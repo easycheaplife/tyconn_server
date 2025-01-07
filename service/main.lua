@@ -6,11 +6,6 @@ local GATE_CONF = {
 	protocol = "ws",      -- WebSocket 协议
 }
 
--- 游戏服务配置
-local GAME_CONF = {
-	instance_count = 1,  -- 改为只启动一个游戏服务实例
-}
-
 -- 启动游戏服务组
 local function start_game_services()
 	local game = skynet.newservice("game")

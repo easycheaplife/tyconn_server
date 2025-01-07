@@ -3,8 +3,7 @@ local skynet = require "skynet"
 local game = {}
 local users = {}  -- fd -> user_info
 local CMD = {}
-local HANDLER = {}
-local balance    -- 负载均衡服务
+local HANDLER = {}  -- 负载均衡服务
 
 -- 消息处理函数
 function HANDLER.hello(fd, msg)
@@ -62,37 +61,6 @@ function CMD.client_disconnect(source, fd)
             skynet.self(), fd, user.agent))
     end
     users[fd] = nil
-end
-
--- 负载更新函数
-local function update_load()
-    if balance then
-        local load = {
-            connections = #users,
-            cpu = 0,
-            memory = 0,
-        }
-        local total_load = load.connections * 0.6 + load.cpu * 0.2 + load.memory * 0.2
-        
-        skynet.error(string.format("Game(%d) update load: connections=%d, total_load=%.2f", 
-            skynet.self(), load.connections, total_load))
-        
-        skynet.send(balance, "lua", "update_service_status", 
-            "game_services",
-            skynet.self(),
-            #users,
-            total_load
-        )
-    end
-end
-
-local function start_load_update()
-    skynet.fork(function()
-        while true do
-            update_load()
-            skynet.sleep(100)  -- 每10秒更新一次
-        end
-    end)
 end
 
 function CMD.start()
