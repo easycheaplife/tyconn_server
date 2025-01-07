@@ -1,58 +1,61 @@
 local skynet = require "skynet"
+local logger = require "logger"  -- 引入日志模块
+local log = logger.log          -- 简化调用
 
--- 简化网关配置，只保留一个 WebSocket 网关
-local GATE_CONF = {
-	port = 8891,          -- WebSocket 端口
-	protocol = "ws",      -- WebSocket 协议
-}
+-- 保存重要的服务句柄
+local SERVICES = {}
 
--- 启动游戏服务组
-local function start_game_services()
-	local game = skynet.newservice("game")
-	skynet.error(string.format("Starting game service %d", game))
-	
-	-- 初始化游戏服务
-	local ok = skynet.call(game, "lua", "start")
-	if not ok then
-		error(string.format("Failed to start game service %d", game))
-	end
-	
-	skynet.error(string.format("Game service %d started successfully", game))
-	return game  -- 直接返回游戏服务
-end
-
--- 启动网关
-local function start_gate(game_service)
+local function start_watchdog(game_service)
 	local watchdog = skynet.newservice("ws_watchdog")
-	local addr, port = skynet.call(watchdog, "lua", "start", {
-		port = GATE_CONF.port,
-		protocol = GATE_CONF.protocol,
-		game = game_service,  -- 直接传入游戏服务
+	local port = 8891  -- 从配置文件读取或使用默认值
+	
+	local ok = skynet.call(watchdog, "lua", "start", {
+		port = port,
+		game = game_service
 	})
 	
-	if addr then
-		skynet.error(string.format("WebSocket gate listening on %s:%d", addr, port))
-		return watchdog
+	if ok then
+		log("WebSocket gate listening on 0.0.0.0:%d", port)
 	else
-		error("Failed to start WebSocket gate")
+		log("Failed to start WebSocket gate")
 	end
+	
+	return watchdog
+end
+
+-- 添加获取服务句柄的接口
+local CMD = {}
+
+function CMD.get_service(name)
+	return SERVICES[name]
 end
 
 skynet.start(function()
-	skynet.error("Server start")
-	
-	if not skynet.getenv "daemon" then
-		local console = skynet.newservice("console")
-	end
-	
-	skynet.newservice("debug_console", 8000)
+	-- 启动必要的服务
+	log("Server starting...")
 	
 	-- 启动游戏服务
-	local game_service = start_game_services()
+	local game = skynet.newservice("game")
+	log("Game service %d started successfully", game)
 	
-	-- 启动网关服务
-	local gate = start_gate(game_service)
+	-- 启动 watchdog（它会创建并管理 gate）
+	local watchdog = start_watchdog(game)
 	
-	skynet.exit()
+	-- 存储服务句柄到本地表
+	SERVICES.game = game
+	SERVICES.watchdog = watchdog
+	
+	-- 添加消息分发
+	skynet.dispatch("lua", function(session, source, cmd, ...)
+		local f = CMD[cmd]
+		if f then
+			skynet.ret(skynet.pack(f(...)))
+		end
+	end)
+	
+	log("Server started")
+	
+	-- 如果是后台运行则注释掉这行
+	-- skynet.exit()
 end)
 

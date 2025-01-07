@@ -1,115 +1,75 @@
 local skynet = require "skynet"
-local socket = require "skynet.socket"
-local websocket = require "http.websocket"
+local logger = require "logger"  -- 引入日志模块
+local log = logger.log          -- 简化调用
 
-local WATCHDOG
-local connection = {}  -- fd -> agent
-local handler = {}
-local game_service    -- 游戏服务
-
-function handler.connect(fd)
-    skynet.error(string.format("Watchdog(%d) new client connect, fd=%d", skynet.self(), fd))
-    local agent = skynet.newservice("ws_agent")
-    skynet.error(string.format("Watchdog(%d) created agent(%d) for fd=%d", 
-        skynet.self(), agent, fd))
-    
-    skynet.call(agent, "lua", "start", { 
-        fd = fd,
-        game = game_service  -- 直接传入游戏服务
-    })
-    connection[fd] = agent
-end
-
-function handler.handshake(fd, header, url)
-    local addr = websocket.addrinfo(fd)
-    print("ws handshake from", addr, "url", url)
-    print("----header----")
-    for k,v in pairs(header) do
-        print(k,v)
-    end
-    print("--------------")
-end
-
-function handler.message(fd, msg, msg_type)
-    local agent = connection[fd]
-    if agent then
-        skynet.error(string.format("Watchdog(%d) forward message to agent(%d), fd=%d, type=%s", 
-            skynet.self(), agent, fd, msg_type))
-        skynet.send(agent, "lua", "message", msg, msg_type)
-    else
-        skynet.error(string.format("Watchdog(%d) no agent for fd=%d", skynet.self(), fd))
-    end
-end
-
-function handler.ping(fd)
-    print("ws ping from: " .. tostring(fd))
-end
-
-function handler.pong(fd)
-    print("ws pong from: " .. tostring(fd))
-end
-
-function handler.close(fd, code, reason)
-    skynet.error(string.format("Watchdog(%d) client close, fd=%d, code=%s, reason=%s", 
-        skynet.self(), fd, tostring(code), tostring(reason)))
-    local agent = connection[fd]
-    if agent then
-        skynet.send(agent, "lua", "disconnect")
-        connection[fd] = nil
-    end
-end
-
-function handler.error(fd)
-    print("ws error from: " .. tostring(fd))
-    local agent = connection[fd]
-    if agent then
-        skynet.send(agent, "lua", "disconnect")
-        connection[fd] = nil
-    end
-end
+local gate  -- ws_gate service handle
 
 local CMD = {}
 
 function CMD.start(conf)
-    game_service = assert(conf.game, "game service not found")
-    local protocol = conf.protocol or "ws"
-    local port = assert(conf.port)
-    
-    -- 添加日志
-    skynet.error(string.format("WS_Watchdog(%d) starting on port %d, protocol: %s", 
-        skynet.self(), port, protocol))
-    
-    local id = socket.listen("0.0.0.0", port)
-    if not id then
-        skynet.error(string.format("WS_Watchdog(%d) failed to listen on port %d", 
-            skynet.self(), port))
-        return nil, "listen failed"
+    -- 创建并启动 ws_gate
+    gate = skynet.newservice("ws_gate")
+    if not gate then
+        log("Failed to create gate service")
+        return false
     end
     
-    skynet.error(string.format("WS_Watchdog(%d) listening on port %d", skynet.self(), port))
+    log("Watchdog(%d) created gate service(%d)", skynet.self(), gate)
     
-    socket.start(id, function(fd, addr)
-        skynet.error(string.format("WS_Watchdog(%d) new connection from %s", skynet.self(), addr))
-        local ok, err = websocket.accept(fd, handler, protocol, addr)
-        if not ok then
-            skynet.error(string.format("WS_Watchdog(%d) websocket accept failed: %s", 
-                skynet.self(), err))
+    -- 启动 gate 服务
+    local ok = skynet.call(gate, "lua", "start", {
+        port = conf.port,
+        game = conf.game,
+        watchdog = skynet.self()
+    })
+    
+    if not ok then
+        log("Failed to start gate service")
+        return false
+    end
+    
+    -- 开始监控
+    skynet.fork(function()
+        while true do
+            if gate then
+                -- 检查 gate 服务状态
+                local status = skynet.call(gate, "lua", "status")
+                log("Gate status: connections=%d", status.connection_count)
+            end
+            skynet.sleep(1000)  -- 每 10 秒检查一次
         end
     end)
     
-    return "0.0.0.0", port
+    return true
+end
+
+function CMD.gate_error(error_type, ...)
+    log("Watchdog(%d) received gate error: %s", skynet.self(), error_type)
+    
+    -- 处理不同类型的错误
+    if error_type == "listen_failed" then
+        -- 端口监听失败
+        local port = ...
+        log("Gate failed to listen on port %d", port)
+    elseif error_type == "client_close" then
+        -- 客户端正常断开
+        local fd, code, reason = ...
+        log("Client %d closed connection, code: %s, reason: %s", 
+            fd, tostring(code), tostring(reason))
+    elseif error_type == "ws_error" then
+        -- WebSocket 错误
+        local fd = ...
+        log("WebSocket error on connection %d", fd)
+    end
 end
 
 skynet.start(function()
-    WATCHDOG = skynet.self()
-    skynet.dispatch("lua", function(session, source, cmd, subcmd, ...)
-        if cmd == "socket" then
-            local f = handler[subcmd]
-            f(...)
-            -- socket api don't need return
-        else
-            local f = assert(CMD[cmd])
-            skynet.ret(skynet.pack(f(subcmd, ...)))
+    skynet.dispatch("lua", function(session, source, cmd, ...)
+        local f = CMD[cmd]
+        if f then
+            skynet.ret(skynet.pack(f(...)))
         end
     end)
+    
+    log("Watchdog(%d) started", skynet.self())
 end) 
