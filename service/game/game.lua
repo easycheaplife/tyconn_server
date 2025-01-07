@@ -5,7 +5,7 @@ local log = logger.log          -- 简化调用
 local game = {}
 local users = {}  -- fd -> user_info
 local CMD = {}
-local HANDLER = {}  -- 负载均衡服务
+local HANDLER = {}  
 
 -- 消息处理函数
 function HANDLER.hello(fd, msg)
