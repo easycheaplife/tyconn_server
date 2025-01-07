@@ -40,3 +40,4 @@ luac.out
 *.hex
 
 skynet
+client/node_modules
