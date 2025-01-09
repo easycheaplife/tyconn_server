@@ -1,22 +1,13 @@
+include "config.path"
+
 -- 添加日志等级环境变量
 env = "LOG_LEVEL=1"  -- 1=DEBUG, 2=INFO, 3=ERROR
 
 thread = 8
-cpath = "./skynet/cservice/?.so"
+
 bootstrap = "snlua bootstrap"
 
 start = "main"
 harbor = 0
 
-lualoader = "./skynet/lualib/loader.lua"
-
-luaservice = "./service/?.lua;"..
-            "./service/game/?.lua;"..
-            "./service/gate/?.lua;"..
-            "./service/?/init.lua;"..
-            "./skynet/service/?.lua"
-
-lua_path = "./lualib/?.lua;" .. "./etc/?.lua;" .. "./lualib/?.lua;" .. "./skynet/lualib/?.lua;" .. "./skynet/lualib/?/init.lua;"
-
-lua_cpath = "./luaclib/?.so;" .. "./skynet/luaclib/?.so"
 
