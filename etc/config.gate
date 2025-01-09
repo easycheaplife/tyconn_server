@@ -1,0 +1,17 @@
+include "config.path"
+
+thread = 8
+harbor = 0
+address = "127.0.0.1:2003"
+master = "127.0.0.1:2001"
+
+-- 启动配置
+bootstrap = "snlua bootstrap"
+start = "main_gate"
+
+-- 集群配置
+cluster = "./etc/clustername.lua"
+websocket_port = 8891
+
+-- 日志配置
+env = "LOG_LEVEL=1"  -- 1=DEBUG, 2=INFO, 3=ERROR

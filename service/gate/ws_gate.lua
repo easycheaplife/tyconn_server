@@ -18,28 +18,16 @@ local handler = {}
 -- 处理新的 WebSocket 连接
 -- @param fd: 连接的文件描述符
 function handler.connect(fd)
-    logger.info("Gate(%d) new client connected, fd=%d", skynet.self(), fd)
-    
+    logger.info("New client connected, fd=%d", fd)
     -- 为新连接创建代理服务
     local agent = skynet.newservice("ws_agent")
     connection[fd] = agent
-    
-    -- 启动代理服务
-    local ok, err = pcall(skynet.call, agent, "lua", "start", { 
+    skynet.call(agent, "lua", "start", { 
         fd = fd,
         game = game_service,
-        gate = skynet.self()
+        game_node = "game",
+        gate = skynet.self()    -- 传递 gate 服务句柄
     })
-    
-    -- 处理启动失败的情况
-    if not ok then
-        logger.error("Gate(%d) failed to start agent for fd=%d: %s", skynet.self(), fd, err)
-        connection[fd] = nil
-        skynet.kill(agent)
-        return
-    end
-    
-    logger.info("Gate(%d) agent(%d) started for fd=%d", skynet.self(), agent, fd)
 end
 
 -- 处理 WebSocket 消息
@@ -49,7 +37,12 @@ end
 function handler.message(fd, msg, msg_type)
     local agent = connection[fd]
     if agent then
-        logger.debug("Gate(%d) received message from fd=%d: %s", skynet.self(), fd, msg)
+        -- 确保消息是字符串类型
+        if type(msg) == "number" then
+            msg = tostring(msg)
+        end
+        logger.debug("Gate(%d) received message from fd=%d: %s (type=%s)", 
+            skynet.self(), fd, msg, msg_type)
         skynet.send(agent, "lua", "message", msg, msg_type)
     else
         logger.error("Gate(%d) no agent for fd=%d", skynet.self(), fd)
@@ -89,6 +82,10 @@ end
 -- @param msg: 消息内容
 function CMD.send_message(fd, msg)
     if connection[fd] then
+        -- 确保消息是字符串类型
+        if type(msg) == "number" then
+            msg = tostring(msg)
+        end
         logger.debug("Gate(%d) sending message to fd=%d: %s", skynet.self(), fd, msg)
         local ok, err = pcall(websocket.write, fd, msg)
         if not ok then
