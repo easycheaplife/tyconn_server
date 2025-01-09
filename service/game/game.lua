@@ -8,19 +8,17 @@ local cluster = require "skynet.cluster"
 local logger = require "logger"
 
 -- 用户管理表
-local users = {}  -- fd -> {agent = agent}
+local users = {}  -- fd -> {agent, node}
 
 -- 消息处理函数表
 local handlers = {
     -- 处理 hello 命令
-    hello = function(fd, msg)
-        logger.debug("Game(%d) handling hello command from fd=%d: %s", skynet.self(), fd, msg)
+    hello = function(_, msg)
         return string.format("Hello %s!", msg)
     end,
     
     -- 处理 echo 命令
-    echo = function(fd, msg)
-        logger.debug("Game(%d) handling echo command from fd=%d: %s", skynet.self(), fd, msg)
+    echo = function(_, msg)
         return msg
     end
 }
@@ -36,21 +34,12 @@ function CMD.client_message(source, client_fd, msg)
             agent = source,
             node = "gate"  -- 记录 agent 所在的节点
         }
-        logger.info("Game(%d) new client connected from agent(%d), fd=%d msg=%s", 
-            skynet.self(), source, client_fd, msg)
     end
     
     -- 尝试解析消息
-    local ok, cmd, params = pcall(function()
-        local c, p = string.match(msg, "([^|]+)|?(.*)")
-        return c or msg, p or ""
-    end)
-    
-    if not ok then
-        logger.error("Game(%d) failed to parse message from fd=%d: %s", 
-            skynet.self(), client_fd, msg)
-        return
-    end
+    local cmd, params = string.match(msg, "([^|]+)|?(.*)")
+    cmd = cmd or msg
+    params = params or ""
     
     logger.debug("Game(%d) received command from fd=%d: %s, params: %s", 
         skynet.self(), client_fd, cmd, params)
@@ -75,11 +64,8 @@ function CMD.client_message(source, client_fd, msg)
 end
 
 -- 处理客户端断开连接
-function CMD.client_disconnect(source, client_fd)
-    if users[client_fd] then
-        logger.info("Game(%d) client disconnected, fd=%d", skynet.self(), client_fd)
-        users[client_fd] = nil
-    end
+function CMD.client_disconnect(_, client_fd)
+    users[client_fd] = nil
 end
 
 -- 服务入口
@@ -87,7 +73,7 @@ skynet.start(function()
     logger.info("Game(%d) service starting", skynet.self())
     
     -- 注册消息处理函数
-    skynet.dispatch("lua", function(session, source, cmd, ...)
+    skynet.dispatch("lua", function(_, _, cmd, ...)
         local f = CMD[cmd]
         if f then
             -- 直接传递 ... 给命令处理函数

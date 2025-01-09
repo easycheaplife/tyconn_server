@@ -24,9 +24,8 @@ local LEVEL_NAMES = {
     [3] = "ERROR"
 }
 
--- 从环境变量获取日志等级，如果未设置则默认使用 DEBUG 级别
--- 可在 config 文件中通过 env = "LOG_LEVEL=1" 设置
-local current_level = tonumber(os.getenv("LOG_LEVEL")) or logger.LEVEL.DEBUG
+-- 从环境变量获取日志等级
+local current_level = tonumber(skynet.getenv "LOG_LEVEL") or logger.LEVEL.DEBUG
 
 -- 设置日志等级
 -- @param level: 日志等级，取值为 logger.LEVEL 中的值

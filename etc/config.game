@@ -3,7 +3,6 @@ include "config.path"
 thread = 8
 harbor = 0
 address = "127.0.0.1:2002"
-master = "127.0.0.1:2001"
 
 -- 启动配置
 bootstrap = "snlua bootstrap"
@@ -13,4 +12,4 @@ start = "main_game"
 cluster = "./etc/clustername.lua"
 
 -- 日志配置
-env = "LOG_LEVEL=1"  -- 1=DEBUG, 2=INFO, 3=ERROR
+LOG_LEVEL = 2  -- 1=DEBUG, 2=INFO, 3=ERROR
