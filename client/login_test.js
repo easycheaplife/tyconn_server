@@ -62,7 +62,7 @@ async function main() {
                 
                 // 创建登录请求
                 const loginData = {
-                    account: "test",
+                    account: "testuser1",
                     password: "123456",
                     device_id: "test_device",
                     platform: "web",

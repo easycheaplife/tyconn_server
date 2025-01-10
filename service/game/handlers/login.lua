@@ -40,25 +40,35 @@ function M.handle(client_id, msg)
             "无效的请求格式"
         ))
     end
-    
-    -- 验证账号密码
-    if request.account == "test" and request.password == "123456" then
-        -- 创建用户信息
-        local user_info = user_model.create_user_info(10001, "测试账号")
+
+    -- 验证用户名密码
+    local user, err = user_model.validate_user(request.account, request.password)
+    if user then
+        -- 记录用户信息
+        user_model.add_user(client_id, user)
         
-        -- 打印调试信息
-        logger.debug("user_info: %s", table_to_string(user_info))
+        -- 更新最后登录时间
+        user.last_login = os.time()
+        user_model.update_user(user)
         
         -- 创建登录响应
         local login_response = {
             code = pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
             message = "登录成功",
-            user_info = user_info,
-            token = "dummy_token_" .. client_id
+            token = "token_" .. user.user_id, -- 简单token生成
+            user_info = {
+                user_id = user.user_id,
+                nickname = user.nickname,
+                level = user.level,
+                exp = user.exp,
+                vip_level = user.vip_level,
+                gold = user.gold,
+                diamond = user.diamond,
+                avatar = user.avatar,
+                register_time = user.register_time,
+                last_login = user.last_login
+            }
         }
-        
-        -- 记录用户信息
-        user_model.add_user(client_id, user_info)
         
         -- 编码登录响应
         local ok, payload = pcall(pb.encode, "command.S2CLoginResponse", login_response)
@@ -81,7 +91,7 @@ function M.handle(client_id, msg)
         return message_util.encode_response(message_util.create_error_response(
             base_request.session,
             pb.enum("common.ErrorCode", "ERROR_CODE_WRONG_PASSWORD"),
-            "账号或密码错误"
+            err or "账号或密码错误"
         ))
     end
 end

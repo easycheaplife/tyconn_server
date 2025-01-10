@@ -148,4 +148,16 @@ function M.get_stats()
     }
 end
 
+-- 更新用户信息
+function M.update_user(user)
+    if not user or not user.username then
+        return false
+    end
+    
+    -- 更新用户数据
+    db.set(db_id, "user:" .. user.username, user)
+    db.set(db_id, "user_id:" .. user.user_id, user)
+    return true
+end
+
 return M 
