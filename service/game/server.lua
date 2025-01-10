@@ -38,6 +38,33 @@ local function print_enums()
     return table.concat(result, "\n")
 end
 
+-- 添加打印用户信息的函数
+local function print_user_stats()
+    local user_model = require "game.models.user"
+    local stats = user_model.get_stats()
+    
+    -- 获取当前时间
+    local current_time = os.date("%Y-%m-%d %H:%M:%S")
+    
+    -- 打印统计信息
+    logger.info("[%s] [INFO] User Statistics:", current_time)
+    logger.info("[%s] [INFO] - Total Users: %d", current_time, stats.total_users)
+    logger.info("[%s] [INFO] - Online Users: %d", current_time, stats.online_users)
+    logger.info("[%s] [INFO] Recent Registered Users:", current_time)
+    
+    -- 打印最近注册用户信息
+    for _, user in ipairs(stats.recent_users) do
+        local register_time = os.date("%Y-%m-%d %H:%M:%S", user.register_time)
+        logger.info("[%s] [INFO]   - ID: %d, Name: %s, Level: %d, Register Time: %s",
+            current_time,
+            user.user_id,
+            user.username,
+            user.level,
+            register_time
+        )
+    end
+end
+
 -- 初始化消息处理器
 local function init_handlers()
     -- 打印所有已加载的类型
@@ -47,18 +74,26 @@ local function init_handlers()
     logger.debug("Available enums:\n%s", print_enums())
     
     -- 获取消息ID
-    local message_id = pb.enum("common.MessageID", "C2S_LOGIN_REQUEST")
-    if not message_id then
+    local login_msg_id = pb.enum("common.MessageID", "C2S_LOGIN_REQUEST")
+    local register_msg_id = pb.enum("common.MessageID", "C2S_REGISTER_REQUEST")
+    
+    if not login_msg_id then
         logger.error("Failed to get message id for C2S_LOGIN_REQUEST")
         return false
     end
-    logger.debug("C2S_LOGIN_REQUEST message id: %d", message_id)
+    
+    if not register_msg_id then
+        logger.error("Failed to get message id for C2S_REGISTER_REQUEST")
+        return false
+    end
     
     -- 打印所有 MessageID 枚举值
     local message_ids = {
         NONE = pb.enum("common.MessageID", "NONE") or 0,
         C2S_LOGIN_REQUEST = pb.enum("common.MessageID", "C2S_LOGIN_REQUEST") or 0,
-        S2C_LOGIN_RESPONSE = pb.enum("common.MessageID", "S2C_LOGIN_RESPONSE") or 0
+        S2C_LOGIN_RESPONSE = pb.enum("common.MessageID", "S2C_LOGIN_RESPONSE") or 0,
+        C2S_REGISTER_REQUEST = pb.enum("common.MessageID", "C2S_REGISTER_REQUEST") or 0,
+        S2C_REGISTER_RESPONSE = pb.enum("common.MessageID", "S2C_REGISTER_RESPONSE") or 0
     }
     
     for name, id in pairs(message_ids) do
@@ -66,7 +101,9 @@ local function init_handlers()
     end
     
     -- 注册处理器
-    handlers[message_id] = require "game.handlers.login"
+    handlers[login_msg_id] = require "game.handlers.login"
+    handlers[register_msg_id] = require "game.handlers.register"
+    
     return true
 end
 
@@ -113,9 +150,24 @@ function CMD.client_disconnect(_, client_id)
     user_model.remove_user(client_id)
 end
 
+local function init_db()
+    local user_model = require "game.models.user"
+    if not user_model.init() then
+        logger.error("Failed to initialize database")
+        return false
+    end
+    return true
+end
+
 -- 服务入口
 skynet.start(function()
     logger.info("Game server starting...")
+    
+    -- 初始化数据库
+    if not init_db() then
+        logger.error("Failed to initialize database")
+        return
+    end
     
     -- 加载协议文件
     if not protoloader.load_directory("./proto") then
@@ -136,6 +188,14 @@ skynet.start(function()
         local f = CMD[cmd]
         if f then
             skynet.ret(skynet.pack(f(...)))
+        end
+    end)
+    
+    -- 添加定时器，每30秒打印一次用户信息
+    skynet.fork(function()
+        while true do
+            skynet.sleep(3000)  -- 30秒 (100 = 1秒)
+            print_user_stats()
         end
     end)
     

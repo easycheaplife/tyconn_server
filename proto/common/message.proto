@@ -8,6 +8,8 @@ enum MessageID {
     // 登录相关 1-100
     C2S_LOGIN_REQUEST = 1;
     S2C_LOGIN_RESPONSE = 2;
+    C2S_REGISTER_REQUEST = 3;
+    S2C_REGISTER_RESPONSE = 4;
 }
 
 // 会话信息

@@ -20,4 +20,19 @@ message S2CLoginResponse {
     common.UserInfo user_info = 4;  // 用户信息
 }
 
+// 注册请求
+message C2SRegisterRequest {
+    string username = 1;    // 用户名
+    string password = 2;    // 密码
+    string nickname = 3;    // 昵称
+    string avatar = 4;      // 头像URL，可选
+}
+
+// 注册响应
+message S2CRegisterResponse {
+    int32 code = 1;            // 错误码
+    string message = 2;        // 错误信息
+    common.UserInfo user_info = 3;  // 用户信息
+}
+
 // 其他命令消息定义... 
