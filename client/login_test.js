@@ -44,17 +44,18 @@ async function main() {
             console.log('Received login response:');
             console.log('- Code:', ErrorCode.valuesById[response.code]);
             console.log('- Message:', response.message);
+            console.log('- Raw response:', JSON.stringify(response.toJSON(), null, 2));
             
             if (response.code === ErrorCode.values.ERROR_CODE_SUCCESS) {
                 console.log('- Token:', response.token);
-                if (response.user_info) {
+                if (response.userInfo) {  // 注意：protobuf.js 会使用驼峰命名
                     console.log('User Info:');
-                    console.log('- ID:', response.user_info.user_id?.toString());  // int64 需要 toString()
-                    console.log('- Nickname:', response.user_info.nickname);
-                    console.log('- Level:', response.user_info.level);
-                    console.log('- VIP:', response.user_info.vip_level);
-                    console.log('- Gold:', response.user_info.gold?.toString());   // int64 需要 toString()
-                    console.log('- Diamond:', response.user_info.diamond?.toString()); // int64 需要 toString()
+                    console.log('- ID:', response.userInfo.userId?.toString());
+                    console.log('- Nickname:', response.userInfo.nickname);
+                    console.log('- Level:', response.userInfo.level);
+                    console.log('- VIP:', response.userInfo.vipLevel);
+                    console.log('- Gold:', response.userInfo.gold?.toString());
+                    console.log('- Diamond:', response.userInfo.diamond?.toString());
                 } else {
                     console.log('No user info in response');
                 }

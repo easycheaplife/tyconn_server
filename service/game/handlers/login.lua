@@ -4,6 +4,19 @@ local user_model = require "game.models.user"
 
 local M = {}
 
+-- 打印表内容的辅助函数
+local function table_to_string(t)
+    local result = {}
+    for k, v in pairs(t) do
+        if type(v) == "table" then
+            table.insert(result, k .. "=" .. table_to_string(v))
+        else
+            table.insert(result, k .. "=" .. tostring(v))
+        end
+    end
+    return "{" .. table.concat(result, ", ") .. "}"
+end
+
 -- 登录处理
 function M.handle(client_id, msg)
     -- 解码登录请求
@@ -18,17 +31,14 @@ function M.handle(client_id, msg)
         -- 创建用户信息
         local user_info = user_model.create_user_info(10001, "测试账号")
         
-        logger.debug("user_info: %s", table.concat({
-            string.format("user_id=%d", user_info.user_id),
-            string.format("nickname=%s", user_info.nickname),
-            string.format("level=%d", user_info.level)
-        }, ", "))
+        -- 打印调试信息
+        logger.debug("user_info: %s", table_to_string(user_info))
         
         -- 创建登录响应
         local response = {
             code = pb.enum("login.ErrorCode", "ERROR_CODE_SUCCESS"),
             message = "登录成功",
-            user_info = user_info,
+            user_info = user_info,  -- 确保这里的 user_info 结构与 proto 定义匹配
             token = "dummy_token_" .. client_id
         }
         
@@ -41,6 +51,13 @@ function M.handle(client_id, msg)
             logger.error("编码登录响应失败: %s", encoded)
             return user_model.create_error_response("ERROR_CODE_SYSTEM_ERROR", "系统错误")
         end
+        
+        -- 验证编码是否成功
+        local ok2, decoded = pcall(pb.decode, "login.S2CLoginResponse", encoded)
+        if ok2 then
+            logger.debug("Response decoded: %s", table_to_string(decoded))
+        end
+        
         return encoded
     else
         -- 登录失败响应
