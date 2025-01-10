@@ -62,12 +62,15 @@ async function main() {
                 
                 // 创建登录请求
                 const loginData = {
-                    account: "testuser1",
+                    account: "testuser",
                     password: "123456",
                     device_id: "test_device",
                     platform: "web",
                     version: "1.0.0"
                 };
+                
+                // 打印登录数据
+                console.log('Login data:', loginData);
                 
                 // 验证请求数据
                 const loginError = C2SLoginRequest.verify(loginData);
@@ -77,10 +80,18 @@ async function main() {
                 
                 // 编码消息
                 const payload = C2SLoginRequest.encode(loginData).finish();
+                console.log('Encoded payload (hex):', Buffer.from(payload).toString('hex'));
+                
                 const baseRequest = {
                     session: session,
                     payload: payload
                 };
+                
+                // 打印基础请求
+                console.log('Base request:', {
+                    session: baseRequest.session,
+                    payload: Buffer.from(baseRequest.payload).toString('hex')
+                });
                 
                 // 验证 BaseRequest
                 const baseRequestError = BaseRequest.verify(baseRequest);
@@ -89,6 +100,7 @@ async function main() {
                 }
                 
                 const message = BaseRequest.encode(baseRequest).finish();
+                console.log('Final message (hex):', Buffer.from(message).toString('hex'));
                 console.log('Sending login request...');
                 ws.send(message, { binary: true });
                 

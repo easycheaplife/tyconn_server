@@ -1,7 +1,6 @@
 local skynet = require "skynet"
 
 local connection = {}    -- 数据库连接池
-local database = {}     -- 数据存储
 local connection_id = 0  -- 连接ID计数器
 
 local function dump(obj)
@@ -72,8 +71,10 @@ local db = {}
 function db.connect(conf)
     connection_id = connection_id + 1
     local id = connection_id
-    connection[id] = database
+    -- 为每个连接创建独立的存储
+    connection[id] = {}
     skynet.error(string.format("Database connected (id = %d) %s", id, dump(conf)))
+    db.print_all(id)
     return id
 end
 
@@ -83,12 +84,24 @@ end
 
 function db.get(id, key)
     local db = connection[id]
-    return db_query(db, key)
+    local value = db_query(db, key)
+    skynet.error(string.format("DB GET - id: %d, key: %s, value: %s", 
+        id, 
+        key, 
+        value and dump(value) or "nil"
+    ))
+    return value
 end
 
 function db.set(id, key, value)
     local db = connection[id]
-    return db_update(db, key, value)
+    local result = db_update(db, key, value)
+    skynet.error(string.format("DB SET - id: %d, key: %s, value: %s", 
+        id, 
+        key, 
+        value and dump(value) or "nil"
+    ))
+    return result
 end
 
 function db.incr(id, key)
@@ -145,6 +158,20 @@ function db.dump(id)
         return "No such connection"
     end
     return dump(db)
+end
+
+-- 打印所有数据（调试用）
+function db.print_all(id)
+    local db = connection[id]
+    if not db then
+        skynet.error("No database connection for id:", id)
+        return
+    end
+    
+    skynet.error("Database contents:")
+    for k, v in pairs(db) do
+        skynet.error(string.format("  %s = %s", k, dump(v)))
+    end
 end
 
 return db 

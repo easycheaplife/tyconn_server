@@ -1,6 +1,7 @@
 local skynet = require "skynet"
 local db = require "simpledb"
 local pb = require "pb"
+local logger = require "logger"
 
 local M = {}
 local db_id  -- 保存数据库连接ID
@@ -29,18 +30,32 @@ function M.create_user_info(username, password, nickname)
     }
 end
 
+-- 打印表内容的辅助函数
+local function table_to_string(t)
+    if not t then return "nil" end
+    local result = {}
+    for k, v in pairs(t) do
+        if type(v) == "table" then
+            table.insert(result, k .. "=" .. table_to_string(v))
+        else
+            table.insert(result, k .. "=" .. tostring(v))
+        end
+    end
+    return "{" .. table.concat(result, ", ") .. "}"
+end
+
 -- 创建新用户
 function M.create_user(username, password, nickname, avatar)
     -- 检查用户名是否已存在
     local exists = db.get(db_id, "user:" .. username)
+    logger.debug("Creating user - username: %s, exists: %s", username, exists and "true" or "false")
+    
     if exists then
         return nil, "用户名已存在"
     end
     
     -- 创建用户信息
     local user = M.create_user_info(username, password, nickname)
-    
-    -- 生成用户ID
     user.user_id = db.incr(db_id, "next_user_id")
     user.avatar = avatar or "default.png"
     
@@ -48,12 +63,18 @@ function M.create_user(username, password, nickname, avatar)
     db.set(db_id, "user:" .. username, user)
     db.set(db_id, "user_id:" .. user.user_id, user)
     
+    logger.debug("User created: %s", table_to_string(user))
     return user
 end
 
 -- 根据用户名获取用户
 function M.get_user_by_username(username)
-    return db.get(db_id, "user:" .. username)
+    local user = db.get(db_id, "user:" .. username)
+    logger.debug("get_user_by_username - username: %s, result: %s", 
+        username, 
+        user and table_to_string(user) or "nil"
+    )
+    return user
 end
 
 -- 根据用户ID获取用户
@@ -71,12 +92,30 @@ end
 
 -- 验证用户名密码
 function M.validate_user(username, password)
+    logger.debug("Validating user - username: [%s], password: [%s]", username, password)
+    
+    -- 打印数据库内容
+    logger.debug("Current database contents:")
+    db.print_all(db_id)
+    
+    -- 打印所有以 user: 开头的键
+    local keys = db.keys(db_id, "^user:")
+    logger.debug("All user keys:")
+    for _, key in ipairs(keys) do
+        logger.debug("  - %s", key)
+    end
+    
     local user = M.get_user_by_username(username)
     if not user then
+        logger.error("User not found: [%s]", username)
         return nil, "用户不存在"
     end
     
+    logger.debug("Found user: %s", table_to_string(user))
+    logger.debug("Password comparison: stored=[%s], input=[%s]", user.password, password)
+    
     if user.password ~= password then
+        logger.error("Wrong password for user: %s", username)
         return nil, "密码错误"
     end
     

@@ -21,12 +21,20 @@ end
 
 -- 解码基础请求
 function M.decode_request(msg)
-    local ok, base_request = pcall(pb.decode, "common.BaseRequest", msg)
+    local ok, request = pcall(pb.decode, "common.BaseRequest", msg)
     if not ok then
-        logger.error("Failed to decode base request: %s", base_request)
+        logger.error("Failed to decode base request: %s", request)
         return nil
     end
-    return base_request
+    
+    if request and request.session then
+        logger.debug("Decoded base request: messageId=%d, sequence=%d", 
+            request.session.messageId or 0,
+            request.session.sequence or 0
+        )
+    end
+    
+    return request
 end
 
 -- 创建会话信息

@@ -23,12 +23,16 @@ function M.handle(client_id, msg)
     -- 解码基础请求
     local base_request = message_util.decode_request(msg)
     if not base_request then
+        logger.error("Failed to decode base request")
         return message_util.encode_response(message_util.create_error_response(
             nil,
             pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"),
             "无效的请求格式"
         ))
     end
+    
+    -- 打印原始请求数据
+    logger.debug("Raw request payload (hex): %s", pb.tohex(msg))
 
     -- 解码登录请求
     local ok, request = pcall(pb.decode, "command.C2SLoginRequest", base_request.payload)
@@ -40,10 +44,18 @@ function M.handle(client_id, msg)
             "无效的请求格式"
         ))
     end
+    
+    -- 打印解码后的请求数据
+    logger.debug("Decoded login request: account=%s, password=%s", 
+        request.account, 
+        request.password
+    )
 
     -- 验证用户名密码
     local user, err = user_model.validate_user(request.account, request.password)
+    logger.debug("Login attempt - account: %s, password: %s", request.account, request.password)
     if user then
+        logger.debug("Login success - user: %s", table_to_string(user))
         -- 记录用户信息
         user_model.add_user(client_id, user)
         
@@ -87,6 +99,7 @@ function M.handle(client_id, msg)
             payload
         ))
     else
+        logger.error("Login failed - error: %s", err)
         -- 登录失败响应
         return message_util.encode_response(message_util.create_error_response(
             base_request.session,
