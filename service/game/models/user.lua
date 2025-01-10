@@ -23,8 +23,8 @@ end
 
 -- 创建错误响应
 function M.create_error_response(code, message)
-    return pb.encode("login.S2CLoginResponse", {
-        code = pb.enum("login.ErrorCode", code),
+    return pb.encode("command.S2CLoginResponse", {
+        code = pb.enum("common.ErrorCode", code),
         message = message
     })
 end

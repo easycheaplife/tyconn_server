@@ -1,0 +1,33 @@
+syntax = "proto3";
+package common;
+
+// 消息ID定义
+enum MessageID {
+    NONE = 0;
+    
+    // 登录相关 1-100
+    C2S_LOGIN_REQUEST = 1;
+    S2C_LOGIN_RESPONSE = 2;
+}
+
+// 会话信息
+message Session {
+    uint32 messageId = 1;    // 消息ID
+    uint32 sequence = 2;      // 序列号
+    int64 timestamp = 3;      // 时间戳
+    string version = 4;       // 协议版本
+}
+
+// 基础请求消息结构
+message BaseRequest {
+    Session session = 1;      // 会话信息
+    bytes payload = 2;        // 消息内容
+}
+
+// 基础响应消息结构
+message BaseResponse {
+    Session session = 1;      // 会话信息
+    int32 errorCode = 2;     // 错误码
+    string errorMsg = 3;     // 错误信息
+    bytes payload = 4;        // 消息内容
+} 

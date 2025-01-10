@@ -1,0 +1,18 @@
+syntax = "proto3";
+package game;
+
+// 用户信息
+message UserInfo {
+    int64 user_id = 1;        // 用户ID
+    string nickname = 2;       // 昵称
+    int32 level = 3;          // 等级
+    int64 exp = 4;            // 经验值
+    int32 vip_level = 5;      // VIP等级
+    int64 gold = 6;           // 金币
+    int64 diamond = 7;        // 钻石
+    string avatar = 8;        // 头像URL
+    int64 register_time = 9;  // 注册时间
+    int64 last_login = 10;    // 上次登录时间
+}
+
+// 其他游戏相关数据结构... 

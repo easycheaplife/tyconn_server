@@ -1,0 +1,23 @@
+syntax = "proto3";
+package command;
+
+import "common/user.proto";
+
+// 登录请求
+message C2SLoginRequest {
+    string account = 1;      // 账号
+    string password = 2;     // 密码
+    string device_id = 3;    // 设备ID
+    string platform = 4;     // 平台
+    string version = 5;      // 客户端版本
+}
+
+// 登录响应
+message S2CLoginResponse {
+    int32 code = 1;         // 错误码
+    string message = 2;     // 错误信息
+    string token = 3;       // 登录令牌
+    common.UserInfo user_info = 4;  // 用户信息
+}
+
+// 其他命令消息定义... 
