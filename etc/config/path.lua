@@ -1,13 +1,30 @@
-cpath = "./skynet/cservice/?.so"
+root = "./"
+skynet_root = "./skynet/"
 
-lualoader = "./skynet/lualib/loader.lua"
+-- C服务路径
+cpath = skynet_root.."cservice/?.so"
 
-luaservice = "./service/?.lua;"..
-            "./service/game/?.lua;"..
-            "./service/gate/?.lua;"..
-            "./service/?/init.lua;"..
-            "./skynet/service/?.lua"
+-- Lua加载器
+lualoader = skynet_root.."lualib/loader.lua"
 
-lua_path = "./lualib/?.lua;" .. "./etc/?.lua;" .. "./lualib/?.lua;" .. "./skynet/lualib/?.lua;" .. "./skynet/lualib/?/init.lua;"
+-- Lua服务路径
+luaservice = root.."service/?.lua;"..
+            root.."service/game/?.lua;"..
+            root.."service/gate/?.lua;"..
+            root.."service/?/init.lua;"..
+            skynet_root.."service/?.lua"
 
-lua_cpath = "./luaclib/?.so;" .. "./skynet/luaclib/?.so"
+-- Lua模块路径
+lua_path = root.."lualib/?.lua;"..
+          root.."service/?.lua;"..     -- 添加 service 目录
+          root.."service/game/?.lua;".. -- 添加 game 子目录
+          root.."etc/?.lua;"..
+          skynet_root.."lualib/?.lua;"..
+          skynet_root.."lualib/?/init.lua"
+
+-- C模块路径
+lua_cpath = root.."luaclib/?.so;"..
+           skynet_root.."luaclib/?.so"
+
+-- protobuf 路径
+proto_path = root.."proto/"
