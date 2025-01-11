@@ -9,7 +9,7 @@ skynet.start(function()
     
     local game_service_proxy = cluster.proxy("game1", "game1")
     local gateway_manager = skynet.newservice("gate/manager")
-    local port = tonumber(skynet.getenv("websocket_port")) or 8891
+    local port = tonumber(skynet.getenv("websocket_port")) or 8008
     
     local ok = skynet.call(gateway_manager, "lua", "start", {
         port = port,

@@ -51,7 +51,7 @@ async function main() {
         }
         
         // 创建WebSocket连接
-        const ws = new WebSocket('ws://localhost:8891', {
+        const ws = new WebSocket('ws://localhost:8008', {
             perMessageDeflate: false
         });
         

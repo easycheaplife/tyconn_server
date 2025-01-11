@@ -12,7 +12,7 @@ start = "node/gate"
 cluster = "etc/cluster.lua"
 node_name = "gate1"
 game_node = "game1"
-websocket_port = 8891
+websocket_port = 8008
 
 -- 日志配置
 LOG_LEVEL = 1
