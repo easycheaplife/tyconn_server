@@ -2,6 +2,7 @@ local skynet = require "skynet"
 local db = require "simpledb"
 local pb = require "pb"
 local logger = require "logger"
+local utils = require "utils"
 
 local M = {}
 local db_id  -- 保存数据库连接ID
@@ -30,20 +31,6 @@ function M.create_user_info(username, password, nickname)
     }
 end
 
--- 打印表内容的辅助函数
-local function table_to_string(t)
-    if not t then return "nil" end
-    local result = {}
-    for k, v in pairs(t) do
-        if type(v) == "table" then
-            table.insert(result, k .. "=" .. table_to_string(v))
-        else
-            table.insert(result, k .. "=" .. tostring(v))
-        end
-    end
-    return "{" .. table.concat(result, ", ") .. "}"
-end
-
 -- 创建新用户
 function M.create_user(username, password, nickname, avatar)
     -- 检查用户名是否已存在
@@ -63,7 +50,7 @@ function M.create_user(username, password, nickname, avatar)
     db.set(db_id, "user:" .. username, user)
     db.set(db_id, "user_id:" .. user.user_id, user)
     
-    logger.debug("User created: %s", table_to_string(user))
+    logger.debug("User created: %s", utils.table_to_string(user))
     return user
 end
 
@@ -72,7 +59,7 @@ function M.get_user_by_username(username)
     local user = db.get(db_id, "user:" .. username)
     logger.debug("get_user_by_username - username: %s, result: %s", 
         username, 
-        user and table_to_string(user) or "nil"
+        user and utils.table_to_string(user) or "nil"
     )
     return user
 end
@@ -111,7 +98,7 @@ function M.validate_user(username, password)
         return nil, "用户不存在"
     end
     
-    logger.debug("Found user: %s", table_to_string(user))
+    logger.debug("Found user: %s", utils.table_to_string(user))
     logger.debug("Password comparison: stored=[%s], input=[%s]", user.password, password)
     
     if user.password ~= password then

@@ -19,8 +19,7 @@ async function main() {
             'common/message.proto',
             'common/error.proto',
             'common/user.proto',
-            'command/command.proto',
-            'game/game.proto'
+            'command/command.proto'
         ]);
         console.log('Proto files loaded');
         

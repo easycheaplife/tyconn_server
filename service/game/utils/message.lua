@@ -1,23 +1,8 @@
 local pb = require "pb"
 local logger = require "logger"
+local utils = require "utils"
 
 local M = {}
-
--- 打印表内容的辅助函数
-function M.table_to_string(t)
-    if type(t) ~= "table" then
-        return tostring(t)
-    end
-    local result = {}
-    for k, v in pairs(t) do
-        if type(v) == "table" then
-            table.insert(result, k .. "=" .. M.table_to_string(v))
-        else
-            table.insert(result, k .. "=" .. tostring(v))
-        end
-    end
-    return "{" .. table.concat(result, ", ") .. "}"
-end
 
 -- 解码基础请求
 function M.decode_request(msg)

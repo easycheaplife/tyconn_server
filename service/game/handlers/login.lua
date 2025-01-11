@@ -2,21 +2,9 @@ local pb = require "pb"
 local logger = require "logger"
 local user_model = require "game.models.user"
 local message_util = require "game.utils.message"
+local utils = require "utils"
 
 local M = {}
-
--- 打印表内容的辅助函数
-local function table_to_string(t)
-    local result = {}
-    for k, v in pairs(t) do
-        if type(v) == "table" then
-            table.insert(result, k .. "=" .. table_to_string(v))
-        else
-            table.insert(result, k .. "=" .. tostring(v))
-        end
-    end
-    return "{" .. table.concat(result, ", ") .. "}"
-end
 
 -- 登录处理
 function M.handle(client_id, msg)
@@ -55,7 +43,7 @@ function M.handle(client_id, msg)
     local user, err = user_model.validate_user(request.account, request.password)
     logger.debug("Login attempt - account: %s, password: %s", request.account, request.password)
     if user then
-        logger.debug("Login success - user: %s", table_to_string(user))
+        logger.debug("Login success - user: %s", utils.table_to_string(user))
         -- 记录用户信息
         user_model.add_user(client_id, user)
         

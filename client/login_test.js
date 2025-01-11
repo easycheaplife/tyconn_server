@@ -18,7 +18,7 @@ async function main() {
         await root.load([
             'common/message.proto',
             'common/error.proto',
-            'game/game.proto',
+            'common/user.proto',
             'command/command.proto'
         ]);
         console.log('Proto files loaded');
