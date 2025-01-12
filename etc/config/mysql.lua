@@ -1,10 +1,13 @@
+-- 从环境变量读取数据库密码
+local password = os.getenv("MYSQL_PASSWORD") or "123456"
+
 return {
     -- 数据库连接配置
     connection = {
         host = "127.0.0.1",
         port = 3306,
         user = "root",
-        password = "F0BYKDqw7",
+        password = password,
         charset = "utf8mb4",
         max_packet_size = 1024 * 1024
     },
