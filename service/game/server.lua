@@ -45,39 +45,6 @@ local function print_enums()
     return table.concat(result, "\n")
 end
 
--- 打印用户统计信息
-local function print_user_stats()
-    local user_model = require "game.models.user"
-    local stats = user_model.get_stats()
-    local current_time = os.date("%Y-%m-%d %H:%M:%S")
-    
-    logger.info("[%s] User Statistics:", current_time)
-    logger.info("- Total Users: %d", stats.total_users)
-    logger.info("- Online Users: %d", stats.online_users)
-    
-    -- 打印在线用户列表
-    if #stats.online_list > 0 then
-        logger.info("Online Users:")
-        for _, user in ipairs(stats.online_list) do
-            local login_time = os.date("%Y-%m-%d %H:%M:%S", user.login_time)
-            logger.info("  - %s (Client: %s, Login: %s)", 
-                user.username, user.client_id, login_time)
-        end
-    end
-    
-    -- 打印最近注册用户
-    logger.info("Recent Registered Users:")
-    for _, user in ipairs(stats.recent_users) do
-        local register_time = os.date("%Y-%m-%d %H:%M:%S", user.register_time)
-        logger.info("  - ID: %d, Name: %s, Level: %d, Register Time: %s",
-            user.user_id,
-            user.username,
-            user.level,
-            register_time
-        )
-    end
-end
-
 -- 初始化消息处理器
 local function init_handlers()
     -- 打印所有已加载的类型和枚举值
@@ -179,14 +146,6 @@ skynet.start(function()
         local f = CMD[cmd]
         if f then
             skynet.ret(skynet.pack(f(...)))
-        end
-    end)
-    
-    -- 启动用户统计定时器
-    skynet.fork(function()
-        while true do
-            skynet.sleep(3000)  -- 30秒
-            print_user_stats()
         end
     end)
     

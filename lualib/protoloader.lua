@@ -49,7 +49,7 @@ function M.load_directory(proto_dir)
 	end
 	
 	-- 再加载其他目录的 proto 文件
-	local dir = io.popen('ls ' .. proto_dir .. '/game/*.proto ' .. proto_dir .. '/command/*.proto')
+	local dir = io.popen('ls ' .. proto_dir .. '/command/*.proto')
 	if not dir then
 		skynet.error("Failed to open proto directory:", proto_dir)
 		return false
