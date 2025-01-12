@@ -4,12 +4,8 @@ package common;
 // 消息ID定义
 enum MessageID {
     NONE = 0;
-    
-    // 登录相关 1-100
-    C2S_LOGIN_REQUEST = 1;
-    S2C_LOGIN_RESPONSE = 2;
-    C2S_REGISTER_REQUEST = 3;
-    S2C_REGISTER_RESPONSE = 4;
+    C2S_LOGIN_REQUEST = 1;     // 登录请求
+    S2C_LOGIN_RESPONSE = 2;    // 登录响应
 }
 
 // 会话信息

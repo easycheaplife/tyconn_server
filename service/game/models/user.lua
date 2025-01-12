@@ -69,64 +69,51 @@ function M.get_user_by_id(user_id)
     return db.get(db_id, "user_id:" .. user_id)
 end
 
--- 创建错误响应
-function M.create_error_response(code, message)
-    return pb.encode("command.S2CRegisterResponse", {
-        code = code,
-        message = message
-    })
-end
-
--- 验证用户名密码
-function M.validate_user(username, password)
-    logger.debug("Validating user - username: [%s], password: [%s]", username, password)
-    
-    -- 打印数据库内容
-    logger.debug("Current database contents:")
-    db.print_all(db_id)
-    
-    -- 打印所有以 user: 开头的键
-    local keys = db.keys(db_id, "^user:")
-    logger.debug("All user keys:")
-    for _, key in ipairs(keys) do
-        logger.debug("  - %s", key)
-    end
-    
-    local user = M.get_user_by_username(username)
-    if not user then
-        logger.error("User not found: [%s]", username)
-        return nil, "用户不存在"
-    end
-    
-    logger.debug("Found user: %s", utils.table_to_string(user))
-    logger.debug("Password comparison: stored=[%s], input=[%s]", user.password, password)
-    
-    if user.password ~= password then
-        logger.error("Wrong password for user: %s", username)
-        return nil, "密码错误"
-    end
-    
-    return user
-end
-
 -- 用户会话管理
-local users = {}
+local sessions = {}  -- 改名为更合适的名字
+local session_by_username = {}  -- 用户名到会话的映射
 
 -- 添加用户会话
 function M.add_user(client_id, user_info)
-    users[client_id] = {
-        user_info = user_info
+    -- 检查用户是否已经在线
+    local old_client_id = session_by_username[user_info.username]
+    if old_client_id then
+        -- 踢掉旧的连接
+        sessions[old_client_id] = nil
+        logger.info("Kicked old session for user: %s", user_info.username)
+    end
+    
+    -- 添加新会话
+    sessions[client_id] = {
+        user_info = user_info,
+        login_time = os.time()
     }
-end
-
--- 获取用户会话
-function M.get_user(client_id)
-    return users[client_id]
+    session_by_username[user_info.username] = client_id
+    
+    logger.info("User logged in - username: %s, client_id: %s", 
+        user_info.username, client_id)
 end
 
 -- 删除用户会话
 function M.remove_user(client_id)
-    users[client_id] = nil
+    local session = sessions[client_id]
+    if session then
+        local username = session.user_info.username
+        session_by_username[username] = nil
+        logger.info("User logged out - username: %s, client_id: %s", 
+            username, client_id)
+    end
+    sessions[client_id] = nil
+end
+
+-- 获取用户会话
+function M.get_user(client_id)
+    return sessions[client_id]
+end
+
+-- 检查用户是否在线
+function M.is_user_online(username)
+    return session_by_username[username] ~= nil
 end
 
 -- 获取用户统计信息
@@ -143,7 +130,7 @@ function M.get_stats()
     
     -- 统计在线用户
     local online_count = 0
-    for _ in pairs(users) do
+    for _ in pairs(sessions) do
         online_count = online_count + 1
     end
     
@@ -167,10 +154,26 @@ function M.get_stats()
         table.insert(recent_users, all_users[i])
     end
     
+    -- 添加在线用户详细信息
+    local online_users = {}
+    for client_id, session in pairs(sessions) do
+        table.insert(online_users, {
+            username = session.user_info.username,
+            client_id = client_id,
+            login_time = session.login_time
+        })
+    end
+    
+    -- 按登录时间排序
+    table.sort(online_users, function(a, b)
+        return a.login_time > b.login_time
+    end)
+    
     return {
         total_users = #all_users,
-        online_users = online_count,
-        recent_users = recent_users
+        online_users = #online_users,
+        recent_users = recent_users,
+        online_list = online_users  -- 添加在线用户列表
     }
 end
 
@@ -184,6 +187,31 @@ function M.update_user(user)
     db.set(db_id, "user:" .. user.username, user)
     db.set(db_id, "user_id:" .. user.user_id, user)
     return true
+end
+
+-- 获取或创建用户
+function M.get_or_create_user(username, password)
+    -- 先尝试获取用户
+    local user = M.get_user_by_username(username)
+    local is_new_user = false
+    
+    if not user then
+        -- 用户不存在，创建新用户
+        logger.debug("Creating new user for account: %s", username)
+        user = M.create_user(username, password, username)
+        if not user then
+            return nil, "创建用户失败"
+        end
+        is_new_user = true
+    else
+        -- 用户存在，验证密码
+        if user.password ~= password then
+            logger.error("Wrong password for user: %s", username)
+            return nil, "密码错误"
+        end
+    end
+    
+    return user, nil, is_new_user  -- 返回用户信息、错误信息、是否新用户
 end
 
 return M 

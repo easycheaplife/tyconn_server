@@ -4,13 +4,14 @@ package common;
 // 用户信息
 message UserInfo {
     int64 user_id = 1;        // 用户ID
-    string nickname = 2;       // 昵称
-    int32 level = 3;          // 等级
-    int64 exp = 4;            // 经验值
-    int32 vip_level = 5;      // VIP等级
-    int64 gold = 6;           // 金币
-    int64 diamond = 7;        // 钻石
-    string avatar = 8;        // 头像URL
-    int64 register_time = 9;  // 注册时间
-    int64 last_login = 10;    // 上次登录时间
+    string username = 2;       // 用户名
+    string nickname = 3;       // 昵称
+    int32 level = 4;          // 等级
+    int64 exp = 5;            // 经验值
+    int32 vip_level = 6;      // VIP等级
+    int64 gold = 7;           // 金币
+    int64 diamond = 8;        // 钻石
+    string avatar = 9;        // 头像URL
+    int64 register_time = 10; // 注册时间
+    int64 last_login = 11;    // 最后登录时间
 } 

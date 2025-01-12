@@ -4,8 +4,16 @@ local logger = require "logger"
 local pb = require "pb"
 local protoloader = require "protoloader"
 
+-- 先加载协议文件
+if not protoloader.load_directory("./proto") then
+    logger.error("Failed to load proto files")
+    return
+end
+
 -- 消息处理模块
-local handlers = {}
+local handlers = {
+    [pb.enum("common.MessageID", "C2S_LOGIN_REQUEST")] = require "game.handlers.login"
+}
 
 -- 命令处理模块
 local CMD = {}
@@ -23,7 +31,6 @@ end
 -- 打印所有枚举值的辅助函数
 local function print_enums()
     local result = {}
-    -- 获取所有类型
     local types = pb.types()
     for name in types do
         if pb.type(name) == "enum" then
@@ -38,25 +45,31 @@ local function print_enums()
     return table.concat(result, "\n")
 end
 
--- 添加打印用户信息的函数
+-- 打印用户统计信息
 local function print_user_stats()
     local user_model = require "game.models.user"
     local stats = user_model.get_stats()
-    
-    -- 获取当前时间
     local current_time = os.date("%Y-%m-%d %H:%M:%S")
     
-    -- 打印统计信息
-    logger.info("[%s] [INFO] User Statistics:", current_time)
-    logger.info("[%s] [INFO] - Total Users: %d", current_time, stats.total_users)
-    logger.info("[%s] [INFO] - Online Users: %d", current_time, stats.online_users)
-    logger.info("[%s] [INFO] Recent Registered Users:", current_time)
+    logger.info("[%s] User Statistics:", current_time)
+    logger.info("- Total Users: %d", stats.total_users)
+    logger.info("- Online Users: %d", stats.online_users)
     
-    -- 打印最近注册用户信息
+    -- 打印在线用户列表
+    if #stats.online_list > 0 then
+        logger.info("Online Users:")
+        for _, user in ipairs(stats.online_list) do
+            local login_time = os.date("%Y-%m-%d %H:%M:%S", user.login_time)
+            logger.info("  - %s (Client: %s, Login: %s)", 
+                user.username, user.client_id, login_time)
+        end
+    end
+    
+    -- 打印最近注册用户
+    logger.info("Recent Registered Users:")
     for _, user in ipairs(stats.recent_users) do
         local register_time = os.date("%Y-%m-%d %H:%M:%S", user.register_time)
-        logger.info("[%s] [INFO]   - ID: %d, Name: %s, Level: %d, Register Time: %s",
-            current_time,
+        logger.info("  - ID: %d, Name: %s, Level: %d, Register Time: %s",
             user.user_id,
             user.username,
             user.level,
@@ -67,33 +80,23 @@ end
 
 -- 初始化消息处理器
 local function init_handlers()
-    -- 打印所有已加载的类型
+    -- 打印所有已加载的类型和枚举值
     logger.debug("Available types:\n%s", print_types())
-    
-    -- 打印所有可用的枚举值
     logger.debug("Available enums:\n%s", print_enums())
     
-    -- 获取消息ID
+    -- 验证必要的消息ID
     local login_msg_id = pb.enum("common.MessageID", "C2S_LOGIN_REQUEST")
-    local register_msg_id = pb.enum("common.MessageID", "C2S_REGISTER_REQUEST")
     
     if not login_msg_id then
         logger.error("Failed to get message id for C2S_LOGIN_REQUEST")
         return false
     end
     
-    if not register_msg_id then
-        logger.error("Failed to get message id for C2S_REGISTER_REQUEST")
-        return false
-    end
-    
-    -- 打印所有 MessageID 枚举值
+    -- 打印已加载的消息ID
     local message_ids = {
         NONE = pb.enum("common.MessageID", "NONE") or 0,
-        C2S_LOGIN_REQUEST = pb.enum("common.MessageID", "C2S_LOGIN_REQUEST") or 0,
-        S2C_LOGIN_RESPONSE = pb.enum("common.MessageID", "S2C_LOGIN_RESPONSE") or 0,
-        C2S_REGISTER_REQUEST = pb.enum("common.MessageID", "C2S_REGISTER_REQUEST") or 0,
-        S2C_REGISTER_RESPONSE = pb.enum("common.MessageID", "S2C_REGISTER_RESPONSE") or 0
+        C2S_LOGIN_REQUEST = login_msg_id,
+        S2C_LOGIN_RESPONSE = pb.enum("common.MessageID", "S2C_LOGIN_RESPONSE") or 0
     }
     
     for name, id in pairs(message_ids) do
@@ -102,38 +105,34 @@ local function init_handlers()
     
     -- 注册处理器
     handlers[login_msg_id] = require "game.handlers.login"
-    handlers[register_msg_id] = require "game.handlers.register"
     
     return true
 end
 
+-- 处理客户端消息
 function CMD.client_message(source, client_id, msg)
-    -- 解析消息类型
     local ok, base_request = pcall(pb.decode, "common.BaseRequest", msg)
-    if not ok then
+    if not ok or not base_request then
         logger.error("Failed to decode base request: %s", base_request)
         return
     end
     
-    if not base_request then
-        logger.error("Failed to decode base request")
+    -- 验证会话信息
+    if not base_request.session then
+        logger.error("No session in request")
         return
     end
     
     -- 打印会话信息
-    if base_request.session then
-        logger.debug("Session info: messageId=%d, sequence=%d, timestamp=%d, version=%s",
-            base_request.session.messageId or 0,
-            base_request.session.sequence or 0,
-            base_request.session.timestamp or 0,
-            base_request.session.version or ""
-        )
-    else
-        logger.error("No session in request")
-    end
+    logger.debug("Session info: messageId=%d, sequence=%d, timestamp=%d, version=%s",
+        base_request.session.messageId or 0,
+        base_request.session.sequence or 0,
+        base_request.session.timestamp or 0,
+        base_request.session.version or ""
+    )
     
     -- 处理消息
-    local msg_id = base_request.session and base_request.session.messageId or 0
+    local msg_id = base_request.session.messageId
     local handler = handlers[msg_id]
     if handler then
         local response = handler.handle(client_id, msg)
@@ -145,38 +144,30 @@ function CMD.client_message(source, client_id, msg)
     end
 end
 
+-- 处理客户端断开连接
 function CMD.client_disconnect(_, client_id)
     local user_model = require "game.models.user"
     user_model.remove_user(client_id)
 end
 
+-- 初始化数据库
 local function init_db()
     local user_model = require "game.models.user"
-    if not user_model.init() then
-        logger.error("Failed to initialize database")
-        return false
-    end
-    return true
+    return user_model.init()
 end
 
 -- 服务入口
 skynet.start(function()
     logger.info("Game server starting...")
     
-    -- 初始化数据库
+    -- 初始化
     if not init_db() then
         logger.error("Failed to initialize database")
         return
     end
     
-    -- 加载协议文件
-    if not protoloader.load_directory("./proto") then
-        logger.error("Failed to load proto files")
-        return
-    end
     logger.info("Proto files loaded")
     
-    -- 初始化消息处理器
     if not init_handlers() then
         logger.error("Failed to initialize handlers")
         return
@@ -191,10 +182,10 @@ skynet.start(function()
         end
     end)
     
-    -- 添加定时器，每30秒打印一次用户信息
+    -- 启动用户统计定时器
     skynet.fork(function()
         while true do
-            skynet.sleep(3000)  -- 30秒 (100 = 1秒)
+            skynet.sleep(3000)  -- 30秒
             print_user_stats()
         end
     end)

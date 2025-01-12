@@ -11,5 +11,4 @@ enum ErrorCode {
     ERROR_CODE_SYSTEM_ERROR = 5;         // 系统错误
     ERROR_CODE_ALREADY_ONLINE = 6;       // 已经在线
     ERROR_CODE_INVALID_PARAM = 7;         // 无效参数
-    ERROR_CODE_USERNAME_EXISTS = 8;       // 用户名已存在
 } 
