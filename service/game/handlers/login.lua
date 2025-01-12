@@ -62,7 +62,7 @@ function M.handle(client_id, msg)
         code = pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
         message = is_new and "注册成功" or "登录成功",
         token = "token_" .. user.user_id,
-        user_info = user_info,
+        userInfo = user_info,
         isNewUser = is_new
     }
     

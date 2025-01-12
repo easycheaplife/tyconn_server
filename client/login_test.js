@@ -128,22 +128,25 @@ async function main() {
                         // 解码登录响应
                         const response = S2CLoginResponse.decode(baseResponse.payload);
                         console.log('Login response (raw):', response.toJSON());
-                        console.log('Login response:');
-                        console.log('- Message:', response.message);
-                        console.log('- Token:', response.token);
-                        console.log('- Is new user:', response.isNewUser);
+                        console.log('Login response:', {
+                            code: response.code,
+                            message: response.message,
+                            token: response.token,
+                            userInfo: response.userInfo,
+                            isNewUser: response.isNewUser
+                        });
                         
-                        if (response.user_info) {
+                        if (response.userInfo) {
                             console.log('User info:');
-                            console.log('- ID:', response.user_info.user_id?.toString());
-                            console.log('- Username:', response.user_info.username);
-                            console.log('- Nickname:', response.user_info.nickname);
-                            console.log('- Level:', response.user_info.level);
-                            console.log('- VIP:', response.user_info.vip_level);
-                            console.log('- Gold:', response.user_info.gold?.toString());
-                            console.log('- Diamond:', response.user_info.diamond?.toString());
-                            console.log('- Register time:', new Date(response.user_info.register_time * 1000).toLocaleString());
-                            console.log('- Last login:', new Date(response.user_info.last_login * 1000).toLocaleString());
+                            console.log('- ID:', response.userInfo.userId?.toString());
+                            console.log('- Username:', response.userInfo.username);
+                            console.log('- Nickname:', response.userInfo.nickname);
+                            console.log('- Level:', response.userInfo.level);
+                            console.log('- VIP:', response.userInfo.vipLevel);
+                            console.log('- Gold:', response.userInfo.gold?.toString());
+                            console.log('- Diamond:', response.userInfo.diamond?.toString());
+                            console.log('- Register time:', new Date(response.userInfo.registerTime * 1000).toLocaleString());
+                            console.log('- Last login:', new Date(response.userInfo.lastLogin * 1000).toLocaleString());
                         }
                     }
                 } catch (error) {

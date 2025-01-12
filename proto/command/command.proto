@@ -17,6 +17,6 @@ message S2CLoginResponse {
     int32 code = 1;         // 错误码
     string message = 2;     // 错误信息
     string token = 3;       // 登录令牌
-    common.UserInfo user_info = 4;  // 用户信息
-    bool isNewUser = 5;   // 是否新用户，使用驼峰命名以匹配 JS 风格
+    common.UserInfo userInfo = 4;  // 用户信息
+    bool isNewUser = 5;     // 是否新用户
 } 

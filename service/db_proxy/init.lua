@@ -1,6 +1,12 @@
-return {
-    -- 创建用户表
-    create_table = [[
+local skynet = require "skynet"
+local logger = require "logger"
+local mysql = require "db.mysql"
+
+local M = {}
+
+-- 创建用户表
+local function create_users_table()
+    return mysql.query([[
         CREATE TABLE IF NOT EXISTS users (
             user_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '用户ID',
             username VARCHAR(64) NOT NULL COMMENT '用户名',
@@ -20,41 +26,25 @@ return {
             INDEX idx_register_time (register_time),
             INDEX idx_last_login (last_login)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
-    ]],
+    ]])
+end
 
-    -- 用户查询
-    get_by_username = "SELECT * FROM users WHERE username = '%s' LIMIT 1",
-    get_by_id = "SELECT * FROM users WHERE user_id = %d LIMIT 1",
+-- 初始化数据库
+function M.init()
+    -- 初始化MySQL连接
+    if not mysql.init() then
+        logger.error("Failed to initialize MySQL connection")
+        return false
+    end
     
-    -- 用户创建
-    create_user = [[
-        INSERT INTO users (
-            username, password, nickname, avatar, 
-            register_time, last_login
-        ) VALUES (
-            '%s', '%s', '%s', '%s', %d, %d
-        )
-    ]],
+    -- 创建用户表
+    if not create_users_table() then
+        logger.error("Failed to create users table")
+        return false
+    end
     
-    -- 用户更新
-    update_user = [[
-        UPDATE users SET 
-            nickname = '%s',
-            level = %d,
-            exp = %d,
-            vip_level = %d,
-            gold = %d,
-            diamond = %d,
-            avatar = '%s',
-            last_login = %d
-        WHERE user_id = %d
-    ]],
+    logger.info("Database initialized successfully")
+    return true
+end
 
-    -- 统计查询
-    count_total = "SELECT COUNT(*) as count FROM users",
-    get_recent_users = [[
-        SELECT * FROM users 
-        ORDER BY register_time DESC 
-        LIMIT 10
-    ]]
-} 
+return M 
