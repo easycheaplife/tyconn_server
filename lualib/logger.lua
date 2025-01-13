@@ -5,68 +5,89 @@
 
 local skynet = require "skynet"
 
-local logger = {}
-
--- 日志等级定义
--- DEBUG = 1: 调试信息，用于开发调试，包含详细的消息收发信息
--- INFO = 2:  一般信息，用于记录重要状态变化，如服务启动、连接建立等
--- ERROR = 3: 错误信息，用于记录异常情况
-logger.LEVEL = {
+local LOG_LEVEL = {
     DEBUG = 1,
     INFO = 2,
-    ERROR = 3
+    WARN = 3,
+    ERROR = 4,
+    FATAL = 5
 }
 
--- 日志等级名称映射表，用于日志输出时显示等级名称
-local LEVEL_NAMES = {
+local LOG_NAMES = {
     [1] = "DEBUG",
     [2] = "INFO",
-    [3] = "ERROR"
+    [3] = "WARN",
+    [4] = "ERROR",
+    [5] = "FATAL"
 }
 
--- 从环境变量获取日志等级
-local current_level = tonumber(skynet.getenv "LOG_LEVEL") or logger.LEVEL.DEBUG
+local M = {}
 
--- 设置日志等级
--- @param level: 日志等级，取值为 logger.LEVEL 中的值
-function logger.set_level(level)
-    current_level = level
-end
-
--- 获取当前日志等级
--- @return: 当前日志等级
-function logger.get_level()
-    return current_level
-end
-
--- 基础日志输出函数
--- @param level: 日志等级
--- @param fmt: 格式化字符串
--- @param ...: 格式化参数
-local function log_at_level(level, fmt, ...)
-    -- 只输出大于等于当前等级的日志
-    if level >= current_level then
-        local msg = string.format(fmt, ...)
-        local time = os.date("%Y-%m-%d %H:%M:%S")
-        -- 日志格式：[服务地址] [时间] [日志等级] 消息内容
-        skynet.error(string.format("[:%08x] [%s] [%s] %s", 
-            skynet.self(), time, LEVEL_NAMES[level], msg))
+-- 获取调用者信息
+local function get_caller_info()
+    local level = 4  -- 跳过 write_log、logger函数(debug/info/error等)、get_caller_info 这三层调用栈
+    local info
+    
+    -- 向上查找第一个非 logger.lua 的调用位置
+    repeat
+        info = debug.getinfo(level, "Sl")
+        level = level + 1
+    until not info or not string.match(info.short_src, "logger.lua$")
+    
+    if info then
+        -- 去掉路径前缀，只保留文件名
+        local filename = string.match(info.short_src, "([^/]+)$") or info.short_src
+        return string.format("%s:%d", filename, info.currentline)
     end
+    
+    return "unknown:0"
 end
 
--- DEBUG 级别日志输出
-function logger.debug(fmt, ...)
-    log_at_level(logger.LEVEL.DEBUG, fmt, ...)
+-- 格式化日志消息
+local function format_log(level, fmt, ...)
+    local ok, msg = pcall(string.format, fmt, ...)
+    if not ok then
+        return string.format("[Error formatting log message: %s] fmt: %s", msg, fmt)
+    end
+    
+    local timestamp = os.date("%Y-%m-%d %H:%M:%S")
+    local caller = get_caller_info()
+    return string.format("[%s] [%s] [%s] %s", 
+        timestamp, 
+        LOG_NAMES[level], 
+        caller,
+        msg)
 end
 
--- INFO 级别日志输出
-function logger.info(fmt, ...)
-    log_at_level(logger.LEVEL.INFO, fmt, ...)
+-- 写入日志
+local function write_log(level, fmt, ...)
+    local min_level = tonumber(skynet.getenv("LOG_LEVEL")) or LOG_LEVEL.DEBUG
+    if level < min_level then
+        return
+    end
+    
+    local msg = format_log(level, fmt, ...)
+    skynet.error(msg)
 end
 
--- ERROR 级别日志输出
-function logger.error(fmt, ...)
-    log_at_level(logger.LEVEL.ERROR, fmt, ...)
+function M.debug(fmt, ...)
+    write_log(LOG_LEVEL.DEBUG, fmt, ...)
 end
 
-return logger 
+function M.info(fmt, ...)
+    write_log(LOG_LEVEL.INFO, fmt, ...)
+end
+
+function M.warn(fmt, ...)
+    write_log(LOG_LEVEL.WARN, fmt, ...)
+end
+
+function M.error(fmt, ...)
+    write_log(LOG_LEVEL.ERROR, fmt, ...)
+end
+
+function M.fatal(fmt, ...)
+    write_log(LOG_LEVEL.FATAL, fmt, ...)
+end
+
+return M 
