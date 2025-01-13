@@ -23,6 +23,18 @@ local LOG_NAMES = {
 
 local M = {}
 
+-- 获取日志文件路径
+local function get_log_file()
+    local node_name = skynet.getenv("node_name") or "unknown"
+    local date = os.date("%Y-%m-%d")
+    local log_file = string.format("logs/%s_%s.log", node_name, date)
+    
+    -- 确保日志目录存在
+    os.execute("mkdir -p logs")
+    
+    return log_file
+end
+
 -- 获取调用者信息
 local function get_caller_info()
     local level = 4  -- 跳过 write_log、logger函数(debug/info/error等)、get_caller_info 这三层调用栈
@@ -52,8 +64,8 @@ local function format_log(level, fmt, ...)
     
     local timestamp = os.date("%Y-%m-%d %H:%M:%S")
     local caller = get_caller_info()
-    return string.format("[%s] [%s] [%s] %s", 
-        timestamp, 
+    return string.format("[%s] [%s] [%s] %s\n", 
+        timestamp,
         LOG_NAMES[level], 
         caller,
         msg)
@@ -67,7 +79,17 @@ local function write_log(level, fmt, ...)
     end
     
     local msg = format_log(level, fmt, ...)
+    
+    -- 输出到控制台
     skynet.error(msg)
+    
+    -- 输出到文件
+    local log_file = get_log_file()
+    local file = io.open(log_file, "a+")
+    if file then
+        file:write(msg)
+        file:close()
+    end
 end
 
 function M.debug(fmt, ...)
