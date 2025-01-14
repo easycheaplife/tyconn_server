@@ -18,7 +18,7 @@ local function init_handlers()
 end
 
 -- 处理客户端消息
-function CMD.client_message(source, client_id, msg)
+function CMD.client_message(source, client_id, msg, gate_node)
     local ok, base_request = pcall(pb.decode, "common.BaseRequest", msg)
     if not ok or not base_request then
         logger.error("Failed to decode base request: %s", base_request)
@@ -45,7 +45,7 @@ function CMD.client_message(source, client_id, msg)
     if handler then
         local response = handler.handle(client_id, msg)
         if response then
-            cluster.send("gate1", source, "client_message", response)
+            cluster.send(gate_node, source, "client_message", response)
         end
     else
         logger.error("Unknown message id: %d", msg_id)

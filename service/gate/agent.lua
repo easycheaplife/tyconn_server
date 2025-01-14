@@ -5,6 +5,7 @@ local gateway_service
 local client_id
 local game_service
 local game_node_name
+local gateway_node = skynet.getenv("node_name")
 
 local CMD = {}
 
@@ -16,7 +17,7 @@ function CMD.start(conf)
 end
 
 function CMD.message(msg)
-    cluster.send(game_node_name, game_service, "client_message", skynet.self(), client_id, msg)
+    cluster.send(game_node_name, game_service, "client_message", skynet.self(), client_id, msg, gateway_node)
 end
 
 function CMD.client_message(msg)
