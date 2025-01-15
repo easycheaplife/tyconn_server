@@ -2,7 +2,7 @@ include "../config/path.lua"
 
 thread = 8
 harbor = 0
-address = "127.0.0.1:2002"
+address = "127.0.0.1:2001"
 
 -- 启动配置
 bootstrap = "snlua bootstrap"
