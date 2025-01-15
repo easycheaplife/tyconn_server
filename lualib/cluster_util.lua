@@ -38,7 +38,6 @@ function M.init_node(node_name)
         error(string.format("Node %s not found in cluster configuration", node_name))
     end
     
-    local address = skynet.getenv("address")
     logger.info("Starting node: %s at %s", node_name, env[node_name])
     
     return env
