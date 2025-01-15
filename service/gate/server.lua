@@ -4,34 +4,26 @@ local websocket = require "http.websocket"
 local logger = require "logger"
 
 local connections = {}  -- client_id -> agent
-local game_services    -- 所有游戏服务
-local next_game_index = 1  -- 用于轮询分配
+local game_nodes    -- 游戏节点列表
+local next_index = 1  -- 用于轮询分配
 
--- 获取下一个游戏服务
-local function get_next_game_service()
-    local nodes = {}
-    for node, _ in pairs(game_services) do
-        table.insert(nodes, node)
-    end
-    table.sort(nodes)  -- 保证顺序一致
-    
-    local node = nodes[next_game_index]
-    next_game_index = next_game_index % #nodes + 1
-    if next_game_index == 0 then next_game_index = 1 end
-    
-    return node, node  -- 返回节点名和节点名
+-- 获取下一个游戏节点
+local function get_next_game_node()
+    local node = game_nodes[next_index]
+    next_index = next_index % #game_nodes + 1
+    if next_index == 0 then next_index = 1 end
+    return node
 end
 
 local handler = {}
 
 function handler.connect(client_id)
-    local game_service, game_node = get_next_game_service()
+    local game_node = get_next_game_node()
     local agent = skynet.newservice("gate/agent")
     connections[client_id] = agent
     
     skynet.call(agent, "lua", "start", {
         client_id = client_id,
-        game = game_service,
         game_node = game_node,
         gateway = skynet.self()
     })
@@ -65,9 +57,10 @@ end
 local CMD = {}
 
 function CMD.start(conf)
-    game_services = conf.game_services
-    local port = conf.port
+    game_nodes = conf.game_nodes
+    table.sort(game_nodes)  -- 保证顺序一致
     
+    local port = conf.port
     local id = socket.listen("0.0.0.0", port)
     socket.start(id, function(fd, addr)
         websocket.accept(fd, handler, "ws", addr)

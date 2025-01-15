@@ -2,15 +2,15 @@ local skynet = require "skynet"
 local logger = require "logger"
 
 local CMD = {}
-local gateway_service
 
 function CMD.start(conf)
-    gateway_service = skynet.newservice("gate/server")
-    skynet.call(gateway_service, "lua", "start", {
+    -- 启动WebSocket服务器
+    local server = skynet.newservice("gate/server")
+    local ok = skynet.call(server, "lua", "start", {
         port = conf.port,
-        game_services = conf.game_services
+        game_nodes = conf.game_nodes  -- 改为 game_nodes
     })
-    return true
+    return ok
 end
 
 skynet.start(function()
@@ -18,8 +18,6 @@ skynet.start(function()
         local f = CMD[cmd]
         if f then
             skynet.ret(skynet.pack(f(...)))
-        else
-            logger.error("Unknown command: %s", cmd)
         end
     end)
 end)

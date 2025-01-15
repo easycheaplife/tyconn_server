@@ -16,7 +16,6 @@ function CMD.start(conf)
 end
 
 function CMD.message(msg)
-    logger.info("CMD.message game_node_name: %s", game_node_name)
     cluster.send(game_node_name, "@" .. game_node_name, "client_message", 
         skynet.self(), client_id, msg, gateway_node)
 end

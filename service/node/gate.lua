@@ -10,16 +10,15 @@ skynet.start(function()
     local env = cluster_util.init_node(node_name)
     
     -- 查找所有game节点
-    local game_services = {}
+    local game_nodes = {}  -- 改名更清晰
     for node, addr in pairs(env) do
         if type(node) == "string" and node:match("^game") then
-            -- 只记录节点名，不需要创建代理
-            game_services[node] = node
+            table.insert(game_nodes, node)  -- 只需要存储节点名
             logger.info("Found game node: %s at %s", node, addr)
         end
     end
     
-    if not next(game_services) then
+    if #game_nodes == 0 then
         error("No game nodes found in cluster configuration")
     end
     
@@ -29,7 +28,7 @@ skynet.start(function()
     
     local ok = skynet.call(gateway_manager, "lua", "start", {
         port = port,
-        game_services = game_services  -- 传入所有游戏服务代理
+        game_nodes = game_nodes  -- 只传递节点名列表
     })
     
     if not ok then
