@@ -1,9 +1,9 @@
 local skynet = require "skynet"
 local cluster = require "skynet.cluster"
+local logger = require "logger"
 
 local gateway_service
 local client_id
-local game_service
 local game_node_name
 local gateway_node = skynet.getenv("node_name")
 
@@ -11,13 +11,14 @@ local CMD = {}
 
 function CMD.start(conf)
     client_id = conf.client_id
-    game_service = conf.game
     game_node_name = conf.game_node
     gateway_service = conf.gateway
 end
 
 function CMD.message(msg)
-    cluster.send(game_node_name, game_service, "client_message", skynet.self(), client_id, msg, gateway_node)
+    logger.info("CMD.message game_node_name: %s", game_node_name)
+    cluster.send(game_node_name, "@" .. game_node_name, "client_message", 
+        skynet.self(), client_id, msg, gateway_node)
 end
 
 function CMD.client_message(msg)
@@ -25,7 +26,8 @@ function CMD.client_message(msg)
 end
 
 function CMD.disconnect()
-    cluster.send(game_node_name, game_service, "client_disconnect", skynet.self(), client_id)
+    cluster.send(game_node_name, "@" .. game_node_name, "client_disconnect", 
+        skynet.self(), client_id)
     skynet.exit()
 end
 

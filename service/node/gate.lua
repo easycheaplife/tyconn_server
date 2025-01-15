@@ -13,9 +13,9 @@ skynet.start(function()
     local game_services = {}
     for node, addr in pairs(env) do
         if type(node) == "string" and node:match("^game") then
-            -- 创建游戏服务代理
-            game_services[node] = cluster.proxy(node, node)
-            logger.info("Connected to game node: %s at %s", node, addr)
+            -- 只记录节点名，不需要创建代理
+            game_services[node] = node
+            logger.info("Found game node: %s at %s", node, addr)
         end
     end
     

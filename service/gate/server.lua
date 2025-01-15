@@ -10,16 +10,16 @@ local next_game_index = 1  -- 用于轮询分配
 -- 获取下一个游戏服务
 local function get_next_game_service()
     local nodes = {}
-    for node, service in pairs(game_services) do
-        table.insert(nodes, {node = node, service = service})
+    for node, _ in pairs(game_services) do
+        table.insert(nodes, node)
     end
-    table.sort(nodes, function(a, b) return a.node < b.node end)  -- 保证顺序一致
+    table.sort(nodes)  -- 保证顺序一致
     
-    local game = nodes[next_game_index]
+    local node = nodes[next_game_index]
     next_game_index = next_game_index % #nodes + 1
     if next_game_index == 0 then next_game_index = 1 end
     
-    return game.service, game.node
+    return node, node  -- 返回节点名和节点名
 end
 
 local handler = {}
