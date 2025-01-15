@@ -13,5 +13,10 @@ cluster = "etc/cluster.lua"
 node_name = "gate2"
 websocket_port = 8009
 
+-- 节点选择配置
+-- round_robin: 均匀分配负载
+-- connection_hash: 相同连接总是连到同一服务器
+node_selector = "connection_hash"
+
 -- 日志配置
 LOG_LEVEL = 1

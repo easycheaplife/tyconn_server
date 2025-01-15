@@ -2,23 +2,28 @@ local skynet = require "skynet"
 local socket = require "skynet.socket"
 local websocket = require "http.websocket"
 local logger = require "logger"
+local node_selector = require "node_selector"
 
 local connections = {}  -- client_id -> agent
 local game_nodes    -- 游戏节点列表
 local next_index = 1  -- 用于轮询分配
+local selector_type = skynet.getenv("node_selector") or "round_robin"
 
 -- 获取下一个游戏节点
-local function get_next_game_node()
-    local node = game_nodes[next_index]
-    next_index = next_index % #game_nodes + 1
-    if next_index == 0 then next_index = 1 end
-    return node
+local function get_next_game_node(client_id)
+    if selector_type == "connection_hash" then
+        return node_selector.connection_hash(game_nodes, client_id)
+    else  -- 默认使用轮询
+        local node
+        node, next_index = node_selector.round_robin(game_nodes, next_index)
+        return node
+    end
 end
 
 local handler = {}
 
 function handler.connect(client_id)
-    local game_node = get_next_game_node()
+    local game_node = get_next_game_node(client_id)
     local agent = skynet.newservice("gate/agent")
     connections[client_id] = agent
     
@@ -28,7 +33,8 @@ function handler.connect(client_id)
         gateway = skynet.self()
     })
     
-    logger.debug("New client %d connected, assigned to game node: %s", client_id, game_node)
+    logger.debug("New client %d connected, assigned to game node: %s (selector: %s)", 
+        client_id, game_node, selector_type)
 end
 
 function handler.message(client_id, msg, msg_type)
@@ -66,7 +72,8 @@ function CMD.start(conf)
         websocket.accept(fd, handler, "ws", addr)
     end)
     
-    logger.info("WebSocket server started on ws://0.0.0.0:%d", port)
+    logger.info("WebSocket server started on ws://0.0.0.0:%d (selector: %s)", 
+        port, selector_type)
     return true
 end
 
