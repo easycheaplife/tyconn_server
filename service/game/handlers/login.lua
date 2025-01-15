@@ -44,17 +44,17 @@ function M.handle(client_id, msg)
     
     -- 构造用户信息
     local user_info = {
-        user_id = user.user_id,
+        userId = user.user_id,
         username = user.username,
         nickname = user.nickname,
-        avatar = user.avatar,
         level = user.level,
         exp = user.exp,
-        vip_level = user.vip_level,
+        vipLevel = user.vip_level,
         gold = user.gold,
         diamond = user.diamond,
-        register_time = user.register_time,
-        last_login = user.last_login
+        avatar = user.avatar,
+        registerTime = tonumber(user.register_time),
+        lastLogin = tonumber(user.last_login)
     }
     
     -- 返回登录响应

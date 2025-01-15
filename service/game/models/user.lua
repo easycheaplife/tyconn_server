@@ -1,6 +1,7 @@
 local skynet = require "skynet"
 local cluster = require "skynet.cluster"
 local logger = require "logger"
+local utils = require "utils"
 
 local M = {}
 
@@ -20,18 +21,19 @@ end
 
 -- 创建用户信息
 function M.create_user_info(username, password, nickname)
+    local now = os.time()
     return {
         username = username,
         password = password,
         nickname = nickname or username,
+        avatar = "default.png",
         level = 1,
         exp = 0,
         vip_level = 0,
         gold = 1000,
         diamond = 100,
-        avatar = "default.png",
-        register_time = os.time(),
-        last_login = os.time()
+        register_time = now,
+        last_login = now
     }
 end
 
@@ -59,7 +61,13 @@ end
 -- 根据用户名获取用户
 function M.get_user_by_username(username)
     local users = call_db("get_user_by_username", username)
-    return users and users[1]
+    local user = users and users[1]
+    if user then
+        -- 确保时间戳是数字
+        user.register_time = tonumber(user.register_time) or os.time()
+        user.last_login = tonumber(user.last_login) or os.time()
+    end
+    return user
 end
 
 -- 根据用户ID获取用户

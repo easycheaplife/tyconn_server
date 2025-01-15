@@ -39,4 +39,41 @@ function M.print_table(t, name)
     print("}")
 end
 
+-- 将 "YYYY-MM-DD HH:MM:SS" 格式或数字转换为 UNIX 时间戳
+function M.datetime_to_timestamp(datetime)
+    if not datetime then return 0 end
+    
+    -- 如果已经是数字，直接返回
+    if type(datetime) == "number" then
+        return datetime
+    end
+    
+    -- 如果是字符串，解析日期时间
+    if type(datetime) == "string" then
+        local year, month, day, hour, min, sec = 
+            datetime:match("(%d+)-(%d+)-(%d+) (%d+):(%d+):(%d+)")
+        
+        if not year then return 0 end
+        
+        return os.time({
+            year = tonumber(year),
+            month = tonumber(month),
+            day = tonumber(day),
+            hour = tonumber(hour),
+            min = tonumber(min),
+            sec = tonumber(sec)
+        })
+    end
+    
+    return 0
+end
+
+-- 将 UNIX 时间戳转换为 "YYYY-MM-DD HH:MM:SS" 格式
+function M.timestamp_to_datetime(timestamp)
+    if not timestamp or timestamp == 0 then
+        return os.date("%Y-%m-%d %H:%M:%S", os.time())
+    end
+    return os.date("%Y-%m-%d %H:%M:%S", tonumber(timestamp))
+end
+
 return M
