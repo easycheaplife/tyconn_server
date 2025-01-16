@@ -42,4 +42,4 @@ luac.out
 skynet
 test/node_modules
 logs
-test/*.json
+test/benchmark*.json
