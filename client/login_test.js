@@ -41,9 +41,16 @@ async function main() {
         const reconnectDelay = 3000; // 3秒
 
         function connect() {
-            const ws = new WebSocket('ws://localhost:8008', {
+
+            const ws = new WebSocket('ws://localhost:8010', {
                 perMessageDeflate: false
             });
+			/*
+            const ws = new WebSocket('wss://localhost:8011', {
+                perMessageDeflate: false,
+				rejectUnauthorized: false
+            });
+			*/
             
             ws.on('open', () => {
                 console.log('Connected to server');
