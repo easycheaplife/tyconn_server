@@ -6,6 +6,8 @@ enum MessageID {
     NONE = 0;
     C2S_LOGIN_REQUEST = 1;     // 登录请求
     S2C_LOGIN_RESPONSE = 2;    // 登录响应
+    C2S_HEARTBEAT = 3;         // 心跳请求
+    S2C_HEARTBEAT = 4;         // 心跳响应
 }
 
 // 会话信息

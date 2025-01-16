@@ -14,6 +14,7 @@ local CMD = {}
 local function init_handlers()
     -- 注册处理器
     handlers[pb.enum("common.MessageID", "C2S_LOGIN_REQUEST")] = require "game.handlers.login"
+    handlers[pb.enum("common.MessageID", "C2S_HEARTBEAT")] = require "game.handlers.heartbeat"
     return true
 end
 

@@ -112,6 +112,7 @@ async function loadProto() {
     
     return {
         C2SLoginRequest: root.lookupType("command.C2SLoginRequest"),
+        C2SHeartbeat: root.lookupType("command.C2SHeartbeat"),
         BaseRequest: root.lookupType("common.BaseRequest"),
         BaseResponse: root.lookupType("common.BaseResponse"),
         MessageID: root.lookupEnum("common.MessageID")
@@ -216,6 +217,7 @@ function sendLoginMessage(ws, index, proto) {
             version: "1.0.0"
         };
         
+        // 登录数据
         const loginData = {
             account: `test_user_${index}`,
             password: "123456",
@@ -224,16 +226,43 @@ function sendLoginMessage(ws, index, proto) {
             version: "1.0.0"
         };
         
-        const payload = proto.C2SLoginRequest.encode(loginData).finish();
+        // 验证登录数据格式
+        const loginError = proto.C2SLoginRequest.verify(loginData);
+        if (loginError) {
+            throw new Error(`Invalid login data: ${loginError}`);
+        }
+        
+        // 编码登录请求
+        const payload = proto.C2SLoginRequest.encode(proto.C2SLoginRequest.create(loginData)).finish();
+        
+        // 创建基础请求
         const baseRequest = {
             session: session,
             payload: payload
         };
         
-        const message = proto.BaseRequest.encode(baseRequest).finish();
+        // 验证基础请求格式
+        const baseError = proto.BaseRequest.verify(baseRequest);
+        if (baseError) {
+            throw new Error(`Invalid base request: ${baseError}`);
+        }
+        
+        // 编码并发送
+        const message = proto.BaseRequest.encode(proto.BaseRequest.create(baseRequest)).finish();
         ws.send(message, { binary: true });
+        
+        // 更新统计
         STATS.messages.sent++;
         STATS.messageTimestamps.set(msgId, Date.now());
+        
+        // 调试日志
+        console.debug('Sent login request:', {
+            session,
+            loginData,
+            payloadLength: payload.length,
+            messageLength: message.length
+        });
+        
     } catch (error) {
         console.error('Failed to send login message:', error);
         STATS.messages.failed++;
@@ -386,30 +415,33 @@ function startMessageLoop(ws, index, proto) {
             try {
                 const msgId = Date.now();
                 const session = {
-                    messageId: proto.MessageID.values.C2S_LOGIN_REQUEST,
+                    messageId: proto.MessageID.values.C2S_HEARTBEAT,
                     sequence: msgId,
                     timestamp: Date.now(),
                     version: "1.0.0"
                 };
                 
-                const message = {
-                    type: 'heartbeat',
+                // 心跳消息内容
+                const heartbeatData = {
                     timestamp: Date.now(),
                     clientId: index
                 };
                 
-                const payload = Buffer.from(JSON.stringify(message));
+                // 编码心跳消息
+                const payload = proto.C2SHeartbeat.encode(proto.C2SHeartbeat.create(heartbeatData)).finish();
+                
+                // 创建基础请求
                 const baseRequest = {
                     session: session,
                     payload: payload
                 };
                 
-                const data = proto.BaseRequest.encode(baseRequest).finish();
-                ws.send(data, { binary: true });
-                STATS.messages.sent++;
-                STATS.messageTimestamps.set(msgId, Date.now());
+                // 编码并发送
+                const message = proto.BaseRequest.encode(proto.BaseRequest.create(baseRequest)).finish();
+                sendWithTimeout(ws, message, msgId);
+                
             } catch (error) {
-                console.error('Failed to send message:', error);
+                console.error('Failed to send heartbeat:', error);
                 STATS.messages.failed++;
             }
         }

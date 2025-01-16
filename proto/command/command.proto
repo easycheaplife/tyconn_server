@@ -19,4 +19,16 @@ message S2CLoginResponse {
     string token = 3;       // 登录令牌
     common.UserInfo userInfo = 4;  // 用户信息
     bool isNewUser = 5;     // 是否新用户
+}
+
+// 心跳请求
+message C2SHeartbeat {
+    int64 timestamp = 1;    // 时间戳
+    int32 clientId = 2;     // 客户端ID
+}
+
+// 心跳响应
+message S2CHeartbeat {
+    int64 timestamp = 1;    // 服务器时间戳
+    int32 code = 2;        // 状态码
 } 

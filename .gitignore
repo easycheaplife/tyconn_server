@@ -43,3 +43,4 @@ skynet
 test/node_modules
 logs
 test/benchmark*.json
+run
