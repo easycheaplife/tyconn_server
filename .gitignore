@@ -40,5 +40,6 @@ luac.out
 *.hex
 
 skynet
-client/node_modules
+test/node_modules
 logs
+test/*.json
