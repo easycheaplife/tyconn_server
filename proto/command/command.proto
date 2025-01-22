@@ -17,9 +17,8 @@ message S2LLoginResponse {
     int32 code = 1;         // 错误码
     string message = 2;     // 错误信息
     string token = 3;       // JWT令牌
-    string username = 4;    // 用户名
-    string gate_addr = 5;   // 网关地址
-    int32 gate_port = 6;    // 网关端口
+    string ws_addr = 4;     // WebSocket地址
+    int32 ws_port = 5;      // WebSocket端口
 }
 
 // 心跳请求

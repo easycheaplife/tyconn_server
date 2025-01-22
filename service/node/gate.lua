@@ -5,6 +5,14 @@ local cluster_util = require "cluster_util"
 
 skynet.start(function()
     local node_name = skynet.getenv("node_name")
+    local ws_host = skynet.getenv("websocket_host")
+    local ws_port = skynet.getenv("websocket_port")
+    
+    -- 打印环境变量
+    logger.debug("Environment variables:")
+    logger.debug("  node_name = %s", node_name)
+    logger.debug("  websocket_host = %s", ws_host)
+    logger.debug("  websocket_port = %s", ws_port)
     
     -- 初始化节点
     local env = cluster_util.init_node(node_name)

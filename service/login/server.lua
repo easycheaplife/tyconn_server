@@ -13,6 +13,7 @@ local jwt_secret
 local jwt_expire
 local gate_nodes = {}  -- 网关节点信息
 local gate_index = 0   -- 用于轮询
+local gate_timeout = 15  -- 网关超时时间(秒)
 
 -- 发送错误响应
 local function send_error_response(client_id, session, message, error_code)
@@ -36,8 +37,8 @@ local function send_login_response(client_id, session, data)
         code = pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
         message = "登录成功",
         token = data.token,
-        gate_addr = data.gate_addr,
-        gate_port = data.gate_port
+        ws_addr = data.ws_addr,
+        ws_port = data.ws_port
     }
     
     local ok, payload = pcall(pb.encode, "command.S2LLoginResponse", login_response)
@@ -66,7 +67,14 @@ end
 local function select_gate()
     -- 检查可用网关
     local available_gates = {}
+    logger.debug("Checking available gates:")
     for name, info in pairs(gate_nodes) do
+        logger.debug("  Gate %s: available=%s, host=%s, port=%d", 
+            name, 
+            tostring(info.available),
+            info.host,
+            info.port
+        )
         if info.available then
             table.insert(available_gates, {
                 name = name,
@@ -77,16 +85,25 @@ local function select_gate()
     end
     
     if #available_gates == 0 then
+        logger.error("No available gates found")
         return nil
     end
     
+    logger.debug("Found %d available gates", #available_gates)
+    
     -- 简单轮询选择
     gate_index = (gate_index % #available_gates) + 1
+    local selected = available_gates[gate_index]
+    logger.debug("Selected gate %s at %s:%d", 
+        selected.name, selected.host, selected.port)
     return available_gates[gate_index]
 end
 
 -- 生成JWT令牌
 local function generate_token(user)
+    logger.debug("Generating token for user: %s with secret: %s", 
+        user.username, jwt_secret)
+    
     local claims = {
         user_id = user.user_id,
         username = user.username,
@@ -94,6 +111,15 @@ local function generate_token(user)
         iat = os.time(),
         iss = "tyconn_login"
     }
+    
+    logger.debug("Token claims: %s", table.concat({
+        string.format("user_id=%d", claims.user_id),
+        string.format("username=%s", claims.username),
+        string.format("exp=%d", claims.exp),
+        string.format("iat=%d", claims.iat),
+        string.format("iss=%s", claims.iss)
+    }, ", "))
+    
     return jwt.encode(claims, jwt_secret)
 end
 
@@ -185,25 +211,6 @@ local function check_version(version)
     
     logger.debug("Version check passed: %s", version)
     return true
-end
-
--- 初始化网关节点
-local function init_gate_nodes()
-    -- 使用 cluster_util 加载配置
-    local env = cluster_util.load_cluster_config()
-    
-    -- 解析配置
-    for name, addr in pairs(env) do
-        if name:match("^gate%d+$") then
-            local host, port = addr:match("([^:]+):(%d+)")
-            gate_nodes[name] = {
-                host = host,
-                port = tonumber(port),
-                available = true
-            }
-            logger.info("Found gate node: %s at %s:%d", name, host, port)
-        end
-    end
 end
 
 -- WebSocket处理函数
@@ -338,8 +345,8 @@ function ws_handler.message(client_id, msg, msg_type)
     logger.debug("Sending login response to user: %s", user.username)
     send_login_response(client_id, base_request.session, {
         token = token,
-        gate_addr = gate.host,
-        gate_port = gate.port
+        ws_addr = gate.host,
+        ws_port = gate.port
     })
     logger.info("Login successful: user=%s, gate=%s:%d", 
         user.username, gate.host, gate.port)
@@ -372,9 +379,6 @@ function CMD.start(conf)
         return false
     end
     
-    -- 初始化网关节点
-    init_gate_nodes()
-    
     -- 启动WebSocket服务器
     local port = conf.port
     local id = socket.listen("0.0.0.0", port)
@@ -386,6 +390,95 @@ function CMD.start(conf)
     logger.info("Login server started on port %d", port)
     return true
 end
+
+-- 清理超时的网关
+local function cleanup_gates()
+    local now = os.time()
+    local removed = false
+    
+    for name, info in pairs(gate_nodes) do
+        if info.last_sync and (now - info.last_sync > gate_timeout) then
+            logger.warn("Gate %s timeout, removing from available list", name)
+            gate_nodes[name] = nil
+            removed = true
+        end
+    end
+    
+    if removed then
+        -- 重置轮询索引
+        gate_index = 0
+    end
+end
+
+-- 更新网关状态
+function CMD.update_gate_status(status_data)
+    
+    if not status_data then
+        logger.error("Received nil status data")
+        return false
+    end
+    
+    -- 打印原始数据
+    logger.debug("Received gate status data: length=%d, hex=%s", 
+        #status_data, 
+        (function()
+            local t = {}
+            for i = 1, math.min(#status_data, 32) do
+                t[i] = string.format("%02x", string.byte(status_data, i))
+            end
+            return table.concat(t, " ")
+        end)()
+    )
+    
+    local ok, status = pcall(pb.decode, "internal.ServiceStatus", status_data)
+    if not ok then
+        logger.error("Failed to decode gate status: %s, data length: %d", 
+            status, #status_data)
+        -- 尝试解码为其他类型
+        local ok2, msg = pcall(pb.decode, "command.S2LLoginResponse", status_data)
+        if ok2 then
+            logger.error("Data appears to be S2LLoginResponse instead of ServiceStatus")
+        end
+        return false
+    end
+    
+    if not status.node_name or status.node_name == "" then
+        logger.error("Invalid gate status update: missing node_name, service_type=%s", 
+            status.service_type or "unknown")
+        -- 打印完整的解码结果
+        logger.error("Decoded status: %s", 
+            table.concat({
+                string.format("node_name=%s", status.node_name or "nil"),
+                string.format("service_type=%s", status.service_type or "nil"),
+                string.format("host=%s", status.host or "nil"),
+                string.format("port=%s", status.port or "nil"),
+                string.format("client_count=%s", status.client_count or "nil"),
+                string.format("timestamp=%s", status.timestamp or "nil")
+            }, ", ")
+        )
+        return false
+    end
+    
+    gate_nodes[status.node_name] = {
+        host = status.host,
+        port = status.port,
+        client_count = status.client_count,
+        last_sync = status.timestamp,
+        available = true
+    }
+    
+    logger.info("Updated gate status: %s at %s:%d, clients: %d", 
+        status.node_name, status.host, status.port, status.client_count)
+    return true
+end
+
+-- 启动定时清理
+skynet.fork(function()
+    while true do
+        cleanup_gates()
+        skynet.sleep(100)  -- 每秒检查一次
+    end
+end)
 
 skynet.start(function()
     logger.info("Login server starting...")

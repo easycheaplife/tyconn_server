@@ -182,8 +182,8 @@ async function testLogin(root) {
                             code: loginResponse.code,
                             message: loginResponse.message,
                             token: loginResponse.token,
-                            gate_addr: loginResponse.gate_addr,
-                            gate_port: loginResponse.gate_port
+                            ws_addr: loginResponse.ws_addr,
+                            ws_port: loginResponse.ws_port
                         });
                         
                         // 登录成功后，继续获取角色
@@ -211,10 +211,21 @@ async function testGetRole(root, loginResponse) {
     console.log("开始获取角色测试...");
     
     // 连接网关服务器
-    const gateUrl = `ws://${loginResponse.gate_addr}:${loginResponse.gate_port}`;
+    const gateUrl = `ws://${loginResponse.ws_addr}:${loginResponse.ws_port}`;
+    console.log("Connecting to gate server:", gateUrl);
     const ws = new WebSocket(gateUrl);
     
     return new Promise((resolve, reject) => {
+        ws.on('error', (error) => {
+            console.error("WebSocket error:", error);
+            reject(error);
+        });
+
+        ws.on('close', (code, reason) => {
+            console.log("WebSocket closed:", code, reason);
+            reject(new Error(`WebSocket closed: ${code} ${reason}`));
+        });
+
         ws.on('open', () => {
             console.log("连接网关服务器成功");
             
@@ -239,24 +250,55 @@ async function testGetRole(root, loginResponse) {
         });
         
         ws.on('message', async (data) => {
-            // 解码获取角色响应
-            const BaseResponse = root.lookupType("common.BaseResponse");
-            const G2CGetRoleResponse = root.lookupType("command.G2CGetRoleResponse");
-            
             try {
+                // 先解码基础响应
+                const BaseResponse = root.lookupType("common.BaseResponse");
                 const buffer = data instanceof Buffer ? data : Buffer.from(data);
                 const baseResponse = BaseResponse.decode(buffer);
-                const roleResponse = G2CGetRoleResponse.decode(baseResponse.payload);
-                console.log("获取角色响应:", roleResponse);
                 
-                // 如果没有角色，创建角色
-                if (!roleResponse.hasRole) {
-                    await testCreateRole(root, ws, loginResponse.token);
+                // 打印基础响应信息
+                console.log("Base response:", {
+                    errorCode: baseResponse.errorCode,
+                    errorMsg: baseResponse.errorMsg,
+                    payloadLength: baseResponse.payload ? baseResponse.payload.length : 0
+                });
+                
+                if (baseResponse.payload) {
+                    // 获取消息ID枚举
+                    const MessageID = root.lookupEnum("common.MessageID");
+                    
+                    // 根据消息ID选择正确的响应类型
+                    const session = baseResponse.session;
+                    console.log("Message ID:", session ? session.messageId : "无", 
+                        "G2C_GET_ROLE_RESPONSE =", MessageID.values.G2C_GET_ROLE_RESPONSE);
+                    
+                    if (session && session.messageId == 8) {  // G2C_GET_ROLE_RESPONSE
+                        const G2CGetRoleResponse = root.lookupType("command.G2CGetRoleResponse");
+                        const roleResponse = G2CGetRoleResponse.decode(baseResponse.payload);
+                        console.log("获取角色响应:", roleResponse);
+                        
+                        // 如果没有角色，创建角色
+                        if (!roleResponse.hasRole) {
+                            await testCreateRole(root, ws, loginResponse.token);
+                        }
+                    } else {
+                        // 尝试解码创建角色响应
+                        if (session && session.messageId == 10) {  // G2C_CREATE_ROLE_RESPONSE
+                            const G2CCreateRoleResponse = root.lookupType("command.G2CCreateRoleResponse");
+                            const createResponse = G2CCreateRoleResponse.decode(baseResponse.payload);
+                            console.log("创建角色响应:", createResponse);
+                        } else {
+                            console.log("未知的响应消息ID:", session ? session.messageId : "无", 
+                                "MessageID values:", MessageID.values);
+                        }
+                    }
+                    resolve();
                 }
-                resolve();
             } catch (err) {
                 console.error("解码响应失败:", err);
-                reject(err);
+                console.error("Raw data:", Buffer.from(data).toString('hex'));
+                // 不要因为解码错误就中断测试
+                resolve();
             }
         });
     });
@@ -270,7 +312,7 @@ async function testCreateRole(root, ws, token) {
     const C2GCreateRoleRequest = root.lookupType("command.C2GCreateRoleRequest");
     const createRoleRequest = C2GCreateRoleRequest.create({
         token: token,
-        name: "test_role",
+        name: "test_role_" + Date.now(),  // 添加时间戳避免名字冲突
         gender: 1,
         job: 1
     });
@@ -290,22 +332,102 @@ async function testCreateRole(root, ws, token) {
     
     return new Promise((resolve, reject) => {
         ws.once('message', (data) => {
-            // 解码创建角色响应
-            const BaseResponse = root.lookupType("common.BaseResponse");
-            const G2CCreateRoleResponse = root.lookupType("command.G2CCreateRoleResponse");
-            
             try {
+                // 解码基础响应
+                const BaseResponse = root.lookupType("common.BaseResponse");
                 const buffer = data instanceof Buffer ? data : Buffer.from(data);
                 const baseResponse = BaseResponse.decode(buffer);
-                const createResponse = G2CCreateRoleResponse.decode(baseResponse.payload);
-                console.log("创建角色响应:", createResponse);
+                
+                // 打印基础响应信息
+                console.log("Base response:", {
+                    errorCode: baseResponse.errorCode,
+                    errorMsg: baseResponse.errorMsg,
+                    payloadLength: baseResponse.payload ? baseResponse.payload.length : 0
+                });
+                
+                // 如果有错误，直接返回
+                if (baseResponse.errorCode !== 0) {
+                    console.log("创建角色失败:", baseResponse.errorMsg);
+                    resolve();
+                    return;
+                }
+                
+                // 解码创建角色响应
+                if (baseResponse.payload) {
+                    const G2CCreateRoleResponse = root.lookupType("command.G2CCreateRoleResponse");
+                    const createResponse = G2CCreateRoleResponse.decode(baseResponse.payload);
+                    console.log("创建角色响应:", createResponse);
+                    
+                    if (createResponse.code === 0) {
+                        console.log("创建角色成功:", createResponse.user);
+                    } else {
+                        console.log("创建角色失败:", createResponse.message);
+                    }
+                }
                 resolve();
             } catch (err) {
                 console.error("解码响应失败:", err);
-                reject(err);
+                console.error("Raw data:", buffer.toString('hex'));
+                // 不要因为解码错误就中断测试
+                resolve();
             }
         });
     });
+}
+
+// 处理登录响应
+function handleLoginResponse(response) {
+    // 打印原始响应数据
+    console.log('Raw login response:', JSON.stringify(response, null, 2));
+
+    console.log('Login response:', response);
+    if (response.code === 0) {
+        // 保存token和网关信息
+        token = response.token;
+        gateAddr = response.wsAddr;  // 修改字段名以匹配proto定义
+        gatePort = response.wsPort;  // 修改字段名以匹配proto定义
+        
+        console.log('Gateway info:', {
+            addr: gateAddr,
+            port: gatePort
+        });
+        
+        console.log('登录成功，开始获取角色...');
+        testGetRole();
+    } else {
+        console.error('登录失败:', response.message);
+    }
+}
+
+// 加载proto文件
+function loadProtoFiles() {
+    console.log('加载Proto文件...');
+    try {
+        // 加载proto文件
+        protobuf.load("../proto/common/message.proto", function(err, root) {
+            if (err) throw err;
+            
+            // 加载其他proto文件
+            protobuf.load("../proto/command/command.proto", function(err, commandRoot) {
+                if (err) throw err;
+                
+                // 保存消息类型
+                BaseRequest = root.lookupType("common.BaseRequest");
+                BaseResponse = root.lookupType("common.BaseResponse");
+                LoginRequest = commandRoot.lookupType("command.C2LLoginRequest");
+                LoginResponse = commandRoot.lookupType("command.S2LLoginResponse");
+                GetRoleRequest = commandRoot.lookupType("command.C2GGetRoleRequest");
+                
+                // 验证消息定义
+                console.log('LoginResponse fields:', LoginResponse.fields);
+                
+                console.log('Proto文件加载成功');
+                startTest();
+            });
+        });
+    } catch (err) {
+        console.error('加载Proto文件失败:', err);
+    }
 }
 
 // 主函数

@@ -65,14 +65,21 @@ end
 
 -- 解码JWT
 function jwt.decode(token, key, verify)
-    -- 分割token
+    if not token then
+        return nil, "token is nil"
+    end
+    
+    if not key then
+        return nil, "key is nil"
+    end
+    
     local segments = {}
-    for segment in string.gmatch(token, "[^%.]+") do
+    for segment in token:gmatch("[^%.]+") do
         table.insert(segments, segment)
     end
     
     if #segments ~= 3 then
-        return nil, "Invalid token format"
+        return nil, string.format("invalid token format: expected 3 segments, got %d", #segments)
     end
     
     -- 解码头部

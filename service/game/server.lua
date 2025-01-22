@@ -5,6 +5,21 @@ local pb = require "pb"
 local protoloader = require "protoloader"
 local jwt = require "jwt"
 
+-- 创建基础响应
+local function create_base_response(session, error_code, error_msg, payload)
+    return {
+        session = {
+            messageId = session.messageId,  -- 由具体的处理器设置正确的响应消息ID
+            sequence = session.sequence,
+            timestamp = os.time(),
+            version = session.version
+        },
+        errorCode = error_code or 0,
+        errorMsg = error_msg or "success",
+        payload = payload
+    }
+end
+
 -- 消息处理模块
 local handlers = {}
 
@@ -64,16 +79,24 @@ end
 
 -- 验证token并获取用户信息
 local function verify_token_and_get_user(token)
-    -- 验证token
-    local claims, err = jwt.decode(token, jwt_secret, true)
-    if not claims then
-        return nil, err
+    local jwt_secret = skynet.getenv("jwt_secret")
+    if not jwt_secret then
+        logger.error("Missing jwt_secret in environment")
+        return false
+    end
+    
+    -- 解析 token
+    local ok, claims = pcall(jwt.decode, token, jwt_secret)
+    if not ok then
+        logger.error("Failed to decode token: %s", claims)
+        logger.debug("Token details: %s", token)
+        return false
     end
     
     -- 获取用户信息
     return {
-        user_id = tonumber(claims.sub),
-        username = claims.name
+        user_id = claims.user_id,
+        username = claims.username
     }
 end
 
@@ -185,6 +208,24 @@ local function check_version(version)
 end
 
 -- 服务入口
+function CMD.start(conf)
+    -- 保存配置
+    jwt_secret = conf.jwt_secret
+    
+    -- 打印环境变量
+    logger.debug("Environment variables:")
+    logger.debug("  jwt_secret = %s", jwt_secret)
+
+    -- 加载proto文件
+    if not protoloader.load_directory("./proto") then
+        logger.error("Failed to load proto files")
+        return false
+    end
+    
+    return true
+end
+
+-- 注册消息处理函数
 skynet.start(function()
     logger.info("Game server starting...")
     
