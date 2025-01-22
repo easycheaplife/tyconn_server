@@ -34,21 +34,6 @@ message S2CHeartbeat {
     int32 code = 2;        // 状态码
 }
 
-// 网关认证请求
-message C2GAuthRequest {
-    string token = 1;       // JWT令牌
-    string device_id = 2;   // 设备ID
-    string platform = 3;    // 平台标识
-    string version = 4;     // 客户端版本
-}
-
-// 网关认证响应
-message G2CAuthResponse {
-    int32 code = 1;        // 错误码
-    string message = 2;    // 错误信息
-    string username = 3;   // 用户名
-}
-
 // 获取角色请求
 message C2GGetRoleRequest {
     string token = 1;       // JWT令牌

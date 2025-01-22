@@ -16,9 +16,6 @@ local gate_index = 0   -- 用于轮询
 
 -- 发送错误响应
 local function send_error_response(client_id, session, message, error_code)
-    logger.debug("Sending error response: client=%d, message=%s, error_code=%s",
-        client_id, message, tostring(error_code))
-    
     local response = {
         session = session,
         errorCode = error_code or pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"),
@@ -27,7 +24,6 @@ local function send_error_response(client_id, session, message, error_code)
     
     local ok, encoded = pcall(pb.encode, "common.BaseResponse", response)
     if ok then
-        logger.debug("Sending binary response, length: %d", #encoded)
         websocket.write(client_id, encoded, "binary")
     else
         logger.error("Failed to encode error response: %s", encoded)
@@ -36,9 +32,6 @@ end
 
 -- 发送登录响应
 local function send_login_response(client_id, session, data)
-    logger.debug("Sending login response: client=%d, gate=%s:%d",
-        client_id, data.gate_addr, data.gate_port)
-    
     local login_response = {
         code = pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
         message = "登录成功",
@@ -63,7 +56,6 @@ local function send_login_response(client_id, session, data)
     
     local ok, encoded = pcall(pb.encode, "common.BaseResponse", base_response)
     if ok then
-        logger.debug("Sending binary response, length: %d", #encoded)
         websocket.write(client_id, encoded, "binary")
     else
         logger.error("Failed to encode base response: %s", encoded)
@@ -218,16 +210,12 @@ end
 local ws_handler = {}
 
 function ws_handler.connect(client_id)
-    logger.debug("New client connected: %d", client_id)
     clients[client_id] = {
         connect_time = os.time()
     }
 end
 
 function ws_handler.message(client_id, msg, msg_type)
-    logger.debug("Received message from client %d, type: %s, length: %d", 
-        client_id, msg_type or "unknown", #msg)
-    
     -- 创建默认会话信息，用于错误响应
     local default_session = {
         messageId = 0,
@@ -239,18 +227,9 @@ function ws_handler.message(client_id, msg, msg_type)
     local ok, base_request = pcall(pb.decode, "common.BaseRequest", msg)
     if not ok then
         logger.error("Failed to decode base request: %s", base_request)
-        send_error_response(client_id, default_session, 
-            "无效的请求格式",
-            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAMS"))
+        send_error_response(client_id, default_session, "无效的请求格式")
         return
     end
-    
-    logger.debug("Decoded base request: messageId=%d, sequence=%d, timestamp=%d, version=%s",
-        base_request.session.messageId or 0,
-        base_request.session.sequence or 0,
-        base_request.session.timestamp or 0,
-        base_request.session.version or ""
-    )
     
     -- 解码登录请求
     local ok, request = pcall(pb.decode, "command.C2LLoginRequest", base_request.payload)
@@ -316,8 +295,7 @@ function ws_handler.message(client_id, msg, msg_type)
         send_error_response(client_id, base_request.session, "账号或密码错误")
         return
     end
-    logger.info("Account verified successfully: %s (ID: %s)", 
-        user.username, user.user_id)
+    logger.info("Account verified successfully: %s", user.username)
     
     -- 生成token
     local token = generate_token(user)

@@ -185,13 +185,19 @@ async function testLogin(root) {
                             gate_addr: loginResponse.gate_addr,
                             gate_port: loginResponse.gate_port
                         });
+                        
+                        // 登录成功后，继续获取角色
+                        if (loginResponse.code === 0) {
+                            console.log("登录成功，开始获取角色...");
+                            testGetRole(root, loginResponse).then(resolve).catch(reject);
+                        } else {
+                            reject(new Error(`Login failed: ${loginResponse.message}`));
+                        }
                     } catch (err) {
                         console.error('Failed to decode login response:', err);
                         throw err;
                     }
                 }
-                
-                resolve();  // 成功接收到响应后解决Promise
             } catch (err) {
                 console.error('解析响应失败:', err);
                 reject(err);
@@ -200,96 +206,39 @@ async function testLogin(root) {
     });
 }
 
-// 测试网关认证
-async function testGateAuth(root, loginResponse) {
-    console.log("开始网关认证测试...");
+// 测试获取角色
+async function testGetRole(root, loginResponse) {
+    console.log("开始获取角色测试...");
     
     // 连接网关服务器
-    const gateUrl = `ws://${loginResponse.gateAddr}:${loginResponse.gatePort}`;
+    const gateUrl = `ws://${loginResponse.gate_addr}:${loginResponse.gate_port}`;
     const ws = new WebSocket(gateUrl);
     
     return new Promise((resolve, reject) => {
         ws.on('open', () => {
             console.log("连接网关服务器成功");
             
-            // 构造认证请求
-            const C2GAuthRequest = root.lookupType("command.C2GAuthRequest");
-            const authRequest = C2GAuthRequest.create({
-                token: loginResponse.token,
-                deviceId: config.deviceId,
-                platform: config.platform,
-                version: config.version
+            // 构造获取角色请求
+            const C2GGetRoleRequest = root.lookupType("command.C2GGetRoleRequest");
+            const getRoleRequest = C2GGetRoleRequest.create({
+                token: loginResponse.token
             });
             
-            // 编码认证请求
+            // 编码获取角色请求
             const MessageID = root.lookupEnum("common.MessageID");
             const baseRequest = createBaseRequest(
                 root,
-                MessageID.values.C2G_AUTH_REQUEST,
-                C2GAuthRequest.encode(authRequest).finish()
+                MessageID.values.C2G_GET_ROLE_REQUEST,
+                C2GGetRoleRequest.encode(getRoleRequest).finish()
             );
             
-            // 发送认证请求
-            console.log("发送认证请求...");
+            // 发送获取角色请求
+            console.log("发送获取角色请求...");
             const BaseRequest = root.lookupType("common.BaseRequest");
             ws.send(BaseRequest.encode(baseRequest).finish());
         });
         
         ws.on('message', async (data) => {
-            // 解码认证响应
-            const BaseResponse = root.lookupType("common.BaseResponse");
-            const G2CAuthResponse = root.lookupType("command.G2CAuthResponse");
-            
-            try {
-                const buffer = data instanceof Buffer ? data : Buffer.from(data);
-                const baseResponse = BaseResponse.decode(buffer);
-                const authResponse = G2CAuthResponse.decode(baseresponse.payload);
-                console.log("认证响应:", authResponse);
-                
-                // 如果认证成功，继续测试获取角色
-                const ErrorCode = root.lookupEnum("common.ErrorCode");
-                if (authResponse.code === ErrorCode.values.ERROR_CODE_SUCCESS) {
-                    await testGetRole(root, ws, loginResponse.token);
-                }
-                resolve();
-            } catch (err) {
-                console.error("解码响应失败:", err);
-                reject(err);
-            }
-        });
-        
-        ws.on('error', (error) => {
-            console.error("WebSocket错误:", error);
-            reject(error);
-        });
-    });
-}
-
-// 测试获取角色
-async function testGetRole(root, ws, token) {
-    console.log("开始获取角色测试...");
-    
-    // 构造获取角色请求
-    const C2GGetRoleRequest = root.lookupType("command.C2GGetRoleRequest");
-    const getRoleRequest = C2GGetRoleRequest.create({
-        token: token
-    });
-    
-    // 编码获取角色请求
-    const MessageID = root.lookupEnum("common.MessageID");
-    const baseRequest = createBaseRequest(
-        root,
-        MessageID.values.C2G_GET_ROLE_REQUEST,
-        C2GGetRoleRequest.encode(getRoleRequest).finish()
-    );
-    
-    // 发送获取角色请求
-    console.log("发送获取角色请求...");
-    const BaseRequest = root.lookupType("common.BaseRequest");
-    ws.send(BaseRequest.encode(baseRequest).finish());
-    
-    return new Promise((resolve, reject) => {
-        ws.once('message', async (data) => {
             // 解码获取角色响应
             const BaseResponse = root.lookupType("common.BaseResponse");
             const G2CGetRoleResponse = root.lookupType("command.G2CGetRoleResponse");
@@ -297,12 +246,12 @@ async function testGetRole(root, ws, token) {
             try {
                 const buffer = data instanceof Buffer ? data : Buffer.from(data);
                 const baseResponse = BaseResponse.decode(buffer);
-                const roleResponse = G2CGetRoleResponse.decode(baseresponse.payload);
+                const roleResponse = G2CGetRoleResponse.decode(baseResponse.payload);
                 console.log("获取角色响应:", roleResponse);
                 
                 // 如果没有角色，创建角色
                 if (!roleResponse.hasRole) {
-                    await testCreateRole(root, ws, token);
+                    await testCreateRole(root, ws, loginResponse.token);
                 }
                 resolve();
             } catch (err) {
@@ -347,8 +296,8 @@ async function testCreateRole(root, ws, token) {
             
             try {
                 const buffer = data instanceof Buffer ? data : Buffer.from(data);
-                const baseresponse = BaseResponse.decode(buffer);
-                const createResponse = G2CCreateRoleResponse.decode(baseresponse.payload);
+                const baseResponse = BaseResponse.decode(buffer);
+                const createResponse = G2CCreateRoleResponse.decode(baseResponse.payload);
                 console.log("创建角色响应:", createResponse);
                 resolve();
             } catch (err) {

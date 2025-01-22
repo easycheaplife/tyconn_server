@@ -33,21 +33,14 @@ function handler.connect(client_id)
         gateway = skynet.self()
     })
     
-    logger.debug("New client %d connected, assigned to game node: %s (selector: %s)", 
-        client_id, game_node, selector_type)
+    logger.info("New client %d connected, assigned to game node: %s", 
+        client_id, game_node)
 end
 
 function handler.message(client_id, msg, msg_type)
-    logger.debug("Received message type: %s from client %d", msg_type or "text", client_id)
     local agent = connections[client_id]
     if agent then
-        if msg_type == "binary" then
-            -- 处理二进制消息
-            skynet.send(agent, "lua", "message", msg)
-        else
-            -- 处理文本消息
-            skynet.send(agent, "lua", "message", msg)
-        end
+        skynet.send(agent, "lua", "message", msg)
     end
 end
 
@@ -56,7 +49,6 @@ function handler.close(client_id)
     if agent then
         skynet.send(agent, "lua", "disconnect")
         connections[client_id] = nil
-        logger.debug("Client %d disconnected", client_id)
     end
 end
 
