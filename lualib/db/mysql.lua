@@ -6,6 +6,26 @@ local config = require "config.mysql"
 local M = {}
 local db
 
+-- 转义SQL字符串
+function M.escape(str)
+    if not str then
+        return "NULL"
+    end
+    
+    -- 替换特殊字符
+    str = string.gsub(str, "'", "\\'")
+    str = string.gsub(str, "\"", "\\\"")
+    str = string.gsub(str, "\n", "\\n")
+    str = string.gsub(str, "\r", "\\r")
+    str = string.gsub(str, "\0", "\\0")
+    str = string.gsub(str, "\b", "\\b")
+    str = string.gsub(str, "\t", "\\t")
+    str = string.gsub(str, "\\", "\\\\")
+    str = string.gsub(str, "%z", "\\0")
+    
+    return str
+end
+
 -- 获取数据库连接
 local function get_db()
     if not db then

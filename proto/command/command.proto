@@ -4,21 +4,22 @@ package command;
 import "common/user.proto";
 
 // 登录请求
-message C2SLoginRequest {
+message C2LLoginRequest {
     string account = 1;      // 账号
     string password = 2;     // 密码
     string device_id = 3;    // 设备ID
-    string platform = 4;     // 平台
+    string platform = 4;     // 平台标识
     string version = 5;      // 客户端版本
 }
 
 // 登录响应
-message S2CLoginResponse {
+message S2LLoginResponse {
     int32 code = 1;         // 错误码
     string message = 2;     // 错误信息
-    string token = 3;       // 登录令牌
-    common.UserInfo userInfo = 4;  // 用户信息
-    bool isNewUser = 5;     // 是否新用户
+    string token = 3;       // JWT令牌
+    string username = 4;    // 用户名
+    string gate_addr = 5;   // 网关地址
+    int32 gate_port = 6;    // 网关端口
 }
 
 // 心跳请求
@@ -31,4 +32,47 @@ message C2SHeartbeat {
 message S2CHeartbeat {
     int64 timestamp = 1;    // 服务器时间戳
     int32 code = 2;        // 状态码
+}
+
+// 网关认证请求
+message C2GAuthRequest {
+    string token = 1;       // JWT令牌
+    string device_id = 2;   // 设备ID
+    string platform = 3;    // 平台标识
+    string version = 4;     // 客户端版本
+}
+
+// 网关认证响应
+message G2CAuthResponse {
+    int32 code = 1;        // 错误码
+    string message = 2;    // 错误信息
+    string username = 3;   // 用户名
+}
+
+// 获取角色请求
+message C2GGetRoleRequest {
+    string token = 1;       // JWT令牌
+}
+
+// 获取角色响应
+message G2CGetRoleResponse {
+    int32 code = 1;        // 错误码
+    string message = 2;    // 错误信息
+    bool has_role = 3;     // 是否有角色
+    common.UserInfo user = 4;  // 用户信息(如果有)
+}
+
+// 创建角色请求
+message C2GCreateRoleRequest {
+    string token = 1;      // JWT令牌
+    string name = 2;       // 角色名
+    int32 gender = 3;      // 性别
+    int32 job = 4;        // 职业
+}
+
+// 创建角色响应
+message G2CCreateRoleResponse {
+    int32 code = 1;        // 错误码
+    string message = 2;    // 错误信息
+    common.UserInfo user = 3;  // 创建的用户信息
 } 

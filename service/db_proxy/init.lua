@@ -6,27 +6,45 @@ local M = {}
 
 -- 创建用户表
 local function create_users_table()
-    return mysql.query([[
+    local sql = [[
         CREATE TABLE IF NOT EXISTS users (
-            user_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '用户ID',
-            username VARCHAR(64) NOT NULL COMMENT '用户名',
-            password VARCHAR(64) NOT NULL COMMENT '密码',
-            nickname VARCHAR(64) NOT NULL COMMENT '昵称',
-            level INT DEFAULT 1 COMMENT '等级',
-            exp BIGINT DEFAULT 0 COMMENT '经验值',
-            vip_level INT DEFAULT 0 COMMENT 'VIP等级',
-            gold BIGINT DEFAULT 1000 COMMENT '金币',
-            diamond BIGINT DEFAULT 100 COMMENT '钻石',
-            avatar VARCHAR(256) DEFAULT 'default.png' COMMENT '头像',
-            register_time BIGINT NOT NULL COMMENT '注册时间',
-            last_login BIGINT NOT NULL COMMENT '最后登录时间',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-            UNIQUE KEY idx_username (username),
-            INDEX idx_register_time (register_time),
-            INDEX idx_last_login (last_login)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户表';
-    ]])
+            user_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+            account VARCHAR(64) NOT NULL UNIQUE,
+            password VARCHAR(64) NOT NULL,
+            username VARCHAR(32) NOT NULL,
+            name VARCHAR(32),
+            level INT DEFAULT 1,
+            gender INT,
+            job INT,
+            exp BIGINT DEFAULT 0,
+            vip_level INT DEFAULT 0,
+            create_time BIGINT,
+            login_time BIGINT,
+            INDEX idx_account (account),
+            INDEX idx_name (name)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ]]
+    
+    return mysql.query(sql)
+end
+
+-- 创建token表
+local function create_tokens_table()
+    local sql = [[
+        CREATE TABLE IF NOT EXISTS user_tokens (
+            token_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+            user_id BIGINT NOT NULL,
+            token TEXT NOT NULL,
+            expire_time BIGINT NOT NULL,
+            device_id VARCHAR(64),
+            platform VARCHAR(32),
+            create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_user_id (user_id),
+            INDEX idx_expire_time (expire_time)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    ]]
+    
+    return mysql.query(sql)
 end
 
 -- 初始化数据库
@@ -40,6 +58,12 @@ function M.init()
     -- 创建用户表
     if not create_users_table() then
         logger.error("Failed to create users table")
+        return false
+    end
+    
+    -- 创建token表
+    if not create_tokens_table() then
+        logger.error("Failed to create tokens table")
         return false
     end
     

@@ -13,7 +13,7 @@ return {
         password = password,
         charset = "utf8mb4",
         max_packet_size = 1024 * 1024,
-		auth = "mysql_native_password"  -- 使用旧的认证方式
+        auth = "mysql_native_password"  -- 使用旧的认证方式
     },
     
     -- 数据库名称

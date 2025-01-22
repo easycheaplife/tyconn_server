@@ -4,30 +4,36 @@ package common;
 // 消息ID定义
 enum MessageID {
     NONE = 0;
-    C2S_LOGIN_REQUEST = 1;     // 登录请求
-    S2C_LOGIN_RESPONSE = 2;    // 登录响应
-    C2S_HEARTBEAT = 3;         // 心跳请求
-    S2C_HEARTBEAT = 4;         // 心跳响应
+    C2L_LOGIN_REQUEST = 1;     // 客户端到登录服务器的登录请求
+    L2C_LOGIN_RESPONSE = 2;    // 登录服务器到客户端的登录响应
+    C2G_AUTH_REQUEST = 3;      // 客户端到网关的认证请求
+    G2C_AUTH_RESPONSE = 4;     // 网关到客户端的认证响应
+    C2S_HEARTBEAT = 5;         // 心跳请求
+    S2C_HEARTBEAT = 6;         // 心跳响应
+    C2G_GET_ROLE_REQUEST = 7;  // 获取角色请求
+    G2C_GET_ROLE_RESPONSE = 8; // 获取角色响应
+    C2G_CREATE_ROLE_REQUEST = 9;  // 创建角色请求
+    G2C_CREATE_ROLE_RESPONSE = 10; // 创建角色响应
 }
 
 // 会话信息
 message Session {
-    uint32 messageId = 1;    // 消息ID
-    uint32 sequence = 2;      // 序列号
-    int64 timestamp = 3;      // 时间戳
-    string version = 4;       // 协议版本
+    int32 messageId = 1;    // 消息ID
+    int32 sequence = 2;     // 序列号
+    int64 timestamp = 3;    // 时间戳
+    string version = 4;     // 版本号
 }
 
-// 基础请求消息结构
+// 基础请求
 message BaseRequest {
-    Session session = 1;      // 会话信息
-    bytes payload = 2;        // 消息内容
+    Session session = 1;    // 会话信息
+    bytes payload = 2;      // 消息内容
 }
 
-// 基础响应消息结构
+// 基础响应
 message BaseResponse {
-    Session session = 1;      // 会话信息
-    int32 errorCode = 2;     // 错误码
-    string errorMsg = 3;     // 错误信息
-    bytes payload = 4;        // 消息内容
+    Session session = 1;    // 会话信息
+    int32 errorCode = 2;    // 错误码
+    string errorMsg = 3;    // 错误信息
+    bytes payload = 4;      // 消息内容
 } 

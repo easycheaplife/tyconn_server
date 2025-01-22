@@ -178,6 +178,210 @@ function CMD.get_online_count()
     return mysql.query(sql, os.time() - 300, os.time()) or 0
 end
 
+-- 同步JWT令牌
+function CMD.sync_jwt(token_info)
+    -- 验证参数
+    if not token_info.token or not token_info.user_id or not token_info.username then
+        logger.error("Invalid token info: missing required fields")
+        return false
+    end
+    
+    -- 更新或插入token记录
+    local sql = string.format(
+        "INSERT INTO user_tokens (user_id, username, token, expire_time) " ..
+        "VALUES (%d, '%s', '%s', FROM_UNIXTIME(%d)) " ..
+        "ON DUPLICATE KEY UPDATE token='%s', expire_time=FROM_UNIXTIME(%d)",
+        token_info.user_id,
+        mysql.escape(token_info.username),
+        mysql.escape(token_info.token),
+        token_info.expire_time,
+        mysql.escape(token_info.token),
+        token_info.expire_time
+    )
+    
+    local ok = mysql.query(sql)
+    if not ok then
+        logger.error("Failed to sync JWT token for user %d", token_info.user_id)
+        return false
+    end
+    
+    logger.debug("JWT token synced for user %d", token_info.user_id)
+    return true
+end
+
+-- 验证JWT令牌
+function CMD.verify_jwt(token)
+    if not token then
+        return false
+    end
+    
+    local sql = string.format(
+        "SELECT user_id, username FROM user_tokens " ..
+        "WHERE token='%s' AND expire_time > NOW()",
+        mysql.quote_sql_str(token)
+    )
+    
+    local result = mysql.query(sql)
+    if not result or #result == 0 then
+        return false
+    end
+    
+    return result[1]
+end
+
+-- 验证账号
+function CMD.verify_account(account, password)
+    logger.debug("Verifying account: %s", account)
+    
+    -- 查询用户
+    local sql = string.format(
+        "SELECT * FROM users WHERE account = '%s' LIMIT 1",
+        mysql.escape(account)
+    )
+    
+    local users = mysql.query(sql)
+    if not users or #users == 0 then
+        -- 创建新用户
+        logger.info("Creating new user: %s", account)
+        local now = os.time()
+        sql = string.format(
+            "INSERT INTO users (account, password, username, create_time, login_time) " ..
+            "VALUES ('%s', '%s', '%s', %d, %d)",
+            mysql.escape(account),
+            mysql.escape(password),
+            mysql.escape(account),
+            now,
+            now
+        )
+        
+        local ok = mysql.query(sql)
+        if not ok then
+            logger.error("Failed to create user: %s", account)
+            return nil
+        end
+        
+        -- 获取新创建的用户
+        sql = string.format(
+            "SELECT * FROM users WHERE account = '%s' LIMIT 1",
+            mysql.escape(account)
+        )
+        users = mysql.query(sql)
+    end
+    
+    local user = users[1]
+    if user.password ~= password then
+        logger.warn("Wrong password for account: %s", account)
+        return nil
+    end
+    
+    -- 更新登录时间
+    sql = string.format(
+        "UPDATE users SET login_time = %d WHERE user_id = %d",
+        os.time(),
+        user.user_id
+    )
+    mysql.query(sql)
+    
+    logger.info("Account verified: %s (ID: %d)", account, user.user_id)
+    return user
+end
+
+-- 获取用户信息
+function CMD.get_user(user_id)
+    local sql = string.format(
+        "SELECT * FROM users WHERE user_id = %d LIMIT 1",
+        user_id
+    )
+    
+    local ok, results = pcall(mysql.query, sql)
+    if not ok then
+        logger.error("Failed to get user: %s", results)
+        return nil
+    end
+    
+    if #results == 0 then
+        return nil
+    end
+    
+    return results[1]
+end
+
+-- 检查角色名是否存在
+function CMD.check_name_exists(name)
+    local sql = string.format(
+        "SELECT 1 FROM users WHERE name = '%s' LIMIT 1",
+        mysql.escape(name)
+    )
+    
+    local ok, results = pcall(mysql.query, sql)
+    if not ok then
+        logger.error("Failed to check name: %s", results)
+        return true  -- 出错时返回存在，防止重名
+    end
+    
+    return #results > 0
+end
+
+-- 更新用户信息
+function CMD.update_user(user_info)
+    local fields = {}
+    for k, v in pairs(user_info) do
+        if k ~= "user_id" then
+            if type(v) == "string" then
+                table.insert(fields, string.format("%s = '%s'", k, mysql.escape(v)))
+            else
+                table.insert(fields, string.format("%s = %s", k, tostring(v)))
+            end
+        end
+    end
+    
+    local sql = string.format(
+        "UPDATE users SET %s WHERE user_id = %d",
+        table.concat(fields, ", "),
+        user_info.user_id
+    )
+    
+    local ok, res = pcall(mysql.query, sql)
+    if not ok then
+        logger.error("Failed to update user: %s", res)
+        return nil
+    end
+    
+    return CMD.get_user(user_info.user_id)
+end
+
+-- 同步token
+function CMD.sync_token(token_info)
+    logger.debug("Syncing token for user: %d", token_info.user_id)
+    
+    -- 删除旧token
+    local sql = string.format(
+        "DELETE FROM user_tokens WHERE user_id = %d",
+        token_info.user_id
+    )
+    mysql.query(sql)
+    
+    -- 插入新token
+    sql = string.format(
+        "INSERT INTO user_tokens (user_id, token, expire_time, device_id, platform) " ..
+        "VALUES (%d, '%s', %d, '%s', '%s')",
+        token_info.user_id,
+        mysql.escape(token_info.token),
+        token_info.expire_time,
+        mysql.escape(token_info.device_id or ""),
+        mysql.escape(token_info.platform or "")
+    )
+    
+    local ok = mysql.query(sql)
+    if not ok then
+        logger.error("Failed to sync token for user: %d", token_info.user_id)
+        return false
+    end
+    
+    logger.info("Token synced for user: %d", token_info.user_id)
+    return true
+end
+
 -- 服务入口
 skynet.start(function()
     logger.info("DB proxy starting...")
