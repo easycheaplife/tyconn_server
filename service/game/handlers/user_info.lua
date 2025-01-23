@@ -6,6 +6,7 @@ local create_base_response = require "game.utils.response".create_base_response
 local M = {}
 
 function M.handle(client_id, msg)
+    logger.debug("Handling user info request from client %d", client_id)
     -- 解码基础请求
     local ok, base_request = pcall(pb.decode, "common.BaseRequest", msg)
     if not ok then
@@ -20,11 +21,13 @@ function M.handle(client_id, msg)
         return nil
     end
 
+    logger.debug("Processing user info request with token: %s", request.token)
     -- 先尝试获取用户信息
     local response = skynet.call(skynet.self(), "lua", "get_user", request.token)
     
     -- 如果用户不存在且提供了创建信息，则创建用户
     if not response.user and request.name and request.gender and request.job then
+        logger.debug("Creating new user with name: %s", request.name)
         response = skynet.call(skynet.self(), "lua", "create_user", 
             request.token, request.name, request.gender, request.job)
         if response.code == pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
@@ -32,6 +35,7 @@ function M.handle(client_id, msg)
         end
     end
     
+    logger.debug("User info response: %s", response.message)
     -- 创建基础响应
     local base_response = create_base_response(base_request.session, response.code, response.message,
         pb.encode("command.G2CUserInfoResponse", response))
