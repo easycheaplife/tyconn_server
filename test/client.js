@@ -123,84 +123,49 @@ function parseResponse(root, data) {
     }
 }
 
-// 测试登录流程
-async function testLogin(root) {
-    console.log("开始登录测试...");
+// 测试登录
+async function testLogin(ws, root) {
+    console.log('开始登录测试...');
     
-    // 连接登录服务器
-    console.log("正在连接登录服务器:", config.loginServer);
-    const ws = new WebSocket(config.loginServer, {
-        perMessageDeflate: false,
-        binaryType: "arraybuffer"
-    });
+    // 发送登录请求
+    const loginRequest = createLoginRequest(root, config.account, config.password);
+    console.log('发送登录请求, 长度:', loginRequest.length);
+    console.log('请求内容:', loginRequest.toString('hex'));
+    ws.send(loginRequest);
     
+    // 等待登录响应
     return new Promise((resolve, reject) => {
-        ws.on('open', () => {
-            console.log("连接登录服务器成功");
-            
-            // 发送登录请求
-            const request = createLoginRequest(root, config.account, config.password);
-            console.log("发送登录请求, 长度:", request.length);
-            console.log("请求内容:", Buffer.from(request).toString('hex'));
-            ws.send(request, { binary: true });
-        });
-        
-        ws.on('error', (error) => {
-            console.error("WebSocket错误:", error);
-            reject(error);
-        });
-        
-        ws.on('close', (code, reason) => {
-            console.log("WebSocket连接关闭:", code, reason);
-        });
-        
-        ws.on('message', (data) => {
-            console.log('Received message, length:', data.byteLength);
-            
-            // 解析消息内容
-            const buffer = data instanceof Buffer ? data : Buffer.from(data);
-            console.log('Buffer length:', buffer.length);
-            console.log('Response content:', buffer.toString('hex'));
+        ws.once('message', (data) => {
+            console.log('Received message, length:', data.length);
+            console.log('Buffer length:', data.byteLength);
+            console.log('Response content:', data.toString('hex'));
             
             try {
+                const BaseResponse = root.lookupType('common.BaseResponse');
+                const LoginResponse = root.lookupType('command.S2LLoginResponse');
+                
                 // 解码基础响应
-                const BaseResponse = root.lookupType("common.BaseResponse");
-                const baseResponse = BaseResponse.decode(buffer);
+                const baseResponse = BaseResponse.decode(data);
+                console.log('Base response:', baseResponse);
                 
-                console.log('Base response:', {
-                    errorCode: baseResponse.errorCode,
-                    errorMsg: baseResponse.errorMsg,
-                    payloadLength: baseResponse.payload ? baseResponse.payload.length : 0
-                });
-                
-                // 如果有负载，解码登录响应
-                if (baseResponse.payload) {
-                    try {
-                        const S2LLoginResponse = root.lookupType("command.S2LLoginResponse");
-                        const loginResponse = S2LLoginResponse.decode(baseResponse.payload);
-                        console.log('Login response:', {
-                            code: loginResponse.code,
-                            message: loginResponse.message,
-                            token: loginResponse.token,
-                            ws_addr: loginResponse.ws_addr,
-                            ws_port: loginResponse.ws_port
-                        });
-                        
-                        // 登录成功后，继续获取角色
-                        if (loginResponse.code === 0) {
-                            console.log("登录成功，开始获取角色...");
-                            testGetRole(root, loginResponse).then(resolve).catch(reject);
-                        } else {
-                            reject(new Error(`Login failed: ${loginResponse.message}`));
-                        }
-                    } catch (err) {
-                        console.error('Failed to decode login response:', err);
-                        throw err;
-                    }
+                // 解码登录响应
+                let loginResponse = {};
+                if (baseResponse.payload && baseResponse.payload.length > 0) {
+                    loginResponse = LoginResponse.decode(baseResponse.payload);
                 }
+                console.log('Login response:', loginResponse);
+                
+                // 检查登录是否成功
+                if (baseResponse.errorCode !== 0) {
+                    console.log('\n登录失败:', baseResponse.errorMsg);
+                    process.exit(1);
+                    return;
+                }
+                
+                resolve(loginResponse);
             } catch (err) {
-                console.error('解析响应失败:', err);
-                reject(err);
+                console.error('\n解析响应失败:', err);
+                process.exit(1);
             }
         });
     });
@@ -405,13 +370,29 @@ async function main() {
         const root = await loadProtos();
         console.log("Proto文件加载成功");
         
-        await testLogin(root);
-        // 等待一段时间以确保心跳包能发送完成
-        await new Promise(resolve => setTimeout(resolve, 100000)); // 等待100秒
-        console.log("测试完成");
-        process.exit(0);
-    } catch (error) {
-        console.error("测试失败:", error);
+        // 连接登录服务器
+        console.log('正在连接登录服务器:', config.loginServer);
+        const ws = new WebSocket(config.loginServer);
+        
+        await new Promise((resolve, reject) => {
+            ws.on('open', resolve);
+            ws.on('error', reject);
+        });
+        console.log('连接登录服务器成功');
+        
+        // 测试登录
+        const loginResponse = await testLogin(ws, root);
+        if (loginResponse.token) {
+            console.log('登录成功，开始获取角色...');
+
+            // 继续后续测试
+            await testGetRole(root, loginResponse);
+        } else {
+            console.log('登录失败，终止测试');
+            process.exit(1);
+        }
+    } catch (err) {
+        console.error('测试失败:', err);
         process.exit(1);
     }
 }
