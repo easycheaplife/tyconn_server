@@ -12,7 +12,7 @@ skynet.start(function()
     -- 启动登录服务
     local login_server = skynet.newservice("login/server")
     local ok = skynet.call(login_server, "lua", "start", {
-        port = tonumber(skynet.getenv("websocket_port")) or 8021,
+        port = tonumber(skynet.getenv("websocket_port")),
         jwt_secret = skynet.getenv("jwt_secret"),
         jwt_expire = tonumber(skynet.getenv("jwt_expire"))
     })

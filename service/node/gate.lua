@@ -32,7 +32,7 @@ skynet.start(function()
     
     -- 启动网关管理器
     local gateway_manager = skynet.newservice("gate/manager")
-    local port = tonumber(skynet.getenv("websocket_port")) or 8008
+    local port = tonumber(skynet.getenv("websocket_port"))
     
     local ok = skynet.call(gateway_manager, "lua", "start", {
         port = port,
