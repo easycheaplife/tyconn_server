@@ -22,41 +22,29 @@ message S2LLoginResponse {
 }
 
 // 心跳请求
-message C2SHeartbeat {
+message C2GHeartbeat {
     int64 timestamp = 1;    // 时间戳
     int32 clientId = 2;     // 客户端ID
 }
 
 // 心跳响应
-message S2CHeartbeat {
+message G2CHeartbeat {
     int64 timestamp = 1;    // 服务器时间戳
     int32 code = 2;        // 状态码
 }
 
-// 获取角色请求
-message C2GGetRoleRequest {
+// 获取用户信息请求
+message C2GUserInfoRequest {
     string token = 1;       // JWT令牌
+    string name = 2;        // 角色名（可选，用于创建角色）
+    int32 gender = 3;       // 性别（可选，用于创建角色）
+    int32 job = 4;          // 职业（可选，用于创建角色）
 }
 
-// 获取角色响应
-message G2CGetRoleResponse {
+// 获取用户信息响应
+message G2CUserInfoResponse {
     int32 code = 1;        // 错误码
     string message = 2;    // 错误信息
-    bool has_role = 3;     // 是否有角色
-    common.UserInfo user = 4;  // 用户信息(如果有)
-}
-
-// 创建角色请求
-message C2GCreateRoleRequest {
-    string token = 1;      // JWT令牌
-    string name = 2;       // 角色名
-    int32 gender = 3;      // 性别
-    int32 job = 4;        // 职业
-}
-
-// 创建角色响应
-message G2CCreateRoleResponse {
-    int32 code = 1;        // 错误码
-    string message = 2;    // 错误信息
-    common.UserInfo user = 3;  // 创建的用户信息
+    common.UserInfo user = 3;  // 用户信息
+    bool is_new = 4;       // 是否是新创建的用户
 } 

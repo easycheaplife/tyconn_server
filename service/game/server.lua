@@ -20,19 +20,33 @@ local function create_base_response(session, error_code, error_msg, payload)
     }
 end
 
+-- 心跳相关配置
+local heartbeat_timeout = tonumber(skynet.getenv("heartbeat_timeout")) or 180  -- 默认180秒超时
+_G.client_heartbeats = {}  -- 记录客户端最后心跳时间，全局可访问
+
 -- 消息处理模块
 local handlers = {}
 
 -- 命令处理模块
 local CMD = {}
 
+-- 检查心跳超时
+local function check_heartbeat_timeout()
+    local now = os.time()
+    for client_id, last_time in pairs(_G.client_heartbeats) do
+        if now - last_time > heartbeat_timeout then
+            logger.warn("Client %d heartbeat timeout, disconnecting...", client_id)
+            handler.close(client_id)
+            _G.client_heartbeats[client_id] = nil
+        end
+    end
+end
+
 -- 初始化消息处理器
 local function init_handlers()
     -- 注册处理器
-    handlers[pb.enum("common.MessageID", "C2G_AUTH_REQUEST")] = require "game.handlers.auth"
-    handlers[pb.enum("common.MessageID", "C2G_GET_ROLE_REQUEST")] = require "game.handlers.get_role"
-    handlers[pb.enum("common.MessageID", "C2G_CREATE_ROLE_REQUEST")] = require "game.handlers.create_role"
-    handlers[pb.enum("common.MessageID", "C2S_HEARTBEAT")] = require "game.handlers.heartbeat"
+    handlers[pb.enum("common.MessageID", "C2G_USER_INFO_REQUEST")] = require "game.handlers.user_info"
+    handlers[pb.enum("common.MessageID", "C2G_HEARTBEAT")] = require "game.handlers.heartbeat"
     return true
 end
 
@@ -248,6 +262,14 @@ skynet.start(function()
         local f = CMD[cmd]
         if f then
             skynet.ret(skynet.pack(f(...)))
+        end
+    end)
+    
+    -- 启动心跳检查定时器
+    skynet.fork(function()
+        while true do
+            check_heartbeat_timeout()
+            skynet.sleep(100)  -- 每秒检查一次
         end
     end)
     

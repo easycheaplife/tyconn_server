@@ -2,53 +2,40 @@ local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
 local message_util = require "game.utils.message"
+local create_base_response = require "game.utils.response".create_base_response
 
 local M = {}
 
 function M.handle(client_id, msg)
     -- 解码基础请求
-    local base_request = message_util.decode_request(msg)
-    if not base_request then
-        logger.error("Failed to decode base request")
-        return message_util.encode_response(message_util.create_error_response(
-            nil,
-            pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"),
-            "无效的请求格式"
-        ))
-    end
-    
-    -- 解码心跳请求
-    local ok, request = pcall(pb.decode, "command.C2SHeartbeat", base_request.payload)
+    local ok, base_request = pcall(pb.decode, "common.BaseRequest", msg)
     if not ok then
-        logger.error("Failed to decode heartbeat request: %s", request)
-        return message_util.encode_response(message_util.create_error_response(
-            base_request.session,
-            pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"),
-            "无效的请求格式"
-        ))
+        logger.error("Failed to decode base request: %s", base_request)
+        return nil
     end
+
+    -- 更新客户端最后心跳时间
+    if not _G.client_heartbeats then
+        _G.client_heartbeats = {}
+    end
+    _G.client_heartbeats[client_id] = os.time()
+    logger.debug("Updated heartbeat time for client %d: %d", client_id, _G.client_heartbeats[client_id])
     
-    -- 构造心跳响应
-    local response = {
+    -- 创建心跳响应
+    local heartbeat_response = {
         timestamp = os.time(),
         code = 0
     }
     
-    -- 编码并返回响应
-    local ok, payload = pcall(pb.encode, "command.S2CHeartbeat", response)
-    if not ok then
-        logger.error("Failed to encode heartbeat response: %s", payload)
-        return message_util.encode_response(message_util.create_error_response(
-            base_request.session,
-            pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"),
-            "系统错误"
-        ))
-    end
+    -- 创建基础响应
+    local base_response = create_base_response(base_request.session, 0, "success",
+        pb.encode("command.G2CHeartbeat", heartbeat_response))
     
-    return message_util.encode_response(message_util.create_success_response(
-        base_request.session,
-        payload
-    ))
+    -- 设置正确的响应消息ID
+    base_response.session.messageId = pb.enum("common.MessageID", "G2C_HEARTBEAT")
+    
+    -- 编码并返回响应
+    return pb.encode("common.BaseResponse", base_response)
 end
 
 return M 

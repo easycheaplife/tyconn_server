@@ -418,18 +418,6 @@ function CMD.update_gate_status(status_data)
         return false
     end
     
-    -- 打印原始数据
-    logger.debug("Received gate status data: length=%d, hex=%s", 
-        #status_data, 
-        (function()
-            local t = {}
-            for i = 1, math.min(#status_data, 32) do
-                t[i] = string.format("%02x", string.byte(status_data, i))
-            end
-            return table.concat(t, " ")
-        end)()
-    )
-    
     local ok, status = pcall(pb.decode, "internal.ServiceStatus", status_data)
     if not ok then
         logger.error("Failed to decode gate status: %s, data length: %d", 
@@ -467,8 +455,6 @@ function CMD.update_gate_status(status_data)
         available = true
     }
     
-    logger.info("Updated gate status: %s at %s:%d, clients: %d", 
-        status.node_name, status.host, status.port, status.client_count)
     return true
 end
 

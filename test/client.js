@@ -208,12 +208,57 @@ async function testLogin(root) {
 
 // 测试获取角色
 async function testGetRole(root, loginResponse) {
-    console.log("开始获取角色测试...");
+    console.log("开始获取用户信息测试...");
     
     // 连接网关服务器
     const gateUrl = `ws://${loginResponse.ws_addr}:${loginResponse.ws_port}`;
     console.log("Connecting to gate server:", gateUrl);
     const ws = new WebSocket(gateUrl);
+    
+    // 发送心跳
+    function startHeartbeat() {
+        const heartbeatInterval = 30000; // 30秒
+        let heartbeatCount = 0;
+        
+        const heartbeatTimer = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+                heartbeatCount++;
+                console.log(`发送第 ${heartbeatCount} 次心跳包...`);
+                
+                // 构造心跳请求
+                const C2GHeartbeat = root.lookupType("command.C2GHeartbeat");
+                const heartbeatRequest = C2GHeartbeat.create({
+                    timestamp: Math.floor(Date.now() / 1000),
+                    clientId: 0  // 可选的客户端ID
+                });
+                
+                // 编码心跳请求
+                const MessageID = root.lookupEnum("common.MessageID");
+                const baseRequest = createBaseRequest(
+                    root,
+                    MessageID.values.C2G_HEARTBEAT,
+                    C2GHeartbeat.encode(heartbeatRequest).finish()
+                );
+                
+                // 发送心跳请求
+                const BaseRequest = root.lookupType("common.BaseRequest");
+                ws.send(BaseRequest.encode(baseRequest).finish());
+                
+                // 如果已经发送了3次心跳，关闭连接
+                if (heartbeatCount >= 3) {
+                    console.log("已发送3次心跳包，准备关闭连接...");
+                    clearInterval(heartbeatTimer);
+                    ws.close();
+                }
+            }
+        }, heartbeatInterval);
+        
+        // 当WebSocket关闭时清理定时器
+        ws.on('close', () => {
+            clearInterval(heartbeatTimer);
+            console.log("连接已关闭");
+        });
+    }
     
     return new Promise((resolve, reject) => {
         ws.on('error', (error) => {
@@ -223,28 +268,33 @@ async function testGetRole(root, loginResponse) {
 
         ws.on('close', (code, reason) => {
             console.log("WebSocket closed:", code, reason);
-            reject(new Error(`WebSocket closed: ${code} ${reason}`));
+            resolve();  // 正常关闭不应该reject
         });
 
         ws.on('open', () => {
             console.log("连接网关服务器成功");
+            // 启动心跳
+            startHeartbeat();
             
-            // 构造获取角色请求
-            const C2GGetRoleRequest = root.lookupType("command.C2GGetRoleRequest");
-            const getRoleRequest = C2GGetRoleRequest.create({
-                token: loginResponse.token
+            // 构造获取用户信息请求
+            const C2GUserInfoRequest = root.lookupType("command.C2GUserInfoRequest");
+            const userInfoRequest = C2GUserInfoRequest.create({
+                token: loginResponse.token,
+                name: "test_role_" + Date.now(),
+                gender: 1,
+                job: 1
             });
             
-            // 编码获取角色请求
+            // 编码获取用户信息请求
             const MessageID = root.lookupEnum("common.MessageID");
             const baseRequest = createBaseRequest(
                 root,
-                MessageID.values.C2G_GET_ROLE_REQUEST,
-                C2GGetRoleRequest.encode(getRoleRequest).finish()
+                MessageID.values.C2G_USER_INFO_REQUEST,
+                C2GUserInfoRequest.encode(userInfoRequest).finish()
             );
             
-            // 发送获取角色请求
-            console.log("发送获取角色请求...");
+            // 发送获取用户信息请求
+            console.log("发送获取用户信息请求...");
             const BaseRequest = root.lookupType("common.BaseRequest");
             ws.send(BaseRequest.encode(baseRequest).finish());
         });
@@ -264,112 +314,30 @@ async function testGetRole(root, loginResponse) {
                 });
                 
                 if (baseResponse.payload) {
-                    // 获取消息ID枚举
+                    // 检查是否是心跳响应
                     const MessageID = root.lookupEnum("common.MessageID");
+                    if (baseResponse.session.messageId === MessageID.values.G2C_HEARTBEAT) {
+                        const G2CHeartbeat = root.lookupType("command.G2CHeartbeat");
+                        const heartbeatResponse = G2CHeartbeat.decode(baseResponse.payload);
+                        console.log("收到心跳响应:", heartbeatResponse);
+                        return;
+                    }
                     
-                    // 根据消息ID选择正确的响应类型
-                    const session = baseResponse.session;
-                    console.log("Message ID:", session ? session.messageId : "无", 
-                        "G2C_GET_ROLE_RESPONSE =", MessageID.values.G2C_GET_ROLE_RESPONSE);
+                    const G2CUserInfoResponse = root.lookupType("command.G2CUserInfoResponse");
+                    const userInfoResponse = G2CUserInfoResponse.decode(baseResponse.payload);
+                    console.log("获取用户信息响应:", userInfoResponse);
                     
-                    if (session && session.messageId == 8) {  // G2C_GET_ROLE_RESPONSE
-                        const G2CGetRoleResponse = root.lookupType("command.G2CGetRoleResponse");
-                        const roleResponse = G2CGetRoleResponse.decode(baseResponse.payload);
-                        console.log("获取角色响应:", roleResponse);
-                        
-                        // 如果没有角色，创建角色
-                        if (!roleResponse.hasRole) {
-                            await testCreateRole(root, ws, loginResponse.token);
-                        }
-                    } else {
-                        // 尝试解码创建角色响应
-                        if (session && session.messageId == 10) {  // G2C_CREATE_ROLE_RESPONSE
-                            const G2CCreateRoleResponse = root.lookupType("command.G2CCreateRoleResponse");
-                            const createResponse = G2CCreateRoleResponse.decode(baseResponse.payload);
-                            console.log("创建角色响应:", createResponse);
-                        } else {
-                            console.log("未知的响应消息ID:", session ? session.messageId : "无", 
-                                "MessageID values:", MessageID.values);
+                    if (userInfoResponse.code === 0) {
+                        console.log("用户信息:", userInfoResponse.user);
+                        if (userInfoResponse.is_new) {
+                            console.log("新创建的用户");
                         }
                     }
-                    resolve();
                 }
             } catch (err) {
                 console.error("解码响应失败:", err);
                 console.error("Raw data:", Buffer.from(data).toString('hex'));
                 // 不要因为解码错误就中断测试
-                resolve();
-            }
-        });
-    });
-}
-
-// 测试创建角色
-async function testCreateRole(root, ws, token) {
-    console.log("开始创建角色测试...");
-    
-    // 构造创建角色请求
-    const C2GCreateRoleRequest = root.lookupType("command.C2GCreateRoleRequest");
-    const createRoleRequest = C2GCreateRoleRequest.create({
-        token: token,
-        name: "test_role_" + Date.now(),  // 添加时间戳避免名字冲突
-        gender: 1,
-        job: 1
-    });
-    
-    // 编码创建角色请求
-    const MessageID = root.lookupEnum("common.MessageID");
-    const baseRequest = createBaseRequest(
-        root,
-        MessageID.values.C2G_CREATE_ROLE_REQUEST,
-        C2GCreateRoleRequest.encode(createRoleRequest).finish()
-    );
-    
-    // 发送创建角色请求
-    console.log("发送创建角色请求...");
-    const BaseRequest = root.lookupType("common.BaseRequest");
-    ws.send(BaseRequest.encode(baseRequest).finish());
-    
-    return new Promise((resolve, reject) => {
-        ws.once('message', (data) => {
-            try {
-                // 解码基础响应
-                const BaseResponse = root.lookupType("common.BaseResponse");
-                const buffer = data instanceof Buffer ? data : Buffer.from(data);
-                const baseResponse = BaseResponse.decode(buffer);
-                
-                // 打印基础响应信息
-                console.log("Base response:", {
-                    errorCode: baseResponse.errorCode,
-                    errorMsg: baseResponse.errorMsg,
-                    payloadLength: baseResponse.payload ? baseResponse.payload.length : 0
-                });
-                
-                // 如果有错误，直接返回
-                if (baseResponse.errorCode !== 0) {
-                    console.log("创建角色失败:", baseResponse.errorMsg);
-                    resolve();
-                    return;
-                }
-                
-                // 解码创建角色响应
-                if (baseResponse.payload) {
-                    const G2CCreateRoleResponse = root.lookupType("command.G2CCreateRoleResponse");
-                    const createResponse = G2CCreateRoleResponse.decode(baseResponse.payload);
-                    console.log("创建角色响应:", createResponse);
-                    
-                    if (createResponse.code === 0) {
-                        console.log("创建角色成功:", createResponse.user);
-                    } else {
-                        console.log("创建角色失败:", createResponse.message);
-                    }
-                }
-                resolve();
-            } catch (err) {
-                console.error("解码响应失败:", err);
-                console.error("Raw data:", buffer.toString('hex'));
-                // 不要因为解码错误就中断测试
-                resolve();
             }
         });
     });
@@ -438,6 +406,8 @@ async function main() {
         console.log("Proto文件加载成功");
         
         await testLogin(root);
+        // 等待一段时间以确保心跳包能发送完成
+        await new Promise(resolve => setTimeout(resolve, 100000)); // 等待100秒
         console.log("测试完成");
         process.exit(0);
     } catch (error) {
