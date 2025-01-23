@@ -14,14 +14,14 @@ function M.init()
     skynet.fork(function()
         while true do
             M.print_status()
-            skynet.sleep(100)  -- 每秒打印一次
+            skynet.sleep(1000)  -- 每10秒打印一次
         end
     end)
     
     -- 定期清理超时的网关
     skynet.fork(function()
         while true do
-            M.cleanup_timeout(15)  -- 15秒超时
+            M.cleanup_timeout(120)  -- 120秒超时
             skynet.sleep(100)
         end
     end)

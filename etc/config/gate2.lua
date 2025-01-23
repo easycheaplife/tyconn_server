@@ -13,7 +13,7 @@ node_name = "gate2"
 
 -- WebSocket配置
 websocket_host = "127.0.0.1"
-websocket_port = 8023
+websocket_port = 8032
 
 -- 状态同步配置
 sync_interval = 60  -- 同步间隔(秒)

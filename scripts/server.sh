@@ -76,6 +76,12 @@ start_server() {
     nohup "$SKYNET_PATH" etc/config/db_proxy.lua > "$LOG_DIR/db_proxy.log" 2>&1 &
     save_pid "db_proxy" $!
     sleep 2
+
+        # 启动登陆服务器
+    echo "Starting Login..."
+    nohup "$SKYNET_PATH" etc/config/login.lua > "$LOG_DIR/login.log" 2>&1 &
+    save_pid "login" $!
+    sleep 2
     
     # 启动游戏服务器
     for i in $(seq 1 "$GAME_NODES"); do
@@ -105,6 +111,7 @@ stop_server() {
     
     # 停止所有进程
     local processes=("db_proxy")
+    processes+=("login")
     for i in $(seq 1 "$GAME_NODES"); do
         processes+=("game$i")
     done
@@ -134,6 +141,7 @@ check_status() {
     
     # 检查所有进程
     local processes=("db_proxy")
+    processes+=("login")
     for i in $(seq 1 "$GAME_NODES"); do
         processes+=("game$i")
     done

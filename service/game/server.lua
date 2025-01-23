@@ -13,7 +13,8 @@ local function check_heartbeat_timeout()
     for client_id, last_time in pairs(_G.client_heartbeats) do
         if now - last_time > heartbeat_timeout then
             logger.warn("Client %d heartbeat timeout, disconnecting...", client_id)
-            handler.close(client_id)
+            -- 通知网关断开客户端连接
+            skynet.send(".gate", "lua", "disconnect", client_id)
             _G.client_heartbeats[client_id] = nil
         end
     end
