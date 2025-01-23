@@ -1,7 +1,7 @@
 local skynet = require "skynet"
 local pb = require "pb"
 local logger = require "logger"
-local create_base_response = require "game.utils.response".create_base_response
+local message_util = require "game.utils.message"
 
 local M = {}
 
@@ -37,7 +37,7 @@ function M.handle(client_id, msg)
     
     logger.debug("User info response: %s", response.message)
     -- 创建基础响应
-    local base_response = create_base_response(base_request.session, response.code, response.message,
+    local base_response = message_util.create_base_response(base_request.session, response.code, response.message,
         pb.encode("command.G2CUserInfoResponse", response))
     
     -- 设置正确的响应消息ID
