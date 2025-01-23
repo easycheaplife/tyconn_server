@@ -4,21 +4,7 @@ local logger = require "logger"
 local pb = require "pb"
 local protoloader = require "protoloader"
 local jwt = require "jwt"
-
--- 创建基础响应
-local function create_base_response(session, error_code, error_msg, payload)
-    return {
-        session = {
-            messageId = session.messageId,  -- 由具体的处理器设置正确的响应消息ID
-            sequence = session.sequence,
-            timestamp = os.time(),
-            version = session.version
-        },
-        errorCode = error_code or 0,
-        errorMsg = error_msg or "success",
-        payload = payload
-    }
-end
+local create_base_response = require "game.utils.response".create_base_response
 
 -- 心跳相关配置
 local heartbeat_timeout = tonumber(skynet.getenv("heartbeat_timeout")) or 180  -- 默认180秒超时
@@ -114,8 +100,8 @@ local function verify_token_and_get_user(token)
     }
 end
 
--- 获取角色信息
-function CMD.get_role(token)
+-- 获取用户信息
+function CMD.get_user(token)
     -- 验证token
     local user, err = verify_token_and_get_user(token)
     if not user then
@@ -125,25 +111,25 @@ function CMD.get_role(token)
         }
     end
     
-    -- 从数据库获取角色信息
+    -- 从数据库获取用户信息
     local ok, user_info = pcall(cluster.call, "db_proxy", "@db_proxy", "get_user", user.user_id)
     if not ok then
         return {
             code = pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"),
-            message = "获取角色信息失败"
+            message = "获取用户信息失败"
         }
     end
     
     return {
         code = pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
         message = "success",
-        has_role = user_info and user_info.name ~= "",
+        has_user = user_info and user_info.name ~= "",
         user = user_info
     }
 end
 
--- 创建角色
-function CMD.create_role(token, name, gender, job)
+-- 创建用户
+function CMD.create_user(token, name, gender, job)
     -- 验证token
     local user, err = verify_token_and_get_user(token)
     if not user then
@@ -153,7 +139,7 @@ function CMD.create_role(token, name, gender, job)
         }
     end
     
-    -- 检查角色名是否已存在
+    -- 检查用户名是否已存在
     local ok, exists = pcall(cluster.call, "db_proxy", "@db_proxy", "check_name_exists", name)
     if not ok then
         return {
@@ -165,11 +151,11 @@ function CMD.create_role(token, name, gender, job)
     if exists then
         return {
             code = pb.enum("common.ErrorCode", "ERROR_CODE_NAME_EXISTS"),
-            message = "角色名已存在"
+            message = "用户名已存在"
         }
     end
     
-    -- 创建角色
+    -- 创建用户
     local ok, user_info = pcall(cluster.call, "db_proxy", "@db_proxy", "update_user", {
         user_id = user.user_id,
         name = name,
@@ -185,7 +171,7 @@ function CMD.create_role(token, name, gender, job)
     if not ok or not user_info then
         return {
             code = pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"),
-            message = "创建角色失败"
+            message = "创建用户失败"
         }
     end
     

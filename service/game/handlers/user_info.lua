@@ -21,11 +21,11 @@ function M.handle(client_id, msg)
     end
 
     -- 先尝试获取用户信息
-    local response = skynet.call(skynet.self(), "lua", "get_role", request.token)
+    local response = skynet.call(skynet.self(), "lua", "get_user", request.token)
     
     -- 如果用户不存在且提供了创建信息，则创建用户
     if not response.user and request.name and request.gender and request.job then
-        response = skynet.call(skynet.self(), "lua", "create_role", 
+        response = skynet.call(skynet.self(), "lua", "create_user", 
             request.token, request.name, request.gender, request.job)
         if response.code == pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
             response.is_new = true
