@@ -42,13 +42,9 @@ function M.sync_token(token_info)
             db_util.escape(token_info.account))
         logger.debug("Deleting old tokens - SQL: %s", query)
         
-        local ok, results = pcall(db_util.query, query)
-        if not ok then
-            logger.error("Failed to delete old tokens: %s, SQL: %s", results, query)
-            return false, "Database error"
-        end
+        local results, err = db_util.query(query)
         if not results then
-            logger.error("Delete query returned nil")
+            logger.error("Failed to delete old tokens: %s, SQL: %s", err, query)
             return false, "Database error"
         end
         logger.debug("Deleted %d old tokens", results.affected_rows or 0)
@@ -64,13 +60,9 @@ function M.sync_token(token_info)
         )
         logger.debug("Inserting new token - Account: %s, SQL: %s", token_info.account, query)
         
-        ok, results = pcall(db_util.query, query)
-        if not ok then
-            logger.error("Failed to insert token: %s, SQL: %s", results, query)
-            return false, "Database error"
-        end
+        results, err = db_util.query(query)
         if not results then
-            logger.error("Insert query returned nil")
+            logger.error("Failed to insert token: %s, SQL: %s", err, query)
             return false, "Database error"
         end
         logger.info("Successfully synced token for account: %s", token_info.account)
@@ -100,9 +92,9 @@ function M.verify_token(account, token)
         db_util.escape(token)
     )
     
-    local ok, results = pcall(db_util.query, query)
-    if not ok then
-        logger.error("Failed to verify token: %s", results)
+    local results, err = db_util.query(query)
+    if not results then
+        logger.error("Failed to verify token: %s", err)
         return false, "Database error"
     end
     
@@ -116,25 +108,26 @@ function M.verify_token(account, token)
     end
     
     -- 更新缓存
-    if results[1] then
-        cache.set_token(account, results[1])
-    end
+    cache.set_token(account, results[1])
     
     return true
 end
 
 -- 清理过期token
 function M.clean_expired_tokens()
-    local query = string.format(sql.CLEAN_EXPIRED_TOKENS, os.time())
+    local current_time = os.time()
+    logger.debug("Cleaning expired tokens before %d", current_time)
     
-    local ok, results = pcall(db_util.query, query)
-    if not ok then
-        logger.error("Failed to clean expired tokens: %s", results)
+    local query = string.format(sql.CLEAN_EXPIRED_TOKENS, current_time)
+    local results, err = db_util.query(query)
+    if not results then
+        logger.error("Failed to clean expired tokens: %s", err)
         return false
     end
     
-    if results.affected_rows > 0 then
-        logger.info("Cleaned %d expired tokens", results.affected_rows)
+    local affected = results.affected_rows or 0
+    if affected > 0 then
+        logger.info("Cleaned %d expired tokens", affected)
     end
     
     return true
