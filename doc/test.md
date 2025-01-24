@@ -20,7 +20,7 @@ npm install
 
 #### 用户模块测试
 ```javascript
-// test/unit/user_test.js
+// test/tests/user_info_test.js
 describe('User Model Test', () => {
     it('should create user successfully', async () => {
         const user = {
@@ -38,13 +38,14 @@ describe('User Model Test', () => {
 
 #### 登录测试
 ```javascript
-// test/api/login_test.js
+// test/tests/login_test.js
 describe('Login API Test', () => {
     it('should login successfully', async () => {
-        const response = await client.login({
+        const request = loginRequestBuilder.build({
             account: 'test',
             password: '123456'
         });
+        const response = await client.send(request);
         expect(response.code).toBe(0);
         expect(response.data.token).toBeDefined();
     });
@@ -55,7 +56,7 @@ describe('Login API Test', () => {
 
 #### 登录压测
 ```javascript
-// test/benchmark/login_bench.js
+// test/tests/login_test.js
 async function loginBenchmark() {
     const concurrent = 100;  // 并发数
     const total = 1000;     // 总请求数
@@ -68,10 +69,11 @@ async function loginBenchmark() {
         concurrent,
         total,
         fn: async () => {
-            return client.login({
+            const request = loginRequestBuilder.build({
                 account: `test_${Math.random()}`,
                 password: '123456'
             });
+            return client.send(request);
         }
     });
     
@@ -109,25 +111,21 @@ async function loginBenchmark() {
 
 ### 1. 测试客户端
 ```javascript
-// test/lib/client.js
+// test/client.js
 class GameClient {
     constructor(config) {
         this.loginServer = config.loginServer;
-        this.proto = new ProtoHelper();
+        this.wsClient = new WSClient(config);
+        this.responseHandler = new ResponseHandler();
     }
 
     async connect() {
-        this.ws = new WebSocket(this.loginServer);
-        return new Promise((resolve, reject) => {
-            this.ws.on('open', resolve);
-            this.ws.on('error', reject);
-        });
+        return this.wsClient.connect();
     }
 
-    async login(params) {
-        const request = this.proto.encode('C2LLoginRequest', params);
-        this.ws.send(request);
-        return this.waitResponse('L2CLoginResponse');
+    async send(request) {
+        const response = await this.wsClient.send(request);
+        return this.responseHandler.handle(response);
     }
 }
 ```
@@ -139,8 +137,10 @@ class ProtoHelper {
     async loadProtos() {
         const root = new protobuf.Root();
         await root.load([
+            'proto/command/command.proto',
+            'proto/common/error.proto',
             'proto/common/message.proto',
-            'proto/command/command.proto'
+            'proto/common/user.proto'
         ]);
         return root;
     }
@@ -148,6 +148,24 @@ class ProtoHelper {
     encode(type, data) {
         const message = this.root.lookupType(type);
         return message.encode(data).finish();
+    }
+}
+```
+
+### 3. 请求构建器
+```javascript
+// test/builders/login_request_builder.js
+class LoginRequestBuilder {
+    build(params) {
+        return {
+            session: {
+                messageId: 1,
+                sequence: 1,
+                timestamp: Date.now(),
+                version: "1.0.0"
+            },
+            payload: params
+        };
     }
 }
 ```
@@ -160,7 +178,7 @@ class ProtoHelper {
 npm run test:unit
 
 # 输出结果
-PASS test/unit/user_test.js
+PASS test/tests/user_info_test.js
 User Model Test
   ✓ should create user successfully (5ms)
   ✓ should get user info (3ms)
