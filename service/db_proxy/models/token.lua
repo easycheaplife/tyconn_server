@@ -7,18 +7,49 @@ local M = {}
 
 -- 同步token
 function M.sync_token(token_info)
-    logger.debug("Saving token for user: %s", token_info.account)
+    -- 验证参数
+    if not token_info then
+        logger.error("token_info is nil")
+        return false, "Invalid token info"
+    end
+    
+    if not token_info.account or token_info.account == "" then
+        logger.error("account is missing")
+        return false, "Invalid account"
+    end
+    
+    if not token_info.token or token_info.token == "" then
+        logger.error("token is missing")
+        return false, "Invalid token"
+    end
+    
+    if not token_info.expire_time or token_info.expire_time <= 0 then
+        logger.error("invalid expire_time: %s", tostring(token_info.expire_time))
+        return false, "Invalid expire time"
+    end
+
+    logger.info("Syncing token - Account: %s, Device: %s, Platform: %s", 
+        token_info.account,
+        token_info.device_id or "none",
+        token_info.platform or "none"
+    )
     
     return db_util.transaction(function()
         -- 删除旧token
         local query = string.format(sql.DELETE_OLD_TOKENS, 
             db_util.escape(token_info.account))
+        logger.debug("Deleting old tokens - SQL: %s", query)
         
         local ok, results = pcall(db_util.query, query)
         if not ok then
-            logger.error("Failed to delete old tokens: %s", results)
+            logger.error("Failed to delete old tokens: %s, SQL: %s", results, query)
             return false, "Database error"
         end
+        if not results then
+            logger.error("Delete query returned nil")
+            return false, "Database error"
+        end
+        logger.debug("Deleted %d old tokens", results.affected_rows or 0)
         
         -- 插入新token
         query = string.format(sql.SYNC_TOKEN,
@@ -27,14 +58,20 @@ function M.sync_token(token_info)
             db_util.escape(token_info.device_id or ""),
             db_util.escape(token_info.platform or ""),
             token_info.expire_time,
-            token_info.create_time
+            token_info.create_time or os.time()
         )
+        logger.debug("Inserting new token - Account: %s, SQL: %s", token_info.account, query)
         
         ok, results = pcall(db_util.query, query)
         if not ok then
-            logger.error("Failed to insert token: %s", results)
+            logger.error("Failed to insert token: %s, SQL: %s", results, query)
             return false, "Database error"
         end
+        if not results then
+            logger.error("Insert query returned nil")
+            return false, "Database error"
+        end
+        logger.info("Successfully synced token for account: %s", token_info.account)
         
         return true
     end)

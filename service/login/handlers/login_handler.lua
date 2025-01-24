@@ -55,6 +55,7 @@ function M.handle(client_id, base_request)
     end
 
     -- 保存token到数据库
+    logger.info("Saving token to database - Account: %s", user_info.account)
     local ok, err = pcall(cluster.call, "db_proxy", "@db_proxy", "sync_jwt", {
         account = user_info.account,
         token = token,
@@ -64,12 +65,13 @@ function M.handle(client_id, base_request)
         create_time = os.time()
     })
     if not ok then
-        logger.error("Failed to save token: %s", err)
+        logger.error("Failed to save token for account %s: %s", user_info.account, tostring(err))
         return {
             code = pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"),
             message = "同步令牌失败"
         }
     end
+    logger.info("Token saved successfully for account: %s", user_info.account)
 
     -- 选择网关
     local gate = gate_mgr.select_server()

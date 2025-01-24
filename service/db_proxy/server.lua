@@ -57,6 +57,14 @@ end
 
 -- Token相关操作
 function CMD.sync_jwt(token_info)
+    logger.debug("Received sync_jwt request - Account: %s, Token length: %d", 
+        token_info.account, #(token_info.token or ""))
+    
+    if not token_info or not token_info.account or not token_info.token then
+        logger.error("Invalid token_info: %s", require("utils").table_to_string(token_info))
+        return false, "Invalid token info"
+    end
+    
     return token_model.sync_token(token_info)
 end
 

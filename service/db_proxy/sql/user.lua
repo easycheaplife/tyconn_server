@@ -27,7 +27,7 @@ M.CREATE_TOKENS_TABLE = [[
     CREATE TABLE IF NOT EXISTS user_tokens (
         token_id BIGINT PRIMARY KEY AUTO_INCREMENT,
         account VARCHAR(64) NOT NULL,
-        token TEXT NOT NULL,
+        token MEDIUMTEXT NOT NULL,
         expire_time BIGINT NOT NULL,
         device_id VARCHAR(64),
         platform VARCHAR(32),
