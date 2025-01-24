@@ -137,6 +137,85 @@
 - 事务支持
 - 数据模型封装
 
+## 协议详解
+
+### 1. 登录流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant L as Login Server
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>L: 1. 登录请求(account, password)
+    L->>DB: 2. 验证账号
+    DB-->>L: 3. 验证结果
+    L->>L: 4. 生成Token
+    L->>DB: 5. 保存Token
+    L->>L: 6. 选择网关
+    L-->>C: 7. 返回Token和网关地址
+    
+    C->>G: 8. 连接网关(token)
+    G->>GM: 9. 验证Token
+    GM->>DB: 10. 查询Token
+    DB-->>GM: 11. Token有效
+    GM-->>G: 12. 验证通过
+    G-->>C: 13. 连接成功
+```
+
+### 2. 心跳机制
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    
+    loop Every 30s
+        C->>G: Heartbeat
+        G->>GM: Update last_heartbeat
+        GM-->>G: OK
+        G-->>C: Heartbeat Response
+    end
+    
+    Note over GM: Check every 1s
+    GM->>GM: Check timeout
+    Note over GM: Timeout > 180s
+    GM->>G: Disconnect
+    G-->>C: Close Connection
+```
+
+### 3. 获取用户信息流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 获取用户信息请求(token)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>DB: 5. 查询用户信息
+    
+    alt 用户不存在
+        GM->>GM: 6a. 生成随机名字
+        GM->>DB: 7a. 开始事务
+        GM->>DB: 8a. 检查名字是否存在
+        DB-->>GM: 9a. 名字可用
+        GM->>DB: 10a. 创建用户信息
+        GM->>DB: 11a. 提交事务
+        DB-->>GM: 12a. 创建成功
+        GM-->>G: 13a. 返回新用户信息
+        G-->>C: 14a. 返回响应(is_new=true)
+    else 用户已存在
+        DB-->>GM: 6b. 返回用户数据
+        GM-->>G: 7b. 返回用户信息
+        G-->>C: 8b. 返回响应(is_new=false)
+    end
+```
+
 ## 登录流程
 
 ### 1. 客户端登录
