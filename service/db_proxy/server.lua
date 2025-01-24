@@ -75,6 +75,10 @@ function CMD.verify_jwt(account, token)
     return wrap_call(token_model.verify_token, account, token)
 end
 
+function CMD.renew_jwt(account, token, expire_time)
+    return wrap_call(token_model.renew_token, account, token, expire_time)
+end
+
 -- 服务入口
 skynet.start(function()
     logger.info("DB proxy server starting...")
