@@ -3,6 +3,8 @@ local logger = require "logger"
 local mysql = require "db.mysql"
 local sql = require "db_proxy.sql.user"
 local db_util = require "db_proxy.utils.db_util"
+local cache = require "db_proxy.cache.cache"
+local const = require "db_proxy.const"
 
 local M = {}
 
@@ -95,6 +97,15 @@ end
 
 -- 获取用户信息
 function M.get_user(account)
+    -- 先查缓存
+    local cached_user = cache.get_user(account)
+    if cached_user then
+        return {
+            success = true,
+            user = cached_user
+        }
+    end
+    
     logger.debug("Getting user with account: %s", account)
     
     local query = string.format(sql.GET_USER_BY_ACCOUNT, mysql.escape(account))
@@ -107,6 +118,11 @@ function M.get_user(account)
             success = false,
             error = "Database error"
         }
+    end
+    
+    -- 更新缓存
+    if results[1] then
+        cache.set_user(account, results[1])
     end
     
     return {
@@ -138,7 +154,12 @@ function M.update_user(user)
         return false, "Database error"
     end
     
-    return true
+    -- 更新缓存
+    if ok then
+        cache.remove_user(user.account)
+    end
+    
+    return ok
 end
 
 -- 获取用户总数

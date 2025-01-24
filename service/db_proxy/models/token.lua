@@ -2,6 +2,8 @@ local skynet = require "skynet"
 local logger = require "logger"
 local sql = require "db_proxy.sql.user"
 local db_util = require "db_proxy.utils.db_util"
+local cache = require "db_proxy.cache.cache"
+local const = require "db_proxy.const"
 
 local M = {}
 
@@ -73,12 +75,26 @@ function M.sync_token(token_info)
         end
         logger.info("Successfully synced token for account: %s", token_info.account)
         
+        -- 更新缓存
+        cache.set_token(token_info.account, token_info)
+        
         return true
     end)
 end
 
 -- 验证token
 function M.verify_token(account, token)
+    -- 先查缓存
+    local cached_token = cache.get_token(account)
+    if cached_token and cached_token.token == token then
+        if cached_token.expire_time > os.time() then
+            return true
+        else
+            cache.remove_token(account)
+            return false, "Token expired"
+        end
+    end
+    
     local query = string.format(sql.GET_TOKEN,
         db_util.escape(account),
         db_util.escape(token)
@@ -97,6 +113,11 @@ function M.verify_token(account, token)
     -- 检查token是否过期
     if results[1].expire_time < os.time() then
         return false, "Token expired"
+    end
+    
+    -- 更新缓存
+    if results[1] then
+        cache.set_token(account, results[1])
     end
     
     return true

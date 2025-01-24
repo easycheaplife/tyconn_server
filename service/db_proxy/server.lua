@@ -4,6 +4,7 @@ local user_model = require "db_proxy.models.user"
 local token_model = require "db_proxy.models.token"
 local sql = require "db_proxy.sql.user"
 local db_util = require "db_proxy.utils.db_util"
+local const = require "db_proxy.const"
 
 local CMD = {}
 
@@ -22,54 +23,56 @@ local function init_db()
     return true
 end
 
+-- 包装错误处理
+local function wrap_call(func, ...)
+    local ok, result, err = pcall(func, ...)
+    if not ok then
+        logger.error("Call failed: %s", result)
+        return false, "Internal error"
+    end
+    return result, err
+end
+
 -- 用户相关操作
 function CMD.create_user(user)
-    return user_model.create_user(user)
+    return wrap_call(user_model.create_user, user)
 end
 
 function CMD.get_user(account)
-    return user_model.get_user(account)
+    return wrap_call(user_model.get_user, account)
 end
 
 function CMD.update_user(user)
-    return user_model.update_user(user)
+    return wrap_call(user_model.update_user, user)
 end
 
 function CMD.get_user_by_username(username)
-    return user_model.get_user_by_username(username)
+    return wrap_call(user_model.get_user_by_username, username)
 end
 
 function CMD.get_user_by_id(user_id)
-    return user_model.get_user_by_id(user_id)
+    return wrap_call(user_model.get_user_by_id, user_id)
 end
 
 function CMD.get_total_users()
-    return user_model.get_total_users()
+    return wrap_call(user_model.get_total_users)
 end
 
 function CMD.get_recent_users()
-    return user_model.get_recent_users()
+    return wrap_call(user_model.get_recent_users)
 end
 
 function CMD.get_online_users()
-    return user_model.get_online_users()
+    return wrap_call(user_model.get_online_users)
 end
 
 -- Token相关操作
 function CMD.sync_jwt(token_info)
-    logger.debug("Received sync_jwt request - Account: %s, Token length: %d", 
-        token_info.account, #(token_info.token or ""))
-    
-    if not token_info or not token_info.account or not token_info.token then
-        logger.error("Invalid token_info: %s", require("utils").table_to_string(token_info))
-        return false, "Invalid token info"
-    end
-    
-    return token_model.sync_token(token_info)
+    return wrap_call(token_model.sync_token, token_info)
 end
 
 function CMD.verify_jwt(account, token)
-    return token_model.verify_token(account, token)
+    return wrap_call(token_model.verify_token, account, token)
 end
 
 -- 服务入口
@@ -85,8 +88,9 @@ skynet.start(function()
     -- 启动定时清理过期token的任务
     skynet.fork(function()
         while true do
+            skynet.sleep(100)  -- 等待1秒再开始清理
             token_model.clean_expired_tokens()
-            skynet.sleep(3600 * 100)  -- 每小时清理一次
+            skynet.sleep(const.DB.CLEAN_TOKEN_INTERVAL * 100)
         end
     end)
     
@@ -94,11 +98,11 @@ skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         local f = CMD[cmd]
         if f then
-            skynet.ret(skynet.pack(f(...)))
+            skynet.ret(skynet.pack(wrap_call(f, ...)))
         else
             logger.error("Unknown command: %s", cmd)
             if session > 0 then
-                skynet.ret(skynet.pack(false))
+                skynet.ret(skynet.pack(false, "Unknown command"))
             end
         end
     end)
