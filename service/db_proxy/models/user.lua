@@ -2,6 +2,7 @@ local skynet = require "skynet"
 local logger = require "logger"
 local mysql = require "db.mysql"
 local sql = require "db_proxy.sql.user"
+local db_util = require "db_proxy.utils.db_util"
 
 local M = {}
 
@@ -138,6 +139,47 @@ function M.update_user(user)
     end
     
     return true
+end
+
+-- 获取用户总数
+function M.get_total_users()
+    local query = "SELECT COUNT(*) as count FROM users"
+    local ok, results = pcall(db_util.query, query)
+    if not ok then
+        logger.error("Failed to get total users: %s", results)
+        return 0
+    end
+    return results[1] and results[1].count or 0
+end
+
+-- 获取最近用户
+function M.get_recent_users()
+    local query = [[
+        SELECT * FROM users 
+        ORDER BY last_login_time DESC 
+        LIMIT 10
+    ]]
+    local ok, results = pcall(db_util.query, query)
+    if not ok then
+        logger.error("Failed to get recent users: %s", results)
+        return {}
+    end
+    return results or {}
+end
+
+-- 获取在线用户数
+function M.get_online_users()
+    local query = string.format([[
+        SELECT COUNT(*) as count FROM users 
+        WHERE last_login_time > %d AND last_login_time + 300 > %d
+    ]], os.time() - 300, os.time())
+    
+    local ok, results = pcall(db_util.query, query)
+    if not ok then
+        logger.error("Failed to get online users: %s", results)
+        return 0
+    end
+    return results[1] and results[1].count or 0
 end
 
 return M 

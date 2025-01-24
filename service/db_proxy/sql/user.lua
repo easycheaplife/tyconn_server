@@ -87,6 +87,17 @@ M.DELETE_OLD_TOKENS = [[
     WHERE account = '%s'
 ]]
 
+M.GET_TOKEN = [[
+    SELECT * FROM user_tokens 
+    WHERE account = '%s' AND token = '%s'
+    LIMIT 1
+]]
+
+M.CLEAN_EXPIRED_TOKENS = [[
+    DELETE FROM user_tokens 
+    WHERE expire_time < %d
+]]
+
 -- 初始化数据库
 function M.init()
     -- 创建用户表
