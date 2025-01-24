@@ -1,9 +1,10 @@
 local skynet = require "skynet"
-local cluster = require "skynet.cluster"
 local logger = require "logger"
+local cluster = require "skynet.cluster"
 local cluster_util = require "cluster_util"
 
 skynet.start(function()
+    -- 初始化集群
     local node_name = skynet.getenv("node_name")
     local jwt_secret = skynet.getenv("jwt_secret")
     if not jwt_secret then

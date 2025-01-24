@@ -1,6 +1,6 @@
 module.exports = {
     loginServer: 'ws://127.0.0.1:8021',
-    account: 'test111',
+    account: 'test',
     password: '123456',
     deviceId: 'test_device',
     platform: 'test',

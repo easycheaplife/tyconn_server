@@ -11,22 +11,6 @@ function M.get_token_expire()
     return config.jwt_expire
 end
 
--- 从测试账号名生成user_id
-local function generate_test_user_id(account)
-    -- 提取test后面的数字作为user_id
-    local num = account:match("^test(%d+)$")
-    if num then
-        return tonumber(num)
-    end
-    
-    -- 如果没有数字，使用字符串hash
-    local hash = 0
-    for i = 1, #account do
-        hash = (hash * 31 + string.byte(account, i)) % 100000
-    end
-    return hash + 10000  -- 避免与纯数字账号冲突
-end
-
 -- 初始化配置
 function M.init(conf)
     if not conf.jwt_secret then
