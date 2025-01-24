@@ -8,33 +8,106 @@
 - 游戏服务器 (Game Server)
 - 数据库代理 (DB Proxy)
 
-### 目录结构 
-    ├── etc/ # 配置文件
-    │ ├── config/
-    │ │ ├── login.lua # 登录服务器配置
-    │ │ ├── game1.lua # 游戏服务器1配置
-    │ │ ├── game2.lua # 游戏服务器2配置
-    │ │ └── db_proxy.lua # 数据库代理配置
-    │ └── cluster.lua # 集群配置
-    ├── service/ # 服务实现
-    │ ├── login/ # 登录服务器
-    │ │ ├── server.lua # 服务入口
-    │ │ ├── login_mgr.lua # 登录管理
-    │ │ ├── gate_mgr.lua # 网关管理
-    │ │ └── handlers/ # 消息处理
-    │ ├── gate/ # 网关服务器
-    │ │ ├── server.lua # 服务入口
-    │ │ └── manager.lua # 连接管理
-    │ ├── game/ # 游戏服务器
-    │ │ ├── server.lua # 服务入口
-    │ │ └── user_mgr.lua # 用户管理
-    │ ├── db_proxy/ # 数据库代理
-    │ │ ├── server.lua # 服务入口
-    │ │ ├── models/ # 数据模型
-    │ │ └── cache/ # 缓存管理
-    │ └── node/ # 节点启动脚本
-    └── test/ # 测试工具
-    └── config/ # 测试配置
+### 目录结构
+    ├── doc/                    # 文档
+    │   └── README.md          # 项目说明文档
+    ├── etc/                   # 配置文件
+    │   ├── config/           # 具体配置
+    │   │   ├── login.lua     # 登录服务器配置
+    │   │   ├── game1.lua     # 游戏服务器1配置
+    │   │   ├── game2.lua     # 游戏服务器2配置
+    │   │   ├── gate1.lua     # 网关服务器1配置
+    │   │   ├── gate2.lua     # 网关服务器2配置
+    │   │   ├── mysql.lua     # MySQL数据库配置
+    │   │   └── db_proxy.lua  # 数据库代理配置
+    │   └── cluster.lua       # 集群配置
+    ├── lualib/               # Lua库
+    │   ├── cluster_util.lua  # 集群工具
+    │   ├── db/              # 数据库相关
+    │   │   ├── mysql.lua    # MySQL操作封装
+    │   │   └── pool.lua     # 连接池实现
+    │   ├── jwt.lua          # JWT实现
+    │   ├── logger.lua       # 日志库
+    │   ├── node_selector.lua # 节点选择器
+    │   ├── protoloader.lua  # Proto加载器
+    │   ├── utils.lua        # 通用工具函数
+    │   └── websocket.lua    # WebSocket库
+    ├── nginx/               # Nginx配置
+    │   └── conf/
+    │       └── game.conf    # 游戏服务器配置
+    ├── proto/               # 协议定义
+    │   ├── command/        # 命令协议
+    │   │   └── command.proto
+    │   ├── common/         # 通用协议
+    │   │   ├── error.proto
+    │   │   ├── message.proto
+    │   │   └── user.proto
+    │   └── internal/       # 内部协议
+    │       └── service.proto
+    ├── scripts/            # 脚本工具
+    │   └── server.sh      # 服务器管理脚本
+    ├── service/           # 服务实现
+    │   ├── db_proxy/     # 数据库代理服务
+    │   │   ├── cache/    # 缓存实现
+    │   │   │   └── cache.lua
+    │   │   ├── const.lua # 常量定义
+    │   │   ├── db/       # 数据库操作
+    │   │   │   └── pool.lua
+    │   │   ├── models/   # 数据模型
+    │   │   │   ├── token.lua
+    │   │   │   └── user.lua
+    │   │   ├── server.lua
+    │   │   ├── sql/      # SQL定义
+    │   │   │   └── user.lua
+    │   │   └── utils/    # 工具函数
+    │   │       └── db_util.lua
+    │   ├── game/        # 游戏服务
+    │   │   ├── cmd_mgr.lua
+    │   │   ├── handlers/  # 消息处理器
+    │   │   │   ├── heartbeat.lua
+    │   │   │   └── user_info.lua
+    │   │   ├── message_mgr.lua
+    │   │   ├── models/   # 游戏模型
+    │   │   │   └── user.lua
+    │   │   ├── server.lua
+    │   │   ├── user_mgr.lua
+    │   │   └── utils/    # 工具函数
+    │   │       ├── message.lua
+    │   │       └── name_generator.lua
+    │   ├── gate/       # 网关服务
+    │   │   ├── agent.lua
+    │   │   ├── manager.lua
+    │   │   └── server.lua
+    │   ├── login/      # 登录服务
+    │   │   ├── gate_mgr.lua
+    │   │   ├── handlers/
+    │   │   │   └── login_handler.lua
+    │   │   ├── login_mgr.lua
+    │   │   ├── network/
+    │   │   │   └── ws_server.lua
+    │   │   └── server.lua
+    │   └── node/      # 节点启动脚本
+    │       ├── db_proxy.lua
+    │       ├── game.lua
+    │       ├── gate.lua
+    │       └── login.lua
+    └── test/         # 测试工具
+        ├── builders/ # 请求构建器
+        │   ├── get_user_info_builder.js
+        │   ├── heartbeat_builder.js
+        │   └── login_request_builder.js
+        ├── client.js # 测试客户端
+        ├── config/   # 测试配置
+        │   └── config.js
+        ├── lib/      # 测试库
+        │   ├── proto_helper.js
+        │   ├── response_handler.js
+        │   └── ws_client.js
+        ├── package.json
+        └── tests/    # 测试用例
+            ├── heartbeat_test.js
+            ├── login_test.js
+            └── user_info_test.js
 
 ## 服务器功能
 
@@ -201,6 +274,7 @@ module.exports = {
 1. 数据库代理: `./skynet etc/config/db_proxy.lua`
 2. 登录服务器: `./skynet etc/config/login.lua`
 3. 游戏服务器: `./skynet etc/config/game1.lua`
+4. 网关服务器: `./skynet etc/config/gate1.lua`
 
 ### 注意事项
 - 确保MySQL服务已启动
@@ -212,7 +286,7 @@ module.exports = {
 
 ### 1. 添加新的消息处理
 ```lua
--- service/login/handlers/new_handler.lua
+-- service/game/handlers/new_handler.lua
 local M = {}
 
 function M.handle(client, params)
@@ -490,6 +564,7 @@ case "$1" in
         ./skynet etc/config/login.lua
         sleep 1
         ./skynet etc/config/game1.lua
+        ./skynet etc/config/gate1.lua
         ;;
     stop)
         killall skynet
@@ -509,6 +584,7 @@ local function check_service_status()
     local services = {
         {name = "login", port = 8021},
         {name = "game1", port = 5001},
+        {name = "gate1", port = 8031},
         {name = "db_proxy", port = 4003}
     }
     
@@ -517,6 +593,8 @@ local function check_service_status()
         local ok = socket.connect("127.0.0.1", service.port)
         if not ok then
             logger.error("%s service may be down!", service.name)
+            -- 发送告警
+            alert_service_down(service.name)
         end
     end
 end
@@ -1336,147 +1414,116 @@ function check_heartbeat()
 end
 ```
 
-## 服务器状态管理
+## 计划功能
 
-### 1. 服务状态定义
+### 1. 服务器状态管理 (待实现)
+- 服务状态监控
+- CPU/内存使用率统计
+- 状态上报机制
+
+### 2. 服务器容错机制 (待实现)
+- 全局错误处理
+- 自动恢复机制
+- 数据备份
+
+### 3. 性能优化 (待实现)
+- 对象池
+- 字符串缓存
+- 批量处理
+- 定时器优化
+
+### 4. 监控报警 (待实现)
+- 系统监控
+- 邮件/短信/微信通知
+- 性能指标收集
+
+## 环境变量配置
+
+### 1. MySQL配置
+```bash
+export MYSQL_HOST="127.0.0.1"
+export MYSQL_USER="tyconn"
+export MYSQL_PASSWORD="your_password"
+export MYSQL_DATABASE="tyconn"
+```
+
+### 2. 服务器配置
+```bash
+# 日志级别
+export LOG_LEVEL=1
+
+# JWT配置
+export JWT_SECRET="your_jwt_secret_key"
+export JWT_EXPIRE=3600
+
+# 版本配置
+export VERSION_MIN="1.0.0"
+export VERSION_LATEST="1.0.0"
+export VERSION_FORCE_UPDATE="false"
+```
+
+## 路径配置说明
+
+### 1. 基础路径 (etc/config/path.lua)
 ```lua
--- 服务状态枚举
-local SERVICE_STATUS = {
-    INIT = 1,      -- 初始化中
-    READY = 2,     -- 就绪
-    BUSY = 3,      -- 繁忙
-    ERROR = 4,     -- 错误
-    SHUTDOWN = 5   -- 关闭中
+root = "./"
+skynet_root = "./skynet/"
+
+-- C服务路径
+cpath = skynet_root.."cservice/?.so"
+
+-- Lua加载器
+lualoader = skynet_root.."lualib/loader.lua"
+
+-- Lua服务路径
+luaservice = root.."service/?.lua;"..
+            root.."service/game/?.lua;"..
+            root.."service/gate/?.lua;"..
+            root.."service/?/init.lua;"..
+            skynet_root.."service/?.lua"
+
+-- Lua模块路径
+lua_path = root.."lualib/?.lua;"..
+          root.."service/?.lua;"..
+          root.."service/game/?.lua;"..
+          root.."etc/?.lua;"..
+          skynet_root.."lualib/?.lua;"..
+          skynet_root.."lualib/?/init.lua"
+
+-- C模块路径
+lua_cpath = root.."luaclib/?.so;"..
+           skynet_root.."luaclib/?.so"
+
+-- protobuf 路径
+proto_path = root.."proto/"
+```
+
+### 2. 数据库配置 (etc/config/mysql.lua)
+```lua
+-- 从环境变量读取数据库配置
+local host = os.getenv("MYSQL_HOST") or "127.0.0.1"
+local user = os.getenv("MYSQL_USER") or "root"
+local password = os.getenv("MYSQL_PASSWORD") or "123456"
+local database = os.getenv("MYSQL_DATABASE") or "tyconn"
+
+return {
+    -- 数据库连接配置
+    connection = {
+        host = host,
+        port = 3306,
+        user = user,
+        password = password,
+        charset = "utf8mb4",
+        max_packet_size = 1024 * 1024
+    },
+    
+    -- 数据库名称
+    database = database,
+    
+    -- 连接池配置
+    pool = {
+        max_connections = 5,
+        idle_timeout = 60  -- 秒
+    }
 }
-
--- 服务状态信息
-local service_info = {
-    status = SERVICE_STATUS.INIT,
-    start_time = os.time(),
-    last_error = nil,
-    client_count = 0,
-    cpu_usage = 0,
-    mem_usage = 0
-}
-```
-
-### 2. 状态上报
-```lua
--- 定期上报状态
-local function report_status()
-    while true do
-        -- 收集状态信息
-        local status = {
-            node_name = skynet.getenv("node_name"),
-            status = service_info.status,
-            client_count = service_info.client_count,
-            cpu_usage = get_cpu_usage(),
-            mem_usage = get_mem_usage(),
-            uptime = os.time() - service_info.start_time
-        }
-        
-        -- 发送到管理服务
-        cluster.send("manager", "@status_collector", "update", status)
-        
-        skynet.sleep(100)  -- 每秒上报
-    end
-end
-```
-
-### 3. 状态监控
-```lua
--- 状态检查
-local function check_status()
-    -- 检查CPU使用率
-    if service_info.cpu_usage > 80 then
-        service_info.status = SERVICE_STATUS.BUSY
-        logger.warn("Service busy: CPU usage too high")
-    end
-    
-    -- 检查内存使用率
-    if service_info.mem_usage > 90 then
-        service_info.status = SERVICE_STATUS.BUSY
-        logger.warn("Service busy: Memory usage too high")
-    end
-    
-    -- 检查客户端数量
-    if service_info.client_count > MAX_CLIENTS then
-        service_info.status = SERVICE_STATUS.BUSY
-        logger.warn("Service busy: Too many clients")
-    end
-end
-```
-
-## 服务器容错机制
-
-### 1. 错误处理
-```lua
--- 全局错误处理
-skynet.register_protocol {
-    name = "error",
-    id = skynet.PTYPE_ERROR,
-    unpack = function(msg, sz)
-        return skynet.tostring(msg, sz)
-    end,
-    dispatch = function(session, source, msg)
-        logger.error("Service error: %s", msg)
-        
-        -- 记录错误状态
-        service_info.status = SERVICE_STATUS.ERROR
-        service_info.last_error = {
-            time = os.time(),
-            message = msg
-        }
-        
-        -- 尝试恢复
-        pcall(error_recovery)
-    end
-}
-```
-
-### 2. 自动恢复
-```lua
--- 错误恢复
-function error_recovery()
-    -- 1. 保存关键数据
-    save_critical_data()
-    
-    -- 2. 清理异常连接
-    cleanup_connections()
-    
-    -- 3. 重置服务状态
-    service_info.status = SERVICE_STATUS.INIT
-    
-    -- 4. 重新初始化
-    local ok, err = pcall(service_init)
-    if not ok then
-        logger.error("Failed to recover: %s", err)
-        service_info.status = SERVICE_STATUS.ERROR
-    else
-        service_info.status = SERVICE_STATUS.READY
-    end
-end
-```
-
-### 3. 数据备份
-```lua
--- 关键数据备份
-function save_critical_data()
-    -- 1. 保存会话信息
-    local sessions = {}
-    for fd, client in pairs(clients) do
-        sessions[client.account] = {
-            last_heartbeat = client.last_heartbeat,
-            user_data = client.user_data
-        }
-    end
-    
-    -- 2. 写入备份文件
-    local backup_file = string.format("backup_%d.dat", os.time())
-    local f = io.open(backup_file, "w")
-    if f then
-        f:write(json.encode(sessions))
-        f:close()
-    end
-end
 ```
