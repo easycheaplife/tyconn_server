@@ -603,35 +603,93 @@ end
 ## 协议列表
 
 ### 1. 登录相关
-```
-C2L_LOGIN_REQUEST(1)        # 登录请求
-L2C_LOGIN_RESPONSE(2)       # 登录响应
+```protobuf
+// 登录请求
+message C2LLoginRequest {
+    string account = 1;      // 账号
+    string password = 2;     // 密码
+    string device_id = 3;    // 设备ID
+    string platform = 4;     // 平台标识
+    string version = 5;      // 客户端版本
+}
+
+// 登录响应
+message L2CLoginResponse {
+    int32 code = 1;         // 错误码
+    string message = 2;     // 错误信息
+    string token = 3;       // JWT令牌
+    string ws_addr = 4;     // WebSocket地址
+    int32 ws_port = 5;      // WebSocket端口
+}
 ```
 
 ### 2. 心跳相关
-```
-C2G_HEARTBEAT(5)           # 心跳请求
-G2C_HEARTBEAT(6)           # 心跳响应
+```protobuf
+// 心跳请求
+message C2GHeartbeat {
+    int64 timestamp = 1;    // 时间戳
+    int32 clientId = 2;     // 客户端ID
+}
+
+// 心跳响应
+message G2CHeartbeat {
+    int64 timestamp = 1;    // 服务器时间戳
+    int32 code = 2;        // 状态码
+}
 ```
 
 ### 3. 用户信息
-```
-C2G_USER_INFO_REQUEST(7)   # 获取用户信息请求
-G2C_USER_INFO_RESPONSE(8)  # 获取用户信息响应
+```protobuf
+// 获取用户信息请求
+message C2GUserInfoRequest {
+    string token = 1;       // JWT令牌
+    string name = 2;        // 角色名（可选，用于创建角色）
+    int32 gender = 3;       // 性别（可选，用于创建角色）
+    int32 job = 4;          // 职业（可选，用于创建角色）
+}
+
+// 获取用户信息响应
+message G2CUserInfoResponse {
+    int32 code = 1;        // 错误码
+    string message = 2;    // 错误信息
+    UserInfo user = 3;     // 用户信息
+    bool is_new = 4;       // 是否是新创建的用户
+}
+
+// 用户信息结构
+message UserInfo {
+    int64 user_id = 1;      // 用户ID
+    string username = 2;     // 用户名
+    string name = 3;        // 角色名
+    int32 level = 4;        // 等级
+    int32 gender = 5;       // 性别
+    int32 job = 6;         // 职业
+    int64 exp = 7;         // 经验值
+    int64 create_time = 8;  // 创建时间
+    int64 login_time = 9;   // 最后登录时间
+}
 ```
 
 ### 4. 错误码
-```
-ERROR_CODE_SUCCESS = 0              # 成功
-ERROR_CODE_SYSTEM_ERROR = 1         # 系统错误
-ERROR_CODE_INVALID_PARAMS = 2       # 无效参数
-ERROR_CODE_INVALID_ACCOUNT = 3      # 无效账号
-ERROR_CODE_INVALID_PASSWORD = 4     # 密码错误
-ERROR_CODE_TOKEN_INVALID = 7        # 无效的令牌
-ERROR_CODE_TOKEN_EXPIRED = 8        # 令牌已过期
-ERROR_CODE_SERVER_BUSY = 9          # 服务器繁忙
-ERROR_CODE_VERSION_NOT_MATCH = 10   # 版本不匹配
-ERROR_CODE_GATE_NOT_AVAILABLE = 11  # 网关不可用
+```protobuf
+enum ErrorCode {
+    ERROR_CODE_SUCCESS = 0;              // 成功
+    ERROR_CODE_SYSTEM_ERROR = 1;         // 系统错误
+    ERROR_CODE_INVALID_PARAMS = 2;       // 无效参数
+    ERROR_CODE_INVALID_ACCOUNT = 3;      // 无效账号
+    ERROR_CODE_INVALID_PASSWORD = 4;     // 密码错误
+    ERROR_CODE_ACCOUNT_EXISTS = 5;       // 账号已存在
+    ERROR_CODE_ACCOUNT_NOT_FOUND = 6;    // 账号不存在
+    ERROR_CODE_TOKEN_INVALID = 7;        // 无效的令牌
+    ERROR_CODE_TOKEN_EXPIRED = 8;        // 令牌已过期
+    ERROR_CODE_SERVER_BUSY = 9;          // 服务器繁忙
+    ERROR_CODE_VERSION_NOT_MATCH = 10;   // 版本不匹配
+    ERROR_CODE_GATE_NOT_AVAILABLE = 11;  // 网关不可用
+    ERROR_CODE_NAME_EXISTS = 12;         // 名字已存在
+    ERROR_CODE_INVALID_NAME = 13;        // 无效的名字
+    ERROR_CODE_INVALID_GENDER = 14;      // 无效的性别
+    ERROR_CODE_INVALID_JOB = 15;         // 无效的职业
+}
 ```
 
 ## 错误处理
