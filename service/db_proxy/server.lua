@@ -1,7 +1,8 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local mysql = require "db.mysql"
-local db_init = require "db_proxy.init"
+local user_model = require "db_proxy.models.user"
+local sql = require "db_proxy.sql.user"
 
 local CMD = {}
 
@@ -16,7 +17,7 @@ end
 
 -- 初始化数据库连接
 local function init_db()
-    if not db_init.init() then
+    if not sql.init() then
         logger.error("Failed to initialize MySQL connection")
         return false
     end
@@ -60,117 +61,12 @@ end
 
 -- 创建新用户
 function CMD.create_user(user)
-    logger.debug("Creating user: %s", table.concat({
-        account = user.account,
-        username = user.username,
-        name = user.name
-    }, ", "))
-    
-    return transaction(function()
-        -- 检查用户是否已存在
-        local sql = string.format(
-            "SELECT user_id FROM users WHERE username = '%s' LIMIT 1",
-            mysql.escape(user.username)
-        )
-        log_sql(sql)
-        
-        local ok, results = pcall(mysql.query, sql)
-        if not ok then
-            logger.error("Failed to check user existence: %s", results)
-            return false, "Database error"
-        end
-        
-        if results[1] then
-            logger.error("Username already exists: %s", user.username)
-            return false, "Username already exists"
-        end
-        
-        -- 插入用户数据
-        sql = string.format(
-            "INSERT INTO users (account, username, name, gender, job, level, exp, create_time) " ..
-            "VALUES ('%s', '%s', '%s', %d, %d, %d, %d, %d)",
-            mysql.escape(user.account),
-            mysql.escape(user.username),
-            mysql.escape(user.name),
-            user.gender,
-            user.job,
-            user.level,
-            user.exp,
-            user.create_time
-        )
-        log_sql(sql)
-        
-        ok, results = pcall(mysql.query, sql)
-        if not ok then
-            logger.error("Failed to insert user: %s", results)
-            return false, "Database error"
-        end
-        
-        -- 获取创建的用户信息
-        sql = string.format(
-            "SELECT * FROM users WHERE user_id = %d",
-            results.insert_id
-        )
-        log_sql(sql)
-        
-        ok, results = pcall(mysql.query, sql)
-        if not ok then
-            logger.error("Failed to get created user: %s", results)
-            return false, "Database error"
-        end
-        
-        if not results[1] then
-            logger.error("Created user not found: id=%d", results.insert_id)
-            return false, "Database error"
-        end
-        
-        return true, results[1]
-    end)
+    return user_model.create_user(user)
 end
 
 -- 更新用户信息
 function CMD.update_user(user)
-    if not user or not user.user_id then
-        return false, "无效的用户信息"
-    end
-    
-    local sql = [[
-        UPDATE users SET 
-            nickname = '%s',
-            level = %d,
-            exp = %d,
-            vip_level = %d,
-            gold = %d,
-            diamond = %d,
-            avatar = '%s',
-            last_login = %d
-        WHERE user_id = %d
-    ]]
-    log_sql(sql,
-        user.nickname,
-        user.level,
-        user.exp,
-        user.vip_level,
-        user.gold,
-        user.diamond,
-        user.avatar,
-        user.last_login,
-        user.user_id
-    )
-    
-    local res = mysql.query(sql,
-        user.nickname,
-        user.level,
-        user.exp,
-        user.vip_level,
-        user.gold,
-        user.diamond,
-        user.avatar,
-        user.last_login,
-        user.user_id
-    )
-    
-    return res and res.affected_rows > 0
+    return user_model.update_user(user)
 end
 
 -- 获取总用户数
@@ -321,28 +217,7 @@ end
 
 -- 获取用户信息
 function CMD.get_user(account)
-    logger.debug("Getting user with account: %s", account)
-    
-    -- 查询用户信息
-    local sql = string.format(
-        "SELECT * FROM users WHERE account = '%s' LIMIT 1",
-        mysql.escape(account)
-    )
-    log_sql(sql)
-    
-    local ok, results = pcall(mysql.query, sql)
-    if not ok then
-        logger.error("Failed to get user: %s", results)
-        return {
-            success = false,
-            error = "Database error"
-        }
-    end
-    
-    return {
-        success = true,
-        user = results[1]  -- 如果用户不存在，这里会是 nil
-    }
+    return user_model.get_user(account)
 end
 
 -- 检查角色名是否存在
@@ -359,34 +234,6 @@ function CMD.check_name_exists(name)
     end
     
     return #results > 0
-end
-
--- 更新用户信息
-function CMD.update_user(user_info)
-    local fields = {}
-    for k, v in pairs(user_info) do
-        if k ~= "user_id" then
-            if type(v) == "string" then
-                table.insert(fields, string.format("%s = '%s'", k, mysql.escape(v)))
-            else
-                table.insert(fields, string.format("%s = %s", k, tostring(v)))
-            end
-        end
-    end
-    
-    local sql = string.format(
-        "UPDATE users SET %s WHERE user_id = %d",
-        table.concat(fields, ", "),
-        user_info.user_id
-    )
-    
-    local ok, res = pcall(mysql.query, sql)
-    if not ok then
-        logger.error("Failed to update user: %s", res)
-        return nil
-    end
-    
-    return CMD.get_user(user_info.user_id)
 end
 
 -- 同步token
