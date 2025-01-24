@@ -6,18 +6,12 @@ local db_init = require "db_proxy.init"
 local CMD = {}
 
 -- 打印 SQL 语句
-local function log_sql(sql, ...)
-    if ... then
-        local args = {...}
-        for i, arg in ipairs(args) do
-            if type(arg) == "string" then
-                arg = string.format("'%s'", arg)
-            end
-            args[i] = tostring(arg)
-        end
-        sql = string.format(sql, table.unpack(args))
+local function log_sql(sql, params)
+    local sql_str = "[SQL] " .. sql
+    if params then
+        sql_str = sql_str .. " [" .. table.concat(params, ", ") .. "]"
     end
-    logger.debug("[SQL] %s", sql)
+    logger.debug(sql_str)
 end
 
 -- 初始化数据库连接
@@ -43,66 +37,95 @@ function CMD.get_user_by_id(user_id)
     return mysql.query("SELECT * FROM users WHERE user_id = %d LIMIT 1", user_id)
 end
 
--- 创建新用户
-function CMD.create_user(user_info)
-    -- 开始事务
+-- 执行事务
+local function transaction(func)
     log_sql("START TRANSACTION")
-    if not mysql.begin() then
-        return nil, "系统错误"
+    local ok, err = pcall(mysql.query, "START TRANSACTION")
+    if not ok then
+        logger.error("Failed to start transaction: %s", err)
+        return false, err
     end
     
-    -- 插入用户数据
-    local sql = [[
-        INSERT INTO users (
-            username, password, nickname, avatar, 
-            register_time, last_login
-        ) VALUES (
-            '%s', '%s', '%s', '%s', %d, %d
-        )
-    ]]
-    log_sql(sql, 
-        user_info.username,
-        user_info.password,
-        user_info.nickname,
-        user_info.avatar,
-        user_info.register_time,
-        user_info.last_login
-    )
-    
-    local res = mysql.query(sql,
-        user_info.username,
-        user_info.password,
-        user_info.nickname,
-        user_info.avatar,
-        user_info.register_time,
-        user_info.last_login
-    )
-    
-    if not res or not res.insert_id then
-        mysql.rollback()
+    local result, err = func()
+    if not result then
         log_sql("ROLLBACK")
-        return nil, "创建用户失败"
+        mysql.query("ROLLBACK")
+        return false, err
     end
     
-    -- 获取创建的用户信息
-    sql = "SELECT * FROM users WHERE user_id = %d"
-    log_sql(sql, res.insert_id)
-    local users = mysql.query(sql, res.insert_id)
-    if not users or not users[1] then
-        mysql.rollback()
-        log_sql("ROLLBACK")
-        return nil, "获取用户信息失败"
-    end
-    
-    -- 提交事务
     log_sql("COMMIT")
-    if not mysql.commit() then
-        mysql.rollback()
-        log_sql("ROLLBACK")
-        return nil, "系统错误"
-    end
+    mysql.query("COMMIT")
+    return true
+end
+
+-- 创建新用户
+function CMD.create_user(user)
+    logger.debug("Creating user: %s", table.concat({
+        account = user.account,
+        username = user.username,
+        name = user.name
+    }, ", "))
     
-    return users[1]
+    return transaction(function()
+        -- 检查用户是否已存在
+        local sql = string.format(
+            "SELECT user_id FROM users WHERE username = '%s' LIMIT 1",
+            mysql.escape(user.username)
+        )
+        log_sql(sql)
+        
+        local ok, results = pcall(mysql.query, sql)
+        if not ok then
+            logger.error("Failed to check user existence: %s", results)
+            return false, "Database error"
+        end
+        
+        if results[1] then
+            logger.error("Username already exists: %s", user.username)
+            return false, "Username already exists"
+        end
+        
+        -- 插入用户数据
+        sql = string.format(
+            "INSERT INTO users (account, username, name, gender, job, level, exp, create_time) " ..
+            "VALUES ('%s', '%s', '%s', %d, %d, %d, %d, %d)",
+            mysql.escape(user.account),
+            mysql.escape(user.username),
+            mysql.escape(user.name),
+            user.gender,
+            user.job,
+            user.level,
+            user.exp,
+            user.create_time
+        )
+        log_sql(sql)
+        
+        ok, results = pcall(mysql.query, sql)
+        if not ok then
+            logger.error("Failed to insert user: %s", results)
+            return false, "Database error"
+        end
+        
+        -- 获取创建的用户信息
+        sql = string.format(
+            "SELECT * FROM users WHERE user_id = %d",
+            results.insert_id
+        )
+        log_sql(sql)
+        
+        ok, results = pcall(mysql.query, sql)
+        if not ok then
+            logger.error("Failed to get created user: %s", results)
+            return false, "Database error"
+        end
+        
+        if not results[1] then
+            logger.error("Created user not found: id=%d", results.insert_id)
+            return false, "Database error"
+        end
+        
+        return true, results[1]
+    end)
 end
 
 -- 更新用户信息
@@ -180,33 +203,43 @@ end
 
 -- 同步JWT令牌
 function CMD.sync_jwt(token_info)
-    -- 验证参数
-    if not token_info.token or not token_info.user_id or not token_info.username then
-        logger.error("Invalid token info: missing required fields")
-        return false
-    end
+    logger.debug("Saving token for user: %s", token_info.account)
     
-    -- 更新或插入token记录
-    local sql = string.format(
-        "INSERT INTO user_tokens (user_id, username, token, expire_time) " ..
-        "VALUES (%d, '%s', '%s', FROM_UNIXTIME(%d)) " ..
-        "ON DUPLICATE KEY UPDATE token='%s', expire_time=FROM_UNIXTIME(%d)",
-        token_info.user_id,
-        mysql.escape(token_info.username),
-        mysql.escape(token_info.token),
-        token_info.expire_time,
-        mysql.escape(token_info.token),
-        token_info.expire_time
-    )
-    
-    local ok = mysql.query(sql)
-    if not ok then
-        logger.error("Failed to sync JWT token for user %d", token_info.user_id)
-        return false
-    end
-    
-    logger.debug("JWT token synced for user %d", token_info.user_id)
-    return true
+    return transaction(function()
+        -- 删除该用户的旧token（通过account查找）
+        local sql = string.format(
+            "DELETE FROM user_tokens WHERE account = '%s'",
+            mysql.escape(token_info.account)
+        )
+        log_sql(sql)
+        
+        local ok, err = pcall(mysql.query, sql)
+        if not ok then
+            logger.error("Failed to delete old tokens: %s", err)
+            return false, "Database error"
+        end
+        
+        -- 插入新token
+        sql = string.format(
+            "INSERT INTO user_tokens (account, token, device_id, platform, expire_time, create_time) " ..
+            "VALUES ('%s', '%s', '%s', '%s', %d, %d)",
+            mysql.escape(token_info.account),
+            mysql.escape(token_info.token),
+            mysql.escape(token_info.device_id or ''),
+            mysql.escape(token_info.platform or ''),
+            token_info.expire_time,
+            token_info.create_time
+        )
+        log_sql(sql)
+        
+        ok, err = pcall(mysql.query, sql)
+        if not ok then
+            logger.error("Failed to insert token: %s", err)
+            return false, "Database error"
+        end
+        
+        return true
+    end)
 end
 
 -- 验证JWT令牌
@@ -287,23 +320,29 @@ function CMD.verify_account(account, password)
 end
 
 -- 获取用户信息
-function CMD.get_user(user_id)
+function CMD.get_user(account)
+    logger.debug("Getting user with account: %s", account)
+    
+    -- 查询用户信息
     local sql = string.format(
-        "SELECT * FROM users WHERE user_id = %d LIMIT 1",
-        user_id
+        "SELECT * FROM users WHERE account = '%s' LIMIT 1",
+        mysql.escape(account)
     )
+    log_sql(sql)
     
     local ok, results = pcall(mysql.query, sql)
     if not ok then
         logger.error("Failed to get user: %s", results)
-        return nil
+        return {
+            success = false,
+            error = "Database error"
+        }
     end
     
-    if #results == 0 then
-        return nil
-    end
-    
-    return results[1]
+    return {
+        success = true,
+        user = results[1]  -- 如果用户不存在，这里会是 nil
+    }
 end
 
 -- 检查角色名是否存在
@@ -384,7 +423,7 @@ end
 
 -- 服务入口
 skynet.start(function()
-    logger.info("DB proxy starting...")
+    logger.info("DB proxy server starting...")
     
     -- 初始化数据库
     if not init_db() then
@@ -392,15 +431,16 @@ skynet.start(function()
         return
     end
     
-    -- 注册消息处理函数
+    -- 注册消息处理器
     skynet.dispatch("lua", function(_, _, command, ...)
         local f = CMD[command]
         if f then
+            logger.debug("Handling command: %s", command)
             skynet.ret(skynet.pack(f(...)))
         else
             logger.error("Unknown command: %s", command)
         end
     end)
     
-    logger.info("DB proxy started")
+    logger.info("DB proxy server started")
 end) 

@@ -3,6 +3,7 @@ local logger = require "logger"
 local pb = require "pb"
 local login_mgr = require "login.login_mgr"
 local gate_mgr = require "login.gate_mgr"
+local cluster = require "skynet.cluster"
 
 local M = {}
 
@@ -53,6 +54,23 @@ function M.handle(client_id, base_request)
         }
     end
 
+    -- 保存token到数据库
+    local ok, err = pcall(cluster.call, "db_proxy", "@db_proxy", "sync_jwt", {
+        account = user_info.account,
+        token = token,
+        device_id = request.device_id,
+        platform = request.platform,
+        expire_time = os.time() + login_mgr.get_token_expire(),
+        create_time = os.time()
+    })
+    if not ok then
+        logger.error("Failed to save token: %s", err)
+        return {
+            code = pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"),
+            message = "同步令牌失败"
+        }
+    end
+
     -- 选择网关
     local gate = gate_mgr.select_server()
     if not gate then
@@ -73,7 +91,8 @@ function M.handle(client_id, base_request)
 
     -- 返回成功响应
     logger.info("Login successful: user=%s, gate=%s:%d",
-        user_info.username, gate_addr.host, gate_addr.port)
+        user_info.account,
+        gate_addr.host, gate_addr.port)
         
     return {
         code = pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),

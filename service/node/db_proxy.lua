@@ -11,6 +11,7 @@ skynet.start(function()
     
     -- 启动数据库代理服务
     local db_service = skynet.newservice("db_proxy/server")
+    logger.debug("DB proxy service created with handle: %s", tostring(db_service))
     
     -- 注册服务
     cluster.register(node_name, db_service)
@@ -18,4 +19,5 @@ skynet.start(function()
     
     -- 打开集群端口
     cluster.open(node_name)
+    logger.info("Cluster port opened for node: %s", node_name)
 end) 

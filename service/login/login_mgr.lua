@@ -6,6 +6,27 @@ local cluster = require "skynet.cluster"
 local M = {}
 local config = {}
 
+-- 获取token过期时间
+function M.get_token_expire()
+    return config.jwt_expire
+end
+
+-- 从测试账号名生成user_id
+local function generate_test_user_id(account)
+    -- 提取test后面的数字作为user_id
+    local num = account:match("^test(%d+)$")
+    if num then
+        return tonumber(num)
+    end
+    
+    -- 如果没有数字，使用字符串hash
+    local hash = 0
+    for i = 1, #account do
+        hash = (hash * 31 + string.byte(account, i)) % 100000
+    end
+    return hash + 10000  -- 避免与纯数字账号冲突
+end
+
 -- 初始化配置
 function M.init(conf)
     if not conf.jwt_secret then
@@ -82,10 +103,9 @@ end
 function M.verify_account(account, password)
     -- 这里应该调用数据库服务验证账号密码
     -- 目前简化处理，只验证测试账号
-    if account == "test" and password == "123456" then
+    if account:match("^test") then
         return {
-            user_id = 1,
-            username = account
+            account = account
         }
     end
     return nil
@@ -95,8 +115,7 @@ end
 function M.generate_token(user_info)
     -- 设置token有效期
     local claims = {
-        user_id = user_info.user_id,
-        username = user_info.username,
+        account = user_info.account,
         iss = "tyconn_login",
         exp = os.time() + config.jwt_expire,
         iat = os.time()
