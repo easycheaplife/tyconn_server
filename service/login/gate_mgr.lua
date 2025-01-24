@@ -40,7 +40,7 @@ function M.print_status()
         if info.available then
             ready = ready + 1
             clients = clients + (info.client_count or 0)
-            logger.info("Gate %s: clients=%d/%d (%.1f%%), uptime=%ds",
+            logger.debug("Gate %s: clients=%d/%d (%.1f%%), uptime=%ds",
                 name,
                 info.client_count or 0,
                 MAX_CLIENTS,
