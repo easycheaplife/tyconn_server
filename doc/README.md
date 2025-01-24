@@ -600,229 +600,38 @@ local function check_service_status()
 end
 ```
 
-## 协议详解
-
-### 1. 登录流程
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant L as Login Server
-    participant G as Gate Server
-    participant GM as Game Server
-    participant DB as DB Proxy
-    
-    C->>L: 1. 登录请求(account, password)
-    L->>DB: 2. 验证账号
-    DB-->>L: 3. 验证结果
-    L->>L: 4. 生成Token
-    L->>DB: 5. 保存Token
-    L->>L: 6. 选择网关
-    L-->>C: 7. 返回Token和网关地址
-    
-    C->>G: 8. 连接网关(token)
-    G->>GM: 9. 验证Token
-    GM->>DB: 10. 查询Token
-    DB-->>GM: 11. Token有效
-    GM-->>G: 12. 验证通过
-    G-->>C: 13. 连接成功
-```
-
-### 2. 心跳机制
-```mermaid
-sequenceDiagram
-    participant C as Client
-    participant G as Gate Server
-    participant GM as Game Server
-    
-    loop Every 30s
-        C->>G: Heartbeat
-        G->>GM: Update last_heartbeat
-        GM-->>G: OK
-        G-->>C: Heartbeat Response
-    end
-    
-    Note over GM: Check every 1s
-    GM->>GM: Check timeout
-    Note over GM: Timeout > 180s
-    GM->>G: Disconnect
-    G-->>C: Close Connection
-```
-
-## 数据库设计
-
-### 1. 用户Token表
-```sql
-CREATE TABLE user_tokens (
-    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    account VARCHAR(64) NOT NULL,
-    token VARCHAR(256) NOT NULL,
-    device_id VARCHAR(64),
-    platform VARCHAR(32),
-    expire_time INT UNSIGNED NOT NULL,
-    create_time INT UNSIGNED NOT NULL,
-    PRIMARY KEY (id),
-    UNIQUE KEY uk_account (account),
-    KEY idx_expire (expire_time)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-```
-
-### 2. 用户表
-```sql
-CREATE TABLE users (
-    user_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    account VARCHAR(64) NOT NULL,
-    username VARCHAR(32) NOT NULL,
-    name VARCHAR(32) NOT NULL DEFAULT '',
-    gender TINYINT NOT NULL DEFAULT 0,
-    job INT NOT NULL DEFAULT 0,
-    level INT NOT NULL DEFAULT 1,
-    exp BIGINT NOT NULL DEFAULT 0,
-    create_time INT UNSIGNED NOT NULL,
-    PRIMARY KEY (user_id),
-    UNIQUE KEY uk_account (account),
-    UNIQUE KEY uk_username (username)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-```
-
-## 性能优化建议
-
-### 1. 数据库优化
-- 使用连接池管理连接
-- 合理设置索引
-- 避免大事务
-- 定期清理过期数据
-
-### 2. 网络优化
-- 使用WebSocket长连接
-- 消息压缩
-- 批量处理
-- 异步处理
-
-### 3. 内存优化
-- 合理设置缓存大小
-- 定期清理过期缓存
-- 避免内存泄漏
-- 控制对象生命周期
-
-## 常见问题排查
-
-### 1. 连接断开
-```lua
--- 检查日志
-tail -f logs/game1.log | grep "connection"
-
--- 检查网关状态
-netstat -an | grep 5001
-
--- 检查防火墙
-iptables -L | grep 5001
-```
-
-### 2. 登录失败
-```lua
--- 检查Token
-local token_info = db_util.query([[
-    SELECT * FROM user_tokens 
-    WHERE account = %s
-]], account)
-
--- 检查JWT密钥
-print(skynet.getenv("jwt_secret"))
-
--- 检查网关分配
-local gate = gate_mgr.select_server()
-print("Selected gate:", gate)
-```
-
-### 3. 数据库错误
-```lua
--- 检查连接池
-local pool_size = pool.get_size()
-print("Pool size:", pool_size)
-
--- 检查事务状态
-show processlist;
-
--- 检查死锁
-show engine innodb status;
-```
-
 ## 协议列表
 
 ### 1. 登录相关
-
-#### 1.1 登录请求 (login)
-```json
-{
-    "cmd": "login",
-    "params": {
-        "account": "test",
-        "password": "123456",
-        "device_id": "test_device",
-        "platform": "test",
-        "version": "1.0.0"
-    }
-}
+```
+C2L_LOGIN_REQUEST(1)        # 登录请求
+L2C_LOGIN_RESPONSE(2)       # 登录响应
 ```
 
-#### 1.2 登录响应
-```json
-{
-    "cmd": "login",
-    "result": {
-        "code": 0,
-        "token": "xxx.yyy.zzz",
-        "gate": {
-            "host": "127.0.0.1",
-            "port": 5001
-        }
-    }
-}
+### 2. 心跳相关
+```
+C2G_HEARTBEAT(5)           # 心跳请求
+G2C_HEARTBEAT(6)           # 心跳响应
 ```
 
-### 2. 网关相关
-
-#### 2.1 验证请求 (verify)
-```json
-{
-    "cmd": "verify",
-    "params": {
-        "account": "test",
-        "token": "xxx.yyy.zzz"
-    }
-}
+### 3. 用户信息
+```
+C2G_USER_INFO_REQUEST(7)   # 获取用户信息请求
+G2C_USER_INFO_RESPONSE(8)  # 获取用户信息响应
 ```
 
-#### 2.2 验证响应
-```json
-{
-    "cmd": "verify",
-    "result": {
-        "code": 0,
-        "user_info": {
-            "account": "test",
-            "name": "测试账号",
-            "level": 1
-        }
-    }
-}
+### 4. 错误码
 ```
-
-#### 2.3 心跳请求 (heartbeat)
-```json
-{
-    "cmd": "heartbeat"
-}
-```
-
-#### 2.4 心跳响应
-```json
-{
-    "cmd": "heartbeat",
-    "result": {
-        "code": 0
-    }
-}
+ERROR_CODE_SUCCESS = 0              # 成功
+ERROR_CODE_SYSTEM_ERROR = 1         # 系统错误
+ERROR_CODE_INVALID_PARAMS = 2       # 无效参数
+ERROR_CODE_INVALID_ACCOUNT = 3      # 无效账号
+ERROR_CODE_INVALID_PASSWORD = 4     # 密码错误
+ERROR_CODE_TOKEN_INVALID = 7        # 无效的令牌
+ERROR_CODE_TOKEN_EXPIRED = 8        # 令牌已过期
+ERROR_CODE_SERVER_BUSY = 9          # 服务器繁忙
+ERROR_CODE_VERSION_NOT_MATCH = 10   # 版本不匹配
+ERROR_CODE_GATE_NOT_AVAILABLE = 11  # 网关不可用
 ```
 
 ## 错误处理
@@ -887,19 +696,20 @@ end
 
 ### 1. 单机部署
 ```
-[Client] --> [Nginx] --> [Login Server]
+[Client] --> [Nginx] --> [DB Proxy]
+                     --> [Login Server]
                      --> [Game Server]
-                     --> [DB Proxy]
+                     --> [Gate Server]
 ```
 
 ### 2. 集群部署
 ```
-[Client] --> [SLB] --> [Login Server 1]
-                   --> [Login Server 2]
+[Client] --> [SLB] --> [DB Proxy 1]
+                   --> [Login Server]
                    --> [Game Server 1]
                    --> [Game Server 2]
-                   --> [DB Proxy 1]
-                   --> [DB Proxy 2]
+                   --> [Gate Server 1]
+                   --> [Gate Server 2]
 ```
 
 ## 性能指标
