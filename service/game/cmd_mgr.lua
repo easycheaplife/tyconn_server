@@ -23,11 +23,6 @@ function CMD.get_user(token)
     return user_mgr.get_user(token)
 end
 
--- 创建用户
-function CMD.create_user(token, name, gender, job)
-    return user_mgr.create_user(token, name, gender, job)
-end
-
 -- 服务启动
 function CMD.start(conf)
     -- 打印环境变量

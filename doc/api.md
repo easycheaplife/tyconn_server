@@ -85,8 +85,6 @@ WebSocket: ws://game_server:8031
 
 **请求**
 ```javascript
-WebSocket: ws://game_server:8031
-
 {
     "session": {
         "messageId": 7,  // C2G_USER_INFO_REQUEST
@@ -94,10 +92,7 @@ WebSocket: ws://game_server:8031
         "timestamp": 1648888888
     },
     "payload": {
-        "token": "eyJhbGciOiJIUzI1NiIs...",
-        "name": "player1",     // 可选,创建角色时使用
-        "gender": 1,           // 可选,创建角色时使用
-        "job": 1               // 可选,创建角色时使用
+        "token": "eyJhbGciOiJIUzI1NiIs..."
     }
 }
 ```
@@ -115,11 +110,10 @@ WebSocket: ws://game_server:8031
     "payload": {
         "user": {
             "user_id": 10001,
-            "name": "player1",
+            "username": "player1",
             "level": 1,
-            "gender": 1,
-            "job": 1,
             "exp": 0,
+            "vip_level": 0,
             "create_time": 1648888889,
             "login_time": 1648888889
         },
@@ -173,6 +167,7 @@ WebSocket: ws://game_server:8031
 | 9 | 服务器繁忙 | 稍后重试 |
 | 10 | 版本不匹配 | 更新客户端 |
 | 11 | 网关不可用 | 重新登录 |
+| 12 | 数据库错误 | 重试或联系客服 |
 
 ## WebSocket状态码
 

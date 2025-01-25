@@ -74,19 +74,31 @@ message G2CHeartbeat {
 ```protobuf
 message C2GUserInfoRequest {
     string token = 1;       // JWT令牌
-    string name = 2;        // 角色名（可选）
-    int32 gender = 3;       // 性别（可选）
-    int32 job = 4;          // 职业（可选）
 }
 ```
 
 #### 获取用户信息响应
-```protobuf
-message G2CUserInfoResponse {
-    int32 code = 1;        // 错误码
-    string message = 2;    // 错误信息
-    UserInfo user = 3;     // 用户信息
-    bool is_new = 4;       // 是否是新创建的用户
+```javascript
+{
+    "session": {
+        "messageId": 8,  // G2C_USER_INFO_RESPONSE
+        "sequence": 1,
+        "timestamp": 1648888889
+    },
+    "errorCode": 0,
+    "errorMsg": "success",
+    "payload": {
+        "user": {
+            "user_id": 10001,
+            "username": "player1",
+            "level": 1,
+            "exp": 0,
+            "vip_level": 0,
+            "create_time": 1648888889,
+            "login_time": 1648888889
+        },
+        "is_new": true
+    }
 }
 ```
 
@@ -96,16 +108,17 @@ message G2CUserInfoResponse {
 enum ErrorCode {
     ERROR_CODE_SUCCESS = 0;              // 成功
     ERROR_CODE_SYSTEM_ERROR = 1;         // 系统错误
-    ERROR_CODE_INVALID_PARAMS = 2;       // 无效参数
+    ERROR_CODE_INVALID_PARAM = 2;        // 无效参数
     ERROR_CODE_INVALID_ACCOUNT = 3;      // 无效账号
-    ERROR_CODE_INVALID_PASSWORD = 4;     // 密码错误
+    ERROR_CODE_WRONG_PASSWORD = 4;       // 密码错误
     ERROR_CODE_ACCOUNT_EXISTS = 5;       // 账号已存在
-    ERROR_CODE_ACCOUNT_NOT_FOUND = 6;    // 账号不存在
+    ERROR_CODE_ACCOUNT_NOT_EXIST = 6;    // 账号不存在
     ERROR_CODE_TOKEN_INVALID = 7;        // 无效的令牌
     ERROR_CODE_TOKEN_EXPIRED = 8;        // 令牌已过期
     ERROR_CODE_SERVER_BUSY = 9;          // 服务器繁忙
-    ERROR_CODE_VERSION_NOT_MATCH = 10;   // 版本不匹配
+    ERROR_CODE_VERSION_MISMATCH = 10;    // 版本不匹配
     ERROR_CODE_GATE_NOT_AVAILABLE = 11;  // 网关不可用
+    ERROR_CODE_DB_ERROR = 12;           // 数据库错误
 }
 ```
 

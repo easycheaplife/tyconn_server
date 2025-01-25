@@ -60,11 +60,6 @@ M.GET_ONLINE_USERS = [[
     AND last_login_time + 300 > %d
 ]]
 
-M.CHECK_NAME_EXISTS = [[
-    SELECT user_id 
-    FROM users 
-    WHERE name = '%s' 
-    LIMIT 1
-]]
+M.CHECK_NAME_EXISTS = nil
 
 return M 
