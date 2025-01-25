@@ -38,12 +38,13 @@ function M.create_user(user)
     logger.debug("Creating user: %s", table.concat({
         account = user.account,
         username = user.username,
-        name = user.name
+        name = user.name or ""
     }, ", "))
     
     return transaction(function()
         -- 检查用户是否已存在
-        local query = string.format(sql.CHECK_USER_EXISTS, mysql.escape(user.username))
+        local query = string.format(sql.GET_USER_BY_USERNAME, 
+            mysql.escape(user.username))
         log_sql(query)
         
         local ok, results = pcall(mysql.query, query)
@@ -61,12 +62,13 @@ function M.create_user(user)
         query = string.format(sql.CREATE_USER,
             mysql.escape(user.account),
             mysql.escape(user.username),
-            mysql.escape(user.name),
-            user.gender,
-            user.job,
-            user.level,
-            user.exp,
-            user.create_time
+            mysql.escape(user.name or ""),  -- 确保name有默认值
+            user.gender or 0,               -- 确保gender有默认值
+            user.job or 0,                  -- 确保job有默认值
+            user.level or 1,                -- 确保level有默认值
+            user.exp or 0,                  -- 确保exp有默认值
+            user.create_time or os.time(),  -- 确保create_time有默认值
+            user.last_login or os.time()    -- 确保last_login有默认值
         )
         log_sql(query)
         
@@ -77,7 +79,8 @@ function M.create_user(user)
         end
         
         -- 获取创建的用户信息
-        query = string.format(sql.GET_USER_BY_ACCOUNT, mysql.escape(user.account))
+        query = string.format(sql.GET_USER_BY_ACCOUNT, 
+            mysql.escape(user.account))
         log_sql(query)
         
         ok, results = pcall(mysql.query, query)
@@ -164,7 +167,7 @@ end
 
 -- 获取用户总数
 function M.get_total_users()
-    local query = "SELECT COUNT(*) as count FROM users"
+    local query = string.format(sql.GET_TOTAL_USERS)
     local ok, results = pcall(db_util.query, query)
     if not ok then
         logger.error("Failed to get total users: %s", results)
@@ -175,11 +178,7 @@ end
 
 -- 获取最近用户
 function M.get_recent_users()
-    local query = [[
-        SELECT * FROM users 
-        ORDER BY last_login_time DESC 
-        LIMIT 10
-    ]]
+    local query = string.format(sql.GET_RECENT_USERS)
     local ok, results = pcall(db_util.query, query)
     if not ok then
         logger.error("Failed to get recent users: %s", results)
@@ -190,10 +189,7 @@ end
 
 -- 获取在线用户数
 function M.get_online_users()
-    local query = string.format([[
-        SELECT COUNT(*) as count FROM users 
-        WHERE last_login_time > %d AND last_login_time + 300 > %d
-    ]], os.time() - 300, os.time())
+    local query = string.format(sql.GET_ONLINE_USERS, os.time() - 300, os.time())
     
     local ok, results = pcall(db_util.query, query)
     if not ok then

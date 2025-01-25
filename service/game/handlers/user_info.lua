@@ -5,6 +5,7 @@ local message_util = require "game.utils.message"
 local jwt = require "jwt"
 local cluster = require "skynet.cluster"
 local name_generator = require "game.utils.name_generator"
+local utils = require "utils"
 
 local M = {}
 
@@ -58,13 +59,16 @@ function M.handle(client_id, msg)
         local user = {
             account = claims.account,
             username = name_generator.generate_username(),
-            name = request.name,
-            gender = request.gender,
-            job = request.job,
+            name = request.name or "",
+            gender = request.gender or 0,
+            job = request.job or 0,
             level = 1,
             exp = 0,
-            create_time = os.time()
+            create_time = os.time(),
+            last_login = os.time()
         }
+        
+        logger.debug("Creating new user: %s", utils.table_to_string(user))
         
         -- 调用数据库服务创建用户
         local ok, success, err = pcall(cluster.call, "db_proxy", "@db_proxy", "create_user", user)

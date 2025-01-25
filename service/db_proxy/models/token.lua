@@ -1,6 +1,6 @@
 local skynet = require "skynet"
 local logger = require "logger"
-local sql = require "db_proxy.sql.user"
+local sql = require "db_proxy.sql.token"
 local db_util = require "db_proxy.utils.db_util"
 local cache = require "db_proxy.cache.cache"
 local const = require "db_proxy.const"
