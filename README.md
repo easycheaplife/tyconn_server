@@ -26,26 +26,19 @@ TyConn是一个基于Skynet的游戏服务器框架,提供基础的游戏服务�
 
 ```bash
 # 克隆仓库
-git clone https://github.com/yourusername/tyconn.git
-cd tyconn
-
-# 安装依赖
-make
+git clone git@github.com:easycheaplife/tyconn_server.git
+cd tyconn_server
 ```
 
 ### 配置
 
-1. 复制配置文件
-```bash
-cp etc/config.example.lua etc/config.lua
-```
-
-2. 修改配置
+1. 修改配置
 ```lua
--- etc/config.lua
-mysql_host = "127.0.0.1"
-mysql_user = "root"
-mysql_password = "your_password"
+-- etc/config/mysql.lua
+host = "127.0.0.1"
+user = "root"
+password = "123456"
+database = "tyconn"
 ```
 
 ### 运行
