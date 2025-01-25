@@ -69,7 +69,7 @@ function M.handle(client_id, msg)
         logger.debug("Creating new user: %s", utils.table_to_string(user))
         
         -- 调用数据库服务创建用户
-        local ok, success, err = pcall(cluster.call, "db_proxy", "@db_proxy", "create_user", user)
+        local ok, success, err, is_new = pcall(cluster.call, "db_proxy", "@db_proxy", "create_user", user)
         if not ok then
             logger.error("Failed to create user: %s", success)
             return message_util.create_error_response(base_request.session,
@@ -80,7 +80,7 @@ function M.handle(client_id, msg)
         if success then
             user_response = {
                 user = err,
-                is_new = true
+                is_new = is_new or true  -- 确保新创建的用户 is_new 为 true
             }
         else
             logger.error("Failed to create user: %s", err)

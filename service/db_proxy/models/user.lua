@@ -91,7 +91,7 @@ function M.create_user(user)
             return false, "Database error"
         end
         
-        return true, results[1]
+        return true, results[1], true  -- 添加第三个返回值表示是新用户
     end)
 end
 
@@ -102,7 +102,8 @@ function M.get_user(account)
     if cached_user then
         return {
             success = true,
-            user = cached_user
+            user = cached_user,
+            is_new = false  -- 缓存中的用户一定不是新用户
         }
     end
     
@@ -127,7 +128,8 @@ function M.get_user(account)
     
     return {
         success = true,
-        user = results[1]  -- 如果用户不存在，这里会是 nil
+        user = results[1],  -- 如果用户不存在，这里会是 nil
+        is_new = false     -- 已存在的用户不是新用户
     }
 end
 
