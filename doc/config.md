@@ -14,6 +14,9 @@ export MYSQL_DATABASE="tyconn"      # 数据库名
 
 ### 2. 服务器配置
 ```bash
+# 服务器地址(用于客户端连接,默认127.0.0.1)
+export SERVER_HOST="127.0.0.1"
+
 # 日志配置
 export LOG_LEVEL=1                  # 日志级别(1:DEBUG,2:INFO,3:WARN,4:ERROR,5:FATAL)
 

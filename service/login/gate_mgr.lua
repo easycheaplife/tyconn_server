@@ -93,6 +93,11 @@ function M.cleanup_timeout(timeout)
     end
 end
 
+-- 获取服务器地址
+function M.get_server_host()
+    return os.getenv("SERVER_HOST") or "127.0.0.1"
+end
+
 -- 选择网关服务器
 function M.select_server()
     local available_gates = {}
@@ -144,7 +149,7 @@ function M.get_addr(gate_node)
     end
     
     return {
-        host = gate_info.host,
+        host = M.get_server_host(),
         port = gate_info.port
     }
 end
