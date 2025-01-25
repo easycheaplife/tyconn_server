@@ -6,7 +6,7 @@ const config = require('../config/config');
 class LoginTest {
     constructor(root) {
         this.root = root;
-        this.wsClient = new WSClient(config.loginServer);
+        this.client = new WSClient(config.loginServer);
         this.responseHandler = new ResponseHandler(root);
     }
 
@@ -14,7 +14,7 @@ class LoginTest {
         try {
             // 连接服务器
             console.log('正在连接登录服务器:', config.loginServer);
-            await this.wsClient.connect();
+            await this.client.connect();
             console.log('连接登录服务器成功');
 
             // 发送登录请求
@@ -25,10 +25,10 @@ class LoginTest {
                 config.password
             );
             
-            this.wsClient.send(loginRequest);
+            this.client.send(loginRequest);
 
             // 等待并处理响应
-            const responseData = await this.wsClient.waitForMessage();
+            const responseData = await this.client.waitForMessage();
             const loginResponse = this.responseHandler.handleLoginResponse(responseData);
 
             if (!loginResponse || !loginResponse.token) {
@@ -43,7 +43,7 @@ class LoginTest {
             console.error('测试失败:', err);
             process.exit(1);
         } finally {
-            this.wsClient.close();
+            this.client.close();
         }
     }
 }

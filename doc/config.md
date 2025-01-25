@@ -17,8 +17,15 @@ export MYSQL_DATABASE="tyconn"      # 数据库名
 # 服务器地址(用于客户端连接,默认127.0.0.1)
 export SERVER_HOST="127.0.0.1"
 
+# WebSocket协议(ws或wss,默认ws)
+export WS_PROTOCOL="ws"
+
 # 日志配置
 export LOG_LEVEL=1                  # 日志级别(1:DEBUG,2:INFO,3:WARN,4:ERROR,5:FATAL)
+
+# SSL配置(使用wss时需要)
+export SSL_KEY_FILE="cert/server.key"   # SSL私钥文件路径
+export SSL_CERT_FILE="cert/server.crt"  # SSL证书文件路径
 
 # JWT配置
 export JWT_SECRET="your_jwt_secret_key" # JWT密钥

@@ -8,6 +8,19 @@
 - WebSocket
 - Protocol Buffers
 
+### 2. SSL测试说明
+当使用wss协议进行测试时，如果使用自签名证书，需要设置以下环境变量：
+```bash
+# 忽略SSL证书验证(仅用于测试环境)
+export NODE_TLS_REJECT_UNAUTHORIZED=0
+```
+或在测试配置中设置:
+```javascript
+ssl: {
+    rejectUnauthorized: false
+}
+```
+
 ### 2. 安装依赖
 ```bash
 cd test

@@ -1,4 +1,5 @@
 const WebSocket = require('ws');
+const config = require('../config/config');
 
 class WSClient {
     constructor(url) {
@@ -8,7 +9,10 @@ class WSClient {
 
     async connect() {
         return new Promise((resolve, reject) => {
-            this.ws = new WebSocket(this.url);
+            // 从配置文件读取WebSocket选项
+            const wsOptions = config.ssl || {};
+
+            this.ws = new WebSocket(this.url, wsOptions);
             this.ws.on('open', () => resolve(this.ws));
             this.ws.on('error', reject);
         });

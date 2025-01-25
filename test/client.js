@@ -18,8 +18,12 @@ async function main() {
         const heartbeatTest = new HeartbeatTest(root, loginResponse);
         await heartbeatTest.start();
 
-    } catch (err) {
-        console.error('测试失败:', err);
+        console.log('测试完成');
+    } catch (error) {
+        console.error('测试失败:', error.message);
+        if (error.stack) {
+            console.error(error.stack);
+        }
         process.exit(1);
     }
 }
