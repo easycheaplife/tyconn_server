@@ -25,23 +25,19 @@ M.GET_USER_BY_USERNAME = [[
 
 M.CREATE_USER = [[
     INSERT INTO users (
-        account, username, name, gender, 
-        job, level, exp, create_time, 
-        last_login_time
+        account, username, level, exp,
+        vip_level, create_time, last_login_time
     ) VALUES (
-        '%s', '%s', '%s', %d, 
-        %d, %d, %d, %d, 
-        %d
+        '%s', '%s', %d, %d,
+        %d, %d, %d
     )
 ]]
 
 M.UPDATE_USER = [[
     UPDATE users SET 
-        name = '%s',
         level = %d,
         exp = %d,
-        job = %d,
-        gender = %d,
+        vip_level = %d,
         last_login_time = %d
     WHERE account = '%s'
 ]]

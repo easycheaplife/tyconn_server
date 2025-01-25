@@ -51,19 +51,17 @@ function M.handle(client_id, msg)
         is_new = false
     }
     
-    -- 如果用户不存在且提供了创建信息，则创建用户
-    if not user_response.user and request.name and request.gender and request.job then
-        logger.debug("Creating new user with name: %s", request.name)
+    -- 如果用户不存在，则创建用户
+    if not user_response.user then
+        logger.debug("Creating new user for account: %s", claims.account)
         
         -- 创建用户数据
         local user = {
             account = claims.account,
             username = name_generator.generate_username(),
-            name = request.name or "",
-            gender = request.gender or 0,
-            job = request.job or 0,
             level = 1,
             exp = 0,
+            vip_level = 0,
             create_time = os.time(),
             last_login = os.time()
         }

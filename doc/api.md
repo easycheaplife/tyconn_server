@@ -128,6 +128,35 @@ WebSocket: ws://game_server:8031
 }
 ```
 
+## 用户信息
+
+### 获取用户信息
+
+**请求**
+```javascript
+{
+    "token": "string"    // JWT令牌
+}
+```
+
+**响应**
+```javascript
+{
+    "code": 0,          // 错误码
+    "message": "string", // 错误信息
+    "user": {
+        "user_id": "int64",     // 用户ID
+        "username": "string",    // 用户名
+        "level": "int32",       // 等级
+        "exp": "int64",         // 经验值
+        "vip_level": "int32",   // VIP等级
+        "create_time": "int64", // 创建时间
+        "login_time": "int64"   // 最后登录时间
+    },
+    "is_new": "bool"    // 是否是新创建的用户
+}
+```
+
 ## 错误码说明
 
 | 错误码 | 说明 | 处理建议 |

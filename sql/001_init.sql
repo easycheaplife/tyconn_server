@@ -12,15 +12,13 @@ CREATE TABLE IF NOT EXISTS users (
     user_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     account VARCHAR(64) NOT NULL,
     username VARCHAR(32) NOT NULL,
-    name VARCHAR(32),
     level INT DEFAULT 1,
-    gender INT,
-    job INT,
     exp BIGINT DEFAULT 0,
+    vip_level INT DEFAULT 0,
     create_time BIGINT,
     last_login_time BIGINT,
     INDEX idx_account (account),
-    INDEX idx_name (name)
+    INDEX idx_username (username)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 用户令牌表

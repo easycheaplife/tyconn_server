@@ -37,8 +37,7 @@ end
 function M.create_user(user)
     logger.debug("Creating user: %s", table.concat({
         account = user.account,
-        username = user.username,
-        name = user.name or ""
+        username = user.username
     }, ", "))
     
     return transaction(function()
@@ -62,13 +61,11 @@ function M.create_user(user)
         query = string.format(sql.CREATE_USER,
             mysql.escape(user.account),
             mysql.escape(user.username),
-            mysql.escape(user.name or ""),  -- 确保name有默认值
-            user.gender or 0,               -- 确保gender有默认值
-            user.job or 0,                  -- 确保job有默认值
-            user.level or 1,                -- 确保level有默认值
-            user.exp or 0,                  -- 确保exp有默认值
-            user.create_time or os.time(),  -- 确保create_time有默认值
-            user.last_login or os.time()    -- 确保last_login有默认值
+            user.level or 1,
+            user.exp or 0,
+            user.vip_level or 0,
+            user.create_time or os.time(),
+            user.last_login or os.time()
         )
         log_sql(query)
         
@@ -141,11 +138,9 @@ function M.update_user(user)
     end
     
     local query = string.format(sql.UPDATE_USER,
-        mysql.escape(user.name),
         user.level,
         user.exp,
-        user.job,
-        user.gender,
+        user.vip_level,
         os.time(),
         mysql.escape(user.account)
     )

@@ -55,13 +55,27 @@ class ResponseHandler {
         }
 
         const userInfoResponse = ProtoHelper.decodeMessage(
-            this.root, 
-            'command.G2CUserInfoResponse', 
+            this.root,
+            'command.G2CUserInfoResponse',
             baseResponse.payload
         );
 
-        console.log('User info response:', userInfoResponse);
-        return userInfoResponse;
+        if (userInfoResponse.code === 0) {
+            console.log('\n用户信息:', {
+                user_id: userInfoResponse.user.user_id,
+                username: userInfoResponse.user.username,
+                level: userInfoResponse.user.level,
+                exp: userInfoResponse.user.exp,
+                vip_level: userInfoResponse.user.vip_level,
+                create_time: userInfoResponse.user.create_time,
+                login_time: userInfoResponse.user.login_time
+            });
+            console.log('是否新用户:', userInfoResponse.is_new);
+            return userInfoResponse;
+        } else {
+            console.log('\n获取用户信息失败:', userInfoResponse.message);
+            return null;
+        }
     }
 
     handleHeartbeatResponse(data) {

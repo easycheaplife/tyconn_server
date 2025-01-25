@@ -11,7 +11,7 @@ class GetUserInfoBuilder {
 
         const session = {
             sequence: 1,
-            messageId: messageId.values["C2G_USER_INFO_REQUEST"] || 7, // 获取用户信息
+            messageId: messageId.values["C2G_USER_INFO_REQUEST"] || 7,
             timestamp: Date.now(),
             version: config.version
         };

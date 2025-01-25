@@ -36,9 +36,6 @@ message G2CHeartbeat {
 // 获取用户信息请求
 message C2GUserInfoRequest {
     string token = 1;       // JWT令牌
-    string name = 2;        // 角色名（可选，用于创建角色）
-    int32 gender = 3;       // 性别（可选，用于创建角色）
-    int32 job = 4;          // 职业（可选，用于创建角色）
 }
 
 // 获取用户信息响应

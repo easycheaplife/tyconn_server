@@ -37,6 +37,21 @@ function CMD.start(conf)
     return true
 end
 
+-- 更新用户信息
+function CMD.update_user(user)
+    if not user or not user.account then
+        return false, "Invalid user info"
+    end
+    
+    local ok, err = user_model.update_user(user)
+    if not ok then
+        logger.error("Failed to update user: %s", err)
+        return false, err
+    end
+    
+    return true
+end
+
 -- 初始化命令管理器
 function M.init()
     -- 注册消息处理函数

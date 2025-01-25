@@ -5,12 +5,9 @@ package common;
 message UserInfo {
     int64 user_id = 1;      // 用户ID
     string username = 2;     // 用户名
-    string name = 3;        // 角色名
-    int32 level = 4;        // 等级
-    int32 gender = 5;       // 性别
-    int32 job = 6;         // 职业
-    int64 exp = 7;         // 经验值
-    int32 vip_level = 8;   // VIP等级
-    int64 create_time = 9;  // 创建时间
-    int64 login_time = 10;  // 最后登录时间
+    int32 level = 3;        // 等级
+    int64 exp = 4;         // 经验值
+    int32 vip_level = 5;   // VIP等级
+    int64 create_time = 6;  // 创建时间
+    int64 login_time = 7;  // 最后登录时间
 } 
