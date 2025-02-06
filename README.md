@@ -20,7 +20,6 @@ TyConn是一个基于Skynet的游戏服务器框架,提供基础的游戏服务�
 - Linux/MacOS
 - Lua 5.3+
 - MySQL 5.7+
-- Redis 5.0+
 
 ### 安装
 
@@ -28,6 +27,8 @@ TyConn是一个基于Skynet的游戏服务器框架,提供基础的游戏服务�
 # 克隆仓库
 git clone git@github.com:easycheaplife/tyconn_server.git
 cd tyconn_server
+git clone https://github.com/cloudwu/skynet.git
+ln -s skynet/skynet ./skynet
 ```
 
 ### 配置
@@ -74,11 +75,3 @@ npm install
 # 运行测试
 npm test
 ```
-
-## 贡献
-
-欢迎提交Issue和Pull Request。
-
-## 许可证
-
-[MIT](LICENSE)
