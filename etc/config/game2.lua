@@ -18,4 +18,4 @@ jwt_expire = 3600
 -- 日志配置
 LOG_LEVEL = 1
 
-heartbeat_timeout = 180
+heartbeat_timeout = 180  -- 与 game1.lua 保持一致

@@ -11,7 +11,7 @@ class HeartbeatBuilder {
 
         const session = {
             sequence: 1,
-            messageId: messageId.values["C2G_HEARTBEAT"] || 5, // 心跳请求
+            messageId: messageId.values["C2G_HEARTBEAT"] || 3, // 更新为3，原来是5
             timestamp: Date.now(),
             version: config.version
         };

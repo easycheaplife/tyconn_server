@@ -81,7 +81,7 @@ message C2GUserInfoRequest {
 ```javascript
 {
     "session": {
-        "messageId": 8,  // G2C_USER_INFO_RESPONSE
+        "messageId": 6,  // G2C_USER_INFO_RESPONSE
         "sequence": 1,
         "timestamp": 1648888889
     },
@@ -148,17 +148,19 @@ enum ErrorCode {
 ```mermaid
 sequenceDiagram
     participant C as Client
+    participant N as Nginx
     participant L as Login Server
     participant G as Gate Server
     
-    C->>L: 1. 登录请求(账号密码)
-    L->>L: 2. 验证账号密码
-    L->>L: 3. 生成Token
-    L->>L: 4. 选择网关
-    L-->>C: 5. 返回Token和网关地址
-    C->>G: 6. 连接网关(Token)
-    G->>G: 7. 验证Token
-    G-->>C: 8. 连接成功
+    C->>N: 1. 登录请求
+    N->>L: 2. 转发到登录服务器
+    L->>L: 3. 验证账号密码
+    L->>L: 4. 生成Token
+    L->>L: 5. 选择最优网关
+    L-->>C: 6. 返回Token和网关地址
+    C->>G: 7. 直接连接网关(Token)
+    G->>G: 8. 验证Token
+    G-->>C: 9. 连接成功
 ```
 
 ### 心跳机制
@@ -191,4 +193,16 @@ sequenceDiagram
     DB-->>GM: 6. 返回用户数据
     GM-->>G: 7. 返回用户信息
     G-->>C: 8. 返回响应
-``` 
+```
+
+## 服务器端口说明
+
+- 登录服务器: 8021 (WebSocket)
+- 游戏网关: 8031, 8032 (WebSocket)
+- HTTP代理: 8010 (HTTP/WS)
+- HTTPS代理: 8011 (HTTPS/WSS)
+- 集群内部通信:
+  - 数据库代理: 12001
+  - 登录服务器: 13001  
+  - 游戏服务器: 14001, 14002
+  - 网关服务器: 15001, 15002 

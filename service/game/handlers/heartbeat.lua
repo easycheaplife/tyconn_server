@@ -31,7 +31,7 @@ function M.handle(client_id, msg)
         pb.encode("command.G2CHeartbeat", heartbeat_response))
     
     -- 设置正确的响应消息ID
-    base_response.session.messageId = pb.enum("common.MessageID", "G2C_HEARTBEAT")
+    base_response.session.messageId = pb.enum("common.MessageID", "G2C_HEARTBEAT")  -- 消息ID=4
     
     -- 编码并返回响应
     return pb.encode("common.BaseResponse", base_response)
