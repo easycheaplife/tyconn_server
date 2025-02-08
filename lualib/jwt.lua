@@ -1,5 +1,7 @@
 local cjson = require "cjson"
 local crypt = require "skynet.crypt"
+local logger = require "logger"
+local utils = require "utils"
 
 local jwt = {}
 
@@ -93,6 +95,8 @@ function jwt.decode(token, key, verify)
     if not ok then
         return nil, "Invalid claims"
     end
+    
+    logger.debug("Decoded token claims: %s", utils.table_to_string(claims))
     
     -- 验证签名
     if verify then

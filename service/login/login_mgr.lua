@@ -2,6 +2,7 @@ local skynet = require "skynet"
 local logger = require "logger"
 local jwt = require "jwt"
 local cluster = require "skynet.cluster"
+local utils = require "utils"
 
 local M = {}
 local config = {}
@@ -89,7 +90,7 @@ function M.verify_account(account, password)
     -- 目前简化处理，只验证测试账号
     if account:match("^test") then
         return {
-            account = account
+            account = account,
         }
     end
     return nil
@@ -100,10 +101,13 @@ function M.generate_token(user_info)
     -- 设置token有效期
     local claims = {
         account = user_info.account,
+        user_id = user_info.user_id,  -- 确保包含user_id
         iss = "tyconn_login",
         exp = os.time() + config.jwt_expire,
         iat = os.time()
     }
+    
+    logger.debug("Generating token with claims: %s", utils.table_to_string(claims))
     
     local ok, token = pcall(jwt.encode, claims, config.jwt_secret)
     if not ok then

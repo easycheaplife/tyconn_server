@@ -4,9 +4,9 @@ const HeartbeatBuilder = require('../builders/heartbeat_builder');
 const config = require('../config/config');
 
 class HeartbeatTest {
-    constructor(root, token) {
+    constructor(root, loginResponse) {
         this.root = root;
-        this.token = token;
+        this.loginResponse = loginResponse;  // 保存完整的登录响应
         this.wsClient = null;
         this.responseHandler = new ResponseHandler(root);
         this.intervalId = null;
@@ -17,7 +17,7 @@ class HeartbeatTest {
     async start() {
         try {
             // 使用登录返回的网关地址
-            const wsUrl = `ws://${this.token.ws_addr}:${this.token.ws_port}`;
+            const wsUrl = `ws://${this.loginResponse.ws_addr}:${this.loginResponse.ws_port}`;
             this.wsClient = new WSClient(wsUrl);
 
             // 连接服务器
@@ -28,14 +28,14 @@ class HeartbeatTest {
             // 启动心跳
             this.intervalId = setInterval(async () => {
                 try {
-                    // 检查心跳次数
-                    if (this.heartbeatCount >= this.MAX_HEARTBEAT) {
-                        console.log(`已完成 ${this.MAX_HEARTBEAT} 次心跳，停止测试`);
+                    this.heartbeatCount++;
+                    if (this.heartbeatCount > this.MAX_HEARTBEAT) {
                         this.stop();
                         return;
                     }
 
-                    const request = HeartbeatBuilder.build(this.root);
+                    console.log(`发送第 ${this.heartbeatCount} 次心跳...`);
+                    const request = HeartbeatBuilder.build(this.root, this.loginResponse);
                     this.wsClient.send(request);
 
                     const responseData = await this.wsClient.waitForMessage();
@@ -44,9 +44,6 @@ class HeartbeatTest {
                     if (!response) {
                         console.log('心跳失败');
                         this.stop();
-                    } else {
-                        this.heartbeatCount++;
-                        console.log(`完成第 ${this.heartbeatCount}/${this.MAX_HEARTBEAT} 次心跳`);
                     }
                 } catch (err) {
                     console.error('心跳错误:', err);

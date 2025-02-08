@@ -24,7 +24,7 @@ message S2LLoginResponse {
 // 心跳请求
 message C2GHeartbeat {
     int64 timestamp = 1;    // 时间戳
-    int32 clientId = 2;     // 客户端ID
+    string token = 2;       // JWT令牌,用于身份验证
 }
 
 // 心跳响应

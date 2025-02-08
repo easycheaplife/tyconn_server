@@ -5,17 +5,17 @@ local cmd_mgr = require "game.cmd_mgr"
 
 -- 心跳相关配置
 local heartbeat_timeout = tonumber(skynet.getenv("heartbeat_timeout")) or 180  -- 默认180秒超时
-_G.client_heartbeats = {}  -- 记录客户端最后心跳时间，全局可访问
+_G.client_heartbeats = {}  -- 记录用户最后心跳时间，全局可访问
 
 -- 检查心跳超时
 local function check_heartbeat_timeout()
     local now = os.time()
-    for client_id, last_time in pairs(_G.client_heartbeats) do
+    for user_id, last_time in pairs(_G.client_heartbeats) do
         if now - last_time > heartbeat_timeout then
-            logger.warn("Client %d heartbeat timeout, disconnecting...", client_id)
-            -- 通知网关断开客户端连接
-            skynet.send(".gate", "lua", "disconnect", client_id)
-            _G.client_heartbeats[client_id] = nil
+            logger.warn("User %d heartbeat timeout, disconnecting...", user_id)
+            -- 通知网关断开用户连接
+            skynet.send(".gate", "lua", "disconnect_user", user_id)
+            _G.client_heartbeats[user_id] = nil
         end
     end
 end
