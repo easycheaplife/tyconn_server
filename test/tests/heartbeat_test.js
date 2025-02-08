@@ -4,28 +4,32 @@ const HeartbeatBuilder = require('../builders/heartbeat_builder');
 const config = require('../config/config');
 
 class HeartbeatTest {
-    constructor(root, loginResponse) {
+    constructor(root, ws_addr, ws_port) {
         this.root = root;
-        this.loginResponse = loginResponse;  // 保存完整的登录响应
+        this.ws_addr = ws_addr;
+        this.ws_port = ws_port;
         this.wsClient = null;
         this.responseHandler = new ResponseHandler(root);
         this.intervalId = null;
-        this.heartbeatCount = 0;  // 心跳计数
-        this.MAX_HEARTBEAT = 3;   // 最大心跳次数
+        this.heartbeatCount = 0;
+        this.MAX_HEARTBEAT = 3;
     }
 
     async start() {
         try {
-            // 使用登录返回的网关地址
-            const wsUrl = `ws://${this.loginResponse.ws_addr}:${this.loginResponse.ws_port}`;
+            // 检查token是否存在
+            if (!global.token) {
+                throw new Error('No token available');
+            }
+
+            // 使用构造时传入的网关地址
+            const wsUrl = `ws://${this.ws_addr}:${this.ws_port}`;
             this.wsClient = new WSClient(wsUrl);
 
-            // 连接服务器
             console.log('正在连接网关服务器:', wsUrl);
             await this.wsClient.connect();
             console.log('连接成功，开始心跳...');
 
-            // 启动心跳
             this.intervalId = setInterval(async () => {
                 try {
                     this.heartbeatCount++;
@@ -35,7 +39,7 @@ class HeartbeatTest {
                     }
 
                     console.log(`发送第 ${this.heartbeatCount} 次心跳...`);
-                    const request = HeartbeatBuilder.build(this.root, this.loginResponse);
+                    const request = HeartbeatBuilder.build(this.root);
                     this.wsClient.send(request);
 
                     const responseData = await this.wsClient.waitForMessage();
@@ -49,7 +53,7 @@ class HeartbeatTest {
                     console.error('心跳错误:', err);
                     this.stop();
                 }
-            }, 5000); // 5秒一次心跳，加快测试速度
+            }, 5000);
 
         } catch (err) {
             console.error('测试失败:', err);
@@ -65,7 +69,6 @@ class HeartbeatTest {
         console.log('关闭心跳连接');
         this.wsClient.close();
 
-        // 如果是正常完成所有心跳，退出程序
         if (this.heartbeatCount >= this.MAX_HEARTBEAT) {
             console.log('心跳测试完成');
             process.exit(0);

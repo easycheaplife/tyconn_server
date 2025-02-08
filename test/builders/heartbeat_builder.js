@@ -2,9 +2,7 @@ const ProtoHelper = require('../lib/proto_helper');
 const config = require('../config/config');
 
 class HeartbeatBuilder {
-    static build(root, loginResponse) {
-        console.log('Building heartbeat with loginResponse:', loginResponse);
-
+    static build(root) {
         const messageId = root.lookup("common.MessageID");
         if (!messageId) {
             console.error("Available types:", ProtoHelper.listTypes(root));
@@ -20,10 +18,8 @@ class HeartbeatBuilder {
 
         const heartbeatRequest = {
             timestamp: Date.now(),
-            token: loginResponse.token
+            token: global.token  // 使用全局保存的token
         };
-
-        console.log('Heartbeat request:', heartbeatRequest);
 
         const payload = ProtoHelper.createMessage(root, "command.C2GHeartbeat", heartbeatRequest);
         
