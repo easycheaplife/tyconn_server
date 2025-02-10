@@ -102,8 +102,23 @@ class ResponseHandler {
             baseResponse.payload
         );
 
-        console.log('\n用户信息:', userInfoResponse.user);
-        console.log('是否新用户:', userInfoResponse.is_new);
+        // 打印完整的用户信息
+        console.log('\n用户信息:', {
+            code: userInfoResponse.code,
+            message: userInfoResponse.message,
+            user: {
+                user_id: userInfoResponse.user.user_id.toString(),
+                username: userInfoResponse.user.username,
+                level: userInfoResponse.user.level,
+                exp: userInfoResponse.user.exp.toString(),
+                vip_level: userInfoResponse.user.vip_level,
+                create_time: userInfoResponse.user.create_time ? 
+                    new Date(Number(userInfoResponse.user.create_time) * 1000).toLocaleString() : 'N/A',
+                login_time: userInfoResponse.user.login_time ? 
+                    new Date(Number(userInfoResponse.user.login_time) * 1000).toLocaleString() : 'N/A'
+            },
+            is_new: userInfoResponse.is_new
+        });
 
         return userInfoResponse;
     }
