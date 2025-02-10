@@ -101,10 +101,9 @@ function M.generate_token(user_info)
     -- 设置token有效期
     local claims = {
         account = user_info.account,
-        user_id = user_info.user_id,  -- 确保包含user_id
         iss = "tyconn_login",
-        exp = os.time() + config.jwt_expire,
-        iat = os.time()
+        iat = os.time(),
+        exp = os.time() + config.jwt_expire
     }
     
     logger.debug("Generating token with claims: %s", utils.table_to_string(claims))

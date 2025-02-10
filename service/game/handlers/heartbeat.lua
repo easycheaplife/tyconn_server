@@ -41,22 +41,22 @@ function M.handle(client_id, msg)
             "Invalid token")
     end
 
-    -- 检查user_id
-    if not claims.user_id then
-        logger.error("Missing user_id in token claims: %s", utils.table_to_string(claims))
+    -- 检查账号
+    if not claims.account then
+        logger.error("Missing account in token claims: %s", utils.table_to_string(claims))
         return message_util.create_error_response(base_request.session,
             pb.enum("common.ErrorCode", "ERROR_CODE_TOKEN_INVALID"),
-            "Invalid token format: missing user_id")
+            "Invalid token format: missing account")
     end
 
     -- 更新用户最后心跳时间
     if not _G.client_heartbeats then
         _G.client_heartbeats = {}
     end
-    _G.client_heartbeats[claims.user_id] = os.time()
+    _G.client_heartbeats[claims.account] = os.time()
     
-    logger.debug("Updated heartbeat time for user %d: %d", 
-        claims.user_id, _G.client_heartbeats[claims.user_id])
+    logger.debug("Updated heartbeat time for account %s: %d", 
+        claims.account, _G.client_heartbeats[claims.account])
 
     -- 创建心跳响应
     local heartbeat_response = {
