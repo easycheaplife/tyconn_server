@@ -24,7 +24,7 @@ class ResponseHandler {
             }
 
             // 打印完整的响应信息
-            console.log(`\n[${msgType || 'Unknown'}] Base response:`, {
+            console.log(`\n[${msgType || 'Unknown'}] Base response:`, JSON.stringify({
                 session: {
                     messageId: baseResponse.session.messageId,
                     sequence: baseResponse.session.sequence,
@@ -44,7 +44,7 @@ class ResponseHandler {
                         }
                     })()
                 } : 'null'
-            }, null, 2);
+            }, null, 2));
 
             return baseResponse;
         } catch (err) {

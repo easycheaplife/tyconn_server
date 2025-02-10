@@ -6,6 +6,7 @@ local M = {}
 
 -- 解码基础请求
 function M.decode_request(msg)
+
     local ok, request = pcall(pb.decode, "common.BaseRequest", msg)
     if not ok then
         logger.error("Failed to decode base request: %s", request)
@@ -35,8 +36,11 @@ end
 -- 创建基础响应
 function M.create_base_response(session, errorCode, errorMsg, payload)
     -- 确保所有字段都有默认值
+    local new_session = session or M.create_session()
+    new_session.timestamp = os.time()  -- 更新时间戳
+    
     return {
-        session = session or M.create_session(),
+        session = new_session,
         errorCode = errorCode or 0,
         errorMsg = errorMsg or "",
         payload = payload or ""
