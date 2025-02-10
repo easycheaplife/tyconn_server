@@ -4,6 +4,7 @@ local pb = require "pb"
 local login_mgr = require "login.login_mgr"
 local gate_mgr = require "login.gate_mgr"
 local cluster = require "skynet.cluster"
+local message = require "message"
 
 local M = {}
 

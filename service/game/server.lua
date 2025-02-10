@@ -1,5 +1,6 @@
 local skynet = require "skynet"
 local logger = require "logger"
+local message = require "message"  -- 更新引用路径
 local message_mgr = require "game.message_mgr"
 local cmd_mgr = require "game.cmd_mgr"
 

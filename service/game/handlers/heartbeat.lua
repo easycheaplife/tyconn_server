@@ -1,7 +1,7 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
-local message_util = require "game.utils.message"
+local message = require "message"
 local jwt = require "jwt"
 local utils = require "utils"
 
@@ -28,7 +28,7 @@ function M.handle(client_id, msg)
     -- 验证token
     if not heartbeat.token then
         logger.error("Missing token in heartbeat request")
-        return message_util.create_error_response(base_request.session,
+        return message.create_error_response(base_request.session,
             pb.enum("common.ErrorCode", "ERROR_CODE_TOKEN_INVALID"),
             "Missing token")
     end
@@ -36,7 +36,7 @@ function M.handle(client_id, msg)
     local ok, claims = pcall(jwt.decode, heartbeat.token, skynet.getenv("jwt_secret"))
     if not ok or not claims then
         logger.error("Invalid token in heartbeat")
-        return message_util.create_error_response(base_request.session,
+        return message.create_error_response(base_request.session,
             pb.enum("common.ErrorCode", "ERROR_CODE_TOKEN_INVALID"),
             "Invalid token")
     end
@@ -44,7 +44,7 @@ function M.handle(client_id, msg)
     -- 检查账号
     if not claims.account then
         logger.error("Missing account in token claims: %s", utils.table_to_string(claims))
-        return message_util.create_error_response(base_request.session,
+        return message.create_error_response(base_request.session,
             pb.enum("common.ErrorCode", "ERROR_CODE_TOKEN_INVALID"),
             "Invalid token format: missing account")
     end
@@ -65,7 +65,7 @@ function M.handle(client_id, msg)
     }
 
     -- 创建基础响应
-    local base_response = message_util.create_base_response(
+    local base_response = message.create_base_response(
         base_request.session,
         0,
         "success",

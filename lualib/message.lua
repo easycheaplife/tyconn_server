@@ -6,7 +6,6 @@ local M = {}
 
 -- 解码基础请求
 function M.decode_request(msg)
-
     local ok, request = pcall(pb.decode, "common.BaseRequest", msg)
     if not ok then
         logger.error("Failed to decode base request: %s", request)

@@ -1,7 +1,7 @@
 local skynet = require "skynet"
 local pb = require "pb"
 local logger = require "logger"
-local message_util = require "game.utils.message"
+local message = require "message"
 local jwt = require "jwt"
 local cluster = require "skynet.cluster"
 local name_generator = require "game.utils.name_generator"
@@ -31,7 +31,7 @@ function M.handle(client_id, msg)
     local ok, claims = pcall(jwt.decode, request.token, skynet.getenv("jwt_secret"))
     if not ok or not claims then
         logger.error("Failed to decode token: %s", claims)
-        return message_util.create_error_response(base_request.session, 
+        return message.create_error_response(base_request.session, 
             pb.enum("common.ErrorCode", "ERROR_CODE_TOKEN_INVALID"), 
             "Invalid token")
     end
@@ -40,7 +40,7 @@ function M.handle(client_id, msg)
     local ok, response = pcall(cluster.call, "db_proxy", "@db_proxy", "get_user", claims.account)
     if not ok then
         logger.error("Failed to get user for account %s: %s", claims.account, response)
-        return message_util.create_error_response(base_request.session,
+        return message.create_error_response(base_request.session,
             pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"),
             "Database error")
     end
@@ -72,7 +72,7 @@ function M.handle(client_id, msg)
         local ok, success, err, is_new = pcall(cluster.call, "db_proxy", "@db_proxy", "create_user", user)
         if not ok then
             logger.error("Failed to create user: %s", success)
-            return message_util.create_error_response(base_request.session,
+            return message.create_error_response(base_request.session,
                 pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"),
                 success or "创建用户失败")
         end
@@ -84,14 +84,14 @@ function M.handle(client_id, msg)
             }
         else
             logger.error("Failed to create user: %s", err)
-            return message_util.create_error_response(base_request.session,
+            return message.create_error_response(base_request.session,
                 pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"),
                 err or "创建用户失败")
         end
     end
     
     -- 创建基础响应
-    local base_response = message_util.create_base_response(base_request.session,
+    local base_response = message.create_base_response(base_request.session,
         pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
         "Success",
         pb.encode("command.G2CUserInfoResponse", user_response))
