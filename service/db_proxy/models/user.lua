@@ -34,6 +34,8 @@ function M.create_user(user)
         return false, "Username already exists"
     end
     
+    local current_time = os.time()
+    
     -- 插入新用户
     query = string.format(sql.CREATE_USER,
         mysql.escape(user.account),
@@ -41,8 +43,8 @@ function M.create_user(user)
         user.level or 1,
         user.exp or 0,
         user.vip_level or 0,
-        user.create_time or os.time(),
-        user.last_login_time or os.time()
+        current_time,  -- create_time
+        current_time   -- last_login_time
     )
     log_sql(query)
     
@@ -77,7 +79,7 @@ function M.get_user(account)
         return {
             success = true,
             user = cached_user,
-            is_new = false  -- 缓存中的用户一定不是新用户
+            is_new = false
         }
     end
     
@@ -86,9 +88,10 @@ function M.get_user(account)
     local query = string.format(sql.GET_USER_BY_ACCOUNT, mysql.escape(account))
     log_sql(query)
     
-    local ok, results = pcall(mysql.query, query)
-    if not ok then
-        logger.error("Failed to get user: %s", results)
+    -- 使用 db_util.query 替代 pcall(mysql.query)
+    local results = db_util.query(query)
+    if not results then
+        logger.error("Failed to get user for account: %s", account)
         return {
             success = false,
             error = "Database error"
@@ -97,13 +100,24 @@ function M.get_user(account)
     
     -- 更新缓存
     if results[1] then
-        cache.set_user(account, results[1])
+        -- 确保时间字段正确
+        local user = results[1]
+        if user.last_login_time then
+            user.login_time = user.last_login_time
+            user.last_login_time = nil
+        end
+        cache.set_user(account, user)
+        return {
+            success = true,
+            user = user,
+            is_new = false
+        }
     end
     
     return {
         success = true,
-        user = results[1],  -- 如果用户不存在，这里会是 nil
-        is_new = false     -- 已存在的用户不是新用户
+        user = nil,
+        is_new = false
     }
 end
 
@@ -117,23 +131,21 @@ function M.update_user(user)
         user.level,
         user.exp,
         user.vip_level,
-        os.time(),
+        os.time(),  -- 更新 last_login_time
         mysql.escape(user.account)
     )
     log_sql(query)
     
-    local ok, results = pcall(mysql.query, query)
+    local ok = db_util.query(query)
     if not ok then
-        logger.error("Failed to update user: %s", results)
+        logger.error("Failed to update user: %s", err)
         return false, "Database error"
     end
     
-    -- 更新缓存
-    if ok then
-        cache.remove_user(user.account)
-    end
+    -- 清除缓存，强制下次重新加载
+    cache.remove_user(user.account)
     
-    return ok
+    return true
 end
 
 -- 获取用户总数

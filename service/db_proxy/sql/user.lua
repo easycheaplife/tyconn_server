@@ -6,19 +6,44 @@ local M = {}
 
 -- 用户相关SQL
 M.GET_USER_BY_ID = [[
-    SELECT * FROM users 
+    SELECT 
+        user_id,
+        username,
+        level,
+        exp,
+        vip_level,
+        create_time,
+        last_login_time as login_time
+    FROM users 
     WHERE user_id = %d 
     LIMIT 1
 ]]
 
 M.GET_USER_BY_ACCOUNT = [[
-    SELECT * FROM users 
+    SELECT 
+        user_id,
+        username,
+        level,
+        exp,
+        vip_level,
+        create_time,
+        last_login_time,
+        last_login_time as login_time
+    FROM users 
     WHERE account = '%s' 
     LIMIT 1
 ]]
 
 M.GET_USER_BY_USERNAME = [[
-    SELECT * FROM users 
+    SELECT 
+        user_id,
+        username,
+        level,
+        exp,
+        vip_level,
+        create_time,
+        last_login_time as login_time
+    FROM users 
     WHERE username = '%s' 
     LIMIT 1
 ]]
