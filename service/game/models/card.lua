@@ -56,7 +56,7 @@ end
 -- 获取用户卡牌列表
 function M.get_user_cards(user_id)
     -- 先查缓存
-    local cached = cache.get_user_cards(user_id)
+    local cached = cache.card.get(user_id)
     if cached then
         return cached
     end
@@ -64,7 +64,7 @@ function M.get_user_cards(user_id)
     -- 查询数据库
     local cards = db_client.get_user_cards(user_id)
     if cards then
-        cache.set_user_cards(user_id, cards)
+        cache.card.set(user_id, cards)
     end
     
     return cards
@@ -107,7 +107,7 @@ function M.update_card(user_id, card_id, updates)
     end
     
     -- 更新缓存
-    cache.remove_user_cards(user_id)
+    cache.card.remove(user_id)
     
     return true
 end

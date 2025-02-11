@@ -3,8 +3,6 @@ local logger = require "logger"
 local mysql = require "db.mysql"
 local sql = require "db_proxy.sql.user"
 local db_util = require "db_proxy.utils.db_util"
-local cache = require "db_proxy.cache.cache"
-local const = require "db_proxy.const"
 
 local M = {}
 
@@ -65,58 +63,26 @@ function M.create_user(user)
         return false, "Database error"
     end
     
-    -- 更新缓存
-    cache.set_user(user.account, results[1])
-    
     return true, results[1], true
 end
 
 -- 获取用户信息
 function M.get_user(account)
-    -- 先查缓存
-    local cached_user = cache.get_user(account)
-    if cached_user then
-        return {
-            success = true,
-            user = cached_user,
-            is_new = false
-        }
-    end
-    
     logger.debug("Getting user with account: %s", account)
     
     local query = string.format(sql.GET_USER_BY_ACCOUNT, mysql.escape(account))
     log_sql(query)
     
-    -- 使用 db_util.query 替代 pcall(mysql.query)
     local results = db_util.query(query)
+    
     if not results then
         logger.error("Failed to get user for account: %s", account)
-        return {
-            success = false,
-            error = "Database error"
-        }
-    end
-    
-    -- 更新缓存
-    if results[1] then
-        -- 确保时间字段正确
-        local user = results[1]
-        if user.last_login_time then
-            user.login_time = user.last_login_time
-            user.last_login_time = nil
-        end
-        cache.set_user(account, user)
-        return {
-            success = true,
-            user = user,
-            is_new = false
-        }
+        return false, "Database error"
     end
     
     return {
         success = true,
-        user = nil,
+        user = results[1],
         is_new = false
     }
 end
@@ -142,10 +108,7 @@ function M.update_user(user)
         return false, "Database error"
     end
     
-    -- 清除缓存，强制下次重新加载
-    cache.remove_user(user.account)
-    
-    return true
+    return ok
 end
 
 -- 获取用户总数

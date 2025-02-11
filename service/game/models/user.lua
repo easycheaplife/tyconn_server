@@ -3,6 +3,7 @@ local cluster = require "skynet.cluster"
 local logger = require "logger"
 local utils = require "utils"
 local db_client = require "game.db_client"
+local cache = require "game.cache"
 
 local M = {}
 
@@ -71,9 +72,35 @@ function M.get_user_by_id(user_id)
     return users and users[1]
 end
 
+-- 获取用户信息
+function M.get_user(account)
+    -- 先查缓存
+    local cached_user = cache.user.get(account)
+    if cached_user then
+        return {
+            success = true,
+            user = cached_user,
+            is_new = false
+        }
+    end
+    
+    -- 查询数据库
+    local response = db_client.get_user(account)
+    if response and response.user then
+        cache.user.set(account, response.user)
+    end
+    
+    return response
+end
+
 -- 更新用户信息
 function M.update_user(user)
-    return db_client.update_user(user)
+    local ok = db_client.update_user(user)
+    if ok then
+        -- 更新成功后清除缓存
+        cache.user.remove(user.account)
+    end
+    return ok
 end
 
 -- 添加用户会话

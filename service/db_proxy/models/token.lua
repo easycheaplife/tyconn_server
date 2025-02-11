@@ -1,9 +1,8 @@
 local skynet = require "skynet"
 local logger = require "logger"
+local mysql = require "db.mysql"
 local sql = require "db_proxy.sql.token"
 local db_util = require "db_proxy.utils.db_util"
-local cache = require "db_proxy.cache.cache"
-local const = require "db_proxy.const"
 
 -- 续费配置
 local RENEW_CONFIG = {
@@ -51,7 +50,7 @@ local function check_and_renew(account, token_info)
     return false
 end
 
--- 同步token
+-- 创建或更新token
 function M.sync_token(token_info)
     -- 验证参数
     if not token_info then
@@ -102,10 +101,19 @@ function M.sync_token(token_info)
         return false
     end
     
-    -- 更新缓存
-    cache.set_token(token_info.account, token_info)
-    
     return true
+end
+
+-- 获取token
+function M.get_token(account)
+    local query = string.format(sql.GET_TOKEN, mysql.escape(account))
+    local results = db_util.query(query)
+    
+    if not results then
+        return nil
+    end
+    
+    return results[1]
 end
 
 -- 验证token
@@ -124,7 +132,7 @@ function M.verify_token(account, token)
     end
     
     -- 先查缓存
-    local cached_token = cache.get_token(account)
+    local cached_token = M.get_token(account)
     if cached_token then
         -- token不匹配，加入负缓存
         if cached_token.token ~= token then
@@ -139,8 +147,6 @@ function M.verify_token(account, token)
             check_and_renew(account, cached_token)
             return true
         else
-            cache.remove_token(account)
-            last_check_time[account] = nil
             -- 过期token加入负缓存
             negative_cache[account] = {
                 time = os.time(),
@@ -183,9 +189,6 @@ function M.verify_token(account, token)
     end
     
     check_and_renew(account, results[1])
-    
-    -- 更新缓存
-    cache.set_token(account, results[1])
     
     return true
 end
@@ -241,9 +244,6 @@ function M.renew_token(account, token, new_expire_time)
     -- 更新缓存
     local token_info = results[1]
     token_info.expire_time = new_expire_time
-    cache.set_token(account, token_info)
-    
-    logger.info("Successfully renewed token for account: %s", account)
     return true
 end
 
