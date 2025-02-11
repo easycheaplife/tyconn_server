@@ -2,6 +2,7 @@ local skynet = require "skynet"
 local cluster = require "skynet.cluster"
 local logger = require "logger"
 local utils = require "utils"
+local db_client = require "game.db_client"
 
 local M = {}
 
@@ -49,19 +50,13 @@ function M.create_user(username, password, nickname, avatar)
     local user = M.create_user_info(username, password, nickname)
     user.avatar = avatar or "default.png"
     
-    -- 调用数据库代理创建用户
-    local new_user, err = call_db("create_user", user)
-    if not new_user then
-        return nil, err or "创建用户失败"
-    end
-    
-    return new_user
+    -- 使用 db_client 创建用户
+    return db_client.create_user(user)
 end
 
 -- 根据用户名获取用户
 function M.get_user_by_username(username)
-    local users = call_db("get_user_by_username", username)
-    local user = users and users[1]
+    local user = db_client.get_user_by_username(username)
     if user then
         -- 确保时间戳是数字
         user.register_time = tonumber(user.register_time) or os.time()
@@ -78,7 +73,7 @@ end
 
 -- 更新用户信息
 function M.update_user(user)
-    return call_db("update_user", user)
+    return db_client.update_user(user)
 end
 
 -- 添加用户会话

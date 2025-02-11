@@ -5,6 +5,7 @@ local token_model = require "db_proxy.models.token"
 local sql = require "db_proxy.sql.init"
 local db_util = require "db_proxy.utils.db_util"
 local const = require "db_proxy.const"
+local card = require "db_proxy.models.card"
 
 local CMD = {}
 
@@ -77,6 +78,19 @@ end
 
 function CMD.renew_jwt(account, token, expire_time)
     return wrap_call(token_model.renew_token, account, token, expire_time)
+end
+
+-- 卡牌相关命令
+function CMD.batch_create_cards(cards)
+    return card.batch_create_cards(cards)
+end
+
+function CMD.get_user_cards(user_id)
+    return card.get_user_cards(user_id)
+end
+
+function CMD.update_card(card_info)
+    return card.update_card(card_info)
 end
 
 -- 服务入口
