@@ -24,7 +24,7 @@ class ResponseHandler {
             }
 
             // 打印完整的响应信息
-            console.log(`\n[${msgType || 'Unknown'}] Base response:`, JSON.stringify({
+            console.log(`\n[${msgType}] 响应:`, JSON.stringify({
                 session: {
                     messageId: baseResponse.session.messageId,
                     sequence: baseResponse.session.sequence,
@@ -64,7 +64,10 @@ class ResponseHandler {
         }
 
         if (baseResponse.errorCode !== 0) {
-            console.log('登录失败:', baseResponse.errorMsg || '未知错误');
+            console.log('登录失败:', {
+                errorCode: baseResponse.errorCode,
+                errorMsg: baseResponse.errorMsg
+            });
             return null;
         }
 
@@ -74,12 +77,17 @@ class ResponseHandler {
             baseResponse.payload
         );
 
-        console.log('Login response:', {
-            code: loginResponse.code,
-            message: loginResponse.message,
-            token: loginResponse.token ? loginResponse.token.substring(0, 20) + '...' : null,
-            ws_addr: loginResponse.ws_addr,
-            ws_port: loginResponse.ws_port
+        console.log('\n[Login] 响应详情:', {
+            session: baseResponse.session,
+            errorCode: baseResponse.errorCode,
+            errorMsg: baseResponse.errorMsg,
+            payload: {
+                code: loginResponse.code,
+                message: loginResponse.message,
+                token: loginResponse.token ? loginResponse.token.substring(0, 20) + '...' : null,
+                ws_addr: loginResponse.ws_addr,
+                ws_port: loginResponse.ws_port
+            }
         });
 
         return loginResponse;
@@ -92,7 +100,10 @@ class ResponseHandler {
         }
 
         if (baseResponse.errorCode !== 0) {
-            console.log('获取用户信息失败:', baseResponse.errorMsg);
+            console.log('获取用户信息失败:', {
+                errorCode: baseResponse.errorCode,
+                errorMsg: baseResponse.errorMsg
+            });
             return null;
         }
 
@@ -102,22 +113,26 @@ class ResponseHandler {
             baseResponse.payload
         );
 
-        // 打印完整的用户信息
-        console.log('\n用户信息:', {
-            code: userInfoResponse.code,
-            message: userInfoResponse.message,
-            user: {
-                user_id: userInfoResponse.user.user_id.toString(),
-                username: userInfoResponse.user.username,
-                level: userInfoResponse.user.level,
-                exp: userInfoResponse.user.exp.toString(),
-                vip_level: userInfoResponse.user.vip_level,
-                create_time: userInfoResponse.user.create_time ? 
-                    new Date(Number(userInfoResponse.user.create_time) * 1000).toLocaleString() : 'N/A',
-                login_time: userInfoResponse.user.login_time ? 
-                    new Date(Number(userInfoResponse.user.login_time) * 1000).toLocaleString() : 'N/A'
-            },
-            is_new: userInfoResponse.is_new
+        console.log('\n[UserInfo] 响应详情:', {
+            session: baseResponse.session,
+            errorCode: baseResponse.errorCode,
+            errorMsg: baseResponse.errorMsg,
+            payload: {
+                code: userInfoResponse.code,
+                message: userInfoResponse.message,
+                user: {
+                    user_id: userInfoResponse.user.user_id.toString(),
+                    username: userInfoResponse.user.username,
+                    level: userInfoResponse.user.level,
+                    exp: userInfoResponse.user.exp.toString(),
+                    vip_level: userInfoResponse.user.vip_level,
+                    create_time: userInfoResponse.user.create_time ? 
+                        new Date(Number(userInfoResponse.user.create_time) * 1000).toLocaleString() : 'N/A',
+                    login_time: userInfoResponse.user.login_time ? 
+                        new Date(Number(userInfoResponse.user.login_time) * 1000).toLocaleString() : 'N/A'
+                },
+                is_new: userInfoResponse.is_new
+            }
         });
 
         return userInfoResponse;
@@ -130,7 +145,6 @@ class ResponseHandler {
             return null;
         }
 
-        // 处理错误响应
         if (baseResponse.errorCode !== 0) {
             console.log('心跳请求失败:', {
                 errorCode: baseResponse.errorCode,
@@ -139,7 +153,6 @@ class ResponseHandler {
             return null;
         }
 
-        // 处理成功响应
         if (baseResponse.payload && baseResponse.payload.length > 0) {
             try {
                 const heartbeatResponse = ProtoHelper.decodeMessage(
@@ -147,10 +160,17 @@ class ResponseHandler {
                     'command.G2CHeartbeat',
                     baseResponse.payload
                 );
-                console.log('心跳响应:', {
-                    timestamp: heartbeatResponse.timestamp,
-                    code: heartbeatResponse.code
+
+                console.log('\n[Heartbeat] 响应详情:', {
+                    session: baseResponse.session,
+                    errorCode: baseResponse.errorCode,
+                    errorMsg: baseResponse.errorMsg,
+                    payload: {
+                        timestamp: heartbeatResponse.timestamp,
+                        code: heartbeatResponse.code
+                    }
                 });
+
                 return heartbeatResponse;
             } catch (err) {
                 console.error('解析心跳响应失败:', err);

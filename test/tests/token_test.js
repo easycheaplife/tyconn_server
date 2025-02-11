@@ -4,6 +4,7 @@ const WSClient = require('../lib/ws_client');
 const HeartbeatBuilder = require('../builders/heartbeat_builder');
 const ResponseHandler = require('../lib/response_handler');
 const readline = require('readline');
+const RequestBuilder = require('../builders/request_builder');
 
 class TokenTest {
     constructor(root, ws_addr, ws_port) {
@@ -86,7 +87,7 @@ class TokenTest {
 
     async testNormalToken() {
         console.log('\n执行正常token测试...');
-        const request = HeartbeatBuilder.build(this.root, global.token);
+        const request = RequestBuilder.buildHeartbeatRequest(this.root, global.token);
         this.wsClient.send(request);
         const response = await this.wsClient.waitForMessage();
         this.responseHandler.handleHeartbeatResponse(response);
@@ -95,7 +96,10 @@ class TokenTest {
     async testInvalidToken() {
         try {
             console.log('\n执行无效token测试...');
-            const request = HeartbeatBuilder.build(this.root, 'invalid_token');
+            const invalidToken = 'invalid_token';
+            console.log('使用的无效token:', invalidToken);
+
+            const request = RequestBuilder.buildHeartbeatRequest(this.root, invalidToken);
             this.wsClient.send(request);
             const response = await this.wsClient.waitForMessage();
             const result = this.responseHandler.handleHeartbeatResponse(response);

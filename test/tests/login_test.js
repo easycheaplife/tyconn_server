@@ -1,49 +1,48 @@
 const WSClient = require('../lib/ws_client');
 const ResponseHandler = require('../lib/response_handler');
-const LoginRequestBuilder = require('../builders/login_request_builder');
+const RequestBuilder = require('../builders/request_builder');
 const config = require('../config/config');
 
 class LoginTest {
     constructor(root) {
         this.root = root;
-        this.client = new WSClient(config.loginServer);
+        this.wsClient = null;
         this.responseHandler = new ResponseHandler(root);
     }
 
     async run() {
         try {
-            // 连接服务器
+            // 连接登录服务器
             console.log('正在连接登录服务器:', config.loginServer);
-            await this.client.connect();
+            this.wsClient = new WSClient(config.loginServer);
+            await this.wsClient.connect();
             console.log('连接登录服务器成功');
 
-            // 发送登录请求
-            console.log('开始登录测试...');
-            const loginRequest = LoginRequestBuilder.build(
-                this.root, 
-                config.account, 
-                config.password
+            // 构建并发送登录请求
+            const request = RequestBuilder.buildLoginRequest(
+                this.root,
+                config.account,
+                config.password,
+                config.deviceId,
+                config.platform
             );
-            
-            this.client.send(loginRequest);
+
+            this.wsClient.send(request);
 
             // 等待并处理响应
-            const responseData = await this.client.waitForMessage();
-            const loginResponse = this.responseHandler.handleLoginResponse(responseData);
+            const response = await this.wsClient.waitForMessage();
+            const loginResponse = this.responseHandler.handleLoginResponse(response);
 
-            if (!loginResponse || !loginResponse.token) {
-                console.log('登录失败，终止测试');
-                process.exit(1);
-            }
+            // 关闭连接
+            this.wsClient.close();
 
-            console.log('登录成功');
             return loginResponse;
-
-        } catch (err) {
-            console.error('测试失败:', err);
-            process.exit(1);
-        } finally {
-            this.client.close();
+        } catch (error) {
+            console.error('登录测试失败:', error);
+            if (this.wsClient) {
+                this.wsClient.close();
+            }
+            return null;
         }
     }
 }

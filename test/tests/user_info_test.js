@@ -1,51 +1,46 @@
 const WSClient = require('../lib/ws_client');
 const ResponseHandler = require('../lib/response_handler');
-const GetUserInfoBuilder = require('../builders/get_user_info_builder');
-const config = require('../config/config');
+const RequestBuilder = require('../builders/request_builder');
 
 class UserInfoTest {
-    constructor(root, token) {
+    constructor(root, loginResponse) {
         this.root = root;
-        this.token = token;
+        this.loginResponse = loginResponse;
         this.wsClient = null;
         this.responseHandler = new ResponseHandler(root);
     }
 
     async run() {
         try {
-            // 使用登录返回的网关地址
-            const wsUrl = `ws://${this.token.ws_addr}:${this.token.ws_port}`;
-            this.wsClient = new WSClient(wsUrl);
-
-            // 连接服务器
+            // 连接网关服务器
+            const wsUrl = `ws://${this.loginResponse.ws_addr}:${this.loginResponse.ws_port}`;
             console.log('正在连接网关服务器:', wsUrl);
+            this.wsClient = new WSClient(wsUrl);
             await this.wsClient.connect();
             console.log('连接成功');
 
-            // 发送获取用户信息请求
-            console.log('开始获取用户信息...');
-            const request = GetUserInfoBuilder.build(this.root, this.token);
+            // 构建并发送用户信息请求
+            const request = RequestBuilder.buildUserInfoRequest(
+                this.root,
+                this.loginResponse.token
+            );
+
             this.wsClient.send(request);
 
             // 等待并处理响应
-            const responseData = await this.wsClient.waitForMessage();
-            const response = this.responseHandler.handleUserInfoResponse(responseData);
+            const response = await this.wsClient.waitForMessage();
+            const userInfoResponse = this.responseHandler.handleUserInfoResponse(response);
 
-            if (!response) {
-                console.log('获取用户信息失败');
-                process.exit(1);
-            }
+            // 关闭连接
+            this.wsClient.close();
 
-            console.log('获取用户信息成功');
-            return response;
-
-        } catch (err) {
-            console.error('测试失败:', err);
-            process.exit(1);
-        } finally {
+            return userInfoResponse;
+        } catch (error) {
+            console.error('获取用户信息失败:', error);
             if (this.wsClient) {
                 this.wsClient.close();
             }
+            return null;
         }
     }
 }

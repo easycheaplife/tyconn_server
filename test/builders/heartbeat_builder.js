@@ -8,6 +8,8 @@ class HeartbeatBuilder {
             timestamp: Math.floor(Date.now() / 1000)
         };
 
+        console.log('发送心跳请求:', heartbeatRequest);
+
         const payload = root.lookupType("command.C2GHeartbeat")
             .encode(heartbeatRequest)
             .finish();
@@ -21,6 +23,8 @@ class HeartbeatBuilder {
             },
             payload: payload
         };
+
+        console.log('心跳请求基础信息:', baseRequest);
 
         return root.lookupType("common.BaseRequest")
             .encode(baseRequest)
