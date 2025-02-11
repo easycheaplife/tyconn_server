@@ -126,14 +126,20 @@ class ResponseHandler {
     handleHeartbeatResponse(data) {
         const baseResponse = this.decodeBaseResponse(data, 'Heartbeat');
         if (!baseResponse) {
+            console.log('无法解析响应消息');
             return null;
         }
 
+        // 处理错误响应
         if (baseResponse.errorCode !== 0) {
-            console.log('心跳失败:', baseResponse.errorMsg);
+            console.log('心跳请求失败:', {
+                errorCode: baseResponse.errorCode,
+                errorMsg: baseResponse.errorMsg
+            });
             return null;
         }
 
+        // 处理成功响应
         if (baseResponse.payload && baseResponse.payload.length > 0) {
             try {
                 const heartbeatResponse = ProtoHelper.decodeMessage(
@@ -141,13 +147,13 @@ class ResponseHandler {
                     'command.G2CHeartbeat',
                     baseResponse.payload
                 );
-                console.log('Heartbeat response:', {
+                console.log('心跳响应:', {
                     timestamp: heartbeatResponse.timestamp,
                     code: heartbeatResponse.code
                 });
                 return heartbeatResponse;
             } catch (err) {
-                console.error('Failed to decode heartbeat response:', err);
+                console.error('解析心跳响应失败:', err);
                 return null;
             }
         }

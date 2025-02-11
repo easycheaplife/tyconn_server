@@ -2,6 +2,7 @@ const ProtoHelper = require('./lib/proto_helper');
 const LoginTest = require('./tests/login_test');
 const UserInfoTest = require('./tests/user_info_test');
 const HeartbeatTest = require('./tests/heartbeat_test');
+const TokenTest = require('./tests/token_test');
 
 // 全局保存token
 global.token = null;
@@ -31,6 +32,10 @@ async function main() {
         const userInfoTest = new UserInfoTest(root, loginResponse);
         const userInfo = await userInfoTest.run();
 
+        // Token测试
+        const tokenTest = new TokenTest(root, loginResponse.ws_addr, loginResponse.ws_port);
+        await tokenTest.run();
+
         // 心跳测试
         console.log('开始心跳测试...');
         const heartbeatTest = new HeartbeatTest(root, loginResponse.ws_addr, loginResponse.ws_port);
@@ -46,4 +51,4 @@ async function main() {
     }
 }
 
-main(); 
+main();

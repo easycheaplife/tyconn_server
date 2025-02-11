@@ -2,31 +2,29 @@ const ProtoHelper = require('../lib/proto_helper');
 const config = require('../config/config');
 
 class HeartbeatBuilder {
-    static build(root) {
-        const messageId = root.lookup("common.MessageID");
-        if (!messageId) {
-            console.error("Available types:", ProtoHelper.listTypes(root));
-            throw new Error("Required enum not found: common.MessageID");
-        }
-
-        const session = {
-            sequence: 1,
-            messageId: messageId.values["C2G_HEARTBEAT"] || 3,
-            timestamp: Date.now(),
-            version: config.version
-        };
-
+    static build(root, token) {
         const heartbeatRequest = {
-            timestamp: Date.now(),
-            token: global.token  // 使用全局保存的token
+            token: token || global.token,
+            timestamp: Math.floor(Date.now() / 1000)
         };
 
-        const payload = ProtoHelper.createMessage(root, "command.C2GHeartbeat", heartbeatRequest);
-        
-        return ProtoHelper.createMessage(root, "common.BaseRequest", {
-            session: session,
+        const payload = root.lookupType("command.C2GHeartbeat")
+            .encode(heartbeatRequest)
+            .finish();
+
+        const baseRequest = {
+            session: {
+                messageId: root.lookupEnum("common.MessageID").values.C2G_HEARTBEAT,
+                sequence: 1,
+                timestamp: Date.now(),
+                version: "1.0.0"
+            },
             payload: payload
-        });
+        };
+
+        return root.lookupType("common.BaseRequest")
+            .encode(baseRequest)
+            .finish();
     }
 }
 

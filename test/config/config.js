@@ -17,5 +17,6 @@ module.exports = {
     deviceId: 'test_device',
     platform: 'test',
     version: '1.0.0',
+    jwtSecret: 'tyconn_jwt_secret',  // 添加JWT密钥，需要和服务器端一致
     ssl: WS_PROTOCOL === 'wss' ? SSL_CONFIG : undefined  // 仅在wss时使用SSL配置
 }; 
