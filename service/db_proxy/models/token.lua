@@ -74,58 +74,38 @@ function M.sync_token(token_info)
         return false, "Invalid expire time"
     end
 
-    logger.info("Syncing token - Account: %s, Device: %s, Platform: %s", 
-        token_info.account,
-        token_info.device_id or "none",
-        token_info.platform or "none"
+    logger.info("Syncing token - Account: %s", 
+        type(token_info.account) == "table" and "table" or token_info.account)
+    
+    -- 删除旧token
+    local query = string.format(sql.DELETE_OLD_TOKENS, 
+        db_util.escape(token_info.account))
+    local ok = db_util.query(query)
+    if not ok then
+        logger.error("Failed to delete old tokens for account: %s", token_info.account)
+        return false
+    end
+    
+    -- 插入新token
+    query = string.format(sql.SYNC_TOKEN,
+        db_util.escape(token_info.account),
+        db_util.escape(token_info.token),
+        db_util.escape(token_info.device_id or ""),
+        db_util.escape(token_info.platform or ""),
+        token_info.expire_time,
+        os.time()
     )
     
-    return db_util.transaction(function()
-        -- 获取旧token信息用于判断是否需要保持续费
-        local old_token = cache.get_token(token_info.account)
-        
-        -- 删除旧token
-        local query = string.format(sql.DELETE_OLD_TOKENS, 
-            db_util.escape(token_info.account))
-        logger.debug("Deleting old tokens - SQL: %s", query)
-        
-        local results, err = db_util.query(query)
-        if not results then
-            logger.error("Failed to delete old tokens: %s, SQL: %s", err, query)
-            return false, "Database error"
-        end
-        logger.debug("Deleted %d old tokens", results.affected_rows or 0)
-        
-        -- 插入新token
-        query = string.format(sql.SYNC_TOKEN,
-            db_util.escape(token_info.account),
-            db_util.escape(token_info.token),
-            db_util.escape(token_info.device_id or ""),
-            db_util.escape(token_info.platform or ""),
-            token_info.expire_time,
-            token_info.create_time or os.time()
-        )
-        logger.debug("Inserting new token - Account: %s, SQL: %s", token_info.account, query)
-        
-        results, err = db_util.query(query)
-        if not results then
-            logger.error("Failed to insert token: %s, SQL: %s", err, query)
-            return false, "Database error"
-        end
-        logger.info("Successfully synced token for account: %s", token_info.account)
-        
-        -- 如果是同一设备重新登录，继承上次的活跃时间
-        if old_token and old_token.device_id == token_info.device_id then
-            last_check_time[token_info.account] = last_check_time[token_info.account]
-        else
-            last_check_time[token_info.account] = os.time()
-        end
-        
-        -- 更新缓存
-        cache.set_token(token_info.account, token_info)
-        
-        return true
-    end)
+    ok = db_util.query(query)
+    if not ok then
+        logger.error("Failed to insert new token for account: %s", token_info.account)
+        return false
+    end
+    
+    -- 更新缓存
+    cache.set_token(token_info.account, token_info)
+    
+    return true
 end
 
 -- 验证token
@@ -216,9 +196,9 @@ function M.clean_expired_tokens()
     logger.debug("Cleaning expired tokens before %d", current_time)
     
     local query = string.format(sql.CLEAN_EXPIRED_TOKENS, current_time)
-    local results, err = db_util.query(query)
+    local results = db_util.query(query)
     if not results then
-        logger.error("Failed to clean expired tokens: %s", err)
+        logger.error("Failed to clean expired tokens")
         return false
     end
     

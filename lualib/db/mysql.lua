@@ -12,6 +12,21 @@ function M.escape(str)
         return "NULL"
     end
     
+    -- 如果是表，转换为字符串
+    if type(str) == "table" then
+        local success, result = pcall(function()
+            return string.format("table:%s", tostring(str))
+        end)
+        if not success then
+            logger.error("Failed to convert table to string: %s", result)
+            return "NULL"
+        end
+        str = result
+    end
+    
+    -- 确保是字符串
+    str = tostring(str)
+    
     -- 替换特殊字符
     str = string.gsub(str, "'", "\\'")
     str = string.gsub(str, "\"", "\\\"")
@@ -67,33 +82,6 @@ local function ensure_database(conn, db_name)
     end
     
     return true
-end
-
--- 开始事务
-function M.begin()
-    local connection = get_db()
-    if not connection then
-        return false
-    end
-    return connection:query("START TRANSACTION")
-end
-
--- 提交事务
-function M.commit()
-    local connection = get_db()
-    if not connection then
-        return false
-    end
-    return connection:query("COMMIT")
-end
-
--- 回滚事务
-function M.rollback()
-    local connection = get_db()
-    if not connection then
-        return false
-    end
-    return connection:query("ROLLBACK")
 end
 
 -- 执行查询

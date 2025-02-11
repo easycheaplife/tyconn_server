@@ -14,37 +14,6 @@ function M.log_sql(sql_str, ...)
     logger.debug("[SQL] %s", sql_str)
 end
 
--- 事务包装器
-function M.transaction(func)
-    M.log_sql("START TRANSACTION")
-    local ok, err = pool.query("START TRANSACTION")
-    if not ok then
-        logger.error("Failed to start transaction: %s", err)
-        return false, "Failed to start transaction"
-    end
-    
-    local ok, result, err = pcall(func)
-    logger.debug("Transaction function result - OK: %s, Result: %s, Error: %s", 
-        tostring(ok), tostring(result), tostring(err))
-    
-    if not ok or not result then
-        local error_msg = ok and err or result
-        logger.error("Transaction failed - Error: %s", error_msg)
-        M.log_sql("ROLLBACK")
-        pool.query("ROLLBACK")
-        return false, ok and err or result
-    end
-    
-    M.log_sql("COMMIT")
-    ok, err = pool.query("COMMIT")
-    if not ok then
-        logger.error("Failed to commit transaction: %s", err)
-        pool.query("ROLLBACK")
-        return false, "Failed to commit transaction"
-    end
-    return result, err
-end
-
 -- 执行SQL查询
 function M.query(sql, ...)
     local query = sql
@@ -58,11 +27,6 @@ function M.query(sql, ...)
     if not results then
         logger.error("Query failed: %s, SQL: %s", err, query)
         return false, err
-    end
-    
-    -- 确保返回的是表格
-    if type(results) ~= "table" then
-        results = { affected_rows = 0 }
     end
     
     return results
