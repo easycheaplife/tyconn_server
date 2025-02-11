@@ -19,6 +19,7 @@ M.DELETE_OLD_TOKENS = [[
 M.GET_TOKEN = [[
     SELECT * FROM user_tokens 
     WHERE account = '%s' AND token = '%s'
+    AND expire_time > %d
     LIMIT 1
 ]]
 

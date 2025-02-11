@@ -234,47 +234,37 @@ end
 function M.renew_token(account, token, new_expire_time)
     logger.info("Renewing token - Account: %s", account)
     
-    return db_util.transaction(function()
-        -- 先验证token是否存在且有效
-        local sql = string.format([[
-            SELECT * FROM user_tokens 
-            WHERE account = %s AND token = %s
-            AND expire_time > %d
-            LIMIT 1
-        ]], 
+    -- 先验证token是否存在且有效
+    local query = string.format(sql.GET_TOKEN,
         db_util.escape(account),
         db_util.escape(token),
         os.time())
-        
-        local results = db_util.query(sql)
-        if not results or #results == 0 then
-            logger.error("Token not found or expired - Account: %s", account)
-            return false, "Invalid token"
-        end
-        
-        -- 更新token过期时间
-        sql = string.format([[
-            UPDATE user_tokens SET expire_time = %d
-            WHERE account = %s AND token = %s
-        ]],
+    
+    local results = db_util.query(query)
+    if not results or #results == 0 then
+        logger.error("Token not found or expired - Account: %s", account)
+        return false, "Invalid token"
+    end
+    
+    -- 更新token过期时间
+    query = string.format(sql.RENEW_TOKEN,
         new_expire_time,
         db_util.escape(account),
         db_util.escape(token))
-        
-        local ok = db_util.query(sql)
-        if not ok then
-            logger.error("Failed to renew token - Account: %s", account)
-            return false, "Failed to renew token"
-        end
-        
-        -- 更新缓存
-        local token_info = results[1]
-        token_info.expire_time = new_expire_time
-        cache.set_token(account, token_info)
-        
-        logger.info("Successfully renewed token for account: %s", account)
-        return true
-    end)
+    
+    local ok = db_util.query(query)
+    if not ok then
+        logger.error("Failed to renew token - Account: %s", account)
+        return false, "Failed to renew token"
+    end
+    
+    -- 更新缓存
+    local token_info = results[1]
+    token_info.expire_time = new_expire_time
+    cache.set_token(account, token_info)
+    
+    logger.info("Successfully renewed token for account: %s", account)
+    return true
 end
 
 return M

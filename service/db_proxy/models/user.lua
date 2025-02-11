@@ -16,23 +16,6 @@ local function log_sql(sql_str, ...)
     logger.debug("[SQL] %s", sql_str)
 end
 
--- 事务包装器
-local function transaction(func)
-    mysql.query("START TRANSACTION")
-    log_sql("START TRANSACTION")
-    
-    local ok, result, err = pcall(func)
-    if not ok or not result then
-        mysql.query("ROLLBACK")
-        log_sql("ROLLBACK")
-        return false, ok and err or result
-    end
-    
-    mysql.query("COMMIT")
-    log_sql("COMMIT")
-    return result, err
-end
-
 -- 创建用户
 function M.create_user(user)
     logger.debug("Creating user: %s", table.concat({
@@ -40,59 +23,50 @@ function M.create_user(user)
         username = user.username
     }, ", "))
     
-    return transaction(function()
-        -- 检查用户是否已存在
-        local query = string.format(sql.GET_USER_BY_USERNAME, 
-            mysql.escape(user.username))
-        log_sql(query)
-        
-        local ok, results = pcall(mysql.query, query)
-        if not ok then
-            logger.error("Failed to check user existence: %s", results)
-            return false, "Database error"
-        end
-        
-        if results[1] then
-            logger.error("Username already exists: %s", user.username)
-            return false, "Username already exists"
-        end
-        
-        -- 插入用户数据
-        query = string.format(sql.CREATE_USER,
-            mysql.escape(user.account),
-            mysql.escape(user.username),
-            user.level or 1,
-            user.exp or 0,
-            user.vip_level or 0,
-            user.create_time or os.time(),
-            user.last_login or os.time()
-        )
-        log_sql(query)
-        
-        ok, results = pcall(mysql.query, query)
-        if not ok then
-            logger.error("Failed to insert user: %s", results)
-            return false, "Database error"
-        end
-        
-        -- 获取创建的用户信息
-        query = string.format(sql.GET_USER_BY_ACCOUNT, 
-            mysql.escape(user.account))
-        log_sql(query)
-        
-        ok, results = pcall(mysql.query, query)
-        if not ok then
-            logger.error("Failed to get created user: %s", results)
-            return false, "Database error"
-        end
-        
-        if not results[1] then
-            logger.error("Created user not found: account=%s", user.account)
-            return false, "Database error"
-        end
-        
-        return true, results[1], true  -- 添加第三个返回值表示是新用户
-    end)
+    -- 检查用户是否已存在
+    local query = string.format(sql.GET_USER_BY_USERNAME, 
+        mysql.escape(user.username))
+    log_sql(query)
+    
+    local results = db_util.query(query)
+    if results and #results > 0 then
+        logger.error("Username already exists: %s", user.username)
+        return false, "Username already exists"
+    end
+    
+    -- 插入新用户
+    query = string.format(sql.CREATE_USER,
+        mysql.escape(user.account),
+        mysql.escape(user.username),
+        user.level or 1,
+        user.exp or 0,
+        user.vip_level or 0,
+        user.create_time or os.time(),
+        user.last_login_time or os.time()
+    )
+    log_sql(query)
+    
+    local ok = db_util.query(query)
+    if not ok then
+        logger.error("Failed to create user")
+        return false, "Database error"
+    end
+    
+    -- 获取新创建的用户信息
+    query = string.format(sql.GET_USER_BY_USERNAME, 
+        mysql.escape(user.username))
+    log_sql(query)
+    
+    results = db_util.query(query)
+    if not results or #results == 0 then
+        logger.error("Failed to get created user")
+        return false, "Database error"
+    end
+    
+    -- 更新缓存
+    cache.set_user(user.account, results[1])
+    
+    return true, results[1], true
 end
 
 -- 获取用户信息
