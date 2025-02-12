@@ -1,7 +1,7 @@
 local skynet = require "skynet"
 local mysql = require "skynet.db.mysql"
 local logger = require "logger"
-local config = require "config.mysql"
+local config = require("database").mysql
 
 local M = {}
 local db

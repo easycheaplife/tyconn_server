@@ -1,8 +1,7 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local mysql = require "db.mysql"
-local const = require "db_proxy.const"
-local mysql_config = require "config.mysql"
+local mysql_config = require "database"
 
 local M = {}
 
@@ -17,7 +16,7 @@ local pool = {
 
 -- 创建新连接
 local function create_connection()
-    if not mysql.init() then
+    if not mysql.init(mysql_config.mysql) then
         return nil, "Failed to initialize MySQL"
     end
     return mysql

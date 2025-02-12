@@ -1,7 +1,6 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local mysql = require "db.mysql"
-local const = require "db_proxy.const"
 local pool = require "db_proxy.db.pool"
 
 local M = {}

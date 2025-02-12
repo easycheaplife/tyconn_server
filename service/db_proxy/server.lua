@@ -4,7 +4,6 @@ local user_model = require "db_proxy.models.user"
 local token_model = require "db_proxy.models.token"
 local sql = require "db_proxy.sql.init"
 local db_util = require "db_proxy.utils.db_util"
-local const = require "db_proxy.const"
 local card = require "db_proxy.models.card"
 
 local CMD = {}
@@ -108,7 +107,7 @@ skynet.start(function()
         while true do
             skynet.sleep(100)  -- 等待1秒再开始清理
             token_model.clean_expired_tokens()
-            skynet.sleep(const.DB.CLEAN_TOKEN_INTERVAL * 100)
+            skynet.sleep(3600 * 100)  -- 直接使用3600秒(1小时)作为清理间隔
         end
     end)
     
