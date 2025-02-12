@@ -1,80 +1,138 @@
 local skynet = require "skynet"
 local logger = require "logger"
+local redis = require "skynet.db.redis"
+local cjson = require "cjson"
 
 local M = {}
 
--- 创建缓存对象
-local cache = {
-    user_cards = {},  -- 用户卡牌缓存 user_id -> {cards, time}
-    user_info = {},   -- 用户信息缓存 account -> {user, time}
-    expire_time = 300 -- 缓存过期时间(秒)
-}
+-- 加载Redis配置
+local redis_conf = require("database").redis
 
--- 卡牌缓存
-function M.get_user_cards(user_id)
-    local data = cache.user_cards[user_id]
-    if data and os.time() - data.time < cache.expire_time then
-        return data.cards
+local redis_client
+
+-- 初始化Redis连接
+local function init_redis()
+    if redis_client then
+        return true
     end
-    return nil
+
+    local ok, db = pcall(redis.connect, {
+        host = redis_conf.host,
+        port = redis_conf.port,
+        db = redis_conf.db,
+        auth = redis_conf.auth
+    })
+
+    if not ok then
+        logger.error("Failed to connect to Redis: %s", db)
+        return false
+    end
+
+    redis_client = db
+    return true
 end
 
+-- 生成缓存key
+local function make_key(prefix, id)
+    local key_prefix = redis_conf.prefix[prefix] or prefix
+    return string.format("%s:%s", key_prefix, tostring(id))
+end
+
+-- 设置缓存
+local function set_cache(prefix, id, value, expire)
+    if not init_redis() then
+        return false
+    end
+
+    local key = make_key(prefix, id)
+    local data = cjson.encode(value)
+    
+    local ok
+    if expire then
+        ok = redis_client:setex(key, expire, data)
+    else
+        ok = redis_client:set(key, data)
+    end
+
+    if not ok then
+        logger.error("Failed to set cache: %s", key)
+        return false
+    end
+    return true
+end
+
+-- 获取缓存
+local function get_cache(prefix, id)
+    if not init_redis() then
+        return nil
+    end
+
+    local key = make_key(prefix, id)
+    local data = redis_client:get(key)
+    if not data then
+        return nil
+    end
+
+    local ok, value = pcall(cjson.decode, data)
+    if not ok then
+        logger.error("Failed to decode cache data: %s", data)
+        return nil
+    end
+    return value
+end
+
+-- 删除缓存
+local function del_cache(prefix, id)
+    if not init_redis() then
+        return false
+    end
+
+    local key = make_key(prefix, id)
+    local ok = redis_client:del(key)
+    if not ok then
+        logger.error("Failed to delete cache: %s", key)
+        return false
+    end
+    return true
+end
+
+-- 用户卡牌缓存接口
 function M.set_user_cards(user_id, cards)
-    cache.user_cards[user_id] = {
-        cards = cards,
-        time = os.time()
-    }
+    return set_cache("card", user_id, cards, redis_conf.expire.card)
+end
+
+function M.get_user_cards(user_id)
+    return get_cache("card", user_id)
 end
 
 function M.remove_user_cards(user_id)
-    cache.user_cards[user_id] = nil
+    return del_cache("card", user_id)
 end
 
--- 用户信息缓存
-function M.get_user_info(account)
-    local data = cache.user_info[account]
-    if data and os.time() - data.time < cache.expire_time then
-        return data.user
-    end
-    return nil
-end
-
+-- 用户信息缓存接口
 function M.set_user_info(account, user)
-    cache.user_info[account] = {
-        user = user,
-        time = os.time()
-    }
+    return set_cache("user", account, user, redis_conf.expire.user)
+end
+
+function M.get_user_info(account)
+    return get_cache("user", account)
 end
 
 function M.remove_user_info(account)
-    cache.user_info[account] = nil
+    return del_cache("user", account)
 end
 
--- 清理过期缓存
-function M.cleanup()
-    local now = os.time()
-    
-    -- 清理卡牌缓存
-    for user_id, data in pairs(cache.user_cards) do
-        if now - data.time >= cache.expire_time then
-            cache.user_cards[user_id] = nil
-        end
-    end
-    
-    -- 清理用户信息缓存
-    for account, data in pairs(cache.user_info) do
-        if now - data.time >= cache.expire_time then
-            cache.user_info[account] = nil
-        end
-    end
+-- Token缓存接口
+function M.set_token(account, token)
+    return set_cache("token", account, token, redis_conf.expire.token)
 end
 
--- 启动定时清理
-skynet.fork(function()
-    while true do
-        skynet.sleep(100 * 60)  -- 每100秒清理一次
-        M.cleanup()
-    end
-end)
+function M.get_token(account)
+    return get_cache("token", account)
+end
+
+function M.remove_token(account)
+    return del_cache("token", account)
+end
 
 return M 

@@ -74,33 +74,38 @@ end
 
 -- 获取用户信息
 function M.get_user(account)
-    -- 先查缓存
-    local cached_user = cache.user.get(account)
-    if cached_user then
-        return {
-            success = true,
-            user = cached_user,
-            is_new = false
-        }
+    -- 先尝试从缓存获取
+    local user = cache.get_user_info(account)
+    if user then
+        logger.debug("Get user from cache, account: %s", account)
+        return user
     end
-    
-    -- 查询数据库
-    local response = db_client.get_user(account)
-    if response and response.user then
-        cache.user.set(account, response.user)
+
+    -- 缓存未命中，从数据库获取
+    logger.debug("Cache miss, getting user from DB, account: %s", account)
+    local db = skynet.call(".db_proxy", "lua", "get_user", account)
+    if not db then
+        return nil
     end
-    
-    return response
+
+    -- 写入缓存
+    cache.set_user_info(account, db)
+    logger.debug("User info cached, account: %s", account)
+    return db
 end
 
 -- 更新用户信息
 function M.update_user(user)
-    local ok = db_client.update_user(user)
-    if ok then
-        -- 更新成功后清除缓存
-        cache.user.remove(user.account)
+    -- 先更新数据库
+    local ok = skynet.call(".db_proxy", "lua", "update_user", user)
+    if not ok then
+        return false
     end
-    return ok
+
+    -- 清除缓存，强制下次重新加载
+    cache.remove_user_info(user.account)
+    logger.debug("User cache cleared after update, account: %s", user.account)
+    return true
 end
 
 -- 添加用户会话

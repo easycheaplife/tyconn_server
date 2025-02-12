@@ -53,62 +53,53 @@ function M.init_user_cards(user_id)
     return true
 end
 
--- 获取用户卡牌列表
+-- 获取用户卡牌
 function M.get_user_cards(user_id)
-    -- 先查缓存
-    local cached = cache.card.get(user_id)
-    if cached then
-        return cached
-    end
-    
-    -- 查询数据库
-    local cards = db_client.get_user_cards(user_id)
+    -- 先尝试从缓存获取
+    local cards = cache.get_user_cards(user_id)
     if cards then
-        cache.card.set(user_id, cards)
+        logger.debug("Get user cards from cache, user_id: %d", user_id)
+        return cards
     end
-    
-    return cards
+
+    -- 缓存未命中，从数据库获取
+    logger.debug("Cache miss, getting cards from DB, user_id: %d", user_id)
+    local db = skynet.call(".db_proxy", "lua", "get_user_cards", user_id)
+    if not db then
+        return nil
+    end
+
+    -- 写入缓存
+    cache.set_user_cards(user_id, db)
+    logger.debug("User cards cached, user_id: %d", user_id)
+    return db
 end
 
 -- 更新卡牌
-function M.update_card(user_id, card_id, updates)
-    -- 获取卡牌信息
-    local cards = M.get_user_cards(user_id)
-    if not cards then
-        return false, "Failed to get cards"
-    end
-    
-    -- 查找要更新的卡牌
-    local card
-    for _, c in ipairs(cards) do
-        if c.id == card_id then
-            card = c
-            break
-        end
-    end
-    
-    if not card then
-        return false, "Card not found"
-    end
-    
-    -- 更新字段
-    for k, v in pairs(updates) do
-        card[k] = v
-    end
-    
-    -- 重新计算战力
-    card.power = calculate_power(card)
-    card.update_time = os.time()
-    
-    -- 更新数据库
-    local ok = db_client.update_card(card)
+function M.update_card(card_info)
+    -- 先更新数据库
+    local ok = skynet.call(".db_proxy", "lua", "update_card", card_info)
     if not ok then
-        return false, "Failed to update card"
+        return false
     end
-    
-    -- 更新缓存
-    cache.card.remove(user_id)
-    
+
+    -- 清除缓存，强制下次重新加载
+    cache.remove_user_cards(card_info.user_id)
+    logger.debug("Card cache cleared after update, user_id: %d", card_info.user_id)
+    return true
+end
+
+-- 添加卡牌
+function M.add_card(card_info)
+    -- 先写入数据库
+    local ok = skynet.call(".db_proxy", "lua", "add_card", card_info)
+    if not ok then
+        return false
+    end
+
+    -- 清除缓存，强制下次重新加载
+    cache.remove_user_cards(card_info.user_id)
+    logger.debug("Card cache cleared after adding new card, user_id: %d", card_info.user_id)
     return true
 end
 

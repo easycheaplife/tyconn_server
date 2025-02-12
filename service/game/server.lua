@@ -25,9 +25,6 @@ end
 skynet.start(function()
     logger.info("Game server starting...")
     
-    -- 等待集群准备就绪
-    skynet.sleep(100)  -- 等待1秒
-    
     -- 初始化命令管理器
     if not cmd_mgr.init() then
         logger.error("Failed to initialize command manager")
