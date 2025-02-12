@@ -49,16 +49,21 @@ class CardBagTest {
             console.log(`总卡牌数: ${result.cards.length}`);
             
             if (result.cards.length > 0) {
-                console.log('\n第一张卡牌详情:', {
-                    cardId: result.cards[0].card_id,
-                    cardType: result.cards[0].card_type,
-                    level: result.cards[0].level,
-                    exp: result.cards[0].exp,
-                    quality: result.cards[0].quality,
-                    star: result.cards[0].star,
-                    createTime: new Date(result.cards[0].create_time * 1000).toISOString(),
-                    count: result.cards[0].count
+                console.log('\n所有卡牌详情:');
+                result.cards.forEach((card, index) => {
+                    console.log(`\n[卡牌 ${index + 1}]:`, {
+                        cardId: card.card_id,
+                        cardType: card.card_type,
+                        level: card.level,
+                        exp: card.exp,
+                        quality: card.quality,
+                        star: card.star,
+                        createTime: new Date(card.create_time * 1000).toISOString(),
+                        count: card.count
+                    });
                 });
+            } else {
+                console.log('背包中没有卡牌');
             }
 
             this.stop();
