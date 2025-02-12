@@ -91,3 +91,32 @@ sequenceDiagram
 6. DB代理返回用户信息
 7. 游戏服务器处理并返回数据
 8. 网关将响应发送给客户端
+
+## 4. 获取用户卡包流程
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 获取卡包请求(token)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>DB: 5. 查询用户卡包
+    DB-->>GM: 6. 返回卡牌数据
+    GM-->>G: 7. 返回卡包信息
+    G-->>C: 8. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送获取卡包请求
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器查询用户卡包数据
+6. DB代理返回卡牌信息
+7. 游戏服务器处理并返回数据
+8. 网关将响应发送给客户端

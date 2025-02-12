@@ -1,7 +1,7 @@
 syntax = "proto3";
 package command;
 
-import "common/user.proto";
+import "common/entity.proto";
 
 // 登录请求
 message C2LLoginRequest {
@@ -44,4 +44,16 @@ message G2CUserInfoResponse {
     string message = 2;    // 错误信息
     common.UserInfo user = 3;  // 用户信息
     bool is_new = 4;       // 是否是新创建的用户
-} 
+}
+
+// 获取用户卡包请求
+message C2GUserCardBagRequest {
+    string token = 1;       // JWT令牌
+}
+
+// 获取用户卡包响应
+message G2CUserCardBagResponse {
+    int32 code = 1;        // 错误码
+    string message = 2;    // 错误信息
+    repeated common.CardInfo cards = 3;  // 卡牌列表
+}

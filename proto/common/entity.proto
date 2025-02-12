@@ -1,0 +1,25 @@
+syntax = "proto3";
+package common;
+
+// 用户信息
+message UserInfo {
+    int64 user_id = 1;      // 用户ID
+    string username = 2;     // 用户名
+    int32 level = 3;        // 等级
+    int64 exp = 4;          // 经验值
+    int32 vip_level = 5;    // VIP等级
+    int64 create_time = 6;  // 创建时间
+    int64 login_time = 7;   // 最后登录时间
+}
+
+// 卡牌信息
+message CardInfo {
+    int64 card_id = 1;      // 卡牌ID
+    int32 card_type = 2;    // 卡牌类型
+    int32 level = 3;        // 等级
+    int32 exp = 4;          // 经验值
+    int32 quality = 5;      // 品质
+    int32 star = 6;         // 星级
+    int64 create_time = 7;  // 获得时间
+    int32 count = 8;        // 数量
+}

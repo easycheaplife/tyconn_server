@@ -12,46 +12,40 @@ class ResponseHandler {
                 return null;
             }
 
-            const baseResponse = ProtoHelper.decodeMessage(this.root, 'common.BaseResponse', data);
+            // 解码基础响应
+            const baseResponse = ProtoHelper.decodeMessage(
+                this.root,
+                'common.BaseResponse',
+                data
+            );
+
             if (!baseResponse) {
                 console.error('Failed to decode BaseResponse');
                 return null;
             }
 
-            if (!baseResponse.session) {
-                console.error('BaseResponse has no session');
-                return null;
-            }
-
             // 打印完整的响应信息
-            console.log(`\n[${msgType}] 响应:`, JSON.stringify({
-                session: {
+            console.log(`\n[${msgType}] 响应:`, {
+                session: baseResponse.session ? {
                     messageId: baseResponse.session.messageId,
                     sequence: baseResponse.session.sequence,
                     timestamp: baseResponse.session.timestamp,
                     version: baseResponse.session.version
-                },
+                } : null,
                 errorCode: baseResponse.errorCode,
                 errorMsg: baseResponse.errorMsg,
                 payload: baseResponse.payload ? {
                     length: baseResponse.payload.length,
-                    hex: baseResponse.payload.toString('hex'),
-                    text: (() => {
-                        try {
-                            return baseResponse.payload.toString('utf8');
-                        } catch (e) {
-                            return 'Not UTF-8 text';
-                        }
-                    })()
-                } : 'null'
-            }, null, 2));
+                    hex: baseResponse.payload.toString('hex')
+                } : null
+            });
 
             return baseResponse;
+
         } catch (err) {
             console.error('Failed to decode base response:', err);
             if (data) {
-                console.error('Data length:', data.length);
-                console.error('Data (hex):', data.toString('hex'));
+                console.error('Raw data (hex):', data.toString('hex'));
             }
             return null;
         }
@@ -179,6 +173,46 @@ class ResponseHandler {
         }
 
         return true;
+    }
+
+    handleCardBagResponse(data) {
+        const baseResponse = this.decodeBaseResponse(data, 'CardBag');
+        if (!baseResponse) {
+            console.error("Failed to decode base response");
+            return null;
+        }
+
+        if (baseResponse.errorCode !== 0) {
+            console.log('获取背包失败:', {
+                errorCode: baseResponse.errorCode,
+                errorMsg: baseResponse.errorMsg
+            });
+            return null;
+        }
+
+        try {
+            const cardBagResponse = ProtoHelper.decodeMessage(
+                this.root,
+                'command.G2CUserCardBagResponse',
+                baseResponse.payload
+            );
+
+            console.log('\n[CardBag] 响应详情:', {
+                session: baseResponse.session,
+                errorCode: baseResponse.errorCode,
+                errorMsg: baseResponse.errorMsg,
+                cardCount: cardBagResponse.cards ? cardBagResponse.cards.length : 0
+            });
+
+            return {
+                code: cardBagResponse.code,
+                message: cardBagResponse.message,
+                cards: cardBagResponse.cards || []
+            };
+        } catch (err) {
+            console.error('解析背包响应失败:', err);
+            return null;
+        }
     }
 }
 

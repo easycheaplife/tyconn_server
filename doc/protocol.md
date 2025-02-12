@@ -135,6 +135,43 @@ message UserInfo {
 }
 ```
 
+### 2.4 获取用户卡包
+
+**连接类型:** `WebSocket`  
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf
+message C2GUserCardBagRequest {
+    string token = 1;       // JWT令牌
+}
+```
+
+**响应格式:**
+```protobuf
+message G2CUserCardBagResponse {
+    int32 code = 1;        // 错误码
+    string message = 2;    // 错误信息
+    repeated CardInfo cards = 3;  // 卡牌列表
+}
+
+message CardInfo {
+    int64 card_id = 1;      // 卡牌ID
+    int32 card_type = 2;    // 卡牌类型
+    int32 level = 3;        // 等级
+    int32 exp = 4;          // 经验值
+    int32 quality = 5;      // 品质
+    int32 star = 6;         // 星级
+    int64 create_time = 7;  // 获得时间
+    int32 count = 8;        // 数量
+}
+```
+
+**错误码说明:**
+- 0: 成功
+- 7: 无效的令牌
+- 8: 令牌已过期
+
 ## 3. 服务端口
 
 ### 3.1 外部端口

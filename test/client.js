@@ -3,6 +3,7 @@ const LoginTest = require('./tests/login_test');
 const UserInfoTest = require('./tests/user_info_test');
 const HeartbeatTest = require('./tests/heartbeat_test');
 const TokenTest = require('./tests/token_test');
+const CardBagTest = require('./tests/card_bag_test');
 
 // 全局保存token
 global.token = null;
@@ -31,6 +32,14 @@ async function main() {
         console.log('开始获取用户信息...');
         const userInfoTest = new UserInfoTest(root, loginResponse);
         const userInfo = await userInfoTest.run();
+
+        // 背包测试
+        console.log('开始获取背包信息...');
+        const cardBagTest = new CardBagTest(root, loginResponse.ws_addr, loginResponse.ws_port);
+        const success = await cardBagTest.start();
+        if (!success) {
+            console.log('获取背包失败');
+        }
 
         // Token测试
         const tokenTest = new TokenTest(root, loginResponse.ws_addr, loginResponse.ws_port);

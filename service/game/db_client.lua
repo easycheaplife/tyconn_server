@@ -5,16 +5,8 @@ local logger = require "logger"
 local M = {}
 
 -- 调用数据库服务
-local function call_db(cmd, ...)
-    local ok, result, err = pcall(cluster.call, "db_proxy", "@db_proxy", cmd, ...)
-    if not ok then
-        logger.error("Failed to call db_proxy.%s: %s", cmd, result)
-        return nil, result
-    end
-    if not result and err then
-        return nil, err
-    end
-    return result, err
+local function call_db(...)
+    return cluster.call("db_proxy", "@db_proxy", ...)
 end
 
 -- 批量创建卡牌
@@ -24,7 +16,18 @@ end
 
 -- 获取用户卡牌列表
 function M.get_user_cards(user_id)
-    return call_db("get_user_cards", user_id)
+    if not user_id then
+        logger.error("get_user_cards: user_id is nil")
+        return nil
+    end
+    
+    local ok, result = pcall(call_db, "get_user_cards", user_id)
+    if not ok then
+        logger.error("Failed to get user cards: %s", result)
+        return nil
+    end
+    
+    return result
 end
 
 -- 更新卡牌信息
