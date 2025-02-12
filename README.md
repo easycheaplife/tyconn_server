@@ -59,8 +59,8 @@ database = "tyconn"
 
 - [架构设计](doc/architecture.md)
 - [协议说明](doc/protocol.md)
+- [流程说明](doc/flow.md)
 - [配置说明](doc/config.md)
-- [API文档](doc/api.md)
 - [部署指南](doc/deploy.md)
 - [开发指南](doc/develop.md)
 - [测试说明](doc/test.md)
