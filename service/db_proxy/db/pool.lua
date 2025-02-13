@@ -9,8 +9,8 @@ local M = {}
 local pool = {
     connections = {},
     size = 0,
-    max_size = 5,  -- 最大连接数
-    min_size = 2,  -- 最小连接数
+    max_size = database.mysql.pool.max_connections,  -- 最大连接数
+    min_size = database.mysql.pool.min_connections,  -- 最小连接数
     current = 0    -- 当前使用的连接索引
 }
 
@@ -97,7 +97,7 @@ function M.init()
     skynet.fork(function()
         while true do
             M.check()
-            skynet.sleep(database.const.DB.RECONNECT_INTERVAL * 100)
+            skynet.sleep(database.mysql.pool.reconnect_interval * 100)
         end
     end)
     

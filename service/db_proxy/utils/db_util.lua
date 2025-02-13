@@ -2,15 +2,13 @@ local skynet = require "skynet"
 local logger = require "logger"
 local mysql = require "db.mysql"
 local pool = require "db_proxy.db.pool"
+local database = require "database"
 
 local M = {}
 
 -- 记录SQL日志
-function M.log_sql(sql_str, ...)
-    if ... then
-        sql_str = string.format(sql_str, ...)
-    end
-    logger.debug("[SQL] %s", sql_str)
+function M.log_sql(sql)
+    logger.debug("[SQL] %s", sql)
 end
 
 -- 执行SQL查询
@@ -22,13 +20,28 @@ function M.query(sql, ...)
     end
 
     M.log_sql(query)
-    local results, err = pool.query(query)
-    if not results then
-        logger.error("Query failed: %s, SQL: %s", err, query)
-        return false, err
+    
+    -- 添加重试逻辑
+    local retries = 0
+    while retries < database.mysql.query.max_retries do
+        local results, err = pool.query(query)
+        if results then
+            return results
+        end
+        
+        logger.error("Query failed (attempt %d/%d): %s, SQL: %s", 
+            retries + 1, 
+            database.mysql.query.max_retries,
+            err, 
+            query)
+            
+        retries = retries + 1
+        if retries < database.mysql.query.max_retries then
+            skynet.sleep(database.mysql.query.retry_delay * 100)
+        end
     end
     
-    return results
+    return false, "Max retries exceeded"
 end
 
 -- 转义SQL字符串

@@ -1,11 +1,9 @@
 local skynet = require "skynet"
 local redis = require "skynet.db.redis"
 local logger = require "logger"
+local database = require "database"
 
 local M = {}
-
--- Redis配置
-local redis_conf = require("database").redis
 
 -- Redis连接实例
 local redis_client
@@ -17,10 +15,10 @@ local function init_redis()
     end
 
     local ok, db = pcall(redis.connect, {
-        host = redis_conf.host,
-        port = redis_conf.port,
-        db = redis_conf.db,
-        auth = redis_conf.auth
+        host = database.redis.host,
+        port = database.redis.port,
+        db = database.redis.db,
+        auth = database.redis.auth
     })
 
     if not ok then

@@ -2,25 +2,32 @@ local M = {}
 
 -- Redis配置
 M.redis = {
+    -- 基础配置
     host = "127.0.0.1",
     port = 6379,
     db = 0,
     auth = nil,  -- 如果需要密码验证，在这里设置
+
+    -- 缓存前缀
     prefix = {
-        token = "token",
-        user = "user",
-        card = "card"
+        token = "token:",    -- token缓存前缀
+        user = "user:",      -- 用户信息缓存前缀
+        card = "card:",      -- 卡牌信息缓存前缀
+        user_cards = "user_cards:"  -- 用户卡组缓存前缀
     },
+
+    -- 缓存过期时间(秒)
     expire = {
-        token = 7200,    -- token缓存2小时
-        user = 3600,     -- 用户信息缓存1小时
-        card = 1800      -- 卡牌信息缓存30分钟
+        token = 7200,       -- token缓存2小时
+        user = 3600,        -- 用户信息缓存1小时
+        card = 1800,        -- 卡牌信息缓存30分钟
+        user_cards = 1800   -- 用户卡组缓存30分钟
     }
 }
 
 -- MySQL配置
 M.mysql = {
-    -- 从环境变量读取数据库密码
+    -- 连接配置
     connection = {
         host = os.getenv("MYSQL_HOST") or "127.0.0.1",
         port = 3306,
@@ -34,28 +41,28 @@ M.mysql = {
     -- 数据库名称
     database = os.getenv("MYSQL_DATABASE") or "tyconn",
     
-    -- 重试配置
-    retry = {
-        max_attempts = 3,
-        delay = 1  -- 秒
-    },
-    
     -- 连接池配置
     pool = {
         max_connections = 5,
-        idle_timeout = 60  -- 秒
+        idle_timeout = 60,  -- 秒
+        min_connections = 2,  -- 最小连接数
+        reconnect_interval = 60,  -- 重连间隔（秒）
+    },
+
+    -- 查询配置
+    query = {
+        max_retries = 3,     -- 最大重试次数
+        retry_delay = 1,     -- 重试延迟（秒）
+        timeout = 1000,      -- 查询超时（毫秒）
     }
 }
 
 -- 数据库常量
 M.const = {
-    -- 数据库相关
     DB = {
         RECONNECT_INTERVAL = 60,  -- 重连间隔（秒）
         MAX_RETRIES = 3,         -- 最大重试次数
-        TIMEOUT = 1000,          -- 超时时间（毫秒）
-        CHECK_INTERVAL = 60,     -- 检查间隔（秒）
-        PING_INTERVAL = 30       -- 心跳间隔（秒）
+        TIMEOUT = 1000           -- 超时时间（毫秒）
     }
 }
 
