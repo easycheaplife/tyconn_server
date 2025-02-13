@@ -47,4 +47,16 @@ M.mysql = {
     }
 }
 
+-- 数据库常量
+M.const = {
+    -- 数据库相关
+    DB = {
+        RECONNECT_INTERVAL = 60,  -- 重连间隔（秒）
+        MAX_RETRIES = 3,         -- 最大重试次数
+        TIMEOUT = 1000,          -- 超时时间（毫秒）
+        CHECK_INTERVAL = 60,     -- 检查间隔（秒）
+        PING_INTERVAL = 30       -- 心跳间隔（秒）
+    }
+}
+
 return M 

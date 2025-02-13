@@ -1,8 +1,7 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local mysql = require "db.mysql"
-local mysql_config = require "database"
-local const = require "db_proxy.const"
+local database = require "database"
 
 local M = {}
 
@@ -17,7 +16,7 @@ local pool = {
 
 -- 创建新连接
 local function create_connection()
-    if not mysql.init(mysql_config.mysql) then
+    if not mysql.init(database.mysql) then
         return nil, "Failed to initialize MySQL"
     end
     return mysql
@@ -98,7 +97,7 @@ function M.init()
     skynet.fork(function()
         while true do
             M.check()
-            skynet.sleep(const.DB.RECONNECT_INTERVAL * 100)
+            skynet.sleep(database.const.DB.RECONNECT_INTERVAL * 100)
         end
     end)
     
