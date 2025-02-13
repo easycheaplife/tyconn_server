@@ -1,7 +1,7 @@
 local skynet = require "skynet"
 local logger = require "logger"
-local db_client = require "game.db_client"
 local cache = require "game.cache"
+local db_client = require "game.db_client"
 
 local M = {}
 
@@ -55,37 +55,39 @@ end
 
 -- 获取用户卡牌
 function M.get_user_cards(user_id)
-    -- 先尝试从缓存获取
+    -- 1. 从缓存获取
     local cards = cache.get_user_cards(user_id)
     if cards then
-        logger.debug("Get user cards from cache, user_id: %d", user_id)
+        logger.debug("Get cards from cache: %s", user_id)
         return cards
     end
 
-    -- 缓存未命中，从数据库获取
-    logger.debug("Cache miss, getting cards from DB, user_id: %d", user_id)
-    local db = skynet.call(".db_proxy", "lua", "get_user_cards", user_id)
-    if not db then
+    -- 2. 从数据库获取
+    local db_cards = db_client.get_user_cards(user_id)
+    if not db_cards then
+        logger.debug("Cards not found: %s", user_id)
         return nil
     end
 
-    -- 写入缓存
-    cache.set_user_cards(user_id, db)
-    logger.debug("User cards cached, user_id: %d", user_id)
-    return db
+    -- 3. 写入缓存
+    cache.set_user_cards(user_id, db_cards)
+    logger.debug("Cards cached: %s", user_id)
+
+    return db_cards
 end
 
 -- 更新卡牌
-function M.update_card(card_info)
-    -- 先更新数据库
-    local ok = skynet.call(".db_proxy", "lua", "update_card", card_info)
+function M.update_card(card)
+    -- 1. 更新数据库
+    local ok = db_client.update_card(card)
     if not ok then
         return false
     end
 
-    -- 清除缓存，强制下次重新加载
-    cache.remove_user_cards(card_info.user_id)
-    logger.debug("Card cache cleared after update, user_id: %d", card_info.user_id)
+    -- 2. 清除缓存
+    cache.remove_user_cards(card.user_id)
+    logger.debug("Card cache cleared: %s", card.user_id)
+
     return true
 end
 
