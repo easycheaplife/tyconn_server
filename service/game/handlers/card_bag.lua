@@ -10,41 +10,37 @@ local M = {}
 function M.handle(client_id, msg)
     logger.debug("Handling card bag info request from client %d", client_id)
     
-    -- 解码基础请求
-    local ok, base_request = pcall(pb.decode, "common.BaseRequest", msg)
-    if not ok then
-        logger.error("Failed to decode base request: %s", base_request)
-        return message.create_error_response(0, 
-            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PROTO"), 
-            "Invalid proto")
-    end
-
     -- 解码请求
-    local ok, request = pcall(pb.decode, "command.C2GUserCardBagRequest", base_request.payload)
-    if not ok then
-        logger.error("Failed to decode card bag request: %s", request)
-        return message.create_error_response(base_request.session, 
-            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PROTO"), 
-            "Invalid proto")
+    local base_request, request = message.decode_request(msg, "command.C2GUserCardBagRequest")
+    if not base_request then
+        return message.encode_response(message.create_error_response(nil,
+            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PROTO"),
+            "Invalid proto"))
     end
 
-    logger.debug("Processing card bag request with token: %s", request.token)
+    -- 验证Token
+    local token_result = message.verify_token(request.token)
+    if token_result.code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+        logger.error("Invalid token for client: %d", client_id)
+        return message.encode_response(message.create_error_response(base_request.session,
+            token_result.code, token_result.message))
+    end
 
     -- 验证Token并获取用户信息
     local result = user_mgr.verify_token_and_get_user(request.token)
     if result.code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
         logger.error("Invalid token for client: %d", client_id)
-        return message.create_error_response(base_request.session, 
-            result.code, result.message)
+        return message.encode_response(message.create_error_response(base_request.session,
+            result.code, result.message))
     end
 
     -- 使用 db_client 获取用户卡包
     local cards = db_client.get_user_cards(result.user.user_id)
     if not cards then
         logger.error("Failed to get cards for user: %d", result.user.user_id)
-        return message.create_error_response(base_request.session, 
-            pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"), 
-            "Failed to get user cards")
+        return message.encode_response(message.create_error_response(base_request.session,
+            pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"),
+            "Failed to get user cards"))
     end
 
     -- 创建响应

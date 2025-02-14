@@ -1,25 +1,73 @@
 local pb = require "pb"
 local logger = require "logger"
 local utils = require "utils"
+local jwt = require "jwt"
+local skynet = require "skynet"
 
 local M = {}
 
--- 解码基础请求
-function M.decode_request(msg)
-    local ok, request = pcall(pb.decode, "common.BaseRequest", msg)
+-- 解码基础请求和具体请求
+function M.decode_request(msg, request_type)
+    -- 解码基础请求
+    local ok, base_request = pcall(pb.decode, "common.BaseRequest", msg)
     if not ok then
-        logger.error("Failed to decode base request: %s", request)
+        logger.error("Failed to decode base request: %s", base_request)
         return nil
     end
     
-    if request and request.session then
+    if base_request and base_request.session then
         logger.debug("Decoded base request: messageId=%d, sequence=%d", 
-            request.session.messageId or 0,
-            request.session.sequence or 0
+            base_request.session.messageId or 0,
+            base_request.session.sequence or 0
         )
     end
-    
-    return request
+
+    -- 如果没有指定具体请求类型，直接返回基础请求
+    if not request_type then
+        return base_request
+    end
+
+    -- 解码具体请求
+    local ok, request = pcall(pb.decode, request_type, base_request.payload)
+    if not ok then
+        logger.error("Failed to decode request payload: %s", request)
+        return nil
+    end
+
+    return base_request, request
+end
+
+-- 验证Token
+function M.verify_token(token)
+    if not token then
+        return {
+            code = pb.enum("common.ErrorCode", "ERROR_CODE_TOKEN_INVALID"),
+            message = "Missing token"
+        }
+    end
+
+    local ok, claims = pcall(jwt.decode, token, skynet.getenv("jwt_secret"))
+    if not ok or not claims then
+        logger.error("Failed to decode token")
+        return {
+            code = pb.enum("common.ErrorCode", "ERROR_CODE_TOKEN_INVALID"),
+            message = "Invalid token"
+        }
+    end
+
+    if not claims.account then
+        logger.error("Missing account in token claims")
+        return {
+            code = pb.enum("common.ErrorCode", "ERROR_CODE_TOKEN_INVALID"),
+            message = "Invalid token format"
+        }
+    end
+
+    return {
+        code = pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
+        message = "success",
+        claims = claims
+    }
 end
 
 -- 创建会话信息
