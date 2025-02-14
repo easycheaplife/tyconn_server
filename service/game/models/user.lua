@@ -7,10 +7,6 @@ local cache = require "game.cache"
 
 local M = {}
 
--- 用户会话管理
-local sessions = {}  -- client_id -> session
-local session_by_username = {}  -- username -> client_id
-
 -- 调用数据库代理
 local function call_db(...)
     return cluster.call("db_proxy", "@db_proxy", ...)
@@ -122,40 +118,24 @@ function M.get_stats()
     }
 end
 
--- 获取或创建用户
-function M.get_or_create_user(username, password)
-    -- 先尝试获取用户
-    local user = M.get_user_by_username(username)
-    local is_new_user = false
-    
-    if not user then
-        -- 用户不存在，创建新用户
-        logger.debug("Creating new user for account: %s", username)
-        user = M.create_user(username, password, username)
-        if not user then
-            return nil, "创建用户失败"
-        end
-        is_new_user = true
-        logger.info("New user created: %s (ID: %d)", username, user.user_id)
-    else
-        -- 用户存在，验证密码
-        if user.password ~= password then
-            logger.error("Wrong password for user: %s", username)
-            return nil, "密码错误"
-        end
-        logger.debug("User logged in: %s (ID: %d)", username, user.user_id)
-    end
-    
-    return user, nil, is_new_user
-end
-
 -- 创建用户
 function M.create_user(user_data)
+    -- 检查必要字段
+    if not user_data.account then
+        logger.error("Missing account field in user data")
+        return false, "Invalid user data"
+    end
+
     -- 1. 写入数据库
     local success, user, is_new = db_client.create_user(user_data)
     if not success then
-        logger.error("Failed to create user: %s", user) -- user 在失败时是错误信息
+        logger.error("Failed to create user: %s", user)
         return false, user
+    end
+
+    -- 确保返回的用户数据包含 account
+    if not user.account then
+        user.account = user_data.account
     end
 
     -- 2. 写入缓存
@@ -163,6 +143,35 @@ function M.create_user(user_data)
     logger.debug("New user cached: %s", user.account)
 
     return true, user, is_new
+end
+
+-- 获取或创建用户
+function M.get_or_create_user(account, username)
+    -- 1. 尝试获取用户
+    local user = M.get_user(account)
+    if user then
+        return user, nil, false
+    end
+
+    -- 2. 创建新用户
+    logger.debug("Creating new user for account: %s", account)
+    local user_data = {
+        account = account,  -- 确保设置 account
+        username = username,
+        level = 1,
+        exp = 0,
+        vip_level = 0,
+        create_time = os.time(),
+        last_login = os.time()
+    }
+
+    local success, created_user, is_new = M.create_user(user_data)
+    if not success then
+        return nil, created_user -- created_user 此时是错误信息
+    end
+
+    logger.info("New user created: %s (ID: %d)", account, created_user.user_id)
+    return created_user, nil, is_new
 end
 
 return M 

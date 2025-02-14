@@ -3,6 +3,7 @@ local logger = require "logger"
 local message_mgr = require "game.message_mgr"
 local user_mgr = require "game.user_mgr"
 local user_model = require "game.models.user"
+local session = require "game.models.session"
 
 local M = {}
 local CMD = {}
@@ -15,7 +16,8 @@ end
 
 -- 处理客户端断开连接
 function CMD.client_disconnect(_, client_id)
-    user_model.remove_user(client_id)
+    logger.info("Client disconnected: %d", client_id)
+    session.remove_user(client_id)
 end
 
 -- 获取用户信息
