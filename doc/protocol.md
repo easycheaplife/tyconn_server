@@ -191,7 +191,7 @@ message CardInfo {
     int32 quality = 5;      // 品质
     int32 star = 6;         // 星级
     int64 create_time = 7;  // 获得时间
-    int32 count = 8;        // 数量
+    int32 power = 8;        // 战力
 }
 ```
 

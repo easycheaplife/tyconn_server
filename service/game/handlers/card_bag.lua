@@ -42,11 +42,26 @@ function M.handle(client_id, msg)
             "Failed to get user cards"))
     end
 
+    -- 转换数据库字段到协议字段
+    local protocol_cards = {}
+    for _, card in ipairs(cards) do
+        table.insert(protocol_cards, {
+            card_id = card.card_id,
+            card_type = card.card_type or 1, -- 默认类型
+            level = card.level,
+            exp = card.exp,
+            quality = card.quality,
+            star = card.star,
+            create_time = card.create_time,
+            power = card.power
+        })
+    end
+
     -- 创建响应
     local response = {
         code = pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
         message = "success",
-        cards = cards or {}
+        cards = protocol_cards
     }
 
     -- 创建成功响应

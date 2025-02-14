@@ -46,6 +46,13 @@ function M.get_user_cards(user_id)
         return nil, "Database error"
     end
     
+    -- 确保返回所有必要字段
+    for _, card in ipairs(results) do
+        card.card_type = card.card_type or 1  -- 默认类型
+        card.exp = card.exp or 0
+        card.power = card.power or 0
+    end
+    
     return results
 end
 

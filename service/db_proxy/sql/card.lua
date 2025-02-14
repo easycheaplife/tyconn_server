@@ -11,7 +11,17 @@ M.INSERT_CARD = [[
 ]]
 
 M.GET_USER_CARDS = [[
-    SELECT * FROM user_cards 
+    SELECT 
+        id,
+        card_id,
+        level,
+        exp,
+        quality,
+        star,
+        power,
+        create_time,
+        update_time
+    FROM user_cards 
     WHERE user_id = %d
     ORDER BY power DESC, level DESC, id ASC
 ]]
