@@ -16,7 +16,7 @@ class HeartbeatBuilder {
 
         const baseRequest = {
             session: {
-                messageId: root.lookupEnum("common.MessageID").values.C2G_HEARTBEAT,
+                messageId: root.lookupEnum("common.MessageID").values.C2G_HEARTBEAT_REQUEST,
                 sequence: 1,
                 timestamp: Date.now(),
                 version: "1.0.0"

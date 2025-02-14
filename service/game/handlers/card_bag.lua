@@ -57,6 +57,9 @@ function M.handle(client_id, msg)
         pb.encode("command.G2CUserCardBagResponse", response)
     )
 
+    -- 设置正确的响应消息ID
+    base_response.session.messageId = pb.enum("common.MessageID", "G2C_USER_CARD_BAG_RESPONSE")
+
     -- 编码并返回响应
     return message.encode_response(base_response)
 end

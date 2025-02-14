@@ -84,7 +84,7 @@ class ProtoHelper {
     getRequestType(messageId) {
         const requestTypes = {
             'C2L_LOGIN_REQUEST': 'command.C2LLoginRequest',
-            'C2G_HEARTBEAT': 'command.C2GHeartbeat',
+            'C2G_HEARTBEAT_REQUEST': 'command.C2GHeartbeatRequest',
             'C2G_USER_INFO_REQUEST': 'command.C2GUserInfoRequest',
             'C2G_USER_CARD_BAG_REQUEST': 'command.C2GUserCardBagRequest'
         };

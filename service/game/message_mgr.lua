@@ -27,7 +27,7 @@ function M.init()
     -- 注册处理器
     M.register(pb.enum("common.MessageID", "C2G_USER_INFO_REQUEST"), 
         require "game.handlers.user_info")
-    M.register(pb.enum("common.MessageID", "C2G_HEARTBEAT"), 
+    M.register(pb.enum("common.MessageID", "C2G_HEARTBEAT_REQUEST"), 
         require "game.handlers.heartbeat")
     M.register(pb.enum("common.MessageID", "C2G_USER_CARD_BAG_REQUEST"), 
         require "game.handlers.card_bag")

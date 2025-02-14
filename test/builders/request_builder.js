@@ -70,7 +70,7 @@ class RequestBuilder {
 
         return this.buildBaseRequest(
             root,
-            root.lookupEnum("common.MessageID").values.C2G_HEARTBEAT,
+            root.lookupEnum("common.MessageID").values.C2G_HEARTBEAT_REQUEST,
             payload
         );
     }

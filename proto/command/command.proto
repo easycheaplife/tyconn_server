@@ -22,13 +22,13 @@ message S2LLoginResponse {
 }
 
 // 心跳请求
-message C2GHeartbeat {
+message C2GHeartbeatRequest {
     int64 timestamp = 1;    // 时间戳
     string token = 2;       // JWT令牌,用于身份验证
 }
 
 // 心跳响应
-message G2CHeartbeat {
+message G2CHeartbeatResponse {
     int64 timestamp = 1;    // 服务器时间戳
     int32 code = 2;        // 状态码
 }

@@ -6,8 +6,8 @@ enum MessageID {
     NONE = 0;
     C2L_LOGIN_REQUEST = 1;     // 客户端到登录服务器的登录请求
     L2C_LOGIN_RESPONSE = 2;    // 登录服务器到客户端的登录响应
-    C2G_HEARTBEAT = 3;         // 客户端到游戏服务器的心跳请求
-    G2C_HEARTBEAT = 4;         // 游戏服务器到客户端的心跳响应
+    C2G_HEARTBEAT_REQUEST = 3;         // 客户端到游戏服务器的心跳请求
+    G2C_HEARTBEAT_RESPONSE = 4;         // 游戏服务器到客户端的心跳响应
     C2G_USER_INFO_REQUEST = 5;  // 获取用户信息请求
     G2C_USER_INFO_RESPONSE = 6; // 获取用户信息响应
     C2G_USER_CARD_BAG_REQUEST = 7; // 获取用户卡包请求

@@ -14,8 +14,8 @@ class GameClient extends BaseClient {
         };
 
         console.log('\nSending heartbeat request:', heartbeatRequest);
-        const response = await this.sendRequest('C2G_HEARTBEAT', heartbeatRequest);
-        return this.decodeResponse(response, 'command.G2CHeartbeat');
+        const response = await this.sendRequest('C2G_HEARTBEAT_REQUEST', heartbeatRequest);
+        return this.decodeResponse(response, 'command.G2CHeartbeatResponse');
     }
 
     // 获取用户信息
