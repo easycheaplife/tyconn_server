@@ -3,7 +3,7 @@ local logger = require "logger"
 local pb = require "pb"
 local message = require "message"
 local user_mgr = require "game.user_mgr"
-local db_client = require "game.db_client"  -- 添加 db_client
+local db_client = require "game.db_client"
 
 local M = {}
 
@@ -26,10 +26,9 @@ function M.handle(client_id, msg)
             token_result.code, token_result.message))
     end
 
-    -- 验证Token并获取用户信息
-    local result = user_mgr.verify_token_and_get_user(request.token)
+    -- 获取用户信息
+    local result = user_mgr.get_user(token_result.claims.account)
     if result.code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
-        logger.error("Invalid token for client: %d", client_id)
         return message.encode_response(message.create_error_response(base_request.session,
             result.code, result.message))
     end
@@ -52,7 +51,7 @@ function M.handle(client_id, msg)
 
     -- 创建成功响应
     local base_response = message.create_base_response(
-        base_request.session,  -- 使用请求中的session
+        base_request.session,
         pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
         "Success",
         pb.encode("command.G2CUserCardBagResponse", response)
