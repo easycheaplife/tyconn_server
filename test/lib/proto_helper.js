@@ -3,6 +3,160 @@ const path = require('path');
 const fs = require('fs');
 
 class ProtoHelper {
+    constructor() {
+        this.root = null;
+        this.messageIds = {};
+        this.sequence = 0;
+        this.init();
+    }
+
+    async init() {
+        try {
+            // 加载proto文件
+            this.root = new protobuf.Root();
+            
+            // 设置 proto 文件搜索路径
+            const protoPath = path.join(__dirname, '../../proto');
+            this.root.resolvePath = (origin, target) => {
+                if (path.isAbsolute(target)) {
+                    return target;
+                }
+                return path.resolve(protoPath, target);
+            };
+
+            // 只加载必要的 proto 文件
+            const protoFiles = [
+                'common/message.proto',
+                'common/error.proto',
+                'command/command.proto'
+            ];
+
+            // 验证文件是否存在
+            for (const file of protoFiles) {
+                const fullPath = path.join(protoPath, file);
+                if (!fs.existsSync(fullPath)) {
+                    throw new Error(`Proto file not found: ${fullPath}`);
+                }
+            }
+
+            // 加载文件
+            console.log('Loading proto files...');
+            for (const file of protoFiles) {
+                const fullPath = path.join(protoPath, file);
+                console.log(`Loading: ${file}`);
+                await this.root.load(fullPath, {
+                    keepCase: true,
+                    alternateCommentMode: true,
+                    preferTrailingComment: true
+                });
+            }
+
+            // 解析所有类型
+            console.log('Resolving types...');
+            this.root.resolveAll();
+            
+            // 加载消息ID
+            const messageIdEnum = this.root.lookupEnum('common.MessageID');
+            if (!messageIdEnum) {
+                throw new Error('MessageID enum not found');
+            }
+            this.messageIds = messageIdEnum.values;
+            
+            console.log('Proto files loaded successfully');
+            console.log('Available message IDs:', Object.keys(this.messageIds));
+
+        } catch (error) {
+            console.error('Failed to load proto files:', error);
+            if (error.code === 'ENOENT') {
+                console.error('Required proto files:');
+                console.error('proto/');
+                console.error('  ├── common/');
+                console.error('  │   ├── message.proto');
+                console.error('  │   └── error.proto');
+                console.error('  └── command/');
+                console.error('      └── command.proto');
+            }
+            throw error;
+        }
+    }
+
+    // 获取请求消息类型
+    getRequestType(messageId) {
+        const requestTypes = {
+            'C2L_LOGIN_REQUEST': 'command.C2LLoginRequest',
+            'C2G_HEARTBEAT': 'command.C2GHeartbeat',
+            'C2G_USER_INFO_REQUEST': 'command.C2GUserInfoRequest',
+            'C2G_USER_CARD_BAG_REQUEST': 'command.C2GUserCardBagRequest'
+        };
+
+        const type = requestTypes[messageId];
+        if (!type) {
+            throw new Error(`Unknown message ID: ${messageId}`);
+        }
+        return type;
+    }
+
+    // 构建基础请求
+    buildBaseRequest(messageId, payload) {
+        if (!this.root) {
+            throw new Error('Proto files not loaded');
+        }
+
+        const BaseRequest = this.root.lookupType('common.BaseRequest');
+        const messageType = this.root.lookupType(this.getRequestType(messageId));
+
+        // 编码具体请求
+        const encodedPayload = messageType.encode(payload).finish();
+
+        // 创建基础请求
+        const baseRequest = {
+            session: {
+                messageId: this.messageIds[messageId],
+                sequence: ++this.sequence,
+                timestamp: Date.now(),
+                version: "1.0.0"
+            },
+            payload: encodedPayload
+        };
+
+        // 编码基础请求
+        return BaseRequest.encode(baseRequest).finish();
+    }
+
+    // 解码基础响应
+    decodeBaseResponse(data) {
+        const BaseResponse = this.root.lookupType('common.BaseResponse');
+        return BaseResponse.decode(data);
+    }
+
+    // 解码登录响应
+    decodeLoginResponse(payload) {
+        // 使用正确的消息类型名称
+        const LoginResponse = this.root.lookupType('command.S2LLoginResponse');
+        return LoginResponse.decode(payload);
+    }
+
+    // 解码用户信息响应
+    decodeUserInfoResponse(payload) {
+        const UserInfoResponse = this.root.lookupType('command.G2CUserInfoResponse');
+        return UserInfoResponse.decode(payload);
+    }
+
+    // 解码心跳响应
+    decodeHeartbeatResponse(payload) {
+        const HeartbeatResponse = this.root.lookupType('command.G2CHeartbeat');
+        return HeartbeatResponse.decode(payload);
+    }
+
+    // 解码消息
+    decodeMessage(messageType, payload) {
+        const MessageType = this.root.lookupType(messageType);
+        if (!MessageType) {
+            throw new Error(`Message type not found: ${messageType}`);
+        }
+        return MessageType.decode(payload);
+    }
+
     static async loadProtos() {
         // 获取项目根目录
         let rootDir = path.resolve(__dirname, '../..');
@@ -103,6 +257,19 @@ class ProtoHelper {
                 types.push(nested.fullName);
             } else if (nested instanceof protobuf.Enum) {
                 types.push(`enum ${nested.fullName}`);
+            }
+        });
+        return types;
+    }
+
+    // 添加调试方法
+    listAvailableTypes() {
+        const types = [];
+        this.root.nestedArray.forEach(nested => {
+            if (nested.nestedArray) {
+                nested.nestedArray.forEach(type => {
+                    types.push(`${nested.name}.${type.name}`);
+                });
             }
         });
         return types;

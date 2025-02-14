@@ -1,14 +1,14 @@
 {
-  "name": "game-test",
-  "version": "1.0.0",
-  "description": "Game server test client",
-  "main": "client.js",
   "scripts": {
-    "test": "node client.js"
+    "test": "node test/run_test.js",
+    "test:user": "node test/run_test.js -t user_info",
+    "test:heartbeat": "node test/run_test.js -t heartbeat",
+    "test:card": "node test/run_test.js -t card_bag",
+    "test:all": "node test/run_test.js --all"
   },
   "dependencies": {
-    "jsonwebtoken": "^9.0.2",
-    "protobufjs": "^7.2.4",
-    "ws": "^8.18.0"
+    "ws": "^8.0.0",
+    "yargs": "^17.0.1",
+    "protobufjs": "^7.0.0"
   }
-}
+} 

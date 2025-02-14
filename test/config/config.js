@@ -11,12 +11,26 @@ const SSL_CONFIG = {
 };
 
 module.exports = {
+    // 服务器配置
+    protocol: process.env.WS_PROTOCOL || 'ws',
+    loginHost: process.env.LOGIN_HOST || '127.0.0.1',
+    loginPort: process.env.LOGIN_PORT || '8021',
+    gameHost: process.env.GAME_HOST || '127.0.0.1',
+    gamePort: process.env.GAME_PORT || '8022',
+
+    // 客户端配置
+    platform: 'test',
+    version: '1.0.0',
+    requestTimeout: 5000,
+
+    // 测试配置
+    testAccount: 'test',
+    testPassword: '123456',
+
     loginServer: `${WS_PROTOCOL}://${SERVER_HOST}:${WS_PORT}`,
     account: 'test',
     password: '123456',
     deviceId: 'test_device',
-    platform: 'test',
-    version: '1.0.0',
     jwtSecret: 'tyconn_jwt_secret',  // 添加JWT密钥，需要和服务器端一致
     ssl: WS_PROTOCOL === 'wss' ? SSL_CONFIG : undefined  // 仅在wss时使用SSL配置
 }; 
