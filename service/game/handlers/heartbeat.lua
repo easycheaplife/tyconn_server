@@ -38,8 +38,9 @@ function M.handle(client_id, msg)
 
     -- 创建心跳响应
     local heartbeat_response = {
-        timestamp = os.time(),
-        code = 0
+        code = 0,
+        message = "success",
+        timestamp = os.time()
     }
 
     -- 创建基础响应

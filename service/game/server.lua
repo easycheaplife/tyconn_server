@@ -11,12 +11,12 @@ _G.client_heartbeats = {}  -- 记录用户最后心跳时间，全局可访问
 -- 检查心跳超时
 local function check_heartbeat_timeout()
     local now = os.time()
-    for user_id, last_time in pairs(_G.client_heartbeats) do
+    for account, last_time in pairs(_G.client_heartbeats) do
         if now - last_time > heartbeat_timeout then
-            logger.warn("User %d heartbeat timeout, disconnecting...", user_id)
+            logger.warn("User %s heartbeat timeout, disconnecting...", account)
             -- 通知网关断开用户连接
-            skynet.send(".gate", "lua", "disconnect_user", user_id)
-            _G.client_heartbeats[user_id] = nil
+            skynet.send(".gate", "lua", "disconnect_user", account)
+            _G.client_heartbeats[account] = nil
         end
     end
 end
