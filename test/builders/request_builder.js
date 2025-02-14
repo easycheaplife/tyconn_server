@@ -64,7 +64,7 @@ class RequestBuilder {
 
         console.log('\n[Heartbeat] 请求详情:', heartbeatRequest);
 
-        const payload = root.lookupType("command.C2GHeartbeat")
+        const payload = root.lookupType("command.C2GHeartbeatRequest")
             .encode(heartbeatRequest)
             .finish();
 

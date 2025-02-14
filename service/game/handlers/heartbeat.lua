@@ -9,7 +9,7 @@ local M = {}
 
 function M.handle(client_id, msg)
     -- 解码请求
-    local base_request, request = message.decode_request(msg, "command.C2GHeartbeat")
+    local base_request, request = message.decode_request(msg, "command.C2GHeartbeatRequest")
     if not base_request then
         return message.encode_response(message.create_error_response(nil,
             pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PROTO"),
@@ -47,7 +47,7 @@ function M.handle(client_id, msg)
         base_request.session,
         pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
         "Success",
-        pb.encode("command.G2CHeartbeat", heartbeat_response)
+        pb.encode("command.G2CHeartbeatResponse", heartbeat_response)
     )
 
     -- 设置正确的响应消息ID

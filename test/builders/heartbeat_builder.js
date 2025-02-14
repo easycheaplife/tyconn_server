@@ -10,7 +10,7 @@ class HeartbeatBuilder {
 
         console.log('发送心跳请求:', heartbeatRequest);
 
-        const payload = root.lookupType("command.C2GHeartbeat")
+        const payload = root.lookupType("command.C2GHeartbeatRequest")
             .encode(heartbeatRequest)
             .finish();
 
