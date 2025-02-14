@@ -41,7 +41,13 @@ function M.get_user_info(account)
     local key = make_key(PREFIX.user, account)
     local data = redis.get(key)
     if data then
-        return cjson.decode(data)
+        logger.debug("Got user cache - Key: %s, Data: %s", key, data)
+        local ok, user = pcall(cjson.decode, data)
+        if ok then
+            return user
+        else
+            logger.error("Failed to decode user cache: %s", user)
+        end
     end
     return nil
 end
@@ -49,9 +55,15 @@ end
 function M.set_user_info(account, user)
     local key = make_key(PREFIX.user, account)
     local data = cjson.encode(user)
+    logger.debug("Setting user cache - Key: %s, Data: %s", key, data)
+    
     local ok = redis.set(key, data)
     if ok then
-        redis.expire(key, EXPIRE.user)
+        -- 设置过期时间
+        ok = redis.expire(key, EXPIRE.user)
+        logger.debug("Set cache expire time for user: %s, ok: %s", account, tostring(ok))
+    else
+        logger.error("Failed to set user cache for: %s", account)
     end
     return ok
 end

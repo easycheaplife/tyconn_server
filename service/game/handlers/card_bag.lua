@@ -27,10 +27,22 @@ function M.handle(client_id, msg)
     end
 
     -- 获取用户信息
-    local result = user_mgr.get_user(token_result.claims.account)
-    if result.code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+    local result = user_mgr.get_user_from_cache(token_result.claims.account)
+    if not result then
+        -- 缓存中没有，从数据库获取
+        result = user_mgr.get_user(token_result.claims.account)
+        if result.code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+            return message.encode_response(message.create_error_response(base_request.session,
+                result.code, result.message))
+        end
+        -- 将用户信息存入缓存
+        user_mgr.cache_user(result.user)
+    end
+
+    if not result.user then
         return message.encode_response(message.create_error_response(base_request.session,
-            result.code, result.message))
+            pb.enum("common.ErrorCode", "ERROR_CODE_USER_NOT_FOUND"),
+            "User not found"))
     end
 
     -- 先从缓存获取用户卡包
