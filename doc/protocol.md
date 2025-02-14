@@ -24,19 +24,48 @@ message Session {
 }
 ```
 
-### 1.2 错误码定义
+### 1.2 消息ID定义
 ```protobuf
-enum ErrorCode {
-    ERROR_CODE_SUCCESS = 0;              // 成功
-    ERROR_CODE_SYSTEM_ERROR = 1;         // 系统错误
-    ERROR_CODE_INVALID_PARAM = 2;        // 无效参数
-    ERROR_CODE_INVALID_ACCOUNT = 3;      // 无效账号
-    ERROR_CODE_WRONG_PASSWORD = 4;       // 密码错误
-    ERROR_CODE_ACCOUNT_EXISTS = 5;       // 账号已存在
-    ERROR_CODE_ACCOUNT_NOT_EXIST = 6;    // 账号不存在
-    ERROR_CODE_TOKEN_INVALID = 7;        // 无效的令牌
-    ERROR_CODE_TOKEN_EXPIRED = 8;        // 令牌已过期
-    ERROR_CODE_SERVER_BUSY = 9;          // 服务器繁忙
+enum MessageID {
+    NONE = 0;
+    C2L_LOGIN_REQUEST = 1;          // 客户端到登录服务器的登录请求
+    L2C_LOGIN_RESPONSE = 2;         // 登录服务器到客户端的登录响应
+    C2G_HEARTBEAT_REQUEST = 3;      // 客户端到游戏服务器的心跳请求
+    G2C_HEARTBEAT_RESPONSE = 4;     // 游戏服务器到客户端的心跳响应
+    C2G_USER_INFO_REQUEST = 5;      // 获取用户信息请求
+    G2C_USER_INFO_RESPONSE = 6;     // 获取用户信息响应
+    C2G_USER_CARD_BAG_REQUEST = 7;  // 获取用户卡包请求
+    G2C_USER_CARD_BAG_RESPONSE = 8; // 获取用户卡包响应
+}
+```
+
+### 1.3 心跳协议
+```protobuf
+// 心跳请求
+message C2GHeartbeatRequest {
+    int64 timestamp = 1;    // 时间戳
+    string token = 2;       // JWT令牌,用于身份验证
+}
+
+// 心跳响应
+message G2CHeartbeatResponse {
+    int64 timestamp = 1;    // 服务器时间戳
+    int32 code = 2;        // 状态码
+}
+```
+
+### 1.4 卡包协议
+```protobuf
+// 获取用户卡包请求
+message C2GUserCardBagRequest {
+    string token = 1;       // JWT令牌
+}
+
+// 获取用户卡包响应
+message G2CUserCardBagResponse {
+    int32 code = 1;        // 错误码
+    string message = 2;    // 错误信息
+    repeated CardInfo cards = 3;  // 卡牌列表
 }
 ```
 
@@ -83,7 +112,7 @@ message L2CLoginResponse {
 
 **请求格式:**
 ```protobuf
-message C2GHeartbeat {
+message C2GHeartbeatRequest {
     string token = 1;       // JWT令牌
     int64 timestamp = 2;    // 时间戳
 }
@@ -91,7 +120,7 @@ message C2GHeartbeat {
 
 **响应格式:**
 ```protobuf
-message G2CHeartbeat {
+message G2CHeartbeatResponse {
     int32 code = 1;        // 错误码
     string message = 2;    // 错误信息
     int64 server_time = 3; // 服务器时间
@@ -121,7 +150,6 @@ message G2CUserInfoResponse {
     int32 code = 1;        // 错误码
     string message = 2;    // 错误信息
     UserInfo user = 3;     // 用户信息
-    bool is_new = 4;       // 是否是新创建的用户
 }
 
 message UserInfo {
@@ -188,11 +216,10 @@ message CardInfo {
 
 ## 4. 协议规范
 
-### 4.1 命名规范
-- 请求消息: C2X_功能名_Request
-- 响应消息: X2C_功能名_Response
-- 枚举类型: 大写下划线
-- 字段名称: 小写下划线
+### 4.1 命名规则
+- 请求消息: C2G/C2L 前缀 + 功能名 + Request
+- 响应消息: G2C/L2C 前缀 + 功能名 + Response
+- 字段名称: 小写下划线命名
 
 ### 4.2 版本控制
 - 每个消息都包含版本号
@@ -205,3 +232,19 @@ message CardInfo {
 - WebSocket连接支持WSS加密
 - 异常连接自动断开
 - 分层验证机制
+
+## 5. 错误码定义
+```protobuf
+enum ErrorCode {
+    ERROR_CODE_SUCCESS = 0;              // 成功
+    ERROR_CODE_SYSTEM_ERROR = 1;         // 系统错误
+    ERROR_CODE_INVALID_PARAM = 2;        // 无效参数
+    ERROR_CODE_INVALID_ACCOUNT = 3;      // 无效账号
+    ERROR_CODE_WRONG_PASSWORD = 4;       // 密码错误
+    ERROR_CODE_ACCOUNT_EXISTS = 5;       // 账号已存在
+    ERROR_CODE_ACCOUNT_NOT_EXIST = 6;    // 账号不存在
+    ERROR_CODE_TOKEN_INVALID = 7;        // 无效的令牌
+    ERROR_CODE_TOKEN_EXPIRED = 8;        // 令牌已过期
+    ERROR_CODE_SERVER_BUSY = 9;          // 服务器繁忙
+}
+```
