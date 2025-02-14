@@ -2,6 +2,7 @@ local skynet = require "skynet"
 local logger = require "logger"
 local redis = require "redis"
 local database = require "database"
+local cjson = require "cjson"
 
 local M = {}
 
@@ -40,14 +41,14 @@ function M.get_user_info(account)
     local key = make_key(PREFIX.user, account)
     local data = redis.get(key)
     if data then
-        return skynet.unpack(data)
+        return cjson.decode(data)
     end
     return nil
 end
 
 function M.set_user_info(account, user)
     local key = make_key(PREFIX.user, account)
-    local data = skynet.pack(user)
+    local data = cjson.encode(user)
     local ok = redis.set(key, data)
     if ok then
         redis.expire(key, EXPIRE.user)
@@ -65,14 +66,14 @@ function M.get_user_cards(user_id)
     local key = make_key(PREFIX.user_cards, user_id)
     local data = redis.get(key)
     if data then
-        return skynet.unpack(data)
+        return cjson.decode(data)
     end
     return nil
 end
 
 function M.set_user_cards(user_id, cards)
     local key = make_key(PREFIX.user_cards, user_id)
-    local data = skynet.pack(cards)
+    local data = cjson.encode(cards)
     local ok = redis.set(key, data)
     if ok then
         redis.expire(key, EXPIRE.user_cards)

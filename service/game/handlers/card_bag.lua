@@ -33,13 +33,19 @@ function M.handle(client_id, msg)
             result.code, result.message))
     end
 
-    -- 使用 db_client 获取用户卡包
-    local cards = db_client.get_user_cards(result.user.user_id)
+    -- 先从缓存获取用户卡包
+    local cards = user_mgr.get_user_cards_from_cache(result.user.user_id)
     if not cards then
-        logger.error("Failed to get cards for user: %d", result.user.user_id)
-        return message.encode_response(message.create_error_response(base_request.session,
-            pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"),
-            "Failed to get user cards"))
+        -- 缓存中没有，从数据库获取
+        cards = db_client.get_user_cards(result.user.user_id)
+        if not cards then
+            logger.error("Failed to get cards for user: %d", result.user.user_id)
+            return message.encode_response(message.create_error_response(base_request.session,
+                pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"),
+                "Failed to get user cards"))
+        end
+        -- 将数据库中获取的卡包信息存入缓存
+        user_mgr.cache_user_cards(result.user.user_id, cards)
     end
 
     -- 转换数据库字段到协议字段
