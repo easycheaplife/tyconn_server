@@ -43,11 +43,11 @@ class LoginClient extends BaseClient {
             throw new Error('No token in login response');
         }
 
-        // 从响应中获取游戏服务器信息
-        const gameHost = loginResponse.ws_addr || config.gameHost || config.loginHost;
-        const gamePort = loginResponse.ws_port || config.gamePort || '8022';
+        if (!loginResponse.ws_addr || !loginResponse.ws_port) {
+            throw new Error('Game server info not provided in login response');
+        }
 
-        console.log(`Game server: ${gameHost}:${gamePort}`);
+        console.log(`Game server: ${loginResponse.ws_addr}:${loginResponse.ws_port}`);
 
         this.close();
 
@@ -55,8 +55,8 @@ class LoginClient extends BaseClient {
             token: loginResponse.token,
             gateInfo: {
                 protocol: config.protocol,
-                host: gameHost,
-                port: gamePort
+                host: loginResponse.ws_addr,
+                port: loginResponse.ws_port
             }
         };
     }

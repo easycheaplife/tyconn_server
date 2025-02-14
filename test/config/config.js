@@ -12,11 +12,9 @@ const SSL_CONFIG = {
 
 module.exports = {
     // 服务器配置
-    protocol: process.env.WS_PROTOCOL || 'ws',
-    loginHost: process.env.LOGIN_HOST || '127.0.0.1',
-    loginPort: process.env.LOGIN_PORT || '8021',
-    gameHost: process.env.GAME_HOST || '127.0.0.1',
-    gamePort: process.env.GAME_PORT || '8022',
+    protocol: WS_PROTOCOL,
+    loginHost: SERVER_HOST,
+    loginPort: WS_PORT,
 
     // 客户端配置
     platform: 'test',
