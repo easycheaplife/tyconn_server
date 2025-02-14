@@ -110,78 +110,15 @@ function M.update_user(user)
     return true
 end
 
--- 添加用户会话
-function M.add_user(client_id, user_info)
-    -- 检查用户是否已经在线
-    local old_client_id = session_by_username[user_info.username]
-    if old_client_id then
-        -- 踢掉旧的连接
-        sessions[old_client_id] = nil
-        logger.info("Kicked old session for user: %s", user_info.username)
-    end
-    
-    -- 添加新会话
-    sessions[client_id] = {
-        user_info = user_info,
-        login_time = os.time()
-    }
-    session_by_username[user_info.username] = client_id
-    
-    -- 更新最后登录时间
-    user_info.last_login = os.time()
-    M.update_user(user_info)
-    
-    logger.info("User logged in - username: %s, client_id: %s", 
-        user_info.username, client_id)
-end
-
--- 删除用户会话
-function M.remove_user(client_id)
-    local session = sessions[client_id]
-    if session then
-        local username = session.user_info.username
-        session_by_username[username] = nil
-        logger.info("User logged out - username: %s, client_id: %s", 
-            username, client_id)
-    end
-    sessions[client_id] = nil
-end
-
--- 获取用户会话
-function M.get_user(client_id)
-    return sessions[client_id]
-end
-
--- 检查用户是否在线
-function M.is_user_online(username)
-    return session_by_username[username] ~= nil
-end
-
 -- 获取用户统计信息
 function M.get_stats()
-    -- 获取总用户数
-    local total = call_db("get_total_users") or 0
-    
-    -- 获取在线用户数和列表
-    local online_count = 0
-    local online_users = {}
-    for client_id, session in pairs(sessions) do
-        online_count = online_count + 1
-        table.insert(online_users, {
-            username = session.user_info.username,
-            client_id = client_id,
-            login_time = session.login_time
-        })
-    end
-    
-    -- 获取最近注册的用户
-    local recent_users = call_db("get_recent_users") or {}
+    -- 获取总用户数和最近注册用户
+    local total = db_client.get_total_users() or 0
+    local recent_users = db_client.get_recent_users() or {}
     
     return {
         total_users = total,
-        online_users = online_count,
-        recent_users = recent_users,
-        online_list = online_users
+        recent_users = recent_users
     }
 end
 
@@ -210,6 +147,22 @@ function M.get_or_create_user(username, password)
     end
     
     return user, nil, is_new_user
+end
+
+-- 创建用户
+function M.create_user(user_data)
+    -- 1. 写入数据库
+    local success, user, is_new = db_client.create_user(user_data)
+    if not success then
+        logger.error("Failed to create user: %s", user) -- user 在失败时是错误信息
+        return false, user
+    end
+
+    -- 2. 写入缓存
+    cache.set_user_info(user.account, user)
+    logger.debug("New user cached: %s", user.account)
+
+    return true, user, is_new
 end
 
 return M 

@@ -8,6 +8,7 @@ local db_client = require "game.db_client"
 local name_generator = require "game.utils.name_generator"
 local handler_helper = require "game.handlers.handler_helper"
 local utils = require "utils"
+local user = require "game.models.user"  -- 添加 user model 引用
 
 local M = {}
 
@@ -61,17 +62,17 @@ function M.handle(client_id, msg)
             
             logger.debug("Creating new user: %s", utils.table_to_string(new_user))
 
-            -- 使用 db_client 创建用户
-            local success, err, is_new = db_client.create_user(new_user)
+            -- 使用 user.create_user 创建用户
+            local success, created_user, is_new = user.create_user(new_user)
             if not success then
-                logger.error("Failed to create user: %s", err)
+                logger.error("Failed to create user: %s", created_user or "unknown error")
                 return message.encode_response(message.create_error_response(base_request.session,
                     pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"),
-                    err or "创建用户失败"))
+                    created_user or "创建用户失败"))
             end
             
             result = {
-                user = err,  -- db_client.create_user 返回的用户信息
+                user = created_user,  -- user.create_user 返回的用户信息
                 is_new = is_new or true
             }
         end
