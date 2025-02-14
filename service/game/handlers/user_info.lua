@@ -3,12 +3,11 @@ local logger = require "logger"
 local pb = require "pb"
 local message = require "message"
 local card = require "game.models.card"
-local user_mgr = require "game.user_mgr"
-local db_client = require "game.db_client"
+local user = require "game.models.user"  -- 改用 user model
+local session = require "game.models.session"
 local name_generator = require "game.utils.name_generator"
 local handler_helper = require "game.handlers.handler_helper"
 local utils = require "utils"
-local user = require "game.models.user"  -- 添加 user model 引用
 
 local M = {}
 
@@ -23,10 +22,10 @@ function M.handle(client_id, msg)
     end
 
     -- 先从缓存获取用户信息
-    local result = user_mgr.get_user_from_cache(claims.account)
+    local result = user.get_user_from_cache(claims.account)
     if not result then
         -- 缓存中没有，从数据库获取
-        result = user_mgr.get_user(claims.account)
+        result = user.get_user(claims.account)
         if not result then
             logger.error("Failed to get user for account %s", claims.account)
             return message.encode_response(message.create_error_response(base_request.session,
@@ -38,7 +37,7 @@ function M.handle(client_id, msg)
         if result.user then
             result.user.account = claims.account
             logger.debug("Attempting to cache user data: %s", utils.table_to_string(result.user))
-            local cache_success, cache_err = user_mgr.cache_user(result.user)
+            local cache_success, cache_err = user.cache_user(result.user)
             if not cache_success then
                 logger.error("Failed to cache user data: %s", cache_err or "unknown error")
                 -- 继续处理，不影响用户信息返回

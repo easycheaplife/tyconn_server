@@ -1,5 +1,7 @@
 local skynet = require "skynet"
 local logger = require "logger"
+local cache = require "game.cache"
+local utils = require "utils"
 
 local M = {}
 
@@ -9,11 +11,11 @@ local session_by_username = {}
 
 -- 添加用户会话
 function M.add_user(client_id, user_info)
-    -- 检查是否已有会话
+    -- 检查用户是否已经在线
     local old_client_id = session_by_username[user_info.username]
     if old_client_id then
-        -- 踢掉旧会话
-        M.remove_user(old_client_id)
+        -- 踢掉旧的连接
+        sessions[old_client_id] = nil
         logger.info("Kicked old session for user: %s", user_info.username)
     end
     
@@ -23,6 +25,9 @@ function M.add_user(client_id, user_info)
         login_time = os.time()
     }
     session_by_username[user_info.username] = client_id
+    
+    -- 更新最后登录时间
+    user_info.last_login = os.time()
     
     logger.info("User logged in - username: %s, client_id: %s", 
         user_info.username, client_id)

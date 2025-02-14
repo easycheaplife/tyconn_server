@@ -1,7 +1,7 @@
 local pb = require "pb"
 local logger = require "logger"
 local message = require "message"
-local user_mgr = require "game.user_mgr"
+local user = require "game.models.user"
 
 local M = {}
 
@@ -24,16 +24,16 @@ function M.verify_request_with_user(client_id, msg, proto_name)
     end
 
     -- 3. 获取用户信息
-    local result = user_mgr.get_user_from_cache(token_result.claims.account)
+    local result = user.get_user_from_cache(token_result.claims.account)
     if not result then
         -- 缓存中没有，从数据库获取
-        result = user_mgr.get_user(token_result.claims.account)
+        result = user.get_user(token_result.claims.account)
         if result.code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
             return nil, nil, nil, message.encode_response(message.create_error_response(base_request.session,
                 result.code, result.message))
         end
         -- 将用户信息存入缓存
-        user_mgr.cache_user(result.user)
+        user.cache_user(result.user)
     end
 
     if not result.user then

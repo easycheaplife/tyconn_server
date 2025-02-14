@@ -174,4 +174,36 @@ function M.get_or_create_user(account, username)
     return created_user, nil, is_new
 end
 
+-- 从缓存获取用户信息
+function M.get_user_from_cache(account)
+    local user = cache.get_user_info(account)
+    if user then
+        logger.debug("Got user from cache: %s", account)
+        return { user = user }
+    end
+    return nil
+end
+
+-- 缓存用户信息
+function M.cache_user(user)
+    if not user or not user.account then
+        logger.error("Failed to cache user: invalid user data")
+        return false
+    end
+    
+    logger.debug("Caching user info: %s", utils.table_to_string({
+        account = user.account,
+        user_id = user.user_id,
+        username = user.username
+    }))
+
+    local ok = cache.set_user_info(user.account, user)
+    if ok then
+        logger.debug("Successfully cached user info for: %s", user.account)
+    else
+        logger.error("Failed to cache user info for: %s", user.account)
+    end
+    return ok
+end
+
 return M 

@@ -1,8 +1,7 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local message_mgr = require "game.message_mgr"
-local user_mgr = require "game.user_mgr"
-local user_model = require "game.models.user"
+local user = require "game.models.user"
 local session = require "game.models.session"
 
 local M = {}
@@ -22,7 +21,7 @@ end
 
 -- 获取用户信息
 function CMD.get_user(token)
-    return user_mgr.get_user(token)
+    return user.get_user(token)
 end
 
 -- 服务启动
@@ -40,7 +39,7 @@ function CMD.update_user(user)
         return false, "Invalid user info"
     end
     
-    local ok, err = user_model.update_user(user)
+    local ok, err = user.update_user(user)
     if not ok then
         logger.error("Failed to update user: %s", err)
         return false, err
