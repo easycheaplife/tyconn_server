@@ -2,49 +2,40 @@ local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
 local message = require "message"
-local jwt = require "jwt"
-local name_generator = require "game.utils.name_generator"
-local utils = require "utils"
-local db_client = require "game.db_client"
-local user = require "game.models.user"
 local card = require "game.models.card"
 local user_mgr = require "game.user_mgr"
+local db_client = require "game.db_client"
+local name_generator = require "game.utils.name_generator"
+local handler_helper = require "game.handlers.handler_helper"
+local utils = require "utils"
 
 local M = {}
 
 function M.handle(client_id, msg)
     logger.debug("Handling user info request from client %d", client_id)
     
-    -- 解码请求
-    local base_request, request = message.decode_request(msg, "command.C2GUserInfoRequest")
+    -- 验证请求
+    local base_request, request, claims = handler_helper.verify_request(
+        client_id, msg, "command.C2GUserInfoRequest")
     if not base_request then
-        return nil
-    end
-
-    -- 验证Token
-    local token_result = message.verify_token(request.token)
-    if token_result.code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
-        logger.error("Failed to decode token: %s", token_result.message)
-        return message.create_error_response(base_request.session, 
-            pb.enum("common.ErrorCode", "ERROR_CODE_TOKEN_INVALID"), 
-            "Invalid token")
+        return request  -- 错误响应
     end
 
     -- 先从缓存获取用户信息
-    local result = user_mgr.get_user_from_cache(token_result.claims.account)
+    local result = user_mgr.get_user_from_cache(claims.account)
     if not result then
         -- 缓存中没有，从数据库获取
-        result = user_mgr.get_user(token_result.claims.account)
+        result = user_mgr.get_user(claims.account)
         if not result then
-            logger.error("Failed to get user for account %s", token_result.claims.account)
-            return message.create_error_response(base_request.session,
+            logger.error("Failed to get user for account %s", claims.account)
+            return message.encode_response(message.create_error_response(base_request.session,
                 pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"),
-                "Database error")
+                "Database error"))
         end
 
         -- 如果用户存在，将用户信息存入缓存
         if result.user then
-            result.user.account = token_result.claims.account
+            result.user.account = claims.account
             logger.debug("Attempting to cache user data: %s", utils.table_to_string(result.user))
             local cache_success, cache_err = user_mgr.cache_user(result.user)
             if not cache_success then
@@ -55,11 +46,11 @@ function M.handle(client_id, msg)
 
         -- 如果用户不存在，则创建用户
         if not result.user then
-            logger.debug("Creating new user for account: %s", token_result.claims.account)
+            logger.debug("Creating new user for account: %s", claims.account)
             
             -- 创建用户数据
             local new_user = {
-                account = token_result.claims.account,
+                account = claims.account,
                 username = name_generator.generate_username(),
                 level = 1,
                 exp = 0,
@@ -74,9 +65,9 @@ function M.handle(client_id, msg)
             local success, err, is_new = db_client.create_user(new_user)
             if not success then
                 logger.error("Failed to create user: %s", err)
-                return message.create_error_response(base_request.session,
+                return message.encode_response(message.create_error_response(base_request.session,
                     pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"),
-                    err or "创建用户失败")
+                    err or "创建用户失败"))
             end
             
             result = {
@@ -89,23 +80,17 @@ function M.handle(client_id, msg)
         if result.is_new then
             local ok = card.init_user_cards(result.user.user_id)
             if not ok then
-                logger.error("Failed to initialize cards for new user: %s", token_result.claims.account)
+                logger.error("Failed to initialize cards for new user: %s", claims.account)
                 -- 继续返回用户信息，不影响登录流程
             end
         end
     end
-    
-    -- 创建基础响应
-    local base_response = message.create_base_response(base_request.session,
-        pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
-        "Success",
-        pb.encode("command.G2CUserInfoResponse", result))
-    
-    -- 设置正确的响应消息ID
-    base_response.session.messageId = pb.enum("common.MessageID", "G2C_USER_INFO_RESPONSE")
 
-    -- 编码并返回响应
-    return pb.encode("common.BaseResponse", base_response)
+    return handler_helper.create_success_response(
+        base_request,
+        "command.G2CUserInfoResponse",
+        result,
+        pb.enum("common.MessageID", "G2C_USER_INFO_RESPONSE"))
 end
 
-return M 
+return M
