@@ -5,6 +5,7 @@ local token_model = require "db_proxy.models.token"
 local sql = require "db_proxy.sql.init"
 local db_util = require "db_proxy.utils.db_util"
 local card = require "db_proxy.models.card"
+local item = require "db_proxy.models.item"
 
 local CMD = {}
 
@@ -90,6 +91,19 @@ end
 
 function CMD.update_card(card_info)
     return card.update_card(card_info)
+end
+
+-- 物品相关命令
+function CMD.get_user_items(user_id)
+    return item.get_user_items(user_id)
+end
+
+function CMD.update_user_items(user_id, items)
+    return item.update_user_items(user_id, items)
+end
+
+function CMD.log_item_change(log)
+    return item.log_item_change(log)
 end
 
 -- 服务入口

@@ -3,7 +3,9 @@
     "test": "node test/run_test.js",
     "test:user": "node test/run_test.js -t user_info",
     "test:heartbeat": "node test/run_test.js -t heartbeat",
-    "test:card": "node test/run_test.js -t card_bag"
+    "test:card": "node test/run_test.js -t card_bag",
+    "test:bag": "node test/run_test.js -t bag_info",
+    "test:item": "node test/run_test.js -t use_item"
   },
   "dependencies": {
     "ws": "^8.0.0",

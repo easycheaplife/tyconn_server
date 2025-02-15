@@ -86,7 +86,9 @@ class ProtoHelper {
             'C2L_LOGIN_REQUEST': 'command.C2LLoginRequest',
             'C2G_HEARTBEAT_REQUEST': 'command.C2GHeartbeatRequest',
             'C2G_USER_INFO_REQUEST': 'command.C2GUserInfoRequest',
-            'C2G_USER_CARD_BAG_REQUEST': 'command.C2GUserCardBagRequest'
+            'C2G_USER_CARD_BAG_REQUEST': 'command.C2GUserCardBagRequest',
+            'C2G_BAG_INFO_REQUEST': 'command.C2GBagInfoRequest',
+            'C2G_USE_ITEM_REQUEST': 'command.C2GUseItemRequest'  
         };
 
         const type = requestTypes[messageId];

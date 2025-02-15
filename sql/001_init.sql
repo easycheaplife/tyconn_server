@@ -48,4 +48,29 @@ CREATE TABLE IF NOT EXISTS user_cards (
     update_time BIGINT NOT NULL,
     PRIMARY KEY (id),
     INDEX idx_user_card (user_id, card_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 用户背包表
+CREATE TABLE IF NOT EXISTS user_items (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,          -- 用户ID
+    item_id INT NOT NULL,             -- 物品ID
+    count INT NOT NULL DEFAULT 1,      -- 数量
+    create_time BIGINT NOT NULL,       -- 获得时间
+    update_time BIGINT NOT NULL,       -- 更新时间
+    INDEX idx_user_item (user_id, item_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 物品变化日志表
+CREATE TABLE IF NOT EXISTS item_logs (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,          -- 用户ID
+    item_id INT NOT NULL,             -- 物品ID
+    count INT NOT NULL,               -- 变化数量
+    type TINYINT NOT NULL,            -- 变化类型
+    source VARCHAR(32) NOT NULL,       -- 来源
+    before_count INT NOT NULL,         -- 变化前数量
+    after_count INT NOT NULL,          -- 变化后数量
+    create_time BIGINT NOT NULL,       -- 记录时间
+    INDEX idx_user_time (user_id, create_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4; 

@@ -45,4 +45,28 @@ function M.create_user(user)
     return call_db("create_user", user)
 end
 
+-- 获取用户物品
+function M.get_user_items(user_id)
+    return call_db("get_user_items", user_id)
+end
+
+-- 更新用户物品
+function M.update_user_items(user_id, items)
+    return call_db("update_user_items", user_id, items)
+end
+
+-- 记录物品变化
+function M.log_item_change(user_id, item_id, count, type, source, before_count, after_count)
+    return call_db("log_item_change", {
+        user_id = user_id,
+        item_id = item_id,
+        count = count,
+        type = type,
+        source = source,
+        before_count = before_count,
+        after_count = after_count,
+        create_time = os.time()
+    })
+end
+
 return M 

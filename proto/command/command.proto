@@ -57,3 +57,29 @@ message G2CUserCardBagResponse {
     string message = 2;    // 错误信息
     repeated common.CardInfo cards = 3;  // 卡牌列表
 }
+
+// 获取背包信息请求
+message C2GBagInfoRequest {
+    string token = 1;
+}
+
+// 背包信息响应
+message G2CBagInfoResponse {
+    int32 code = 1;
+    string message = 2;
+    repeated common.ItemInfo items = 3;  // 背包物品列表
+}
+
+// 使用物品请求
+message C2GUseItemRequest {
+    string token = 1;
+    int32 item_id = 2;      // 物品ID
+    int32 count = 3;        // 使用数量
+}
+
+// 使用物品响应
+message G2CUseItemResponse {
+    int32 code = 1;
+    string message = 2;
+    common.ItemInfo item = 3;  // 使用后的物品信息
+}

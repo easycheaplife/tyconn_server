@@ -4,12 +4,14 @@ const { parseArgs } = require('./lib/cli');
 const UserInfoTest = require('./cases/user_info_test');
 const HeartbeatTest = require('./cases/heartbeat_test');
 const CardBagTest = require('./cases/card_bag_test');
+const BagInfoTest = require('./cases/bag_info_test');
 
 // 所有测试用例
 const ALL_TESTS = {
     user_info: UserInfoTest,
     heartbeat: HeartbeatTest,
-    card_bag: CardBagTest
+    card_bag: CardBagTest,
+    bag_info: BagInfoTest
 };
 
 async function runTests() {

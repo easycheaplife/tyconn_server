@@ -98,4 +98,62 @@ function M.remove_user_cards(user_id)
     return redis.del(key) > 0
 end
 
+-- 用户物品缓存key
+local function get_user_items_key(user_id)
+    return string.format("%s%d", PREFIX.user_items, user_id)
+end
+
+-- 获取用户物品缓存
+function M.get_user_items(user_id)
+    local key = get_user_items_key(user_id)
+    local data = redis.get(key)
+    if data then
+        return cjson.decode(data)
+    end
+    return nil
+end
+
+-- 设置用户物品缓存
+function M.set_user_items(user_id, items)
+    if not user_id or not items then
+        return false
+    end
+    
+    local key = get_user_items_key(user_id)
+    
+    -- 确保 items 是数组
+    if type(items) ~= "table" then
+        items = {}
+    end
+    
+    -- 序列化数据
+    local ok, data = pcall(cjson.encode, items)
+    if not ok then
+        logger.error("Failed to encode items for user %d: %s", user_id, data)
+        return false
+    end
+    
+    -- 设置缓存
+    ok = redis.set(key, data)
+    if not ok then
+        logger.error("Failed to set items cache for user %d", user_id)
+        return false
+    end
+    
+    -- 设置过期时间
+    ok = redis.expire(key, EXPIRE.user_items)
+    if not ok then
+        logger.error("Failed to set expire time for user items %d", user_id)
+        -- 继续执行，不影响缓存使用
+    end
+    
+    return true
+end
+
+-- 删除用户物品缓存
+function M.remove_user_items(user_id)
+    local key = get_user_items_key(user_id)
+    return redis.del(key) > 0
+end
+
 return M

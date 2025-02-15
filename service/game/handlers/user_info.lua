@@ -3,6 +3,7 @@ local logger = require "logger"
 local pb = require "pb"
 local message = require "message"
 local card = require "game.models.card"
+local item = require "game.models.item"
 local user = require "game.models.user"  -- 改用 user model
 local session = require "game.models.session"
 local name_generator = require "game.utils.name_generator"
@@ -76,12 +77,20 @@ function M.handle(client_id, msg)
             }
         end
 
-        -- 如果是新用户，初始化卡牌
+        -- 如果是新用户，初始化游戏数据
         if result.is_new then
+            -- 1. 初始化卡牌
             local ok = card.init_user_cards(result.user.user_id)
             if not ok then
                 logger.error("Failed to initialize cards for new user: %s", claims.account)
-                -- 继续返回用户信息，不影响登录流程
+                -- 继续处理，不影响登录流程
+            end
+
+            -- 2. 初始化物品
+            local ok = item.init_user_items(result.user.user_id)
+            if not ok then
+                logger.error("Failed to initialize items for new user: %s", claims.account)
+                -- 继续处理，不影响登录流程
             end
         end
     end

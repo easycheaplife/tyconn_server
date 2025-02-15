@@ -23,3 +23,12 @@ message CardInfo {
     int64 create_time = 7;  // 获得时间
     int32 power = 8;        // 战力
 }
+
+// 物品信息
+message ItemInfo {
+    int64 id = 1;           // 物品实例ID
+    int32 item_id = 2;      // 物品配置ID
+    int32 count = 3;        // 数量
+    int64 create_time = 4;  // 获得时间
+    int64 update_time = 5;  // 更新时间
+}

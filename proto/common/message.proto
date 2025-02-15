@@ -12,6 +12,10 @@ enum MessageID {
     G2C_USER_INFO_RESPONSE = 6; // 获取用户信息响应
     C2G_USER_CARD_BAG_REQUEST = 7; // 获取用户卡包请求
     G2C_USER_CARD_BAG_RESPONSE = 8; // 获取用户卡包响应
+    C2G_BAG_INFO_REQUEST = 9;
+    G2C_BAG_INFO_RESPONSE = 10;
+    C2G_USE_ITEM_REQUEST = 11;
+    G2C_USE_ITEM_RESPONSE = 12;
 }
 
 // 会话信息

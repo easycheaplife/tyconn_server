@@ -31,6 +31,10 @@ function M.init()
         require "game.handlers.heartbeat")
     M.register(pb.enum("common.MessageID", "C2G_USER_CARD_BAG_REQUEST"), 
         require "game.handlers.card_bag")
+    M.register(pb.enum("common.MessageID", "C2G_BAG_INFO_REQUEST"),
+        require "game.handlers.bag_info")
+    M.register(pb.enum("common.MessageID", "C2G_USE_ITEM_REQUEST"),
+        require "game.handlers.use_item")
     
     logger.info("Message handlers initialized")
     return true

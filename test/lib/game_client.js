@@ -40,6 +40,35 @@ class GameClient extends BaseClient {
         return this.decodeResponse(response, 'command.G2CUserCardBagResponse');
     }
 
+    // 获取背包信息
+    async getBagInfo() {
+        const bagInfoRequest = {
+            token: this.token
+        };
+
+        console.log('\nSending bag info request:', bagInfoRequest);
+        try {
+            const response = await this.sendRequest('C2G_BAG_INFO_REQUEST', bagInfoRequest);
+            return this.decodeResponse(response, 'command.G2CBagInfoResponse');
+        } catch (error) {
+            console.error('Failed to get bag info:', error);
+            throw error;
+        }
+    }
+
+    // 使用物品
+    async useItem(itemId, count) {
+        const useItemRequest = {
+            token: this.token,
+            item_id: itemId,
+            count: count || 1
+        };
+
+        console.log('\nSending use item request:', useItemRequest);
+        const response = await this.sendRequest('C2G_USE_ITEM_REQUEST', useItemRequest);
+        return this.decodeResponse(response, 'command.G2CUseItemResponse');
+    }
+
     // 解码响应数据
     decodeResponse(response, responseType) {
         console.log(`\nDecoding response for type: ${responseType}`);

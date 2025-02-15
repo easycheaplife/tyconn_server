@@ -61,4 +61,32 @@ function M.init()
     return true
 end
 
+-- 执行SQL模板
+function M.execute(template, params)
+    if not template or not template.sql then
+        return false, "Invalid SQL template"
+    end
+
+    -- 收集参数值
+    local values = {}
+    for _, param_name in ipairs(template.params) do
+        local value = params[param_name]
+        if value == nil then
+            logger.error("Missing parameter: %s", param_name)
+            return false, "Missing parameter"
+        end
+        
+        -- 如果是字符串，进行转义
+        if type(value) == "string" then
+            value = M.escape(value)
+        end
+        
+        table.insert(values, value)
+    end
+
+    -- 格式化SQL
+    local sql = string.format(template.sql, table.unpack(values))
+    return M.query(sql)
+end
+
 return M 
