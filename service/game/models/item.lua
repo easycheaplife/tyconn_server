@@ -127,7 +127,7 @@ function M.use_item(user_id, item_id, count)
     end
 
     -- 2. 查找并使用物品
-    for _, item in ipairs(items) do
+    for i, item in ipairs(items) do
         if item.item_id == item_id then
             if item.count < count then
                 return false, "物品数量不足"
@@ -145,6 +145,11 @@ function M.use_item(user_id, item_id, count)
                 M.CHANGE_TYPE.USE, M.CHANGE_SOURCE.USE,
                 before_count, item.count)
 
+            -- 如果物品数量为0，从列表中删除
+            if item.count <= 0 then
+                table.remove(items, i)
+            end
+
             -- 3. 更新数据库
             local ok = db_client.update_user_items(user_id, items)
             if not ok then
@@ -154,7 +159,8 @@ function M.use_item(user_id, item_id, count)
             -- 4. 更新缓存
             cache.set_user_items(user_id, items)
 
-            return true, item
+            -- 如果物品已删除，返回nil
+            return true, item.count > 0 and item or nil
         end
     end
 

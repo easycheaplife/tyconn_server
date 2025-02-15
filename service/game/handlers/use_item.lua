@@ -12,27 +12,14 @@ function M.handle(client_id, msg)
     logger.debug("Handling use item request from client %d", client_id)
     
     -- 验证请求并获取用户信息
-    local ok, base_request, account = handler_helper.verify_request_with_user(
+    local base_request, request, user, claims = handler_helper.verify_request_with_user(
         client_id, msg, "command.C2GUseItemRequest")
-    if not ok then
-        return base_request
-    end
-
-    -- 解码请求
-    local request = pb.decode("command.C2GUseItemRequest", base_request.payload)
-    logger.debug("Use item request: %s", utils.table_to_string(request))
-
-    -- 获取用户信息
-    local user_info = user.get_user(account)
-    if not user_info then
-        return handler_helper.create_error_response(
-            base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_USER_NOT_FOUND"),
-            "用户不存在")
+    if not base_request then
+        return request  -- 错误响应
     end
 
     -- 使用物品
-    local ok, result = item.use_item(user_info.user_id, request.item_id, request.count)
+    local ok, result = item.use_item(user.user_id, request.item_id, request.count)
     if not ok then
         return handler_helper.create_error_response(
             base_request,
@@ -40,7 +27,7 @@ function M.handle(client_id, msg)
             result)
     end
 
-    -- 返回使用结果
+    -- 构造响应
     local response = {
         item = result
     }
