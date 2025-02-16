@@ -65,8 +65,13 @@ class GameClient extends BaseClient {
         };
 
         console.log('\nSending use item request:', useItemRequest);
-        const response = await this.sendRequest('C2G_USE_ITEM_REQUEST', useItemRequest);
-        return this.decodeResponse(response, 'command.G2CUseItemResponse');
+        try {
+            const response = await this.sendRequest('C2G_USE_ITEM_REQUEST', useItemRequest);
+            return this.decodeResponse(response, 'command.G2CUseItemResponse');
+        } catch (error) {
+            console.error('Failed to use item:', error);
+            throw error;
+        }
     }
 
     // 解码响应数据

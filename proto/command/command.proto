@@ -72,14 +72,12 @@ message G2CBagInfoResponse {
 
 // 使用物品请求
 message C2GUseItemRequest {
-    string token = 1;
+    string token = 1;        // 用户令牌
     int32 item_id = 2;      // 物品ID
     int32 count = 3;        // 使用数量
 }
 
 // 使用物品响应
 message G2CUseItemResponse {
-    int32 code = 1;
-    string message = 2;
-    common.ItemInfo item = 3;  // 使用后的物品信息
+    repeated common.ItemInfo items = 1;  // 变化的物品列表
 }

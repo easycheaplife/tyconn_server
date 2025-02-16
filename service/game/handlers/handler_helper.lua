@@ -24,25 +24,27 @@ function M.verify_request_with_user(client_id, msg, proto_name)
     end
 
     -- 3. 获取用户信息
-    local result = user.get_user_from_cache(token_result.claims.account)
-    if not result then
+    local user_info = user.get_user_from_cache(token_result.claims.account)
+    if not user_info then
         -- 缓存中没有，从数据库获取
-        result = user.get_user(token_result.claims.account)
-        if result.code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+        local ok, err = user.get_user(token_result.claims.account)
+        if not ok then
             return nil, nil, nil, message.encode_response(message.create_error_response(base_request.session,
-                result.code, result.message))
+                pb.enum("common.ErrorCode", "ERROR_CODE_USER_NOT_FOUND"),
+                err))
         end
         -- 将用户信息存入缓存
-        user.cache_user(result.user)
+        user_info = err
+        user.cache_user(user_info)
     end
 
-    if not result.user then
+    if not user_info then
         return nil, nil, nil, message.encode_response(message.create_error_response(base_request.session,
             pb.enum("common.ErrorCode", "ERROR_CODE_USER_NOT_FOUND"),
             "User not found"))
     end
 
-    return base_request, request, result.user, token_result.claims
+    return base_request, request, user_info, token_result.claims
 end
 
 -- 验证请求（不需要用户信息的接口使用）
@@ -76,6 +78,22 @@ function M.create_success_response(base_request, proto_name, data, message_id)
     
     base_response.session.messageId = message_id
     return message.encode_response(base_response)
+end
+
+-- 创建错误响应
+function M.create_error_response(base_request, error_code, proto_name, data, message_id)
+    local response = {
+        session = base_request.session,
+        error_code = error_code,
+        error_msg = "Error",
+        payload = data and proto_name and pb.encode(proto_name, data) or nil
+    }
+
+    if message_id then
+        response.session.messageId = message_id
+    end
+
+    return message.encode_response(response)
 end
 
 return M

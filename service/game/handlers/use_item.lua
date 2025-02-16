@@ -19,23 +19,20 @@ function M.handle(client_id, msg)
     end
 
     -- 使用物品
-    local ok, result = item.use_item(user.user_id, request.item_id, request.count)
+    local ok, result = item.use_item(user.account, request.item_id, request.count)
     if not ok then
         return handler_helper.create_error_response(
             base_request,
             pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_OPERATION"),
-            result)
+            "command.G2CUseItemResponse",
+            { items = {} },
+            pb.enum("common.MessageID", "G2C_USE_ITEM_RESPONSE"))
     end
-
-    -- 构造响应
-    local response = {
-        item = result
-    }
 
     return handler_helper.create_success_response(
         base_request,
         "command.G2CUseItemResponse",
-        response,
+        result,
         pb.enum("common.MessageID", "G2C_USE_ITEM_RESPONSE"))
 end
 

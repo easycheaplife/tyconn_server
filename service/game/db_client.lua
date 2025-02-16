@@ -1,6 +1,7 @@
 local skynet = require "skynet"
 local cluster = require "skynet.cluster"
 local logger = require "logger"
+local utils = require "utils"
 
 local M = {}
 
@@ -67,6 +68,23 @@ function M.log_item_change(user_id, item_id, count, type, source, before_count, 
         after_count = after_count,
         create_time = os.time()
     })
+end
+
+-- 更新用户信息
+function M.update_user(user_info)
+    if not user_info or not user_info.user_id then
+        logger.error("update_user: invalid user info")
+        return nil
+    end
+
+    local ok, result = pcall(call_db, "update_user", user_info)
+    if not ok then
+        logger.error("Failed to update user: %s, error: %s", 
+            utils.table_to_string(user_info), result)
+        return nil
+    end
+
+    return result
 end
 
 return M 

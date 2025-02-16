@@ -70,25 +70,30 @@ end
 
 -- 获取用户信息
 function M.get_user(account)
+    logger.debug("Getting user info for account: %s", account)
+    if not account then
+        return nil, "Invalid account"
+    end
+
     -- 1. 从缓存获取
-    local user = cache.get_user_info(account)
+    local user = M.get_user_from_cache(account)
     if user then
-        logger.debug("Get user from cache: %s", account)
+        logger.debug("Got user from cache: %s, user_id: %s", account, user.user_id)
         return user
     end
 
     -- 2. 从数据库获取
-    local db_user = db_client.get_user(account)
-    if not db_user then
-        logger.debug("User not found: %s", account)
-        return nil
+    local result = db_client.get_user(account)
+    if not result then
+        logger.error("Failed to get user from db: %s", account)
+        return nil, "User not found"
     end
 
+    logger.debug("Got user from db: %s, user_id: %s", account, result.user_id)
     -- 3. 写入缓存
-    cache.set_user_info(account, db_user)
-    logger.debug("User info cached: %s", account)
+    M.cache_user(result)
 
-    return db_user
+    return result
 end
 
 -- 更新用户信息
@@ -176,10 +181,11 @@ end
 
 -- 从缓存获取用户信息
 function M.get_user_from_cache(account)
+    logger.debug("Getting user from cache: %s", account)
     local user = cache.get_user_info(account)
     if user then
         logger.debug("Got user from cache: %s", account)
-        return { user = user }
+        return user
     end
     return nil
 end
@@ -204,6 +210,55 @@ function M.cache_user(user)
         logger.error("Failed to cache user info for: %s", user.account)
     end
     return ok
+end
+
+-- 增加经验
+function M.add_exp(account, exp)
+    if not account or not exp or exp <= 0 then
+        return false, "参数无效"
+    end
+
+    -- 从缓存获取用户信息时应该用 account 而不是 user_id
+    local user_info = cache.get_user_info(account)
+    if not user_info then
+        return false, "用户不存在"
+    end
+
+    -- 确保经验值存在
+    user_info.exp = (user_info.exp or 0) + exp
+    
+    -- 更新数据库和缓存
+    local ok = db_client.update_user(user_info)
+    if not ok then
+        return false, "更新失败"
+    end
+    
+    cache.set_user_info(user_info.account, user_info)
+    return true
+end
+
+-- 增加金币
+function M.add_gold(account, gold)
+    if not account or not gold or gold <= 0 then
+        return false, "参数无效"
+    end
+
+    local user_info = M.get_user(account)
+    if not user_info then
+        return false, "用户不存在"
+    end
+
+    -- 确保金币值存在
+    user_info.gold = (user_info.gold or 0) + gold
+    
+    -- 更新数据库和缓存
+    local ok = db_client.update_user(user_info)
+    if not ok then
+        return false, "更新失败"
+    end
+    
+    cache.set_user_info(user_info.account, user_info)
+    return true
 end
 
 return M 

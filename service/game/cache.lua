@@ -38,7 +38,9 @@ end
 
 -- 用户相关
 function M.get_user_info(account)
+    logger.debug("Getting user cache - Account: %s", account)
     local key = make_key(PREFIX.user, account)
+    logger.debug("Getting user cache - Key: %s", key)
     local data = redis.get(key)
     if data then
         logger.debug("Got user cache - Key: %s, Data: %s", key, data)
@@ -99,13 +101,13 @@ function M.remove_user_cards(user_id)
 end
 
 -- 用户物品缓存key
-local function get_user_items_key(user_id)
-    return string.format("%s%d", PREFIX.user_items, user_id)
+local function get_user_items_key(account)
+    return string.format("%s%s", PREFIX.user_items, account)
 end
 
 -- 获取用户物品缓存
-function M.get_user_items(user_id)
-    local key = get_user_items_key(user_id)
+function M.get_user_items(account)
+    local key = get_user_items_key(account)
     local data = redis.get(key)
     if data then
         return cjson.decode(data)
@@ -114,12 +116,12 @@ function M.get_user_items(user_id)
 end
 
 -- 设置用户物品缓存
-function M.set_user_items(user_id, items)
-    if not user_id or not items then
+function M.set_user_items(account, items)
+    if not account or not items then
         return false
     end
     
-    local key = get_user_items_key(user_id)
+    local key = get_user_items_key(account)
     
     -- 确保 items 是数组
     if type(items) ~= "table" then
@@ -129,21 +131,21 @@ function M.set_user_items(user_id, items)
     -- 序列化数据
     local ok, data = pcall(cjson.encode, items)
     if not ok then
-        logger.error("Failed to encode items for user %d: %s", user_id, data)
+        logger.error("Failed to encode items for user %s: %s", account, data)
         return false
     end
     
     -- 设置缓存
     ok = redis.set(key, data)
     if not ok then
-        logger.error("Failed to set items cache for user %d", user_id)
+        logger.error("Failed to set items cache for user %s", account)
         return false
     end
     
     -- 设置过期时间
     ok = redis.expire(key, EXPIRE.user_items)
     if not ok then
-        logger.error("Failed to set expire time for user items %d", user_id)
+        logger.error("Failed to set expire time for user items %s", account)
         -- 继续执行，不影响缓存使用
     end
     
@@ -151,8 +153,8 @@ function M.set_user_items(user_id, items)
 end
 
 -- 删除用户物品缓存
-function M.remove_user_items(user_id)
-    local key = get_user_items_key(user_id)
+function M.remove_user_items(account)
+    local key = get_user_items_key(account)
     return redis.del(key) > 0
 end
 
