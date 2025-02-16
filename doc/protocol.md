@@ -36,6 +36,12 @@ enum MessageID {
     G2C_USER_INFO_RESPONSE = 6;     // 获取用户信息响应
     C2G_USER_CARDS_REQUEST = 7;      // 获取用户卡牌列表请求
     G2C_USER_CARDS_RESPONSE = 8;     // 获取用户卡牌列表响应
+    C2G_BAG_INFO_REQUEST = 9;      // 获取背包信息请求
+    G2C_BAG_INFO_RESPONSE = 10;    // 获取背包信息响应
+    C2G_USE_ITEM_REQUEST = 11;     // 使用物品请求
+    G2C_USE_ITEM_RESPONSE = 12;    // 使用物品响应
+    C2G_ITEM_CHANGE_NOTIFY = 13;   // 物品变化通知
+    G2C_ITEM_CHANGE_NOTIFY = 14;   // 物品变化通知响应
 }
 ```
 
@@ -66,6 +72,91 @@ message G2CUserCardsResponse {
     int32 code = 1;        // 错误码
     string message = 2;    // 错误信息
     repeated CardInfo cards = 3;  // 卡牌列表
+}
+```
+
+### 1.5 物品系统
+```protobuf
+// 物品效果类型
+enum ItemEffectType {
+    EFFECT_TYPE_NONE = 0;    // 无效果
+    EFFECT_TYPE_EXP = 1;     // 经验
+    EFFECT_TYPE_GOLD = 2;    // 金币
+}
+
+// 物品变化类型
+enum ItemChangeType {
+    CHANGE_TYPE_NONE = 0;    // 无变化
+    CHANGE_TYPE_ADD = 1;     // 增加
+    CHANGE_TYPE_REDUCE = 2;  // 减少
+    CHANGE_TYPE_USE = 3;     // 使用
+}
+
+// 物品变化来源
+enum ItemChangeSource {
+    SOURCE_NONE = 0;         // 未知来源
+    SOURCE_INIT = 1;         // 初始化
+    SOURCE_REWARD = 2;       // 奖励
+    SOURCE_USE = 3;          // 使用
+}
+
+// 获取背包信息请求
+message C2GBagInfoRequest {
+    string token = 1;       // JWT令牌
+}
+
+// 获取背包信息响应
+message G2CBagInfoResponse {
+    int32 code = 1;        // 错误码
+    string message = 2;    // 错误信息
+    repeated ItemInfo items = 3;  // 物品列表
+}
+
+// 使用物品请求
+message C2GUseItemRequest {
+    string token = 1;      // JWT令牌
+    int32 item_id = 2;     // 物品ID
+    int32 count = 3;       // 使用数量
+}
+
+// 使用物品响应
+message G2CUseItemResponse {
+    int32 code = 1;        // 错误码
+    string message = 2;    // 错误信息
+    repeated ItemInfo items = 3;  // 变化的物品列表
+}
+
+// 物品信息
+message ItemInfo {
+    int64 id = 1;          // 物品实例ID
+    int32 item_id = 2;     // 物品类型ID
+    int32 count = 3;       // 数量
+    int64 create_time = 4; // 获得时间
+    int64 update_time = 5; // 更新时间
+}
+```
+
+### 1.6 物品变化通知
+```protobuf
+// 物品变化通知
+message C2GItemChangeNotify {
+    string token = 1;       // JWT令牌
+    repeated ItemChange changes = 2;  // 物品变化列表
+}
+
+// 物品变化信息
+message ItemChange {
+    int32 item_id = 1;     // 物品ID
+    int32 count = 2;       // 变化数量
+    int32 type = 3;        // 变化类型
+    string source = 4;     // 变化来源
+}
+
+// 物品变化通知响应
+message G2CItemChangeNotify {
+    int32 code = 1;        // 错误码
+    string message = 2;    // 错误信息
+    repeated ItemInfo items = 3;  // 最新物品列表
 }
 ```
 
@@ -200,6 +291,66 @@ message CardInfo {
 - 7: 无效的令牌
 - 8: 令牌已过期
 
+### 2.5 获取背包信息
+
+**连接类型:** `WebSocket`  
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf
+message C2GBagInfoRequest {
+    string token = 1;       // JWT令牌
+}
+```
+
+**响应格式:**
+```protobuf
+message G2CBagInfoResponse {
+    int32 code = 1;        // 错误码
+    string message = 2;    // 错误信息
+    repeated ItemInfo items = 3;  // 物品列表
+}
+```
+
+**错误码说明:**
+- 0: 成功
+- 7: 无效的令牌
+- 8: 令牌已过期
+- 10: 物品不存在
+- 11: 物品数量不足
+- 12: 使用失败
+
+### 2.6 使用物品
+
+**连接类型:** `WebSocket`  
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf
+message C2GUseItemRequest {
+    string token = 1;      // JWT令牌
+    int32 item_id = 2;     // 物品ID
+    int32 count = 3;       // 使用数量
+}
+```
+
+**响应格式:**
+```protobuf
+message G2CUseItemResponse {
+    int32 code = 1;        // 错误码
+    string message = 2;    // 错误信息
+    repeated ItemInfo items = 3;  // 变化的物品列表
+}
+```
+
+**错误码说明:**
+- 0: 成功
+- 7: 无效的令牌
+- 8: 令牌已过期
+- 10: 物品不存在
+- 11: 物品数量不足
+- 12: 使用失败
+
 ## 3. 服务端口
 
 ### 3.1 外部端口
@@ -219,6 +370,7 @@ message CardInfo {
 ### 4.1 命名规则
 - 请求消息: C2G/C2L 前缀 + 功能名 + Request
 - 响应消息: G2C/L2C 前缀 + 功能名 + Response
+- 通知消息: C2G/G2C 前缀 + 功能名 + Notify
 - 字段名称: 小写下划线命名
 
 ### 4.2 版本控制
@@ -233,6 +385,12 @@ message CardInfo {
 - 异常连接自动断开
 - 分层验证机制
 
+### 4.4 通知机制
+- 服务器主动推送变化
+- 客户端确认接收
+- 支持批量通知
+- 保证通知送达
+
 ## 5. 错误码定义
 ```protobuf
 enum ErrorCode {
@@ -246,5 +404,38 @@ enum ErrorCode {
     ERROR_CODE_TOKEN_INVALID = 7;        // 无效的令牌
     ERROR_CODE_TOKEN_EXPIRED = 8;        // 令牌已过期
     ERROR_CODE_SERVER_BUSY = 9;          // 服务器繁忙
+    ERROR_CODE_ITEM_NOT_EXIST = 10;    // 物品不存在
+    ERROR_CODE_ITEM_NOT_ENOUGH = 11;   // 物品数量不足
+    ERROR_CODE_USE_ITEM_FAILED = 12;   // 使用物品失败
+    ERROR_CODE_NOTIFY_FAILED = 13;     // 通知发送失败
+    ERROR_CODE_NOTIFY_TIMEOUT = 14;    // 通知超时
 }
+```
+
+## 6. 物品配置
+
+### 6.1 物品类型
+```
+1001: 初级经验药水
+  - 效果类型: 经验
+  - 效果值: 100
+  - 描述: 使用后可获得100点经验值
+
+1002: 中级经验药水
+  - 效果类型: 经验
+  - 效果值: 500
+  - 描述: 使用后可获得500点经验值
+
+2001: 金币
+  - 效果类型: 金币
+  - 效果值: 1000
+  - 描述: 使用后可获得1000金币
+
+2002: 钻石
+  - 效果类型: 钻石
+  - 效果值: 100
+  - 描述: 高级货币
+```
+
+### 6.2 新手初始物品
 ```

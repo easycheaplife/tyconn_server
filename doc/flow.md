@@ -92,7 +92,7 @@ sequenceDiagram
 7. 游戏服务器处理并返回数据
 8. 网关将响应发送给客户端
 
-## 4. 获取用户卡包流程
+## 4. 获取用户卡牌流程
 
 ```mermaid
 sequenceDiagram
@@ -101,22 +101,105 @@ sequenceDiagram
     participant GM as Game Server
     participant DB as DB Proxy
     
-    C->>G: 1. 获取卡包请求(token)
+    C->>G: 1. 获取卡牌请求(token)
     G->>GM: 2. 转发请求
     GM->>DB: 3. 验证Token
     DB-->>GM: 4. Token有效
-    GM->>DB: 5. 查询用户卡包
+    GM->>DB: 5. 查询用户卡牌
     DB-->>GM: 6. 返回卡牌数据
-    GM-->>G: 7. 返回卡包信息
+    GM-->>G: 7. 返回卡牌信息
     G-->>C: 8. 返回响应
 ```
 
 **流程说明:**
-1. 客户端发送获取卡包请求
+1. 客户端发送获取卡牌请求
 2. 网关转发请求到游戏服务器
 3. 游戏服务器通过DB代理验证Token
 4. Token验证通过
-5. 游戏服务器查询用户卡包数据
+5. 游戏服务器查询用户卡牌数据
 6. DB代理返回卡牌信息
 7. 游戏服务器处理并返回数据
 8. 网关将响应发送给客户端
+
+## 5. 物品系统流程
+
+### 5.1 获取背包流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 获取背包请求(token)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>DB: 5. 查询用户物品
+    DB-->>GM: 6. 返回物品列表
+    GM-->>G: 7. 返回背包信息
+    G-->>C: 8. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送获取背包请求
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器查询用户物品数据
+6. DB代理返回物品列表
+7. 游戏服务器处理并返回数据
+8. 网关将响应发送给客户端
+
+### 5.2 使用物品流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 使用物品请求
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证物品
+    DB-->>GM: 4. 物品有效
+    GM->>DB: 5. 更新物品数量
+    DB-->>GM: 6. 更新成功
+    GM->>DB: 7. 记录变化日志
+    GM-->>G: 8. 返回使用结果
+    G-->>C: 9. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送使用物品请求
+2. 网关转发请求到游戏服务器
+3. 游戏服务器验证物品是否可用
+4. 物品验证通过
+5. 更新物品数量
+6. 数据库更新成功
+7. 记录物品变化日志
+8. 游戏服务器返回使用结果
+9. 网关将响应发送给客户端
+
+### 5.3 物品变化通知流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    Note over GM,DB: 物品发生变化
+    GM->>DB: 1. 记录变化日志
+    GM->>G: 2. 发送变化通知
+    G->>C: 3. 推送变化消息
+    C->>G: 4. 确认收到通知
+    G->>GM: 5. 更新通知状态
+```
+
+**流程说明:**
+1. 游戏服务器记录物品变化日志
+2. 游戏服务器通知网关
+3. 网关推送变化消息给客户端
+4. 客户端确认收到通知
+5. 网关更新通知状态
