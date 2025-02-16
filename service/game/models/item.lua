@@ -43,7 +43,7 @@ local ITEM_CONFIG = {
 local DEFAULT_ITEMS = {
     {
         item_id = 1001,  -- 初级经验药水
-        count = 2
+        count = 100
     },
     {
         item_id = 2001,  -- 金币

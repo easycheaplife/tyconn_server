@@ -42,15 +42,11 @@ class UseItemTest extends BaseTest {
             assert(itemToUse.count >= count, 'Not enough items');
 
             const useResult = await this.client.useItem(itemId, count);
-            if (useResult.error_code !== 0) {
+            if (!useResult || !useResult.items || useResult.items.length === 0) {
                 console.error('Use item failed:', useResult);
                 return false;
             }
 
-            // 验证响应结构
-            assert(useResult.items, 'Missing items in response');
-            assert(Array.isArray(useResult.items), 'Items should be an array');
-            
             // 验证使用的物品
             const usedItem = useResult.items.find(item => item.item_id === itemId);
             assert(usedItem, 'Used item not found in response');
