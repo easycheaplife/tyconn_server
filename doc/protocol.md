@@ -34,8 +34,8 @@ enum MessageID {
     G2C_HEARTBEAT_RESPONSE = 4;     // 游戏服务器到客户端的心跳响应
     C2G_USER_INFO_REQUEST = 5;      // 获取用户信息请求
     G2C_USER_INFO_RESPONSE = 6;     // 获取用户信息响应
-    C2G_USER_CARD_BAG_REQUEST = 7;  // 获取用户卡包请求
-    G2C_USER_CARD_BAG_RESPONSE = 8; // 获取用户卡包响应
+    C2G_USER_CARDS_REQUEST = 7;      // 获取用户卡牌列表请求
+    G2C_USER_CARDS_RESPONSE = 8;     // 获取用户卡牌列表响应
 }
 ```
 
@@ -54,14 +54,14 @@ message G2CHeartbeatResponse {
 }
 ```
 
-### 1.4 卡包协议
+### 1.4 卡牌系统
 ```protobuf
-// 获取用户卡包请求
+// 获取用户卡牌列表请求
 message C2GUserCardsRequest {
     string token = 1;       // JWT令牌
 }
 
-// 获取用户卡包响应
+// 获取用户卡牌列表响应
 message G2CUserCardsResponse {
     int32 code = 1;        // 错误码
     string message = 2;    // 错误信息
@@ -163,7 +163,7 @@ message UserInfo {
 }
 ```
 
-### 2.4 获取用户卡包
+### 2.4 获取用户卡牌列表
 
 **连接类型:** `WebSocket`  
 **请求路径:** `/ws`

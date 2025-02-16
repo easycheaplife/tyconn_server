@@ -175,15 +175,15 @@ class ResponseHandler {
         return true;
     }
 
-    handleCardBagResponse(data) {
-        const baseResponse = this.decodeBaseResponse(data, 'CardBag');
+    handleUserCardsResponse(data) {
+        const baseResponse = this.decodeBaseResponse(data, 'UserCards');
         if (!baseResponse) {
             console.error("Failed to decode base response");
             return null;
         }
 
         if (baseResponse.errorCode !== 0) {
-            console.log('获取背包失败:', {
+            console.log('获取用户卡牌失败:', {
                 errorCode: baseResponse.errorCode,
                 errorMsg: baseResponse.errorMsg
             });
@@ -191,26 +191,30 @@ class ResponseHandler {
         }
 
         try {
-            const cardBagResponse = ProtoHelper.decodeMessage(
+            const userCardsResponse = ProtoHelper.decodeMessage(
                 this.root,
                 'command.G2CUserCardsResponse',
                 baseResponse.payload
             );
 
-            console.log('\n[CardBag] 响应详情:', {
+            console.log('\n[UserCards] 响应详情:', {
                 session: baseResponse.session,
                 errorCode: baseResponse.errorCode,
                 errorMsg: baseResponse.errorMsg,
-                cardCount: cardBagResponse.cards ? cardBagResponse.cards.length : 0
+                cardCount: userCardsResponse.cards ? userCardsResponse.cards.length : 0
             });
 
+            if (!userCardsResponse.cards) {
+                throw new Error('Invalid user cards response: missing cards');
+            }
+
             return {
-                code: cardBagResponse.code,
-                message: cardBagResponse.message,
-                cards: cardBagResponse.cards || []
+                code: userCardsResponse.code,
+                message: userCardsResponse.message,
+                cards: userCardsResponse.cards || []
             };
         } catch (err) {
-            console.error('解析背包响应失败:', err);
+            console.error('解析用户卡牌响应失败:', err);
             return null;
         }
     }
