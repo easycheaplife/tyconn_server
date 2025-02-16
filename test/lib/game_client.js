@@ -58,6 +58,17 @@ class GameClient extends BaseClient {
 
     // 使用物品
     async useItem(itemId, count) {
+        // 确保已经初始化
+        if (!this.protoHelper.initialized) {
+            await this.protoHelper.init();
+        }
+
+        // 获取正确的消息ID
+        const messageId = this.protoHelper.MessageID["C2G_USE_ITEM_REQUEST"];
+        if (!messageId) {
+            throw new Error("Message ID not found for C2G_USE_ITEM_REQUEST");
+        }
+
         const useItemRequest = {
             token: this.token,
             item_id: itemId,
@@ -65,13 +76,8 @@ class GameClient extends BaseClient {
         };
 
         console.log('\nSending use item request:', useItemRequest);
-        try {
-            const response = await this.sendRequest('C2G_USE_ITEM_REQUEST', useItemRequest);
-            return this.decodeResponse(response, 'command.G2CUseItemResponse');
-        } catch (error) {
-            console.error('Failed to use item:', error);
-            throw error;
-        }
+        const response = await this.sendRequest(messageId, useItemRequest);
+        return this.decodeResponse(response, 'command.G2CUseItemResponse');
     }
 
     // 解码响应数据

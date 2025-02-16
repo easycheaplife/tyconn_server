@@ -5,12 +5,15 @@ const fs = require('fs');
 class ProtoHelper {
     constructor() {
         this.root = null;
-        this.messageIds = {};
+        this.MessageID = null;
+        this.initialized = false;
         this.sequence = 0;
         this.init();
     }
 
     async init() {
+        if (this.initialized) return;
+
         try {
             // 加载proto文件
             this.root = new protobuf.Root();
@@ -56,15 +59,11 @@ class ProtoHelper {
             this.root.resolveAll();
             
             // 加载消息ID
-            const messageIdEnum = this.root.lookupEnum('common.MessageID');
-            if (!messageIdEnum) {
-                throw new Error('MessageID enum not found');
-            }
-            this.messageIds = messageIdEnum.values;
-            
+            this.MessageID = this.root.lookupEnum('common.MessageID').values;
             console.log('Proto files loaded successfully');
-            console.log('Available message IDs:', Object.keys(this.messageIds));
+            console.log('Available message IDs:', Object.keys(this.MessageID));
 
+            this.initialized = true;
         } catch (error) {
             console.error('Failed to load proto files:', error);
             if (error.code === 'ENOENT') {
@@ -82,6 +81,16 @@ class ProtoHelper {
 
     // 获取请求消息类型
     getRequestType(messageId) {
+        // 如果是数字ID，先转换为字符串名称
+        if (typeof messageId === 'number') {
+            const messageNames = Object.entries(this.MessageID)
+                .find(([name, id]) => id === messageId);
+            if (!messageNames) {
+                throw new Error(`Unknown message ID number: ${messageId}`);
+            }
+            messageId = messageNames[0];
+        }
+
         const requestTypes = {
             'C2L_LOGIN_REQUEST': 'command.C2LLoginRequest',
             'C2G_HEARTBEAT_REQUEST': 'command.C2GHeartbeatRequest',
@@ -93,7 +102,7 @@ class ProtoHelper {
 
         const type = requestTypes[messageId];
         if (!type) {
-            throw new Error(`Unknown message ID: ${messageId}`);
+            throw new Error(`Unknown message type for: ${messageId}`);
         }
         return type;
     }
@@ -104,6 +113,27 @@ class ProtoHelper {
             throw new Error('Proto files not loaded');
         }
 
+        // 验证消息ID是否有效
+        if (typeof messageId === 'string') {
+            if (!this.MessageID[messageId]) {
+                throw new Error(`Invalid message ID string: ${messageId}`);
+            }
+            messageId = this.MessageID[messageId];
+        }
+
+        if (!Number.isInteger(messageId) || messageId <= 0) {
+            console.error("Invalid message ID:", messageId);
+            console.log("Available message IDs:", 
+                Object.entries(this.MessageID)
+                    .map(([k,v]) => `${k}=${v}`)
+                    .join(", "));
+            throw new Error(`Invalid message ID: ${messageId}`);
+        }
+
+        // 打印调试信息
+        console.log("Processing message ID:", messageId);
+        console.log("Message ID type:", typeof messageId);
+
         const BaseRequest = this.root.lookupType('common.BaseRequest');
         const messageType = this.root.lookupType(this.getRequestType(messageId));
 
@@ -113,13 +143,16 @@ class ProtoHelper {
         // 创建基础请求
         const baseRequest = {
             session: {
-                messageId: this.messageIds[messageId],
+                messageId: messageId,
                 sequence: ++this.sequence,
                 timestamp: Date.now(),
                 version: "1.0.0"
             },
             payload: encodedPayload
         };
+
+        console.log("Building request with message ID:", messageId);
+        console.log("Request data:", baseRequest);
 
         // 编码基础请求
         return BaseRequest.encode(baseRequest).finish();

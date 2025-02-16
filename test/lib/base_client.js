@@ -51,8 +51,18 @@ class BaseClient {
         }
 
         // 等待 protoHelper 初始化完成
-        if (!this.protoHelper.root) {
-            await new Promise(resolve => setTimeout(resolve, 100));
+        if (!this.protoHelper.initialized) {
+            await this.protoHelper.init();
+        }
+
+        // 验证消息ID
+        if (!messageId) {
+            console.error("No message ID provided!");
+            console.log("Available message IDs:", 
+                Object.entries(this.protoHelper.MessageID)
+                    .map(([k,v]) => `${k}=${v}`)
+                    .join(", "));
+            throw new Error("Message ID is required");
         }
 
         const request = this.protoHelper.buildBaseRequest(messageId, requestData);
