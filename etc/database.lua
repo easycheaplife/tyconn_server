@@ -11,7 +11,8 @@ M.redis = {
     -- 缓存前缀
     prefix = {
         token = "token:",    -- token缓存前缀
-        user = "user:",      -- 用户信息缓存前缀
+        user_info = "user_info:",  -- 用户信息缓存前缀(通过user_id)
+        user_account = "user_account:",  -- 账号到用户ID的映射
         card = "card:",      -- 卡牌信息缓存前缀
         user_cards = "user_cards:",  -- 用户卡组缓存前缀
         user_items = "user_items:",  -- 用户物品缓存前缀
@@ -19,11 +20,11 @@ M.redis = {
 
     -- 缓存过期时间(秒)
     expire = {
-        token = 7200,       -- token缓存2小时
-        user = 3600,        -- 用户信息缓存1小时
+        token = 3600 * 24,     -- token 24小时
+        user = 3600 * 24,      -- 用户信息 24小时
         card = 1800,        -- 卡牌信息缓存30分钟
-        user_cards = 3600,   -- 用户卡组缓存1小时
-        user_items = 3600,   -- 用户物品缓存1小时
+        user_cards = 3600 * 24, -- 用户卡牌 24小时
+        user_items = 3600 * 24  -- 用户物品 24小时
     }
 }
 

@@ -24,6 +24,11 @@ function M.handle(client_id, msg)
 
     -- 先从缓存获取用户信息
     local result = user.get_user_from_cache(claims.account)
+    -- 确保 result 的结构一致
+    if result then
+        result = { user = result }
+    end
+
     if not result then
         -- 缓存中没有，从数据库获取
         result = user.get_user(claims.account)
@@ -95,10 +100,26 @@ function M.handle(client_id, msg)
         end
     end
 
+    -- 打印最终的用户数据结构
+    logger.debug("Final user data: %s", utils.table_to_string(result))
+
+    -- 构造符合 protobuf 定义的响应数据
+    local response_data = {
+        user = {
+            user_id = result.user.user_id,
+            username = result.user.username,
+            level = result.user.level,
+            exp = result.user.exp or 0,
+            vip_level = result.user.vip_level or 0,
+            create_time = result.user.create_time,
+            login_time = result.user.login_time
+        }
+    }
+
     return handler_helper.create_success_response(
         base_request,
         "command.G2CUserInfoResponse",
-        result,
+        response_data,
         pb.enum("common.MessageID", "G2C_USER_INFO_RESPONSE"))
 end
 

@@ -52,9 +52,9 @@ local DEFAULT_ITEMS = {
 }
 
 -- 应用物品效果
-local function apply_item_effect(account, item_id, count)
-    logger.debug("Applying item effect - account: %s, item_id: %d, count: %d", 
-        account, item_id, count)
+local function apply_item_effect(user_id, item_id, count)
+    logger.debug("Applying item effect - user_id: %d, item_id: %d, count: %d", 
+        user_id, item_id, count)
     local config = ITEM_CONFIG[item_id]
     if not config then
         return false, "物品配置不存在"
@@ -65,14 +65,14 @@ local function apply_item_effect(account, item_id, count)
     -- 根据效果类型处理
     if config.effect_type == M.EFFECT_TYPE.EXP then
         -- 增加经验
-        local ok, err = user.add_exp(account, total_effect)
+        local ok, err = user.add_exp(user_id, total_effect)
         if not ok then
             logger.error("Failed to add exp: %s", err)
             return false, err
         end
     elseif config.effect_type == M.EFFECT_TYPE.GOLD then
         -- 增加金币
-        local ok, err = user.add_gold(account, total_effect)
+        local ok, err = user.add_gold(user_id, total_effect)
         if not ok then
             logger.error("Failed to add gold: %s", err)
             return false, err
@@ -83,37 +83,37 @@ local function apply_item_effect(account, item_id, count)
 end
 
 -- 获取用户物品列表
-function M.get_user_items(account)
-    if not account then
-        return nil, "无效的账号"
+function M.get_user_items(user_id)
+    if not user_id then
+        return nil, "无效的用户ID"
     end
 
     -- 1. 从缓存获取
-    local items = cache.get_user_items(account)
+    local items = cache.get_user_items(user_id)
     if items then
         return items
     end
 
     -- 2. 从数据库获取
-    local result = db_client.get_user_items(account)
+    local result = db_client.get_user_items(user_id)
     if not result then
         return {}, "获取物品失败"
     end
 
     -- 3. 写入缓存
-    cache.set_user_items(account, result)
+    cache.set_user_items(user_id, result)
 
     return result
 end
 
 -- 添加物品
-function M.add_items(account, items)
-    if not account or not items then
+function M.add_items(user_id, items)
+    if not user_id or not items then
         return false, "参数无效"
     end
 
     -- 1. 获取当前物品
-    local current_items = M.get_user_items(account) or {}
+    local current_items = M.get_user_items(user_id) or {}
     
     -- 2. 合并物品
     for _, item in ipairs(items) do
@@ -126,7 +126,7 @@ function M.add_items(account, items)
                 curr_item.update_time = os.time()
                 
                 -- 记录物品变化
-                M.log_change(account, item.item_id, item.count, 
+                M.log_change(user_id, item.item_id, item.count, 
                     M.CHANGE_TYPE.ADD, M.CHANGE_SOURCE.REWARD,
                     before_count, curr_item.count)
                 found = true
@@ -137,7 +137,7 @@ function M.add_items(account, items)
         if not found then
             -- 新增物品
             local new_item = {
-                account = account,
+                user_id = user_id,
                 item_id = item.item_id,
                 count = item.count or 1,
                 create_time = os.time(),
@@ -146,32 +146,32 @@ function M.add_items(account, items)
             table.insert(current_items, new_item)
             
             -- 记录物品变化
-            M.log_change(account, item.item_id, new_item.count,
+            M.log_change(user_id, item.item_id, new_item.count,
                 M.CHANGE_TYPE.ADD, M.CHANGE_SOURCE.REWARD,
                 0, new_item.count)
         end
     end
 
     -- 3. 更新数据库
-    local ok = db_client.update_user_items(account, current_items)
+    local ok = db_client.update_user_items(user_id, current_items)
     if not ok then
         return false, "更新失败"
     end
 
     -- 4. 更新缓存
-    cache.set_user_items(account, current_items)
+    cache.set_user_items(user_id, current_items)
 
     return true
 end
 
 -- 使用物品
-function M.use_item(account, item_id, count)
-    if not account or not item_id or not count or count <= 0 then
+function M.use_item(user_id, item_id, count)
+    if not user_id or not item_id or not count or count <= 0 then
         return false, "参数无效"
     end
 
     -- 1. 获取物品
-    local items = M.get_user_items(account)
+    local items = M.get_user_items(user_id)
     if not items then
         return false, "物品不存在"
     end
@@ -184,7 +184,7 @@ function M.use_item(account, item_id, count)
             end
 
             -- 应用物品效果
-            local ok, err = apply_item_effect(account, item_id, count)
+            local ok, err = apply_item_effect(user_id, item_id, count)
             if not ok then
                 return false, err
             end
@@ -197,7 +197,7 @@ function M.use_item(account, item_id, count)
             item.update_time = os.time()
 
             -- 记录物品变化
-            M.log_change(account, item_id, count,
+            M.log_change(user_id, item_id, count,
                 M.CHANGE_TYPE.USE, M.CHANGE_SOURCE.USE,
                 before_count, item.count)
 
@@ -207,13 +207,13 @@ function M.use_item(account, item_id, count)
             end
 
             -- 3. 更新数据库
-            local ok = db_client.update_user_items(account, items)
+            local ok = db_client.update_user_items(user_id, items)
             if not ok then
                 return false, "更新失败"
             end
 
             -- 4. 更新缓存
-            cache.set_user_items(account, items)
+            cache.set_user_items(user_id, items)
 
             -- 返回变化的物品列表
             local changed_items = {}
@@ -235,30 +235,30 @@ function M.use_item(account, item_id, count)
 end
 
 -- 记录物品变化
-function M.log_change(account, item_id, count, type, source, before_count, after_count)
+function M.log_change(user_id, item_id, count, type, source, before_count, after_count)
     return db_client.log_item_change(
-        account, item_id, count, type, source, before_count, after_count
+        user_id, item_id, count, type, source, before_count, after_count
     )
 end
 
 -- 初始化新用户物品
-function M.init_user_items(account)
-    if not account then
+function M.init_user_items(user_id)
+    if not user_id then
         return false, "无效的用户ID"
     end
 
-    logger.info("Initializing items for new user: %s", account)
+    logger.info("Initializing items for new user: %d", user_id)
     
     -- 添加默认物品
-    local ok = M.add_items(account, DEFAULT_ITEMS)
+    local ok = M.add_items(user_id, DEFAULT_ITEMS)
     if not ok then
-        logger.error("Failed to add default items for user: %s", account)
+        logger.error("Failed to add default items for user: %d", user_id)
         return false, "添加默认物品失败"
     end
 
     -- 记录日志
     for _, item in ipairs(DEFAULT_ITEMS) do
-        M.log_change(account, item.item_id, item.count, 
+        M.log_change(user_id, item.item_id, item.count, 
             M.CHANGE_TYPE.ADD, M.CHANGE_SOURCE.INIT, 0, item.count)
     end
 

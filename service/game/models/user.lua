@@ -91,13 +91,19 @@ function M.get_user(account)
 
     logger.debug("Got user from db: %s, user_id: %s", account, result.user_id)
     -- 3. 写入缓存
-    M.cache_user(result)
+    M.cache_user_by_id(result)
+    M.cache_user_by_account(result)  -- 同时缓存 account 到 user_id 的映射
 
     return result
 end
 
 -- 更新用户信息
 function M.update_user(user)
+    if not user or not user.user_id then
+        logger.error("Invalid user data for update")
+        return false
+    end
+
     -- 1. 更新数据库
     local ok = db_client.update_user(user)
     if not ok then
@@ -105,7 +111,8 @@ function M.update_user(user)
     end
 
     -- 2. 清除缓存
-    cache.remove_user_info(user.account)
+    cache.remove_user_info(user.user_id)
+    cache.remove_account_mapping(user.account)
     logger.debug("User cache cleared: %s", user.account)
 
     return true
@@ -144,7 +151,8 @@ function M.create_user(user_data)
     end
 
     -- 2. 写入缓存
-    cache.set_user_info(user.account, user)
+    M.cache_user_by_id(user)
+    M.cache_user_by_account(user)
     logger.debug("New user cached: %s", user.account)
 
     return true, user, is_new
@@ -182,7 +190,13 @@ end
 -- 从缓存获取用户信息
 function M.get_user_from_cache(account)
     logger.debug("Getting user from cache: %s", account)
-    local user = cache.get_user_info(account)
+    -- 先获取user_id
+    local user_id = cache.get_user_id_by_account(account)
+    if not user_id then
+        return nil
+    end
+    -- 再获取用户信息
+    local user = cache.get_user_info(user_id)
     if user then
         logger.debug("Got user from cache: %s", account)
         return user
@@ -190,36 +204,47 @@ function M.get_user_from_cache(account)
     return nil
 end
 
--- 缓存用户信息
-function M.cache_user(user)
-    if not user or not user.account then
+-- 缓存用户信息(通过user_id)
+function M.cache_user_by_id(user)
+    if not user or not user.user_id then
         logger.error("Failed to cache user: invalid user data")
         return false
     end
     
-    logger.debug("Caching user info: %s", utils.table_to_string({
+    logger.debug("Caching user info by ID: %s", utils.table_to_string({
         account = user.account,
         user_id = user.user_id,
         username = user.username
     }))
 
-    local ok = cache.set_user_info(user.account, user)
-    if ok then
-        logger.debug("Successfully cached user info for: %s", user.account)
-    else
-        logger.error("Failed to cache user info for: %s", user.account)
+    return cache.set_user_info(user.user_id, user)
+end
+
+-- 缓存用户信息(通过account)
+function M.cache_user_by_account(user)
+    if not user or not user.account then
+        logger.error("Failed to cache user: invalid user data")
+        return false
     end
-    return ok
+    
+    logger.debug("Caching user info by account: %s", utils.table_to_string({
+        account = user.account,
+        user_id = user.user_id,
+        username = user.username
+    }))
+
+    return cache.set_account_mapping(user.account, user.user_id)
 end
 
 -- 增加经验
-function M.add_exp(account, exp)
-    if not account or not exp or exp <= 0 then
+function M.add_exp(user_id, exp)
+    logger.debug("Adding exp to user %d: %d", user_id, exp)
+    if not user_id or not exp or exp <= 0 then
         return false, "参数无效"
     end
 
-    -- 从缓存获取用户信息时应该用 account 而不是 user_id
-    local user_info = cache.get_user_info(account)
+    -- 从缓存获取用户信息
+    local user_info = cache.get_user_info(user_id)
     if not user_info then
         return false, "用户不存在"
     end
@@ -233,17 +258,18 @@ function M.add_exp(account, exp)
         return false, "更新失败"
     end
     
-    cache.set_user_info(user_info.account, user_info)
+    cache.set_user_info(user_id, user_info)
     return true
 end
 
 -- 增加金币
-function M.add_gold(account, gold)
-    if not account or not gold or gold <= 0 then
+function M.add_gold(user_id, gold)
+    logger.debug("Adding gold to user %d: %d", user_id, gold)
+    if not user_id or not gold or gold <= 0 then
         return false, "参数无效"
     end
 
-    local user_info = M.get_user(account)
+    local user_info = cache.get_user_info(user_id)
     if not user_info then
         return false, "用户不存在"
     end
@@ -257,7 +283,7 @@ function M.add_gold(account, gold)
         return false, "更新失败"
     end
     
-    cache.set_user_info(user_info.account, user_info)
+    cache.set_user_info(user_id, user_info)
     return true
 end
 

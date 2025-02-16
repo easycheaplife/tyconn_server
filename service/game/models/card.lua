@@ -2,6 +2,7 @@ local skynet = require "skynet"
 local logger = require "logger"
 local cache = require "game.cache"
 local db_client = require "game.db_client"
+local utils = require "utils"
 
 local M = {}
 
@@ -19,30 +20,40 @@ end
 
 -- 获取用户卡牌
 function M.get_user_cards(user_id)
+    if not user_id then
+        return nil, "无效的用户ID"
+    end
+
     -- 1. 从缓存获取
     local cards = cache.get_user_cards(user_id)
     if cards then
-        logger.debug("Get cards from cache: %s", user_id)
+        logger.debug("Got cards from cache for user %d: %s", 
+            user_id, utils.table_to_string(cards))
         return cards
     end
 
     -- 2. 从数据库获取
-    local db_cards = db_client.get_user_cards(user_id)
-    if not db_cards then
-        logger.debug("Cards not found: %s", user_id)
-        return nil
+    local result = db_client.get_user_cards(user_id)
+    if not result then
+        logger.error("Failed to get cards from db for user %d", user_id)
+        return nil, "获取卡牌失败"
     end
 
     -- 3. 写入缓存
-    cache.set_user_cards(user_id, db_cards)
-    logger.debug("Cards cached: %s", user_id)
+    cache.set_user_cards(user_id, result)
+    logger.debug("Cached cards for user %d: %s", 
+        user_id, utils.table_to_string(result))
 
-    return db_cards
+    return result
 end
 
 -- 初始化用户卡牌
 function M.init_user_cards(user_id)
-    logger.info("Initializing cards for user: %d", user_id)
+    if not user_id then
+        return false, "无效的用户ID"
+    end
+
+    logger.info("Initializing cards for new user: %d", user_id)
     
     local current_time = os.time()
     local cards = {}

@@ -19,7 +19,7 @@ function M.handle(client_id, msg)
     end
 
     -- 使用物品
-    local ok, result = item.use_item(user.account, request.item_id, request.count)
+    local ok, result = item.use_item(user.user_id, request.item_id, request.count)
     if not ok then
         return handler_helper.create_error_response(
             base_request,
