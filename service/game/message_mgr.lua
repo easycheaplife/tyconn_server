@@ -29,8 +29,8 @@ function M.init()
         require "game.handlers.user_info")
     M.register(pb.enum("common.MessageID", "C2G_HEARTBEAT_REQUEST"), 
         require "game.handlers.heartbeat")
-    M.register(pb.enum("common.MessageID", "C2G_USER_CARD_BAG_REQUEST"), 
-        require "game.handlers.card_bag")
+    M.register(pb.enum("common.MessageID", "C2G_USER_CARDS_REQUEST"), 
+        require "game.handlers.user_cards")
     M.register(pb.enum("common.MessageID", "C2G_BAG_INFO_REQUEST"),
         require "game.handlers.bag_info")
     M.register(pb.enum("common.MessageID", "C2G_USE_ITEM_REQUEST"),

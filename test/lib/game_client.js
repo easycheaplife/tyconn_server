@@ -29,15 +29,15 @@ class GameClient extends BaseClient {
         return this.decodeResponse(response, 'command.G2CUserInfoResponse');
     }
 
-    // 获取卡包信息
-    async getCardBag() {
-        const cardBagRequest = {
+    // 获取用户卡牌
+    async getUserCards() {
+        const userCardsRequest = {
             token: this.token
         };
 
-        console.log('\nSending card bag request:', cardBagRequest);
-        const response = await this.sendRequest('C2G_USER_CARD_BAG_REQUEST', cardBagRequest);
-        return this.decodeResponse(response, 'command.G2CUserCardBagResponse');
+        console.log('\nSending user cards request:', userCardsRequest);
+        const response = await this.sendRequest('C2G_USER_CARDS_REQUEST', userCardsRequest);
+        return this.decodeResponse(response, 'command.G2CUserCardsResponse');
     }
 
     // 获取背包信息

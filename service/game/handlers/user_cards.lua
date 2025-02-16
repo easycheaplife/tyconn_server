@@ -27,6 +27,9 @@ function M.handle(client_id, msg)
             "Failed to get user cards"))
     end
 
+    -- 打印调试信息
+    logger.debug("User cards: %s", utils.table_to_string(cards))
+
     -- 构造响应数据
     local response_data = {
         cards = cards

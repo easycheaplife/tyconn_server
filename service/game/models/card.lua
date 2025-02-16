@@ -35,8 +35,27 @@ function M.get_user_cards(user_id)
     -- 2. 从数据库获取
     local result = db_client.get_user_cards(user_id)
     if not result then
-        logger.error("Failed to get cards from db for user %d", user_id)
-        return nil, "获取卡牌失败"
+        -- 新用户，初始化卡牌
+        return M.init_user_cards(user_id)
+    end
+
+    -- 确保每个字段都是数字类型
+    for _, card in ipairs(result) do
+        logger.debug("card id: %d", card.card_id)
+        -- 确保是整数
+        if type(card.card_id) == "string" then
+            card.card_id = tonumber(card.card_id)
+        end
+        if type(card.card_id) == "cdata" then
+            card.card_id = tonumber(tostring(card.card_id))
+        end
+        card.level = tonumber(card.level)
+        card.exp = tonumber(card.exp)
+        card.star = tonumber(card.star)
+        card.quality = tonumber(card.quality)
+        card.power = tonumber(card.power)
+        card.create_time = tonumber(card.create_time)
+        card.update_time = tonumber(card.update_time)
     end
 
     -- 3. 写入缓存

@@ -57,12 +57,12 @@ message G2CHeartbeatResponse {
 ### 1.4 卡包协议
 ```protobuf
 // 获取用户卡包请求
-message C2GUserCardBagRequest {
+message C2GUserCardsRequest {
     string token = 1;       // JWT令牌
 }
 
 // 获取用户卡包响应
-message G2CUserCardBagResponse {
+message G2CUserCardsResponse {
     int32 code = 1;        // 错误码
     string message = 2;    // 错误信息
     repeated CardInfo cards = 3;  // 卡牌列表
@@ -170,14 +170,14 @@ message UserInfo {
 
 **请求格式:**
 ```protobuf
-message C2GUserCardBagRequest {
+message C2GUserCardsRequest {
     string token = 1;       // JWT令牌
 }
 ```
 
 **响应格式:**
 ```protobuf
-message G2CUserCardBagResponse {
+message G2CUserCardsResponse {
     int32 code = 1;        // 错误码
     string message = 2;    // 错误信息
     repeated CardInfo cards = 3;  // 卡牌列表

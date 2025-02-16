@@ -13,7 +13,7 @@ function M.handle(client_id, msg)
     
     -- 验证请求并获取用户信息
     local base_request, request, user, claims = handler_helper.verify_request_with_user(
-        client_id, msg, "command.C2GUserCardBagRequest")
+        client_id, msg, "command.C2GUserItemsRequest")
     if not base_request then
         return request  -- 错误响应
     end

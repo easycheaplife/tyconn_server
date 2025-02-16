@@ -46,13 +46,13 @@ message G2CUserInfoResponse {
     bool is_new = 4;       // 是否是新创建的用户
 }
 
-// 获取用户卡包请求
-message C2GUserCardBagRequest {
+// 获取用户卡牌请求
+message C2GUserCardsRequest {
     string token = 1;       // JWT令牌
 }
 
-// 获取用户卡包响应
-message G2CUserCardBagResponse {
+// 获取用户卡牌响应
+message G2CUserCardsResponse {
     int32 code = 1;        // 错误码
     string message = 2;    // 错误信息
     repeated common.CardInfo cards = 3;  // 卡牌列表

@@ -193,7 +193,7 @@ class ResponseHandler {
         try {
             const cardBagResponse = ProtoHelper.decodeMessage(
                 this.root,
-                'command.G2CUserCardBagResponse',
+                'command.G2CUserCardsResponse',
                 baseResponse.payload
             );
 

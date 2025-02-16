@@ -10,7 +10,7 @@ class CardBagBuilder {
 
         console.log('\n[CardBag] 请求详情:', cardBagRequest);
 
-        const payload = root.lookupType("command.C2GUserCardBagRequest")
+        const payload = root.lookupType("command.C2GUserCardsRequest")
             .encode(cardBagRequest)
             .finish();
 
