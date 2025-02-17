@@ -46,7 +46,7 @@ function M.verify_token(token)
         }
     end
 
-    local ok, claims = pcall(jwt.decode, token, skynet.getenv("jwt_secret"))
+    local ok, claims = pcall(jwt.decode, token, skynet.getenv("jwt_secret"), true)
     if not ok or not claims then
         logger.error("Failed to decode token")
         return {
