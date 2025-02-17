@@ -8,9 +8,9 @@ local M = {}
 
 -- 初始卡牌配置
 local INITIAL_CARDS = {
-    {card_id = 1, level = 1},
-    {card_id = 2, level = 1},
-    {card_id = 3, level = 1}
+    {card_id = 1, card_type = 1001, level = 1},
+    {card_id = 2, card_type = 1002, level = 1},
+    {card_id = 3, card_type = 1003, level = 1}
 }
 
 -- 计算卡牌战力
@@ -56,6 +56,7 @@ function M.get_user_cards(user_id)
         card.power = tonumber(card.power)
         card.create_time = tonumber(card.create_time)
         card.update_time = tonumber(card.update_time)
+        card.card_type = tonumber(card.template_id) or card.card_type
     end
 
     -- 3. 写入缓存
@@ -82,6 +83,7 @@ function M.init_user_cards(user_id)
         local card = {
             user_id = user_id,
             card_id = config.card_id,
+            card_type = config.card_type,
             level = config.level,
             exp = 0,
             star = 1,
@@ -102,7 +104,7 @@ function M.init_user_cards(user_id)
     
     -- 缓存卡牌数据
     cache.set_user_cards(user_id, cards)
-    return true
+    return cards
 end
 
 -- 更新卡牌

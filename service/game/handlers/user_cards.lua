@@ -12,17 +12,28 @@ function M.handle(client_id, msg)
     logger.debug("Handling card bag request from client %d", client_id)
     
     -- 验证请求并获取用户信息
-    local base_request, request, user, claims = handler_helper.verify_request_with_user(
+    local base_request, request, error_code, error_message, user, claims = handler_helper.verify_request_with_user(
         client_id, msg, "command.C2GUserCardsRequest")
-    if not base_request then
-        return request  -- 错误响应
+    if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+        logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", client_id, error_code, error_message)
+        return handler_helper.create_error_response(
+            base_request, 
+            error_code, 
+            error_message, 
+            nil, 
+            pb.enum("common.MessageID", "G2C_USER_CARDS_RESPONSE"))
     end
 
     -- 获取用户卡牌背包
     local cards = card.get_user_cards(user.user_id)
     if not cards then
         logger.error("Failed to get cards for user: %d", user.user_id)
-        return handler_helper.create_error_response(base_request, pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"), "command.G2CUserCardsResponse", nil, pb.enum("common.MessageID", "G2C_USER_CARDS_RESPONSE"))
+        return handler_helper.create_error_response(
+            base_request, 
+            pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"), 
+            "command.G2CUserCardsResponse", 
+            nil, 
+            pb.enum("common.MessageID", "G2C_USER_CARDS_RESPONSE"))
     end
 
     -- 打印调试信息

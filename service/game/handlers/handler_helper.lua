@@ -10,17 +10,24 @@ function M.verify_request_with_user(client_id, msg, proto_name)
     -- 1. 解码请求
     local base_request, request = message.decode_request(msg, proto_name)
     if not base_request then
-        return nil, nil, nil, message.encode_response(message.create_error_response(nil,
-            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PROTO"),
-            "Invalid proto"))
+        logger.error("Invalid proto for client: %d", client_id)
+        return base_request, request, 
+          tonumber(pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PROTO")),
+          "Invalid proto",
+          nil,
+          nil
     end
 
     -- 2. 验证Token
     local token_result = message.verify_token(request.token)
-    if token_result.code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
-        logger.error("Invalid token for client: %d", client_id)
-        return nil, nil, nil, message.encode_response(message.create_error_response(base_request.session,
-            token_result.code, token_result.message))
+    if token_result.code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then  
+        logger.error("Invalid token for client: %d, code: %d", client_id, token_result.code)
+        return base_request, 
+               request,
+               tonumber(token_result.code),  -- 确保是数字类型
+               "Invalid token",
+               nil,
+               nil
     end
 
     -- 3. 获取用户信息
@@ -29,9 +36,12 @@ function M.verify_request_with_user(client_id, msg, proto_name)
         -- 缓存中没有，从数据库获取
         local ok, err = user.get_user(token_result.claims.account)
         if not ok then
-            return nil, nil, nil, message.encode_response(message.create_error_response(base_request.session,
-                pb.enum("common.ErrorCode", "ERROR_CODE_USER_NOT_FOUND"),
-                err))
+            logger.error("Failed to get user: %s", err)
+            return base_request, request, 
+              tonumber(pb.enum("common.ErrorCode", "ERROR_CODE_ACCOUNT_NOT_EXIST")),
+              err,
+              nil,
+              nil
         end
         -- 将用户信息存入缓存
         user_info = err
@@ -39,12 +49,17 @@ function M.verify_request_with_user(client_id, msg, proto_name)
     end
 
     if not user_info then
-        return nil, nil, nil, message.encode_response(message.create_error_response(base_request.session,
-            pb.enum("common.ErrorCode", "ERROR_CODE_USER_NOT_FOUND"),
-            "User not found"))
+        logger.error("User not found")
+        return base_request, request, 
+          tonumber(pb.enum("common.ErrorCode", "ERROR_CODE_ACCOUNT_NOT_EXIST")),
+          "User not found",
+          nil,
+          nil
     end
-
-    return base_request, request, user_info, token_result.claims
+    
+    return base_request, request, 
+      tonumber(pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS")),
+      "Success", user_info, token_result.claims
 end
 
 -- 验证请求（不需要用户信息的接口使用）
@@ -53,23 +68,26 @@ function M.verify_request(client_id, msg, proto_name)
     local base_request, request = message.decode_request(msg, proto_name)
     if not base_request then
         logger.error("Invalid proto for client: %d", client_id)
-        return base_request, pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PROTO"),
-        "Invalid proto",
-        nil
+        return base_request, request, 
+          tonumber(pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PROTO")),
+          "Invalid proto",
+          nil
     end
 
     -- 2. 验证Token
     local token_result = message.verify_token(request.token)
-    if token_result.code ~= 0 then  -- 直接用数值比较
+    if token_result.code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then  
         logger.error("Invalid token for client: %d, code: %d", client_id, token_result.code)
         return base_request, 
-               token_result.code,  -- 使用 token_result 中的实际错误码
+               request,
+               tonumber(token_result.code),  -- 确保是数字类型
                "Invalid token",
                nil
     end
-    return base_request, pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
-    "Success",
-    token_result.claims
+    return base_request, request, 
+      tonumber(pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS")),
+      "Success",
+      token_result.claims
 end
 
 -- 创建成功响应

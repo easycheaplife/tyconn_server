@@ -7,10 +7,15 @@ local M = {}
 
 function M.handle(client_id, msg)
     -- 验证请求
-    local base_request, error_code, error_message, claims = handler_helper.verify_request(
+    local base_request, request, error_code, error_message, claims = handler_helper.verify_request(
         client_id, msg, "command.C2GHeartbeatRequest")
     if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
-        return handler_helper.create_error_response(base_request, error_code, "command.G2CHeartbeatResponse", nil, pb.enum("common.MessageID", "G2C_HEARTBEAT_RESPONSE"))
+        return handler_helper.create_error_response(
+            base_request, 
+            error_code, 
+            "command.G2CHeartbeatResponse", 
+            nil, 
+            pb.enum("common.MessageID", "G2C_HEARTBEAT_RESPONSE"))
     end
 
     -- 更新用户最后心跳时间
