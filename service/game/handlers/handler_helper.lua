@@ -52,20 +52,23 @@ function M.verify_request(client_id, msg, proto_name)
     -- 1. 解码请求
     local base_request, request = message.decode_request(msg, proto_name)
     if not base_request then
-        return nil, nil, nil, message.encode_response(message.create_error_response(nil,
-            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PROTO"),
-            "Invalid proto"))
+        logger.error("Invalid proto for client: %d", client_id)
+        return base_request, pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PROTO"),
+        "Invalid proto",
+        nil
     end
 
     -- 2. 验证Token
     local token_result = message.verify_token(request.token)
     if token_result.code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
         logger.error("Invalid token for client: %d", client_id)
-        return nil, nil, nil, message.encode_response(message.create_error_response(base_request.session,
-            token_result.code, token_result.message))
+        return base_request, pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_TOKEN"),
+        "Invalid token",
+        nil
     end
-
-    return base_request, request, token_result.claims
+    return base_request, pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
+    "Success",
+    token_result.claims
 end
 
 -- 创建成功响应

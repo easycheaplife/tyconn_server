@@ -1,17 +1,16 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
-local message = require "message"
 local handler_helper = require "game.handlers.handler_helper"
 
 local M = {}
 
 function M.handle(client_id, msg)
     -- 验证请求
-    local base_request, request, claims = handler_helper.verify_request(
+    local base_request, error_code, error_message, claims = handler_helper.verify_request(
         client_id, msg, "command.C2GHeartbeatRequest")
-    if not base_request then
-        return request  -- 错误响应
+    if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+        return handler_helper.create_error_response(base_request, error_code, "command.G2CHeartbeatResponse", nil, pb.enum("common.MessageID", "G2C_HEARTBEAT_RESPONSE"))
     end
 
     -- 更新用户最后心跳时间

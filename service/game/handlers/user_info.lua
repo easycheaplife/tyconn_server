@@ -1,7 +1,6 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
-local message = require "message"
 local card = require "game.models.card"
 local item = require "game.models.item"
 local user = require "game.models.user"  -- 改用 user model
@@ -16,10 +15,10 @@ function M.handle(client_id, msg)
     logger.debug("Handling user info request from client %d", client_id)
     
     -- 验证请求
-    local base_request, request, claims = handler_helper.verify_request(
+    local base_request, error_code, error_message, claims = handler_helper.verify_request(
         client_id, msg, "command.C2GUserInfoRequest")
-    if not base_request then
-        return request  -- 错误响应
+    if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+        return handler_helper.create_error_response(base_request, error_code, "command.G2CUserInfoResponse", nil, pb.enum("common.MessageID", "G2C_USER_INFO_RESPONSE"))
     end
 
     -- 先从缓存获取用户信息
@@ -34,9 +33,7 @@ function M.handle(client_id, msg)
         result = user.get_user(claims.account)
         if not result then
             logger.error("Failed to get user for account %s", claims.account)
-            return message.encode_response(message.create_error_response(base_request.session,
-                pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"),
-                "Database error"))
+            return handler_helper.create_error_response(base_request, pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"), "command.G2CUserInfoResponse", nil, pb.enum("common.MessageID", "G2C_USER_INFO_RESPONSE"))
         end
 
         -- 如果用户存在，将用户信息存入缓存
@@ -71,9 +68,7 @@ function M.handle(client_id, msg)
             local success, created_user, is_new = user.create_user(new_user)
             if not success then
                 logger.error("Failed to create user: %s", created_user or "unknown error")
-                return message.encode_response(message.create_error_response(base_request.session,
-                    pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"),
-                    created_user or "创建用户失败"))
+                return handler_helper.create_error_response(base_request, pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"), "command.G2CUserInfoResponse", nil, pb.enum("common.MessageID", "G2C_USER_INFO_RESPONSE"))
             end
             
             result = {

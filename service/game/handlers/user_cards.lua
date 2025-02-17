@@ -22,9 +22,7 @@ function M.handle(client_id, msg)
     local cards = card.get_user_cards(user.user_id)
     if not cards then
         logger.error("Failed to get cards for user: %d", user.user_id)
-        return message.encode_response(message.create_error_response(base_request.session,
-            pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"),
-            "Failed to get user cards"))
+        return handler_helper.create_error_response(base_request, pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"), "command.G2CUserCardsResponse", nil, pb.enum("common.MessageID", "G2C_USER_CARDS_RESPONSE"))
     end
 
     -- 打印调试信息

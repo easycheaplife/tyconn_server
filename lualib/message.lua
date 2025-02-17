@@ -93,17 +93,6 @@ function M.create_base_response(session, errorCode, errorMsg, payload)
         payload = payload or ""
     }
 end
-
--- 创建错误响应
-function M.create_error_response(session, errorCode, errorMsg)
-    return M.create_base_response(session, errorCode, errorMsg)
-end
-
--- 创建成功响应
-function M.create_success_response(session, payload)
-    return M.create_base_response(session, 0, "", payload)
-end
-
 -- 编码基础响应
 function M.encode_response(base_response)
     local ok, encoded = pcall(pb.encode, "common.BaseResponse", base_response)
