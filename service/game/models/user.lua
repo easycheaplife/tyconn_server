@@ -287,4 +287,19 @@ function M.add_gold(user_id, gold)
     return true
 end
 
+-- 将用户信息存入缓存
+function M.cache_user(user_info)
+    if not user_info or not user_info.user_id then
+        return false, "Invalid user info"
+    end
+    
+    logger.debug("Caching user info: %s", utils.table_to_string({
+        account = user_info.account,
+        user_id = user_info.user_id,
+        username = user_info.username
+    }))
+
+    return cache.set_user_info(user_info.user_id, user_info)
+end
+
 return M 
