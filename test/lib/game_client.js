@@ -80,10 +80,7 @@ class GameClient extends BaseClient {
         return this.decodeResponse(response, 'command.G2CUseItemResponse');
     }
 
-    // 解码响应数据
     decodeResponse(response, responseType) {
-        console.log(`\nDecoding response for type: ${responseType}`);
-        
         if (response.errorCode !== 0) {
             console.error('Request failed:', response.errorMsg);
             throw new Error(`Request failed: ${response.errorMsg}`);
@@ -95,8 +92,33 @@ class GameClient extends BaseClient {
         }
 
         try {
+            // 获取消息类型定义
+            const messageType = this.protoHelper.root.lookupType(responseType);
+            console.log('\nMessage type fields:', messageType.toJSON().fields);
+
+            // 解码消息
             const decoded = this.protoHelper.decodeMessage(responseType, response.payload);
-            console.log('Decoded payload:', JSON.stringify(decoded, null, 2));
+            
+            // 显示完整字段，包括默认值和未设置的字段
+            const fullFields = {};
+            for (const [fieldName, field] of Object.entries(messageType.fields)) {
+                if (fieldName === 'user' && decoded[fieldName]) {
+                    const userType = this.protoHelper.root.lookupType('common.UserInfo');
+                    const userFields = {};
+                    for (const [userField, userFieldDef] of Object.entries(userType.fields)) {
+                        userFields[userField] = decoded[fieldName][userField] ?? 
+                            (userFieldDef.type === 'string' ? '' : 
+                             userFieldDef.type === 'bool' ? false : 0);
+                    }
+                    fullFields[fieldName] = userFields;
+                } else {
+                    fullFields[fieldName] = decoded[fieldName] ?? 
+                        (field.type === 'string' ? '' : 
+                         field.type === 'bool' ? false : 0);
+                }
+            }
+
+            console.log('Decoded payload (with all fields):', JSON.stringify(fullFields, null, 2));
             return decoded;
         } catch (error) {
             console.error('Failed to decode response:', error);

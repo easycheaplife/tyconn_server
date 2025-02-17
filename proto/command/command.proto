@@ -40,10 +40,8 @@ message C2GUserInfoRequest {
 
 // 获取用户信息响应
 message G2CUserInfoResponse {
-    int32 code = 1;        // 错误码
-    string message = 2;    // 错误信息
-    common.UserInfo user = 3;  // 用户信息
-    bool is_new = 4;       // 是否是新创建的用户
+    common.UserInfo user = 1;  // 用户信息
+    bool is_new = 2;       // 是否是新创建的用户
 }
 
 // 获取用户卡牌请求
@@ -53,9 +51,7 @@ message C2GUserCardsRequest {
 
 // 获取用户卡牌响应
 message G2CUserCardsResponse {
-    int32 code = 1;        // 错误码
-    string message = 2;    // 错误信息
-    repeated common.CardInfo cards = 3;  // 卡牌列表
+    repeated common.CardInfo cards = 1;  // 卡牌列表
 }
 
 // 获取背包信息请求
@@ -65,9 +61,7 @@ message C2GBagInfoRequest {
 
 // 背包信息响应
 message G2CBagInfoResponse {
-    int32 code = 1;
-    string message = 2;
-    repeated common.ItemInfo items = 3;  // 背包物品列表
+    repeated common.ItemInfo items = 1;  // 背包物品列表
 }
 
 // 使用物品请求

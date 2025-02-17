@@ -108,7 +108,8 @@ function M.handle(client_id, msg)
             vip_level = result.user.vip_level or 0,
             create_time = result.user.create_time,
             login_time = result.user.login_time
-        }
+        },
+        is_new = result.is_new
     }
 
     return handler_helper.create_success_response(
