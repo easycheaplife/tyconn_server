@@ -7,9 +7,9 @@ class GameClient extends BaseClient {
     }
 
     // 发送心跳
-    async sendHeartbeat() {
+    async sendHeartbeat(token) {
         const heartbeatRequest = {
-            token: this.token,
+            token: token || this.token,
             timestamp: Date.now()
         };
 
@@ -81,9 +81,10 @@ class GameClient extends BaseClient {
     }
 
     decodeResponse(response, responseType) {
+        // 检查基础响应中的错误码
         if (response.errorCode !== 0) {
-            console.error('Request failed:', response.errorMsg);
-            throw new Error(`Request failed: ${response.errorMsg}`);
+            console.error('Request failed with error code:', response.errorCode);
+            throw new Error(`Invalid token (error code: ${response.errorCode})`);
         }
 
         if (!response.payload) {

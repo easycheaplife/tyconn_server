@@ -60,11 +60,12 @@ function M.verify_request(client_id, msg, proto_name)
 
     -- 2. 验证Token
     local token_result = message.verify_token(request.token)
-    if token_result.code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
-        logger.error("Invalid token for client: %d", client_id)
-        return base_request, pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_TOKEN"),
-        "Invalid token",
-        nil
+    if token_result.code ~= 0 then  -- 直接用数值比较
+        logger.error("Invalid token for client: %d, code: %d", client_id, token_result.code)
+        return base_request, 
+               token_result.code,  -- 使用 token_result 中的实际错误码
+               "Invalid token",
+               nil
     end
     return base_request, pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
     "Success",
@@ -87,8 +88,8 @@ end
 function M.create_error_response(base_request, error_code, proto_name, data, message_id)
     local response = {
         session = base_request.session,
-        error_code = error_code,
-        error_msg = "Error",
+        errorCode = error_code,
+        errorMsg = "Error",
         payload = data and proto_name and pb.encode(proto_name, data) or nil
     }
 

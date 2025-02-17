@@ -93,14 +93,18 @@ function M.create_base_response(session, errorCode, errorMsg, payload)
         payload = payload or ""
     }
 end
+
 -- 编码基础响应
-function M.encode_response(base_response)
-    local ok, encoded = pcall(pb.encode, "common.BaseResponse", base_response)
-    if not ok then
-        logger.error("Failed to encode base response: %s", encoded)
-        return nil
-    end
-    return encoded
+function M.encode_response(response)
+    -- 确保错误码被正确编码
+    local base_response = {
+        session = response.session,
+        errorCode = response.errorCode,  -- 修改这里，使用相同的字段名
+        errorMsg = response.errorMsg,    -- 修改这里，使用相同的字段名
+        payload = response.payload
+    }
+    
+    return pb.encode("common.BaseResponse", base_response)
 end
 
 return M 
