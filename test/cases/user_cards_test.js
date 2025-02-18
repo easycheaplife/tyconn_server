@@ -26,7 +26,7 @@ class UserCardsTest extends BaseTest {
                 assert(card.star >= 1, 'Card star should be at least 1');
 
                 // 模板ID范围验证
-                assert(card.card_type >= 1000 && card.card_type <= 9999, 
+                assert(card.card_type >= 1 && card.card_type <= 9999, 
                     'Card type should be in valid range');
             }
 

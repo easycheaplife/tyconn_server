@@ -8,9 +8,9 @@ local M = {}
 
 -- 初始卡牌配置
 local INITIAL_CARDS = {
-    {card_id = 1, card_type = 1001, level = 1},
-    {card_id = 2, card_type = 1002, level = 1},
-    {card_id = 3, card_type = 1003, level = 1}
+    {card_id = 1, card_type = 1, level = 1},
+    {card_id = 2, card_type = 2, level = 1},
+    {card_id = 3, card_type = 3, level = 1}
 }
 
 -- 计算卡牌战力
