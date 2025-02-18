@@ -9,8 +9,9 @@
     "test:login": "node test/run_test.js -t login"
   },
   "dependencies": {
+    "jsonwebtoken": "^9.0.2",
+    "protobufjs": "^7.0.0",
     "ws": "^8.0.0",
-    "yargs": "^17.0.1",
-    "protobufjs": "^7.0.0"
+    "yargs": "^17.0.1"
   }
-} 
+}
