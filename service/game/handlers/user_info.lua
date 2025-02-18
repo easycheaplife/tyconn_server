@@ -8,6 +8,7 @@ local session = require "game.models.session"
 local name_generator = require "game.utils.name_generator"
 local handler_helper = require "game.handlers.handler_helper"
 local utils = require "utils"
+local message = require "message"
 
 local M = {}
 
@@ -18,7 +19,7 @@ function M.handle(client_id, msg)
     local base_request, request, error_code, error_message, claims = handler_helper.verify_request(
         client_id, msg, "command.C2GUserInfoRequest")
     if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
-        return handler_helper.create_error_response(
+        return message.create_error_response(
             base_request, 
             error_code, 
             "command.G2CUserInfoResponse", 
@@ -59,7 +60,7 @@ function M.handle(client_id, msg)
         local success, created_user, is_new = user.create_user(new_user)
         if not success then
             logger.error("Failed to create user: %s", created_user or "unknown error")
-            return handler_helper.create_error_response(
+            return message.create_error_response(
                 base_request, 
                 pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"), 
                 "command.G2CUserInfoResponse", 
@@ -107,7 +108,7 @@ function M.handle(client_id, msg)
         is_new = result.is_new
     }
 
-    return handler_helper.create_success_response(
+    return message.create_success_response(
         base_request,
         "command.G2CUserInfoResponse",
         response_data,

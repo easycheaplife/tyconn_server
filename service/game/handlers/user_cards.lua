@@ -16,10 +16,10 @@ function M.handle(client_id, msg)
         client_id, msg, "command.C2GUserCardsRequest")
     if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
         logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", client_id, error_code, error_message)
-        return handler_helper.create_error_response(
+        return message.create_error_response(
             base_request, 
             error_code, 
-            error_message, 
+            "command.G2CUserCardsResponse", 
             nil, 
             pb.enum("common.MessageID", "G2C_USER_CARDS_RESPONSE"))
     end
@@ -28,7 +28,7 @@ function M.handle(client_id, msg)
     local cards = card.get_user_cards(user.user_id)
     if not cards then
         logger.error("Failed to get cards for user: %d", user.user_id)
-        return handler_helper.create_error_response(
+        return message.create_error_response(
             base_request, 
             pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"), 
             "command.G2CUserCardsResponse", 
@@ -47,7 +47,7 @@ function M.handle(client_id, msg)
     logger.debug("Sending card bag response: %s", utils.table_to_string(response_data))
 
     -- 返回成功响应
-    return handler_helper.create_success_response(
+    return message.create_success_response(
         base_request,
         "command.G2CUserCardsResponse",
         response_data,

@@ -1,10 +1,9 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
-local handler_helper = require "game.handlers.handler_helper"
 local item = require "game.models.item"
-local user = require "game.models.user"
-local utils = require "utils"
+local handler_helper = require "game.handlers.handler_helper"
+local message = require "message"
 
 local M = {}
 
@@ -16,33 +15,36 @@ function M.handle(client_id, msg)
         client_id, msg, "command.C2GBagInfoRequest")
     if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
         logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", client_id, error_code, error_message)
-        return handler_helper.create_error_response(
+        return message.create_error_response(
             base_request, 
-            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PROTO"),
-            error_message,
-            nil)
+            error_code, 
+            "command.G2CBagInfoResponse", 
+            nil, 
+            pb.enum("common.MessageID", "G2C_BAG_INFO_RESPONSE"))
     end
 
     -- 获取用户物品列表
-    local items, err = item.get_user_items(user.user_id)
+    local items = item.get_user_items(user.user_id)
     if not items then
-        logger.error("Failed to get items for user %d: %s", user.user_id, err)
-        return handler_helper.create_error_response(
-            base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"),
-            "Failed to get items",
-            nil)
+        logger.error("Failed to get items for user: %d", user.user_id)
+        return message.create_error_response(
+            base_request, 
+            pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"), 
+            "command.G2CBagInfoResponse", 
+            nil, 
+            pb.enum("common.MessageID", "G2C_BAG_INFO_RESPONSE"))
     end
 
-    -- 构造响应
-    local result = {
+    -- 构造响应数据
+    local response_data = {
         items = items
     }
 
-    return handler_helper.create_success_response(
+    -- 返回成功响应
+    return message.create_success_response(
         base_request,
         "command.G2CBagInfoResponse",
-        result,
+        response_data,
         pb.enum("common.MessageID", "G2C_BAG_INFO_RESPONSE"))
 end
 
