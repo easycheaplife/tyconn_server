@@ -45,6 +45,12 @@ class LoginClient extends BaseClient {
                 throw new Error('Game server info not provided in login response');
             }
 
+            console.log("Gateway info:", {
+                host: loginResponse.ws_addr,
+                port: loginResponse.ws_port,
+                key: loginResponse.token
+            });
+
             return {
                 token: loginResponse.token,
                 gateInfo: {
