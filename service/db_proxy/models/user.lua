@@ -3,6 +3,7 @@ local logger = require "logger"
 local mysql = require "db.mysql"
 local sql = require "db_proxy.sql.user"
 local db_util = require "db_proxy.utils.db_util"
+local utils = require "utils"
 
 local M = {}
 
@@ -72,19 +73,12 @@ function M.get_user(account)
     
     local query = string.format(sql.GET_USER_BY_ACCOUNT, mysql.escape(account))
     log_sql(query)
-    
     local results = db_util.query(query)
-    
-    if not results then
-        logger.error("Failed to get user for account: %s", account)
-        return false, "Database error"
+    if not results or #results == 0 then
+        logger.info("Failed to get user for account: %s", account)
+        return nil
     end
-    
-    return {
-        success = true,
-        user = results[1],
-        is_new = false
-    }
+    return results[1]
 end
 
 -- 更新用户信息

@@ -26,18 +26,39 @@ function M.handle(client_id, msg)
             pb.enum("common.MessageID", "G2C_USER_INFO_RESPONSE"))
     end
 
-    -- 先从缓存获取用户信息
-    local result = user.get_user_from_cache(claims.account)
-    -- 确保 result 的结构一致
-    if result then
-        result = { user = result }
+    local user_info = user.get_user(claims.account)
+    local result = {}
+
+    if user_info then
+        user_info.account = claims.account
+        logger.debug("Attempting to cache user data: %s", utils.table_to_string(user_info))
+        result = {
+            user = user_info,
+            is_new = false
+        }
     end
 
-    if not result then
-        -- 缓存中没有，从数据库获取
-        result = user.get_user(claims.account)
-        if not result then
-            logger.error("Failed to get user for account %s", claims.account)
+    -- 如果用户不存在，则创建用户
+    if not user_info then
+        logger.debug("Creating new user for account: %s", claims.account)
+        
+        -- 创建用户数据
+        local new_user = {
+            account = claims.account,
+            username = name_generator.generate_username(),
+            level = 1,
+            exp = 0,
+            vip_level = 0,
+            create_time = os.time(),
+            last_login = os.time()
+        }
+        
+        logger.debug("Creating new user: %s", utils.table_to_string(new_user))
+
+        -- 使用 user.create_user 创建用户
+        local success, created_user, is_new = user.create_user(new_user)
+        if not success then
+            logger.error("Failed to create user: %s", created_user or "unknown error")
             return handler_helper.create_error_response(
                 base_request, 
                 pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"), 
@@ -45,68 +66,27 @@ function M.handle(client_id, msg)
                 nil, 
                 pb.enum("common.MessageID", "G2C_USER_INFO_RESPONSE"))
         end
+        
+        result = {
+            user = created_user,  -- user.create_user 返回的用户信息
+            is_new = is_new or true
+        }
+    end
 
-        -- 如果用户存在，将用户信息存入缓存
-        if result.user then
-            result.user.account = claims.account
-            logger.debug("Attempting to cache user data: %s", utils.table_to_string(result.user))
-            local cache_success, cache_err = user.cache_user(result.user)
-            if not cache_success then
-                logger.error("Failed to cache user data: %s", cache_err or "unknown error")
-                -- 继续处理，不影响用户信息返回
-            end
+    -- 如果是新用户，初始化游戏数据
+    if result.is_new then
+        -- 1. 初始化卡牌
+        local ok = card.init_user_cards(result.user.user_id)
+        if not ok then
+            logger.error("Failed to initialize cards for new user: %s", claims.account)
+            -- 继续处理，不影响登录流程
         end
 
-        -- 如果用户不存在，则创建用户
-        if not result.user then
-            logger.debug("Creating new user for account: %s", claims.account)
-            
-            -- 创建用户数据
-            local new_user = {
-                account = claims.account,
-                username = name_generator.generate_username(),
-                level = 1,
-                exp = 0,
-                vip_level = 0,
-                create_time = os.time(),
-                last_login = os.time()
-            }
-            
-            logger.debug("Creating new user: %s", utils.table_to_string(new_user))
-
-            -- 使用 user.create_user 创建用户
-            local success, created_user, is_new = user.create_user(new_user)
-            if not success then
-                logger.error("Failed to create user: %s", created_user or "unknown error")
-                return handler_helper.create_error_response(
-                    base_request, 
-                    pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"), 
-                    "command.G2CUserInfoResponse", 
-                    nil, 
-                    pb.enum("common.MessageID", "G2C_USER_INFO_RESPONSE"))
-            end
-            
-            result = {
-                user = created_user,  -- user.create_user 返回的用户信息
-                is_new = is_new or true
-            }
-        end
-
-        -- 如果是新用户，初始化游戏数据
-        if result.is_new then
-            -- 1. 初始化卡牌
-            local ok = card.init_user_cards(result.user.user_id)
-            if not ok then
-                logger.error("Failed to initialize cards for new user: %s", claims.account)
-                -- 继续处理，不影响登录流程
-            end
-
-            -- 2. 初始化物品
-            local ok = item.init_user_items(result.user.user_id)
-            if not ok then
-                logger.error("Failed to initialize items for new user: %s", claims.account)
-                -- 继续处理，不影响登录流程
-            end
+        -- 2. 初始化物品
+        local ok = item.init_user_items(result.user.user_id)
+        if not ok then
+            logger.error("Failed to initialize items for new user: %s", claims.account)
+            -- 继续处理，不影响登录流程
         end
     end
 

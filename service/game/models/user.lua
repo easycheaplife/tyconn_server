@@ -72,7 +72,7 @@ end
 function M.get_user(account)
     logger.debug("Getting user info for account: %s", account)
     if not account then
-        return nil, "Invalid account"
+        return nil
     end
 
     -- 1. 从缓存获取
@@ -86,7 +86,7 @@ function M.get_user(account)
     local result = db_client.get_user(account)
     if not result then
         logger.error("Failed to get user from db: %s", account)
-        return nil, "User not found"
+        return nil
     end
 
     logger.debug("Got user from db: %s, user_id: %s", account, result.user_id)

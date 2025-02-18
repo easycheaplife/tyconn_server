@@ -31,22 +31,16 @@ function M.verify_request_with_user(client_id, msg, proto_name)
     end
 
     -- 3. 获取用户信息
-    local user_info = user.get_user_from_cache(token_result.claims.account)
-    if not user_info then
         -- 缓存中没有，从数据库获取
-        local ok, err = user.get_user(token_result.claims.account)
-        if not ok then
-            logger.error("Failed to get user: %s", err)
+        local user_info = user.get_user(token_result.claims.account)
+        if not user_info then
+            logger.error("Failed to get user: %s", token_result.claims.account)
             return base_request, request, 
               tonumber(pb.enum("common.ErrorCode", "ERROR_CODE_ACCOUNT_NOT_EXIST")),
               err,
               nil,
               nil
         end
-        -- 将用户信息存入缓存
-        user_info = err
-        user.cache_user(user_info)
-    end
 
     if not user_info then
         logger.error("User not found")
