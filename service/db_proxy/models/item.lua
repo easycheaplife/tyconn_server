@@ -15,7 +15,6 @@ function M.get_user_items(user_id)
         logger.error("Failed to get items for user: %d", user_id)
         return nil, "Database error"
     end
-    
     -- 确保返回所有必要字段
     for _, item in ipairs(results) do
         item.count = item.count or 0
