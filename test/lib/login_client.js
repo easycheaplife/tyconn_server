@@ -1,5 +1,6 @@
 const BaseClient = require('./base_client');
 const config = require('../config/config');
+const jwt = require('jsonwebtoken');
 
 class LoginClient extends BaseClient {
     constructor() {
@@ -13,52 +14,59 @@ class LoginClient extends BaseClient {
 
     // 登录并获取token
     async login(account, password) {
-        await this.connect();
+        try {
+            await this.connect();
 
-        const loginRequest = {
-            account: account,
-            password: password,
-            platform: config.platform,
-            version: config.version,
-            deviceId: config.deviceId
-        };
+            const loginRequest = {
+                account: account,
+                password: password,
+                platform: config.platform,
+                version: config.version,
+                deviceId: config.deviceId
+            };
 
-        // 打印可用的消息类型（调试用）
-        console.log('Available message types:', this.protoHelper.listAvailableTypes());
-
-        const response = await this.sendRequest('C2L_LOGIN_REQUEST', loginRequest);
-        if (response.errorCode !== 0) {
-            throw new Error(`Login failed: ${response.errorMsg}`);
-        }
-
-        const loginResponse = this.protoHelper.decodeLoginResponse(response.payload);
-        console.log('Login response:', loginResponse);
-
-        // 检查登录响应的结构
-        if (!loginResponse) {
-            throw new Error('Empty login response');
-        }
-
-        if (!loginResponse.token) {
-            throw new Error('No token in login response');
-        }
-
-        if (!loginResponse.ws_addr || !loginResponse.ws_port) {
-            throw new Error('Game server info not provided in login response');
-        }
-
-        console.log(`Game server: ${loginResponse.ws_addr}:${loginResponse.ws_port}`);
-
-        this.close();
-
-        return {
-            token: loginResponse.token,
-            gateInfo: {
-                protocol: config.protocol,
-                host: loginResponse.ws_addr,
-                port: loginResponse.ws_port
+            const response = await this.sendRequest('C2L_LOGIN_REQUEST', loginRequest);
+            if (response.errorCode !== 0) {
+                throw new Error(`Login failed: ${response.errorMsg}`);
             }
-        };
+
+            const loginResponse = this.protoHelper.decodeLoginResponse(response.payload);
+
+            // 检查登录响应的结构
+            if (!loginResponse) {
+                throw new Error('Empty login response');
+            }
+
+            if (!loginResponse.token) {
+                throw new Error('No token in login response');
+            }
+
+            if (!loginResponse.ws_addr || !loginResponse.ws_port) {
+                throw new Error('Game server info not provided in login response');
+            }
+
+            return {
+                token: loginResponse.token,
+                gateInfo: {
+                    protocol: config.protocol,
+                    host: loginResponse.ws_addr,
+                    port: loginResponse.ws_port
+                }
+            };
+        } finally {
+            await this.close();
+        }
+    }
+
+    // 解码 token
+    decodeToken(token) {
+        try {
+            // 不验证签名，只解码
+            return jwt.decode(token);
+        } catch (error) {
+            console.error('Failed to decode token:', error);
+            return null;
+        }
     }
 }
 

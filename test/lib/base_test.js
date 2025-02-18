@@ -1,9 +1,12 @@
 const GameClient = require('./game_client');
+const LoginClient = require('./login_client');
+const config = require('../config/config');
 
 class BaseTest {
     constructor(name) {
         this.name = name;
-        this.client = null;
+        this.loginClient = new LoginClient();
+        this.client = new GameClient();
     }
 
     // 初始化测试客户端

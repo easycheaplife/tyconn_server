@@ -8,6 +8,7 @@ class BaseClient {
         this.protoHelper = new ProtoHelper();
         this.token = null;
         this.serverInfo = null;
+        this.connected = false;
     }
 
     // 设置token和服务器信息
@@ -96,8 +97,13 @@ class BaseClient {
     // 关闭连接
     close() {
         if (this.ws) {
-            this.ws.close();
+            try {
+                this.ws.close();
+            } catch (error) {
+                // 忽略关闭时的错误
+            }
             this.ws = null;
+            this.connected = false;
         }
     }
 }
