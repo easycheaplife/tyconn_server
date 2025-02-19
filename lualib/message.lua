@@ -123,9 +123,16 @@ end
 function M.create_error_response(base_request, error_code, response_type, error_message, message_id)
     -- 确保错误码是数字
     if type(error_code) ~= "number" then
-        logger.error("Invalid error code type: %s", type(error_code))
-        error_code = pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAMS")
+        logger.error("Invalid error code type: %s, value: %s", type(error_code), tostring(error_code))
+        error_code = pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAM")
     end
+
+    -- 打印所有参数
+    logger.debug("Creating error response with params:")
+    logger.debug("- error_code: %d", error_code)
+    logger.debug("- response_type: %s", response_type)
+    logger.debug("- error_message: %s", error_message)
+    logger.debug("- message_id: %d", message_id)
 
     local response = {
         session = {
@@ -139,9 +146,8 @@ function M.create_error_response(base_request, error_code, response_type, error_
         payload = ""
     }
 
-    -- 打印错误响应信息以便调试
-    logger.debug("Creating error response - code: %d, message: '%s'", 
-        response.errorCode, response.errorMsg)
+    -- 打印完整响应
+    logger.debug("Full error response: %s", utils.table_to_string(response))
 
     return M.encode_response(response)
 end

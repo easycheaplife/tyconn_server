@@ -29,7 +29,7 @@ function M.handle(client_id, msg)
         logger.error("Invalid item id: %s", tostring(request.item_id))
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAMS"),
+            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAM"),
             "command.G2CUseItemResponse",
             "Invalid item id",
             pb.enum("common.MessageID", "G2C_USE_ITEM_RESPONSE"))
@@ -40,7 +40,7 @@ function M.handle(client_id, msg)
         logger.error("Invalid count: %s, error_code: %d", tostring(request.count), error_code)
         return message.create_error_response(
             base_request,
-            error_code,  -- 使用已解析的错误码
+            error_code,
             "command.G2CUseItemResponse",
             "Invalid count",
             pb.enum("common.MessageID", "G2C_USE_ITEM_RESPONSE"))
