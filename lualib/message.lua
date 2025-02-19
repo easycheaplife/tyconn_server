@@ -109,14 +109,27 @@ end
 
 -- 创建成功响应
 function M.create_success_response(base_request, proto_name, data, message_id)
-    local base_response = M.create_base_response(
-        base_request.session,
-        pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
-        "Success",
-        pb.encode(proto_name, data))
-    
-    base_response.session.messageId = message_id
-    return M.encode_response(base_response)
+    -- 加日志
+    logger.debug("Creating success response with params:")
+    logger.debug("- base_request: %s", utils.table_to_string(base_request))
+    logger.debug("- proto_name: %s", proto_name)
+    logger.debug("- data: %s", utils.table_to_string(data))
+    logger.debug("- message_id: %d", message_id)
+
+    local response = {
+        session = {
+            messageId = message_id,
+            sequence = base_request.session.sequence,
+            timestamp = base_request.session.timestamp,
+            version = base_request.session.version
+        },
+        errorCode = pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
+        errorMsg = "Success",
+        payload = pb.encode(proto_name, data)
+    }
+    -- 打印完整响应
+    logger.debug("Full success response: %s", utils.table_to_string(response))
+    return M.encode_response(response)
 end
 
 -- 创建错误响应

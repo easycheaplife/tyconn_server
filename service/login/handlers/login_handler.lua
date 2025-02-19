@@ -31,7 +31,8 @@ function M.handle(client_id, base_request)
     if not request.account or request.account == "" then
         logger.warn("Missing account in login request")
         return message.create_error_response(base_request, 
-            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_ACCOUNT"), 
+            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_ACCOUNT"),
+            "command.C2LLoginRequest",  
             "账号不能为空",
             orig_msg_id)
     end
