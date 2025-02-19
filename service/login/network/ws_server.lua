@@ -3,12 +3,15 @@ local logger = require "logger"
 local pb = require "pb"
 local websocket = require "http.websocket"
 local login_handler = require "login.handlers.login_handler"
+local utils = require "utils"
 
 local M = {}
 local clients = {}  -- client_id -> session info
 
 -- 发送错误响应
 local function send_error_response(client_id, session, message, error_code)
+    logger.error("send_error_response: client_id=%d, session=%s, message=%s, error_code=%s", 
+        client_id, utils.table_to_string(session), utils.table_to_string(message), error_code)
     local response = {
         session = session,
         errorCode = error_code or pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"),
@@ -25,6 +28,8 @@ end
 
 -- 发送登录响应
 local function send_login_response(client_id, session, data)
+    logger.error("send_login_response: client_id=%d, session=%s, data=%s", 
+        client_id, utils.table_to_string(session), utils.table_to_string(data))
     local ok, payload = pcall(pb.encode, "command.L2CLoginResponse", data)
     if not ok then
         logger.error("Failed to encode login response: %s", payload)
@@ -35,7 +40,7 @@ local function send_login_response(client_id, session, data)
     local base_response = {
         session = session,
         errorCode = pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
-        errorMsg = "",
+        errorMsg = data.message,
         payload = payload
     }
     

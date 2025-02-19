@@ -14,11 +14,9 @@ message C2LLoginRequest {
 
 // 登录响应
 message L2CLoginResponse {
-    int32 code = 1;         // 错误码
-    string message = 2;     // 错误信息
-    string token = 3;       // JWT令牌
-    string ws_addr = 4;     // WebSocket地址
-    int32 ws_port = 5;      // WebSocket端口
+    string token = 1;       // JWT令牌
+    string ws_addr = 2;     // WebSocket地址
+    int32 ws_port = 3;      // WebSocket端口
 }
 
 // 心跳请求
@@ -30,7 +28,6 @@ message C2GHeartbeatRequest {
 // 心跳响应
 message G2CHeartbeatResponse {
     int64 timestamp = 1;    // 服务器时间戳
-    int32 code = 2;        // 状态码
 }
 
 // 获取用户信息请求
