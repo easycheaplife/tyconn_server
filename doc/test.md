@@ -1,246 +1,157 @@
 # 测试说明
 
-## 测试环境
+## 1. 快速开始
 
-### 1. 环境要求
-- Node.js 14+
-- npm 6+
-- WebSocket
-- Protocol Buffers
-
-### 2. SSL测试说明
-当使用wss协议进行测试时，如果使用自签名证书，需要设置以下环境变量：
 ```bash
-# 忽略SSL证书验证(仅用于测试环境)
-export NODE_TLS_REJECT_UNAUTHORIZED=0
-```
-或在测试配置中设置:
-```javascript
-ssl: {
-    rejectUnauthorized: false
-}
-```
-
-### 2. 安装依赖
-```bash
+# 安装依赖
 cd test
 npm install
+
+# 运行所有测试
+node test/run_test.js
+
+# 运行登录测试
+node test/run_test.js -t login
+
+# 运行压力测试
+node test/benchmark/cli.js run login -c 100 -n 1000
 ```
 
-## 测试类型
+## 2. 基础组件
 
-### 1. 单元测试
-
-#### 用户模块测试
-```javascript
-// test/tests/user_info_test.js
-describe('User Model Test', () => {
-    it('should create user successfully', async () => {
-        const user = {
-            name: 'test_user',
-            password: '123456'
-        };
-        const result = await UserModel.create(user);
-        expect(result.name).toBe(user.name);
-        expect(result.level).toBe(1);
-    });
-});
-```
-
-### 2. 接口测试
-
-#### 登录测试
-```javascript
-// test/tests/login_test.js
-describe('Login API Test', () => {
-    it('should login successfully', async () => {
-        const request = loginRequestBuilder.build({
-            account: 'test',
-            password: '123456'
-        });
-        const response = await client.send(request);
-        expect(response.code).toBe(0);
-        expect(response.data.token).toBeDefined();
-    });
-});
-```
-
-### 3. 压力测试
-
-#### 登录压测
-```javascript
-// test/tests/login_test.js
-async function loginBenchmark() {
-    const concurrent = 100;  // 并发数
-    const total = 1000;     // 总请求数
-    
-    console.log('Starting login benchmark...');
-    console.log(`Concurrent: ${concurrent}`);
-    console.log(`Total: ${total}`);
-    
-    const results = await benchmark({
-        concurrent,
-        total,
-        fn: async () => {
-            const request = loginRequestBuilder.build({
-                account: `test_${Math.random()}`,
-                password: '123456'
-            });
-            return client.send(request);
-        }
-    });
-    
-    console.log('Benchmark Results:');
-    console.log(`Success Rate: ${results.successRate}%`);
-    console.log(`Average Time: ${results.avgTime}ms`);
-    console.log(`QPS: ${results.qps}`);
-}
-```
-
-#### 性能指标
-- 并发用户数
-- 登录成功率
-- 响应时间
-- CPU使用率
-- 内存占用
-- 网络流量
-
-## 调试指南
-
-### 1. 日志说明
-- DEBUG: 调试信息
-- INFO: 普通信息
-- WARN: 警告信息
-- ERROR: 错误信息
-- FATAL: 致命错误
-
-### 2. 关键节点日志
-- 连接建立/断开
-- 消息收发
-- 错误异常
-- 状态变更
-
-## 测试工具
-
-### 1. 测试客户端
-```javascript
-// test/client.js
-class GameClient {
-    constructor(config) {
-        this.loginServer = config.loginServer;
-        this.wsClient = new WSClient(config);
-        this.responseHandler = new ResponseHandler();
-    }
-
-    async connect() {
-        return this.wsClient.connect();
-    }
-
-    async send(request) {
-        const response = await this.wsClient.send(request);
-        return this.responseHandler.handle(response);
-    }
-}
-```
-
-### 2. Proto工具
+### 2.1 ProtoHelper
 ```javascript
 // test/lib/proto_helper.js
 class ProtoHelper {
-    async loadProtos() {
-        const root = new protobuf.Root();
-        await root.load([
-            'proto/command/command.proto',
-            'proto/common/error.proto',
-            'proto/common/message.proto',
-            'proto/common/user.proto'
-        ]);
-        return root;
-    }
-
-    encode(type, data) {
-        const message = this.root.lookupType(type);
-        return message.encode(data).finish();
-    }
-}
-```
-
-### 3. 请求构建器
-```javascript
-// test/builders/login_request_builder.js
-class LoginRequestBuilder {
-    build(params) {
-        return {
-            session: {
-                messageId: 1,
-                sequence: 1,
-                timestamp: Date.now(),
-                version: "1.0.0"
-            },
-            payload: params
+    constructor() {
+        this.root = null;
+        this.MessageID = {};
+        this.ErrorCode = {
+            ERROR_CODE_SUCCESS: 0,
+            ERROR_CODE_SYSTEM_ERROR: 1,
+            ERROR_CODE_INVALID_PARAM: 2
         };
     }
+
+    async init() {
+        // 加载proto文件
+        this.root = await protobuf.load([
+            'common/message.proto',
+            'command/command.proto'
+        ]);
+    }
 }
 ```
 
-## 测试报告
+### 2.2 BaseClient
+```javascript
+// test/lib/base_client.js
+class BaseClient {
+    constructor() {
+        this.ws = null;
+        this.protoHelper = new ProtoHelper();
+    }
 
-### 1. 单元测试报告
-```bash
-# 运行单元测试
-npm run test:unit
-
-# 输出结果
-PASS test/tests/user_info_test.js
-User Model Test
-  ✓ should create user successfully (5ms)
-  ✓ should get user info (3ms)
+    async connect() {
+        const wsUrl = `${this.serverInfo.protocol}://${this.serverInfo.host}:${this.serverInfo.port}`;
+        // ... WebSocket 连接逻辑
+    }
+}
 ```
 
-### 2. 压测报告
+## 3. 测试用例
+
+### 3.1 单元测试
+```javascript
+// test/cases/login_test.js
+class LoginTest extends BaseTest {
+    async test() {
+        // 测试无效登录
+        try {
+            await this.login('', '123456');
+            assert.fail('Should not allow empty account');
+        } catch (error) {
+            assert.strictEqual(
+                error.response.errorCode,
+                ProtoHelper.ErrorCode.ERROR_CODE_INVALID_ACCOUNT
+            );
+        }
+    }
+}
+```
+
+## 4. 压力测试
+
+### 4.1 使用方法
 ```bash
+# 查看帮助
+node test/benchmark/cli.js --help
+
 # 运行压测
-npm run benchmark
-
-# 输出结果
-Login Benchmark Results:
-- Total Requests: 1000
-- Concurrent Users: 100
-- Success Rate: 99.8%
-- Average Response Time: 15ms
-- QPS: 658
-- P95: 25ms
-- P99: 35ms
+node test/benchmark/cli.js run login -c 100 -n 1000
+node test/benchmark/cli.js run bag -s localhost -p 8022
 ```
 
-## 持续集成
+### 4.2 参数说明
+```
+Options:
+  -c, --concurrent <number>  并发用户数
+  -n, --total <number>      总请求数
+  -t, --timeout <number>    请求超时时间(ms)
+  -s, --server <host>       服务器地址
+  -p, --port <number>       服务器端口
+```
 
-### 1. GitHub Actions配置
-```yaml
-# .github/workflows/test.yml
-name: Test
+## 5. 性能监控
 
-on: [push, pull_request]
+### 5.1 监控指标
+- 并发连接数
+- QPS (每秒查询数)
+- 响应时间 (平均/最大/最小)
+- 错误率
+- 内存使用
+- CPU使用率
 
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v2
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: '14'
-        
-    - name: Install Dependencies
-      run: |
-        cd test
-        npm install
-        
-    - name: Run Tests
-      run: |
-        npm run test:unit
-        npm run test:api
-``` 
+### 5.2 监控方法
+```javascript
+// 开启监控
+monitor.start({
+    interval: 1000,    // 采样间隔
+    metrics: ['qps', 'rt', 'error']  // 监控指标
+});
+
+// 记录请求
+monitor.recordRequest(time);
+
+// 获取报告
+const report = monitor.getReport();
+```
+
+## 6. 调试技巧
+
+### 6.1 环境变量
+```bash
+# 调试日志
+export DEBUG=game:*
+export LOG_LEVEL=debug
+
+# 测试环境
+export NODE_TLS_REJECT_UNAUTHORIZED=0
+export TEST_SERVER=test-server.com
+export TEST_PORT=8022
+```
+
+### 6.2 错误处理
+```javascript
+try {
+    await client.login('test', '123456');
+} catch (error) {
+    if (error.response?.errorCode) {
+        console.error('Login failed:', error.response.errorMsg);
+    } else {
+        console.error('Network error:', error);
+    }
+}
+```
+
+更多协议细节请参考 [protocol.md](protocol.md) 
