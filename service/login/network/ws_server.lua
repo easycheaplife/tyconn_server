@@ -25,7 +25,7 @@ end
 
 -- 发送登录响应
 local function send_login_response(client_id, session, data)
-    local ok, payload = pcall(pb.encode, "command.S2LLoginResponse", data)
+    local ok, payload = pcall(pb.encode, "command.L2CLoginResponse", data)
     if not ok then
         logger.error("Failed to encode login response: %s", payload)
         send_error_response(client_id, session, "系统错误")

@@ -167,7 +167,7 @@ class ProtoHelper {
     // 解码登录响应
     decodeLoginResponse(payload) {
         // 使用正确的消息类型名称
-        const LoginResponse = this.root.lookupType('command.S2LLoginResponse');
+        const LoginResponse = this.root.lookupType('command.L2CLoginResponse');
         return LoginResponse.decode(payload);
     }
 
