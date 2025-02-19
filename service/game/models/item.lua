@@ -100,8 +100,10 @@ function M.get_user_items(user_id)
         return {}, "获取物品失败"
     end
 
+    if #result > 0 then
     -- 3. 写入缓存
-    cache.set_user_items(user_id, result)
+        cache.set_user_items(user_id, result)
+    end
 
     return result
 end
@@ -158,8 +160,8 @@ function M.add_items(user_id, items)
         return false, "更新失败"
     end
 
-    -- 4. 更新缓存
-    cache.set_user_items(user_id, current_items)
+    -- 4. 更新缓存(暂时不更新缓存，因为新增不会带id)
+    -- cache.set_user_items(user_id, current_items)
 
     return true
 end
