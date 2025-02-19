@@ -3,11 +3,30 @@ const path = require('path');
 const fs = require('fs');
 
 class ProtoHelper {
+    static ErrorCode = {
+        ERROR_CODE_SUCCESS : 0,               // 成功
+        ERROR_CODE_SYSTEM_ERROR : 1,         // 系统错误
+        ERROR_CODE_INVALID_PARAM : 2,         // 无效参数
+        ERROR_CODE_INVALID_ACCOUNT : 3,        // 无效账号
+        ERROR_CODE_WRONG_PASSWORD : 4,         // 密码错误
+        ERROR_CODE_ACCOUNT_EXISTS : 5,         // 账号已存在
+        ERROR_CODE_ACCOUNT_NOT_EXIST : 6,      // 账号不存在
+        ERROR_CODE_TOKEN_INVALID : 7,           // 无效的令牌
+        ERROR_CODE_TOKEN_EXPIRED : 8,           // 令牌已过期
+        ERROR_CODE_SERVER_BUSY : 9,             // 服务器繁忙
+        ERROR_CODE_VERSION_MISMATCH : 10,        // 版本不匹配
+        ERROR_CODE_GATE_NOT_AVAILABLE : 11,       // 网关不可用
+        ERROR_CODE_DB_ERROR : 12,                // 数据库错误
+        ERROR_CODE_ITEM_NOT_FOUND : 13,          // 物品不存在
+        ERROR_CODE_ITEM_NOT_ENOUGH : 14,         // 物品数量不足
+    };
+
     constructor() {
         this.root = null;
-        this.MessageID = null;
+        this.MessageID = {};
         this.initialized = false;
         this.sequence = 0;
+        this.ErrorCode = ProtoHelper.ErrorCode;
         this.init();
     }
 
@@ -16,6 +35,7 @@ class ProtoHelper {
 
         try {
             // 加载proto文件
+            console.log('Loading proto files...');
             this.root = new protobuf.Root();
             
             // 设置 proto 文件搜索路径
@@ -43,7 +63,6 @@ class ProtoHelper {
             }
 
             // 加载文件
-            console.log('Loading proto files...');
             for (const file of protoFiles) {
                 const fullPath = path.join(protoPath, file);
                 console.log(`Loading: ${file}`);
@@ -59,9 +78,14 @@ class ProtoHelper {
             this.root.resolveAll();
             
             // 加载消息ID
-            this.MessageID = this.root.lookupEnum('common.MessageID').values;
+            const MessageID = this.root.lookupEnum('common.MessageID');
+            this.MessageID = MessageID.values;
             console.log('Proto files loaded successfully');
             console.log('Available message IDs:', Object.keys(this.MessageID));
+
+            // 初始化错误码
+            const ErrorCode = this.root.lookupEnum('common.ErrorCode');
+            this.ErrorCode = ErrorCode.values;
 
             this.initialized = true;
         } catch (error) {

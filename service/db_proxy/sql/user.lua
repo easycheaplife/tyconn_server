@@ -8,6 +8,7 @@ local M = {}
 M.GET_USER_BY_ID = [[
     SELECT 
         user_id,
+        account,
         username,
         level,
         exp,
@@ -22,6 +23,7 @@ M.GET_USER_BY_ID = [[
 M.GET_USER_BY_ACCOUNT = [[
     SELECT 
         user_id,
+        account,
         username,
         level,
         exp,
@@ -37,6 +39,7 @@ M.GET_USER_BY_ACCOUNT = [[
 M.GET_USER_BY_USERNAME = [[
     SELECT 
         user_id,
+        account,
         username,
         level,
         exp,

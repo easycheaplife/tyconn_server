@@ -84,6 +84,14 @@ class BaseClient {
                     console.log('Error message:', response.errorMsg);
                     console.log('Raw payload:', response.payload);
                     
+                    // 检查错误码
+                    if (response.errorCode !== 0) {  // 直接使用 0 表示成功
+                        const error = new Error(response.errorMsg || 'Unknown error');
+                        error.response = response;  // 添加完整的响应对象到错误中
+                        reject(error);
+                        return;
+                    }
+
                     resolve(response);
                 } catch (error) {
                     reject(error);

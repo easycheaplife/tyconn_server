@@ -1,10 +1,8 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
-local handler_helper = require "game.handlers.handler_helper"
 local item = require "game.models.item"
-local user = require "game.models.user"
-local utils = require "utils"
+local handler_helper = require "game.handlers.handler_helper"
 local message = require "message"
 
 local M = {}
@@ -16,37 +14,65 @@ function M.handle(client_id, msg)
     local base_request, request, error_code, error_message, user, claims = handler_helper.verify_request_with_user(
         client_id, msg, "command.C2GUseItemRequest")
     if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
-        logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", client_id, error_code, error_message)
+        logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", 
+            client_id, error_code, error_message)
         return message.create_error_response(
-            base_request,
-            error_code,
-            "command.G2CUseItemResponse",
-            nil,
+            base_request, 
+            error_code, 
+            "command.G2CUseItemResponse", 
+            nil, 
             pb.enum("common.MessageID", "G2C_USE_ITEM_RESPONSE"))
     end
 
-    -- 使用物品
-    local ok, changed_items = item.use_item(user.user_id, request.item_id, request.count)
-    if not ok then
-        logger.error("Failed to use item: %s", changed_items)
+    -- 参数验证
+    if not request.item_id or request.item_id <= 0 then
+        logger.error("Invalid item id: %s", tostring(request.item_id))
         return message.create_error_response(
             base_request,
             pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAMS"),
             "command.G2CUseItemResponse",
-            nil,
+            "Invalid item id",
             pb.enum("common.MessageID", "G2C_USE_ITEM_RESPONSE"))
     end
 
-    -- 构造响应
-    local result = {
-        items = changed_items
+    if not request.count or request.count <= 0 then
+        local error_code = pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAM")
+        logger.error("Invalid count: %s, error_code: %d", tostring(request.count), error_code)
+        return message.create_error_response(
+            base_request,
+            error_code,  -- 使用已解析的错误码
+            "command.G2CUseItemResponse",
+            "Invalid count",
+            pb.enum("common.MessageID", "G2C_USE_ITEM_RESPONSE"))
+    end
+
+    -- 使用物品
+    logger.info("Use item - user_id: %d, item_id: %d, count: %d", 
+        user.user_id, request.item_id, request.count)
+    local ok, result = item.use_item(user.user_id, request.item_id, request.count)
+    if not ok then
+        -- 检查是否是错误码
+        local error_code = type(result) == "number" and result or 
+            pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_NOT_FOUND")
+        local error_msg = type(result) == "string" and result or "物品不存在"
+        
+        return message.create_error_response(
+            base_request,
+            error_code,
+            "command.G2CUseItemResponse",
+            error_msg,
+            pb.enum("common.MessageID", "G2C_USE_ITEM_RESPONSE"))
+    end
+
+    -- 返回变化的物品列表
+    local response_data = {
+        items = result
     }
 
-    -- 返回成功响应
     return message.create_success_response(
         base_request,
         "command.G2CUseItemResponse",
-        result,
+        response_data,
         pb.enum("common.MessageID", "G2C_USE_ITEM_RESPONSE"))
 end
 

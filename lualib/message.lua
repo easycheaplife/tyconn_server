@@ -120,17 +120,28 @@ function M.create_success_response(base_request, proto_name, data, message_id)
 end
 
 -- 创建错误响应
-function M.create_error_response(base_request, error_code, proto_name, data, message_id)
+function M.create_error_response(base_request, error_code, response_type, error_message, message_id)
+    -- 确保错误码是数字
+    if type(error_code) ~= "number" then
+        logger.error("Invalid error code type: %s", type(error_code))
+        error_code = pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAMS")
+    end
+
     local response = {
-        session = base_request.session,
+        session = {
+            messageId = message_id,
+            sequence = base_request.session.sequence,
+            timestamp = base_request.session.timestamp,
+            version = base_request.session.version
+        },
         errorCode = error_code,
-        errorMsg = "Error",
-        payload = data and proto_name and pb.encode(proto_name, data) or nil
+        errorMsg = error_message or "",
+        payload = ""
     }
 
-    if message_id then
-        response.session.messageId = message_id
-    end
+    -- 打印错误响应信息以便调试
+    logger.debug("Creating error response - code: %d, message: '%s'", 
+        response.errorCode, response.errorMsg)
 
     return M.encode_response(response)
 end

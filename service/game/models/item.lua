@@ -4,6 +4,7 @@ local db_client = require "game.db_client"
 local cache = require "game.cache"
 local utils = require "utils"
 local user = require "game.models.user"
+local pb = require "pb"
 
 local M = {}
 
@@ -169,20 +170,23 @@ end
 -- 使用物品
 function M.use_item(user_id, item_id, count)
     if not user_id or not item_id or not count or count <= 0 then
-        return false, "参数无效"
+        return false, pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAM")
     end
 
     -- 1. 获取物品
     local items = M.get_user_items(user_id)
     if not items then
-        return false, "物品不存在"
+        return false, pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_NOT_FOUND")
     end
 
     -- 2. 查找并使用物品
     for i, item in ipairs(items) do
         if item.item_id == item_id then
+            -- 检查物品数量是否足够
             if item.count < count then
-                return false, "物品数量不足"
+                logger.error("物品数量不足 - user_id: %d, item_id: %d, count: %d, have: %d", 
+                    user_id, item_id, count, item.count)
+                return false, pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_NOT_ENOUGH")
             end
 
             -- 应用物品效果
@@ -197,7 +201,7 @@ function M.use_item(user_id, item_id, count)
             -- 更新数量
             item.count = item.count - count
             item.update_time = os.time()
-
+            
             -- 记录物品变化
             M.log_change(user_id, item_id, count,
                 M.CHANGE_TYPE.USE, M.CHANGE_SOURCE.USE,
@@ -211,7 +215,7 @@ function M.use_item(user_id, item_id, count)
             -- 3. 更新数据库
             local ok = db_client.update_user_items(user_id, items)
             if not ok then
-                return false, "更新失败"
+                return false, pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR")
             end
 
             -- 4. 更新缓存
@@ -227,13 +231,12 @@ function M.use_item(user_id, item_id, count)
                 create_time = item.create_time,
                 update_time = item.update_time
             })
-            -- TODO: 如果有其他物品变化(比如获得新物品)，也添加到列表中
             
             return true, changed_items
         end
     end
 
-    return false, "物品不存在"
+    return false, pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_NOT_FOUND")
 end
 
 -- 记录物品变化
