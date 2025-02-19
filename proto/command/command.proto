@@ -3,7 +3,7 @@ package command;
 
 import "common/entity.proto";
 
-// 登录请求
+// 登录请求 {{Req:1}}
 message C2LLoginRequest {
     string account = 1;      // 账号
     string password = 2;     // 密码
@@ -12,63 +12,63 @@ message C2LLoginRequest {
     string version = 5;      // 客户端版本
 }
 
-// 登录响应
+// 登录响应 {{Res:2}}
 message L2CLoginResponse {
     string token = 1;       // JWT令牌
     string ws_addr = 2;     // WebSocket地址
     int32 ws_port = 3;      // WebSocket端口
 }
 
-// 心跳请求
+// 心跳请求 {{Req:3}}
 message C2GHeartbeatRequest {
     int64 timestamp = 1;    // 时间戳
     string token = 2;       // JWT令牌,用于身份验证
 }
 
-// 心跳响应
+// 心跳响应 {{Res:4}}
 message G2CHeartbeatResponse {
     int64 timestamp = 1;    // 服务器时间戳
 }
 
-// 获取用户信息请求
+// 获取用户信息请求 {{Req:5}}
 message C2GUserInfoRequest {
     string token = 1;       // JWT令牌
 }
 
-// 获取用户信息响应
+// 获取用户信息响应 {{Res:6}}
 message G2CUserInfoResponse {
     common.UserInfo user = 1;  // 用户信息
     bool is_new = 2;       // 是否是新创建的用户
 }
 
-// 获取用户卡牌请求
+// 获取用户卡牌请求 {{Req:7}}
 message C2GUserCardsRequest {
     string token = 1;       // JWT令牌
 }
 
-// 获取用户卡牌响应
+// 获取用户卡牌响应 {{Res:8}}
 message G2CUserCardsResponse {
     repeated common.CardInfo cards = 1;  // 卡牌列表
 }
 
-// 获取背包信息请求
+// 获取背包信息请求 {{Req:9}}
 message C2GBagInfoRequest {
     string token = 1;
 }
 
-// 背包信息响应
+// 背包信息响应 {{Res:10}}
 message G2CBagInfoResponse {
     repeated common.ItemInfo items = 1;  // 背包物品列表
 }
 
-// 使用物品请求
+// 使用物品请求 {{Req:11}}
 message C2GUseItemRequest {
     string token = 1;        // 用户令牌
     int32 item_id = 2;      // 物品ID
     int32 count = 3;        // 使用数量
 }
 
-// 使用物品响应
+// 使用物品响应 {{Res:12}}
 message G2CUseItemResponse {
     repeated common.ItemInfo items = 1;  // 变化的物品列表
 }
