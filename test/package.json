@@ -1,12 +1,13 @@
 {
   "scripts": {
     "test": "node test/run_test.js",
+    "test:login": "node test/run_test.js -t login",
     "test:user": "node test/run_test.js -t user_info",
     "test:heartbeat": "node test/run_test.js -t heartbeat",
+    "test:heartbeat": "node test/run_test.js -t token",
     "test:user_cards": "node test/run_test.js -t user_cards",
     "test:bag": "node test/run_test.js -t bag_info",
-    "test:item": "node test/run_test.js -t use_item",
-    "test:login": "node test/run_test.js -t login"
+    "test:item": "node test/run_test.js -t use_item"
   },
   "dependencies": {
     "jsonwebtoken": "^9.0.2",
