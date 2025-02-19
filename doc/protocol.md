@@ -40,8 +40,6 @@ enum MessageID {
     G2C_BAG_INFO_RESPONSE = 10;    // 获取背包信息响应
     C2G_USE_ITEM_REQUEST = 11;     // 使用物品请求
     G2C_USE_ITEM_RESPONSE = 12;    // 使用物品响应
-    C2G_ITEM_CHANGE_NOTIFY = 13;   // 物品变化通知
-    G2C_ITEM_CHANGE_NOTIFY = 14;   // 物品变化通知响应
 }
 ```
 
@@ -56,7 +54,6 @@ message C2GHeartbeatRequest {
 // 心跳响应
 message G2CHeartbeatResponse {
     int64 timestamp = 1;    // 服务器时间戳
-    int32 code = 2;        // 状态码
 }
 ```
 
@@ -181,11 +178,9 @@ message C2LLoginRequest {
 **响应格式:**
 ```protobuf
 message L2CLoginResponse {
-    int32 code = 1;         // 错误码
-    string message = 2;     // 错误信息
-    string token = 3;       // JWT令牌
-    string ws_addr = 4;     // WebSocket地址
-    int32 ws_port = 5;     // WebSocket端口
+    string token = 1;       // JWT令牌
+    string ws_addr = 2;     // WebSocket地址
+    int32 ws_port = 3;     // WebSocket端口
 }
 ```
 
