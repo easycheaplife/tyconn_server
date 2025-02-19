@@ -10,10 +10,7 @@ local M = {}
 
 -- 处理登录请求
 function M.handle(client_id, base_request)
-    -- 保存原始messageId
-    local orig_msg_id = base_request.session.messageId
-    -- 修改messageId为登录响应
-    base_request.session.messageId = pb.enum("common.MessageID", "L2C_LOGIN_RESPONSE")
+    local messageId = pb.enum("common.MessageID", "L2C_LOGIN_RESPONSE")
     base_request.session.timestamp = os.time()
     -- 解码登录请求
     local ok, request = pcall(pb.decode, "command.C2LLoginRequest", base_request.payload)
@@ -22,9 +19,9 @@ function M.handle(client_id, base_request)
         return message.create_error_response(
             base_request, 
             pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAM"), 
-            "command.C2LLoginRequest", 
+            "command.L2CLoginResponse", 
             "无效参数", 
-            orig_msg_id)
+            messageId)
     end
 
     -- 检查必要的参数
@@ -32,18 +29,18 @@ function M.handle(client_id, base_request)
         logger.warn("Missing account in login request")
         return message.create_error_response(base_request, 
             pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_ACCOUNT"),
-            "command.C2LLoginRequest",  
+            "command.L2CLoginResponse",  
             "账号不能为空",
-            orig_msg_id)
+            messageId)
     end
 
     -- 验证版本号
     if not login_mgr.check_version(request.version) then
         return message.create_error_response(base_request, 
             pb.enum("common.ErrorCode", "ERROR_CODE_VERSION_NOT_MATCH"), 
-            "command.C2LLoginRequest", 
+            "command.L2CLoginResponse", 
             "版本号不匹配", 
-            orig_msg_id)
+            messageId)
     end
 
     -- 验证账号密码
@@ -51,9 +48,9 @@ function M.handle(client_id, base_request)
     if not user_info then
         return message.create_error_response(base_request, 
             pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_ACCOUNT"), 
-            "command.C2LLoginRequest", 
+            "command.L2CLoginResponse", 
             "账号不存在", 
-            orig_msg_id)
+            messageId)
     end
 
 
@@ -64,7 +61,7 @@ function M.handle(client_id, base_request)
             pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"), 
             "command.C2LLoginRequest", 
             "系统错误", 
-            orig_msg_id)
+            messageId)
     end
 
     -- 保存token到数据库
@@ -81,9 +78,9 @@ function M.handle(client_id, base_request)
         logger.error("Failed to save token for account %s: %s", user_info.account, tostring(err))
         return message.create_error_response(base_request, 
             pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"), 
-            "command.C2LLoginRequest", 
+            "command.L2CLoginResponse", 
             "系统错误", 
-            orig_msg_id)
+            messageId)
     end
     logger.info("Token saved successfully for account: %s", user_info.account)
 
@@ -94,9 +91,9 @@ function M.handle(client_id, base_request)
     if not gate then
         return message.create_error_response(base_request, 
             pb.enum("common.ErrorCode", "ERROR_CODE_GATE_NOT_AVAILABLE"), 
-            "command.C2LLoginRequest", 
+            "command.L2CLoginResponse", 
             "网关不可用", 
-            orig_msg_id)
+            messageId)
     end
 
     -- 获取网关地址
@@ -104,9 +101,9 @@ function M.handle(client_id, base_request)
     if not gate_addr then
         return message.create_error_response(base_request, 
             pb.enum("common.ErrorCode", "ERROR_CODE_GATE_NOT_AVAILABLE"), 
-            "command.C2LLoginRequest", 
+            "command.L2CLoginResponse", 
             "网关不可用", 
-            orig_msg_id)
+            messageId)
     end
 
 
