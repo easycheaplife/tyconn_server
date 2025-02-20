@@ -26,10 +26,11 @@ local CALC_TYPE = {
 }
 
 -- 查找属性配置
-local function find_property_list(property_id)
+local function find_property_list(property_id, level)
+    logger.info("Finding property list for id: %s, level: %d", property_id, level)
     -- 遍历找到对应的 property_id 配置
     for _, config in pairs(property_config) do
-        if config.Property_id == property_id then
+        if config.Property_id == property_id and config.Level == level then
             local result = {}
             -- 遍历 Property 数组获取具体属性
             for _, prop in pairs(config.Property) do
@@ -39,6 +40,7 @@ local function find_property_list(property_id)
                     prop[3]   -- Value
                 })
             end
+            logger.info("Found property list: %s", utils.table_to_string(result))
             return result
         end
     end
@@ -68,11 +70,15 @@ local function calculate_property(property_list, property_type)
     end
     
     -- 计算最终值（基础值 * (1 + 万分比/10000)）
-    return math.floor(base_value * (1 + percent/10000))
+    local result = math.floor(base_value * (1 + percent/10000))
+    logger.info("calculate_property result: %d, property_type: %d, base_value: %d, percent: %d", 
+        result, property_type, base_value, percent)
+    return result
 end
 
 -- 获取单位属性
 function M.get_unit_property(unit_id, level)
+    logger.info("Getting unit property - unit_id: %d, level: %d", unit_id, level)
     -- 1. 从unit配置中获取property_id
     local target_unit
     for _, unit in pairs(unit_config) do
@@ -87,6 +93,7 @@ function M.get_unit_property(unit_id, level)
         return nil
     end
     
+    logger.info("Found target unit: %s", utils.table_to_string(target_unit))
     local property_id = target_unit.Property_id
     if not property_id then
         logger.error("Property_id not found for unit: %d", unit_id)
@@ -94,7 +101,7 @@ function M.get_unit_property(unit_id, level)
     end
 
     -- 2. 查找对应的属性配置列表
-    local property_list = find_property_list(property_id)
+    local property_list = find_property_list(property_id, level)
     if not property_list or #property_list == 0 then
         logger.error("Property not found for id: %s", property_id)
         return nil
