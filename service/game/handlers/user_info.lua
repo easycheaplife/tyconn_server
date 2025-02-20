@@ -103,7 +103,10 @@ function M.handle(client_id, msg)
             exp = result.user.exp or 0,
             vip_level = result.user.vip_level or 0,
             create_time = result.user.create_time,
-            login_time = result.user.login_time
+            login_time = result.user.login_time,
+            hp = result.user.hp,
+            attack = result.user.attack,
+            defense = result.user.defense
         },
         is_new = result.is_new
     }

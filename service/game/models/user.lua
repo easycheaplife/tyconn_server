@@ -4,8 +4,11 @@ local logger = require "logger"
 local utils = require "utils"
 local db_client = require "game.db_client"
 local cache = require "game.cache"
+local config_loader = require "game.config_loader"
+local property_calculator = require "game.property_calculator"
 
 local M = {}
+local default_unit_id = 10001
 
 -- 调用数据库代理
 local function call_db(...)
@@ -31,7 +34,7 @@ function M.create_user_info(username, password, nickname)
         gold = 1000,
         diamond = 100,
         register_time = now,
-        last_login = now
+        last_login = now,
     }
 end
 
@@ -46,7 +49,8 @@ function M.create_user(username, password, nickname, avatar)
     -- 创建用户信息
     local user = M.create_user_info(username, password, nickname)
     user.avatar = avatar or "default.png"
-    
+    user.unit_id = default_unit_id
+    logger.debug("create_user: %s", utils.table_to_string(user))
     -- 使用 db_client 创建用户
     return db_client.create_user(user)
 end
@@ -216,8 +220,7 @@ function M.cache_user_by_id(user)
         user_id = user.user_id,
         username = user.username
     }))
-
-    return cache.set_user_info(user.user_id, user)
+    return M.cache_user(user)
 end
 
 -- 缓存用户信息(通过account)
@@ -257,9 +260,37 @@ function M.add_exp(user_id, exp)
     if not ok then
         return false, "更新失败"
     end
+    M.cache_user(user_info)
+
+    -- 检查是否升级
+    local old_level = user_info.level
+    local new_level = calculate_level(user_info.exp)  -- 需要实现计算等级的函数
     
-    cache.set_user_info(user_id, user_info)
+    if new_level > old_level then
+        user_info.level = new_level
+        -- 更新属性
+        user_info = M.update_user_property(user_info)
+    end
+
     return true
+end
+
+-- 更新用户属性
+function M.update_user_property(user_info)
+    local property = property_calculator.get_unit_property(default_unit_id, user_info.level)
+    if property then
+        -- 更新属性
+        user_info.hp = property.hp
+        user_info.attack = property.attack
+        user_info.defense = property.defense
+        
+        -- 更新数据库和缓存
+        local ok = db_client.update_user(user_info)
+        if ok then
+            M.cache_user(user_info)
+        end
+    end
+    return user_info
 end
 
 -- 增加金币
@@ -282,8 +313,7 @@ function M.add_gold(user_id, gold)
     if not ok then
         return false, "更新失败"
     end
-    
-    cache.set_user_info(user_id, user_info)
+    M.cache_user(user_info)
     return true
 end
 
@@ -292,14 +322,22 @@ function M.cache_user(user_info)
     if not user_info or not user_info.user_id then
         return false, "Invalid user info"
     end
+    local base_property = property_calculator.get_unit_property(default_unit_id, user_info.level)
+    -- 添加基础属性
+    user_info.hp = base_property and base_property.hp or 0
+    user_info.attack = base_property and base_property.attack or 0
+    user_info.defense = base_property and base_property.defense or 0
     
     logger.debug("Caching user info: %s", utils.table_to_string({
         account = user_info.account,
         user_id = user_info.user_id,
-        username = user_info.username
+        username = user_info.username,
+        hp = user_info.hp,
+        attack = user_info.attack,
+        defense = user_info.defense
     }))
 
     return cache.set_user_info(user_info.user_id, user_info)
 end
 
-return M 
+return M

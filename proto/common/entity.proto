@@ -10,6 +10,9 @@ message UserInfo {
     int32 vip_level = 5;    // VIP等级
     int64 create_time = 6;  // 创建时间
     int64 login_time = 7;   // 最后登录时间
+    int32 hp = 8;           // 生命值
+    int32 attack = 9;       // 攻击力
+    int32 defense = 10;     // 防御力
 }
 
 // 卡牌信息
