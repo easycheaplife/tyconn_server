@@ -14,6 +14,7 @@ function M.batch_create_cards(cards)
     for _, card in ipairs(cards) do
         -- 插入数据库
         local query = string.format(sql.INSERT_CARD,
+            card.id,
             card.user_id,
             card.card_id,
             card.level,
@@ -71,6 +72,34 @@ function M.update_card(card)
         card.update_time,
         card.id,
         card.user_id
+    )
+    
+    local ok = db_util.query(query)
+    if not ok then
+        return false, "Database error"
+    end
+    
+    return true
+end
+
+-- 创建卡牌
+function M.create_card(card)
+    if not card or not card.id or not card.user_id then
+        return false, "Invalid card info"
+    end
+    
+    local query = string.format(sql.CREATE_CARD,
+        card.id,
+        card.user_id,
+        card.card_id,
+        card.card_type,
+        card.level,
+        card.exp,
+        card.star,
+        card.quality,
+        card.power,
+        card.create_time,
+        card.update_time
     )
     
     local ok = db_util.query(query)

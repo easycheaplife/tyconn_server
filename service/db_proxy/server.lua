@@ -81,6 +81,10 @@ function CMD.renew_jwt(account, token, expire_time)
 end
 
 -- 卡牌相关命令
+function CMD.create_card(card)
+    return wrap_call(card.create_card, card)
+end
+
 function CMD.batch_create_cards(cards)
     return card.batch_create_cards(cards)
 end

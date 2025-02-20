@@ -96,7 +96,7 @@ function M.add_card(card_info)
     end
     
     -- 写入数据库
-    local ok = card_dao.update_card(card)
+    local ok = card_dao.create_card(card)
     if not ok then
         return false, "添加卡牌失败"
     end

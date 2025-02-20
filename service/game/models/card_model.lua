@@ -1,3 +1,5 @@
+local snowflake = require "utils.snowflake"
+
 -- 卡牌数据模型定义
 local M = {}
 
@@ -6,6 +8,7 @@ function M.new(params)
     local now = os.time()
     return {
         -- 基础信息
+        id = params.id or snowflake.generate(),
         user_id = params.user_id,
         card_id = params.card_id,
         card_type = params.card_type,

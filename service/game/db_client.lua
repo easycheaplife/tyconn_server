@@ -87,4 +87,9 @@ function M.update_user(user_info)
     return result
 end
 
+-- 创建卡牌
+function M.create_card(card)
+    return call_db("create_card", card)
+end
+
 return M 

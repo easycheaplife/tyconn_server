@@ -76,6 +76,11 @@ function M.batch_create_cards(cards)
     return true, cards
 end
 
+-- 创建卡牌
+function M.create_card(card)
+    return db_client.create_card(card)
+end
+
 -- 更新卡牌
 function M.update_card(card)
     -- 1. 更新数据库
