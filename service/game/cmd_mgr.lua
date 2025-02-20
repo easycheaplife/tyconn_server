@@ -2,7 +2,7 @@ local skynet = require "skynet"
 local logger = require "logger"
 local message_mgr = require "game.message_mgr"
 local user_service = require "services.user_service"
-local session = require "game.models.session"
+local session = require "services.session_service"
 
 local M = {}
 local CMD = {}
