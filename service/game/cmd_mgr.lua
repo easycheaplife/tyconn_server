@@ -1,7 +1,7 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local message_mgr = require "game.message_mgr"
-local user = require "game.models.user"
+local user_service = require "services.user_service"
 local session = require "game.models.session"
 
 local M = {}
@@ -21,7 +21,7 @@ end
 
 -- 获取用户信息
 function CMD.get_user(token)
-    return user.get_user(token)
+    return user_service.get_user(token)
 end
 
 -- 服务启动

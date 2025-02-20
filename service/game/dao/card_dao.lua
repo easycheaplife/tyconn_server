@@ -3,20 +3,9 @@ local logger = require "logger"
 local cache = require "game.cache"
 local db_client = require "game.db_client"
 local utils = require "utils"
+local card_model = require "models.card_model"
 
 local M = {}
-
--- 初始卡牌配置
-local INITIAL_CARDS = {
-    {card_id = 1, card_type = 1, level = 1},
-    {card_id = 2, card_type = 2, level = 1},
-    {card_id = 3, card_type = 3, level = 1}
-}
-
--- 计算卡牌战力
-local function calculate_power(card)
-    return card.level * 100 + card.star * 50 + card.quality * 200
-end
 
 -- 获取用户卡牌
 function M.get_user_cards(user_id)
@@ -35,8 +24,7 @@ function M.get_user_cards(user_id)
     -- 2. 从数据库获取
     local result = db_client.get_user_cards(user_id)
     if not result then
-        -- 新用户，初始化卡牌
-        return M.init_user_cards(user_id)
+        return nil
     end
 
     -- 确保每个字段都是数字类型
@@ -67,44 +55,25 @@ function M.get_user_cards(user_id)
     return result
 end
 
--- 初始化用户卡牌
-function M.init_user_cards(user_id)
-    if not user_id then
-        return false, "无效的用户ID"
-    end
-
-    logger.info("Initializing cards for new user: %d", user_id)
-    
-    local current_time = os.time()
-    local cards = {}
-    
-    -- 准备初始卡牌数据
-    for _, config in ipairs(INITIAL_CARDS) do
-        local card = {
-            user_id = user_id,
-            card_id = config.card_id,
-            card_type = config.card_type,
-            level = config.level,
-            exp = 0,
-            star = 1,
-            quality = 1,
-            create_time = current_time,
-            update_time = current_time
-        }
-        card.power = calculate_power(card)
-        table.insert(cards, card)
+-- 批量创建卡牌
+function M.batch_create_cards(cards)
+    if not cards or #cards == 0 then
+        return false, "无效的卡牌数据"
     end
     
-    -- 批量创建卡牌
+    -- 写入数据库
     local ok, err = db_client.batch_create_cards(cards)
     if not ok then
-        logger.error("Failed to create initial cards: %s", err)
-        return false
+        logger.error("Failed to create cards: %s", err)
+        return false, err
     end
     
     -- 缓存卡牌数据
-    cache.set_user_cards(user_id, cards)
-    return cards
+    if cards[1] and cards[1].user_id then
+        cache.set_user_cards(cards[1].user_id, cards)
+    end
+    
+    return true, cards
 end
 
 -- 更新卡牌
@@ -119,23 +88,6 @@ function M.update_card(card)
     cache.remove_user_cards(card.user_id)
     logger.debug("Card cache cleared: %s", card.user_id)
 
-    return true
-end
-
--- 添加卡牌
-function M.add_card(card_info)
-    -- 计算战力
-    card_info.power = calculate_power(card_info)
-    
-    -- 写入数据库
-    local ok = db_client.add_card(card_info)
-    if not ok then
-        return false
-    end
-
-    -- 清除缓存
-    cache.remove_user_cards(card_info.user_id)
-    logger.debug("Card cache cleared after adding new card, user_id: %d", card_info.user_id)
     return true
 end
 

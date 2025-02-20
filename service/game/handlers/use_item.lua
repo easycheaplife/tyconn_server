@@ -1,7 +1,7 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
-local item = require "game.models.item"
+local item_service = require "services.item_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message = require "message"
 
@@ -49,7 +49,7 @@ function M.handle(client_id, msg)
     -- 使用物品
     logger.info("Use item - user_id: %d, item_id: %d, count: %d", 
         user.user_id, request.item_id, request.count)
-    local ok, result = item.use_item(user.user_id, request.item_id, request.count)
+    local ok, result = item_service.use_item(user.user_id, request.item_id, request.count)
     if not ok then
         -- 检查是否是错误码
         local error_code = type(result) == "number" and result or 

@@ -1,10 +1,9 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
-local card = require "game.models.card"
-local item = require "game.models.item"
-local user = require "game.models.user"  -- 改用 user model
-local session = require "game.models.session"
+local user_service = require "services.user_service"
+local card_service = require "services.card_service"
+local item_service = require "services.item_service"
 local name_generator = require "game.utils.name_generator"
 local handler_helper = require "game.handlers.handler_helper"
 local utils = require "utils"
@@ -27,7 +26,8 @@ function M.handle(client_id, msg)
             pb.enum("common.MessageID", "G2C_USER_INFO_RESPONSE"))
     end
 
-    local user_info = user.get_user(claims.account)
+    -- 获取用户信息
+    local user_info = user_service.get_user(claims.account)
     local result = {}
 
     if user_info then
@@ -43,23 +43,13 @@ function M.handle(client_id, msg)
     if not user_info then
         logger.debug("Creating new user for account: %s", claims.account)
         
-        -- 创建用户数据
-        local new_user = {
-            account = claims.account,
-            username = name_generator.generate_username(),
-            level = 1,
-            exp = 0,
-            vip_level = 0,
-            create_time = os.time(),
-            last_login = os.time()
-        }
+        -- 生成用户名
+        local username = name_generator.generate_username()
         
-        logger.debug("Creating new user: %s", utils.table_to_string(new_user))
-
-        -- 使用 user.create_user 创建用户
-        local success, created_user, is_new = user.create_user(new_user)
-        if not success then
-            logger.error("Failed to create user: %s", created_user or "unknown error")
+        -- 使用 user_service 创建用户
+        local user, err, is_new = user_service.get_or_create_user(claims.account, username)
+        if not user then
+            logger.error("Failed to create user: %s", err or "unknown error")
             return message.create_error_response(
                 base_request, 
                 pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"), 
@@ -69,22 +59,22 @@ function M.handle(client_id, msg)
         end
         
         result = {
-            user = created_user,  -- user.create_user 返回的用户信息
-            is_new = is_new or true
+            user = user,
+            is_new = is_new
         }
     end
 
     -- 如果是新用户，初始化游戏数据
     if result.is_new then
         -- 1. 初始化卡牌
-        local ok = card.init_user_cards(result.user.user_id)
+        local ok = card_service.init_user_cards(result.user.user_id)
         if not ok then
             logger.error("Failed to initialize cards for new user: %s", claims.account)
             -- 继续处理，不影响登录流程
         end
 
         -- 2. 初始化物品
-        local ok = item.init_user_items(result.user.user_id)
+        local ok = item_service.init_user_items(result.user.user_id)
         if not ok then
             logger.error("Failed to initialize items for new user: %s", claims.account)
             -- 继续处理，不影响登录流程

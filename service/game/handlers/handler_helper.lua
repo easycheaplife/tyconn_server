@@ -1,7 +1,7 @@
 local pb = require "pb"
 local logger = require "logger"
 local message = require "message"
-local user = require "game.models.user"
+local user_service = require "services.user_service"
 
 local M = {}
 
@@ -32,7 +32,7 @@ function M.verify_request_with_user(client_id, msg, proto_name)
 
     -- 3. 获取用户信息
         -- 缓存中没有，从数据库获取
-        local user_info = user.get_user(token_result.claims.account)
+        local user_info = user_service.get_user(token_result.claims.account)
         if not user_info then
             logger.error("Failed to get user: %s", token_result.claims.account)
             return base_request, request, 

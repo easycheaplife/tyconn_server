@@ -1,7 +1,7 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
-local item = require "game.models.item"
+local item_service = require "services.item_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message = require "message"
 
@@ -14,7 +14,8 @@ function M.handle(client_id, msg)
     local base_request, request, error_code, error_message, user, claims = handler_helper.verify_request_with_user(
         client_id, msg, "command.C2GBagInfoRequest")
     if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
-        logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", client_id, error_code, error_message)
+        logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", 
+            client_id, error_code, error_message)
         return message.create_error_response(
             base_request, 
             error_code, 
@@ -24,7 +25,7 @@ function M.handle(client_id, msg)
     end
 
     -- 获取用户物品列表
-    local items = item.get_user_items(user.user_id)
+    local items = item_service.get_user_items(user.user_id)
     if not items then
         logger.error("Failed to get items for user: %d", user.user_id)
         return message.create_error_response(

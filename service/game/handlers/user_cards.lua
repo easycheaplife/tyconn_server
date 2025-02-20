@@ -2,7 +2,7 @@ local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
 local message = require "message"
-local card = require "game.models.card"
+local card_service = require "services.card_service"
 local handler_helper = require "game.handlers.handler_helper"
 local utils = require "utils"
 
@@ -25,7 +25,7 @@ function M.handle(client_id, msg)
     end
 
     -- 获取用户卡牌背包
-    local cards = card.get_user_cards(user.user_id)
+    local cards = card_service.get_user_cards(user.user_id)
     if not cards then
         logger.error("Failed to get cards for user: %d", user.user_id)
         return message.create_error_response(
