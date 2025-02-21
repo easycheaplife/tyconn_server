@@ -8,6 +8,7 @@ local snowflake = require "utils.snowflake"
 local bag_dao = require "dao.bag_dao"  -- 直接使用 dao 层
 local property_service = require "services.property_service"
 local bag_model = require "models.bag_model"
+local utils = require "utils"
 
 local M = {}
 
@@ -177,36 +178,60 @@ function M.add_items_to_slot(user_id, items)
         return false, "背包空间不足"
     end
 
-    -- 3. 创建物品实例
-    local current_items = {}
+    -- 3. 获取当前物品列表(用于记录变化)
+    local current_items = item_dao.get_user_items(user_id) or {}
+    local item_map = {}
+    for _, item in ipairs(current_items) do
+        item_map[item.item_id] = item
+    end
+
+    -- 4. 创建物品实例并记录变化
+    local new_items = {}
     for i, item in ipairs(items) do
+        -- 创建新物品
         local new_item = item_model.new({
-            id = item.id or snowflake.next_id(snowflake.ID_TYPE.ITEM),  -- 使用传入的 ID 或生成新 ID
+            id = item.id or snowflake.next_id(snowflake.ID_TYPE.ITEM),
             user_id = user_id,
             item_id = item.item_id,
             count = item.count or 1,
-            bag_type = bag_model.BAG_TYPE.MAIN,  -- 设置背包类型
-            slot_index = empty_slots[i].slot_index,  -- 设置格子索引
+            bag_type = bag_model.BAG_TYPE.MAIN,
+            slot_index = empty_slots[i].slot_index,
             create_time = os.time(),
             update_time = os.time()
         })
         
-        table.insert(current_items, new_item)
+        table.insert(new_items, new_item)
+        
+        -- 记录物品变化
+        local before_count = item_map[item.item_id] and item_map[item.item_id].count or 0
+        item_dao.log_change(
+            user_id,
+            item.item_id,
+            item.count,
+            item_model.CHANGE_TYPE.ADD,
+            item_model.CHANGE_SOURCE.INIT,
+            before_count,
+            before_count + item.count
+        )
     end
     
-    -- 4. 保存物品
-    local ok = item_dao.update_user_items(user_id, current_items)
+    -- 5. 保存物品
+    local ok = item_dao.update_user_items(user_id, new_items)
     if not ok then
         return false, "保存物品失败"
     end
 
-    -- 5. 更新格子状态
+    -- 6. 更新格子状态
     for i, slot in ipairs(empty_slots) do
         if i > #items then break end
         bag_dao.update_slot_state(user_id, bag_model.BAG_TYPE.MAIN, slot.slot_index, bag_model.SLOT_STATE.NORMAL)
     end
 
-    return true
+    -- 7. 记录操作日志
+    logger.info("Added items to slots - user_id: %d, items: %s", 
+        user_id, utils.table_to_string(items))
+
+    return true, new_items
 end
 
 -- 检查物品是否被锁定
@@ -273,12 +298,6 @@ function M.use_item(user_id, item_id, count)
         return false, pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_NOT_ENOUGH")
     end
 
-    -- 应用物品效果
-    local ok, err = apply_item_effect(user_id, item_id, count)
-    if not ok then
-        return false, err
-    end
-
     -- 记录变更前数量
     local before_count = target_item.count
     
@@ -311,6 +330,18 @@ function M.use_item(user_id, item_id, count)
     if not ok then
         return false, pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR")
     end
+
+    -- 应用物品效果
+    local ok, err = apply_item_effect(user_id, item_id, count)
+    if not ok then
+        logger.error("Failed to apply item effect - user_id: %d, item_id: %d, error: %s",
+            user_id, item_id, err)
+        return false, err
+    end
+
+    -- 记录操作日志
+    logger.info("Used item - user_id: %d, item_id: %d, count: %d, remain: %d",
+        user_id, item_id, count, target_item.count)
 
     -- 返回变化的物品列表
     return true, {target_item}

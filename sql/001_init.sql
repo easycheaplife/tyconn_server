@@ -72,17 +72,18 @@ CREATE TABLE IF NOT EXISTS user_items (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 物品变化日志表
-CREATE TABLE IF NOT EXISTS item_change_logs (
+CREATE TABLE IF NOT EXISTS item_logs (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,         -- 用户ID
     item_id INT NOT NULL,            -- 物品ID
     count INT NOT NULL,              -- 变化数量
-    type TINYINT NOT NULL,           -- 变化类型
+    type TINYINT NOT NULL,           -- 变化类型(1:增加 2:减少 3:使用)
     source VARCHAR(32) NOT NULL,     -- 变化来源
     before_count INT NOT NULL,       -- 变化前数量
     after_count INT NOT NULL,        -- 变化后数量
-    time BIGINT NOT NULL,            -- 变化时间
-    INDEX idx_user_time (user_id, time)
+    create_time BIGINT NOT NULL,     -- 记录时间
+    INDEX idx_user_time (user_id, create_time),
+    INDEX idx_item_time (item_id, create_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 物品使用记录表
