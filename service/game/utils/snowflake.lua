@@ -108,4 +108,21 @@ function M.get_type(id)
     return (id >> TYPE_SHIFT) & MAX_TYPE_ID
 end
 
+-- 可以添加一个解析ID的函数来验证
+function M.parse_id(id_str)
+    local id = tonumber(id_str)
+    local sequence = id & MAX_SEQUENCE
+    local worker = (id >> WORKER_SHIFT) & MAX_WORKER_ID
+    local type_id = (id >> TYPE_SHIFT) & MAX_TYPE_ID
+    local timestamp = (id >> TIMESTAMP_SHIFT) + EPOCH
+    
+    return {
+        sequence = sequence,
+        worker_id = worker,
+        type_id = type_id,
+        timestamp = timestamp,
+        original = id_str
+    }
+end
+
 return M

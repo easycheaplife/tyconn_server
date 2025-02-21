@@ -166,37 +166,30 @@ function M.add_items_to_slot(user_id, items)
 
     -- 2. 检查背包空间
     local need_slots = #items
-    local empty_slots = 0
+    local empty_slots = {}
     for _, slot in ipairs(bag.slots) do
         if slot.state == bag_model.SLOT_STATE.EMPTY then
-            empty_slots = empty_slots + 1
+            table.insert(empty_slots, slot)
         end
     end
 
-    if empty_slots < need_slots then
+    if #empty_slots < need_slots then
         return false, "背包空间不足"
     end
 
-    -- 3. 添加物品
-    local current_items = item_dao.get_user_items(user_id) or {}
-    
-    for _, item in ipairs(items) do
-        -- 创建新物品
+    -- 3. 创建物品实例
+    local current_items = {}
+    for i, item in ipairs(items) do
         local new_item = item_model.new({
-            id = snowflake.next_id(snowflake.ID_TYPE.ITEM),  -- 指定类型为物品
+            id = item.id or snowflake.next_id(snowflake.ID_TYPE.ITEM),  -- 使用传入的 ID 或生成新 ID
             user_id = user_id,
             item_id = item.item_id,
             count = item.count or 1,
-            bag_type = bag_model.BAG_TYPE.MAIN
+            bag_type = bag_model.BAG_TYPE.MAIN,  -- 设置背包类型
+            slot_index = empty_slots[i].slot_index,  -- 设置格子索引
+            create_time = os.time(),
+            update_time = os.time()
         })
-        
-        -- 找一个空格子
-        for _, slot in ipairs(bag.slots) do
-            if slot.state == bag_model.SLOT_STATE.EMPTY then
-                new_item.slot_index = slot.slot_index
-                break
-            end
-        end
         
         table.insert(current_items, new_item)
     end
@@ -205,6 +198,12 @@ function M.add_items_to_slot(user_id, items)
     local ok = item_dao.update_user_items(user_id, current_items)
     if not ok then
         return false, "保存物品失败"
+    end
+
+    -- 5. 更新格子状态
+    for i, slot in ipairs(empty_slots) do
+        if i > #items then break end
+        bag_dao.update_slot_state(user_id, bag_model.BAG_TYPE.MAIN, slot.slot_index, bag_model.SLOT_STATE.NORMAL)
     end
 
     return true
@@ -249,9 +248,11 @@ function M.use_item(user_id, item_id, count)
     
     -- 3. 查找物品
     local target_item = nil
-    for _, item in ipairs(items) do
+    local target_index = nil
+    for i, item in ipairs(items) do
         if item.item_id == item_id then
             target_item = item
+            target_index = i
             break
         end
     end
@@ -290,9 +291,19 @@ function M.use_item(user_id, item_id, count)
         item_model.CHANGE_TYPE.USE, item_model.CHANGE_SOURCE.USE,
         before_count, target_item.count)
 
-    -- 如果物品数量为0，从列表中删除
+    -- 如果物品数量为0，从列表中删除并清空格子
     if target_item.count <= 0 then
-        table.remove(items, i)
+        -- 保存格子信息
+        local bag_type = target_item.bag_type
+        local slot_index = target_item.slot_index
+        
+        -- 从列表中删除
+        table.remove(items, target_index)
+        
+        -- 更新格子状态为空
+        if bag_type and slot_index then
+            bag_dao.update_slot_state(user_id, bag_type, slot_index, bag_model.SLOT_STATE.EMPTY)
+        end
     end
 
     -- 更新数据库和缓存
@@ -312,19 +323,27 @@ function M.init_user_items(user_id)
     end
 
     logger.info("Initializing items for new user: %d", user_id)
-    
-    -- 添加默认物品
-    local default_items = {}
-    for _, item in ipairs(DEFAULT_ITEMS) do
-        table.insert(default_items, {
-            id = snowflake.next_id(snowflake.ID_TYPE.ITEM),  -- 为每个物品生成唯一ID
-            item_id = item.item_id,
-            count = item.count
+
+    -- 1. 创建主背包
+    local bag = bag_dao.get_user_bag(user_id, bag_model.BAG_TYPE.MAIN)
+    if not bag then
+        bag = bag_dao.create_bag(user_id, bag_model.BAG_TYPE.MAIN, 20)  -- 默认20格
+        if not bag then
+            return false, "创建背包失败"
+        end
+    end
+
+    -- 2. 准备默认物品
+    local items = {}
+    for _, default_item in ipairs(DEFAULT_ITEMS) do
+        table.insert(items, {
+            item_id = default_item.item_id,
+            count = default_item.count
         })
     end
-    
-    -- 添加到背包
-    local ok, err = M.add_items_to_slot(user_id, default_items)
+
+    -- 3. 添加物品到背包格子
+    local ok, err = M.add_items_to_slot(user_id, items)
     if not ok then
         logger.error("Failed to add default items for user %d: %s", user_id, err)
         return false, err

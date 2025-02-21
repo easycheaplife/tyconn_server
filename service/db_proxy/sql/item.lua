@@ -8,11 +8,13 @@ M.GET_USER_ITEMS = {
             user_id,
             item_id,
             count,
+            bag_type,
+            slot_index,
             create_time,
             update_time
         FROM user_items 
         WHERE user_id = %d
-        ORDER BY item_id ASC
+        ORDER BY bag_type, slot_index
     ]],
     params = {"user_id"}
 }
@@ -21,7 +23,7 @@ M.GET_USER_ITEMS = {
 M.INSERT_ITEMS = {
     sql = [[
         INSERT INTO user_items (
-            id, user_id, item_id, count,
+            id, user_id, item_id, count, bag_type, slot_index,
             create_time, update_time
         ) VALUES %s
     ]],

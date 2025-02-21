@@ -66,6 +66,15 @@ function CMD.get_user_items(user_id)
 end
 
 function CMD.update_user_items(user_id, items)
+    -- 验证物品数据的完整性
+    if items then
+        for _, item in ipairs(items) do
+            if not item.id or not item.item_id or not item.count then
+                logger.error("Invalid item data: %s", utils.table_to_string(item))
+                return false, "Invalid item data"
+            end
+        end
+    end
     return wrap_call(item.update_user_items, user_id, items)
 end
 
