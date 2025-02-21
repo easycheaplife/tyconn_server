@@ -1,122 +1,74 @@
 const BaseClient = require('./base_client');
+const handlers = require('./handlers');
 
 class GameClient extends BaseClient {
     constructor(token, serverInfo) {
         super();
-        this.setAuth(token, serverInfo);
+        // 设置认证信息
+        if (token && serverInfo) {
+            this.setAuth(token, serverInfo);
+        }
+        
+        // 初始化处理器
+        this.handlers = {};
+        this.loadHandlers();
     }
 
-    // 发送心跳
-    async sendHeartbeat(token) {
-        const heartbeatRequest = {
-            token: token || this.token,
-            timestamp: Date.now()
-        };
-
-        console.log('\nSending heartbeat request:', heartbeatRequest);
-        const response = await this.sendRequest('C2G_HEARTBEAT_REQUEST', heartbeatRequest);
-        return this.decodeResponse(response, 'command.G2CHeartbeatResponse');
+    // 设置认证信息
+    setAuth(token, serverInfo) {
+        this.token = token;
+        this.serverInfo = serverInfo;
     }
 
-    // 获取用户信息
-    async getUserInfo() {
-        const userInfoRequest = {
-            token: this.token
-        };
-
-        console.log('\nSending user info request:', userInfoRequest);
-        const response = await this.sendRequest('C2G_USER_INFO_REQUEST', userInfoRequest);
-        return this.decodeResponse(response, 'command.G2CUserInfoResponse');
+    // 加载所有处理器
+    loadHandlers() {
+        // 注册所有处理器
+        for (const [name, handler] of Object.entries(handlers)) {
+            this.registerHandler(name, handler);
+        }
     }
 
-    // 获取用户卡牌
-    async getUserCards() {
-        const userCardsRequest = {
-            token: this.token
-        };
-
-        console.log('\nSending user cards request:', userCardsRequest);
-        const response = await this.sendRequest('C2G_USER_CARDS_REQUEST', userCardsRequest);
-        return this.decodeResponse(response, 'command.G2CUserCardsResponse');
+    // 注册处理器
+    registerHandler(name, handler) {
+        if (this[name]) {
+            throw new Error(`Handler already exists: ${name}`);
+        }
+        this[name] = handler.bind(this);
+        this.handlers[name] = handler;
     }
 
-    // 获取背包信息
-    async getBagInfo() {
-        const bagInfoRequest = {
-            token: this.token
-        };
-
-        console.log('\nSending bag info request:', bagInfoRequest);
+    // 通用请求方法
+    async sendGameRequest(messageId, requestData, responseType) {
         try {
-            const response = await this.sendRequest('C2G_BAG_INFO_REQUEST', bagInfoRequest);
-            return this.decodeResponse(response, 'command.G2CBagInfoResponse');
+            // 确保已经初始化
+            if (!this.protoHelper.initialized) {
+                await this.protoHelper.init();
+            }
+
+            const response = await this.sendRequest(messageId, requestData);
+            return this.decodeResponse(response, responseType);
         } catch (error) {
-            console.error('Failed to get bag info:', error);
+            // 如果是已知错误，添加更多上下文信息
+            if (error.errorCode !== undefined) {
+                console.error(`Game request failed (${error.errorName}):`, {
+                    messageId,
+                    errorCode: error.errorCode,
+                    errorMsg: error.message,
+                    details: error.details
+                });
+            } else {
+                console.error(`Failed to send game request: ${messageId}`, error);
+            }
             throw error;
         }
     }
 
-    // 使用物品
-    async useItem(itemId, count) {
-        // 确保已经初始化
-        if (!this.protoHelper.initialized) {
-            await this.protoHelper.init();
-        }
-
-        // 获取正确的消息ID
-        const messageId = this.protoHelper.MessageID["C2G_USE_ITEM_REQUEST"];
-        if (!messageId) {
-            throw new Error("Message ID not found for C2G_USE_ITEM_REQUEST");
-        }
-
-        const useItemRequest = {
-            token: this.token,
-            item_id: itemId,
-            count: count || 1
-        };
-
-        console.log('\nSending use item request:', useItemRequest);
-        const response = await this.sendRequest(messageId, useItemRequest);
-        return this.decodeResponse(response, 'command.G2CUseItemResponse');
-    }
-
-    // 扩展背包
-    async expandBag(params) {
-        // 确保已经初始化
-        if (!this.protoHelper.initialized) {
-            await this.protoHelper.init();
-        }
-
-        // 如果指定了bag_type，使用指定的值，否则使用默认值
-        let bag_type = params.bag_type;
-        if (bag_type === undefined) {
-            bag_type = 1;  // BAG_TYPE_MAIN
-        }
-
-        // 构造请求
-        const expandBagRequest = {
-            token: this.token,
-            bag_type: bag_type,
-            add_size: Number(params.add_size)
-        };
-
-        // 打印请求信息
-        console.log('\nSending expand bag request:', expandBagRequest);
-
-        try {
-            const response = await this.sendRequest('C2G_EXPAND_BAG_REQUEST', expandBagRequest);
-            return this.decodeResponse(response, 'command.G2CExpandBagResponse');
-        } catch (error) {
-            console.error('Failed to expand bag:', error);
-            throw error;
-        }
-    }
-
+    // 解码响应
     decodeResponse(response, responseType) {
         // 检查基础响应中的错误码
         if (response.errorCode !== 0) {
             console.error('Request failed with error code:', response.errorCode);
-            throw new Error(`Invalid token (error code: ${response.errorCode})`);
+            throw new Error(`Request failed: ${response.errorMsg || 'Unknown error'}`);
         }
 
         if (!response.payload) {
@@ -133,30 +85,30 @@ class GameClient extends BaseClient {
             const decoded = this.protoHelper.decodeMessage(responseType, response.payload);
             
             // 显示完整字段，包括默认值和未设置的字段
-            const fullFields = {};
-            for (const [fieldName, field] of Object.entries(messageType.fields)) {
-                if (fieldName === 'user' && decoded[fieldName]) {
-                    const userType = this.protoHelper.root.lookupType('common.UserInfo');
-                    const userFields = {};
-                    for (const [userField, userFieldDef] of Object.entries(userType.fields)) {
-                        userFields[userField] = decoded[fieldName][userField] ?? 
-                            (userFieldDef.type === 'string' ? '' : 
-                             userFieldDef.type === 'bool' ? false : 0);
-                    }
-                    fullFields[fieldName] = userFields;
-                } else {
-                    fullFields[fieldName] = decoded[fieldName] ?? 
-                        (field.type === 'string' ? '' : 
-                         field.type === 'bool' ? false : 0);
-                }
-            }
-
+            const fullFields = this.getFullFields(messageType, decoded);
             console.log('Decoded payload (with all fields):', JSON.stringify(fullFields, null, 2));
+            
             return decoded;
         } catch (error) {
             console.error('Failed to decode response:', error);
             throw error;
         }
+    }
+
+    // 获取完整字段（包括默认值）
+    getFullFields(messageType, decoded) {
+        const fullFields = {};
+        for (const [fieldName, field] of Object.entries(messageType.fields)) {
+            if (fieldName === 'user' && decoded[fieldName]) {
+                const userType = this.protoHelper.root.lookupType('common.UserInfo');
+                fullFields[fieldName] = this.getFullFields(userType, decoded[fieldName]);
+            } else {
+                fullFields[fieldName] = decoded[fieldName] ?? 
+                    (field.type === 'string' ? '' : 
+                     field.type === 'bool' ? false : 0);
+            }
+        }
+        return fullFields;
     }
 }
 

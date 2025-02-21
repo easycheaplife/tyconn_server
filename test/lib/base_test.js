@@ -10,9 +10,20 @@ class BaseTest {
     }
 
     // 初始化测试客户端
-    async setup(token, serverInfo) {
-        this.client = new GameClient(token, serverInfo);
-        await this.client.connect();
+    async setup() {
+        try {
+            // 登录获取token和服务器信息
+            const loginClient = new LoginClient();
+            const { token, gateInfo } = await loginClient.login('test', '123456');
+
+            // 创建游戏客户端并设置认证信息
+            this.client = new GameClient(token, gateInfo);
+            await this.client.connect();
+
+        } catch (error) {
+            console.error('Setup failed:', error);
+            throw error;
+        }
     }
 
     // 清理测试资源

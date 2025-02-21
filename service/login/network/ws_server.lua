@@ -28,7 +28,7 @@ end
 
 -- 发送登录响应
 local function send_login_response(client_id, session, data)
-    logger.error("send_login_response: client_id=%d, session=%s, data=%s", 
+    logger.debug("send_login_response: client_id=%d, session=%s, data=%s", 
         client_id, utils.table_to_string(session), utils.table_to_string(data))
     local ok, payload = pcall(pb.encode, "command.L2CLoginResponse", data)
     if not ok then

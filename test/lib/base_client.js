@@ -50,6 +50,50 @@ class BaseClient {
         });
     }
 
+    // 处理响应
+    handleResponse(data) {
+        try {
+            const response = this.protoHelper.decodeBaseResponse(data);
+            
+            // 打印响应信息
+            console.log('\nResponse details:');
+            console.log('Session:', JSON.stringify(response.session, null, 2));
+            console.log('Error code:', response.errorCode);
+            
+            // 获取错误码名称
+            const errorName = response.errorCode !== 0 ? 
+                this.protoHelper.getErrorCodeName(response.errorCode) : 'SUCCESS';
+            console.log('Error name:', errorName);
+            console.log('Error message:', response.errorMsg || 'Success');
+            console.log('Raw payload:', response.payload);
+            
+            // 检查错误码
+            if (response.errorCode !== 0) {
+                const error = new Error(response.errorMsg || `Error: ${errorName}`);
+                error.response = response;
+                error.errorCode = response.errorCode;
+                error.errorName = errorName;
+                error.details = {
+                    session: response.session,
+                    errorCode: response.errorCode,
+                    errorName: errorName,
+                    errorMsg: response.errorMsg
+                };
+                throw error;
+            }
+
+            return response;
+        } catch (error) {
+            if (error.errorCode !== undefined) {
+                // 已经处理过的错误，直接抛出
+                throw error;
+            }
+            // 其他错误（如解码错误）
+            console.error('Failed to handle response:', error);
+            throw new Error(`Failed to handle response: ${error.message}`);
+        }
+    }
+
     // 发送请求并等待响应
     async sendRequest(messageId, requestData) {
         if (!this.ws) {
@@ -80,23 +124,7 @@ class BaseClient {
             this.ws.once('message', (data) => {
                 clearTimeout(timeout);
                 try {
-                    const response = this.protoHelper.decodeBaseResponse(data);
-                    
-                    // 打印响应信息
-                    console.log('\nResponse details:');
-                    console.log('Session:', JSON.stringify(response.session, null, 2));
-                    console.log('Error code:', response.errorCode);
-                    console.log('Error message:', response.errorMsg);
-                    console.log('Raw payload:', response.payload);
-                    
-                    // 检查错误码
-                    if (response.errorCode !== 0) {  // 直接使用 0 表示成功
-                        const error = new Error(response.errorMsg || 'Unknown error');
-                        error.response = response;  // 添加完整的响应对象到错误中
-                        reject(error);
-                        return;
-                    }
-
+                    const response = this.handleResponse(data);
                     resolve(response);
                 } catch (error) {
                     reject(error);
