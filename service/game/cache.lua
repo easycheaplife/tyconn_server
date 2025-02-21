@@ -198,9 +198,19 @@ function M.remove_user_items(user_id)
     return redis.del(key) > 0
 end
 
--- 获取单个背包
+-- 获取用户背包
 function M.get_user_bag(user_id, bag_type)
-    local key = make_key(PREFIX.user_bag, string.format("%d:%d", user_id, bag_type))
+    -- 确保参数类型正确
+    user_id = tonumber(user_id)
+    bag_type = tonumber(bag_type)
+    
+    if not user_id or not bag_type then
+        logger.error("Invalid params for get_user_bag: user_id=%s, bag_type=%s", 
+            tostring(user_id), tostring(bag_type))
+        return nil
+    end
+
+    local key = string.format("user_bag:%d:%d", user_id, bag_type)
     local data = redis.get(key)
     if data then
         local ok, bag = pcall(cjson.decode, data)
@@ -260,6 +270,16 @@ end
 
 -- 获取背包格子状态
 function M.get_bag_slots(user_id, bag_type)
+    -- 确保参数类型正确
+    user_id = tonumber(user_id)
+    bag_type = tonumber(bag_type)
+    
+    if not user_id or not bag_type then
+        logger.error("Invalid params for get_bag_slots: user_id=%s, bag_type=%s", 
+            tostring(user_id), tostring(bag_type))
+        return nil
+    end
+
     local key = make_key(PREFIX.bag_slots, string.format("%d:%d", user_id, bag_type))
     local data = redis.get(key)
     if data then

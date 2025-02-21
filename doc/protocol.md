@@ -157,6 +157,103 @@ message G2CItemChangeNotify {
 }
 ```
 
+### 1.7 背包与物品扩展协议
+```protobuf
+// 背包类型
+enum BagType {
+    BAG_TYPE_NONE = 0;
+    BAG_TYPE_MAIN = 1;      // 主背包
+    BAG_TYPE_STORAGE = 2;   // 仓库
+    BAG_TYPE_EQUIP = 3;     // 装备栏
+}
+
+// 格子状态
+enum SlotState {
+    SLOT_STATE_NONE = 0;
+    SLOT_STATE_EMPTY = 1;   // 空格子
+    SLOT_STATE_NORMAL = 2;  // 正常
+    SLOT_STATE_LOCKED = 3;  // 锁定
+}
+
+// 扩展背包请求
+message C2GExpandBagRequest {
+    string token = 1;       // JWT令牌
+    BagType bag_type = 2;   // 背包类型
+    int32 add_size = 3;     // 扩展格子数
+}
+
+// 扩展背包响应
+message G2CExpandBagResponse {
+    int32 code = 1;         // 错误码
+    string message = 2;     // 错误信息
+    BagType bag_type = 3;   // 背包类型
+    int32 new_size = 4;     // 新背包大小
+}
+
+// 整理背包请求
+message C2GSortBagRequest {
+    string token = 1;       // JWT令牌
+    BagType bag_type = 2;   // 背包类型
+    int32 sort_rule = 3;    // 整理规则(1:类型 2:品质 3:等级)
+}
+
+// 整理背包响应
+message G2CSortBagResponse {
+    int32 code = 1;         // 错误码
+    string message = 2;     // 错误信息
+    repeated ItemInfo items = 3;  // 整理后的物品列表
+}
+
+// 物品移动请求
+message C2GMoveItemRequest {
+    string token = 1;       // JWT令牌
+    BagType from_bag = 2;   // 源背包
+    int32 from_slot = 3;    // 源格子
+    BagType to_bag = 4;     // 目标背包
+    int32 to_slot = 5;      // 目标格子
+    int32 count = 6;        // 移动数量
+}
+
+// 物品移动响应
+message G2CMoveItemResponse {
+    int32 code = 1;         // 错误码
+    string message = 2;     // 错误信息
+    repeated ItemInfo changed_items = 3;  // 变化的物品
+}
+```
+
+### 1.8 物品合成与分解协议
+```protobuf
+// 物品合成请求
+message C2GComposeItemRequest {
+    string token = 1;       // JWT令牌
+    int32 target_id = 2;    // 目标物品ID
+    repeated int32 material_slots = 3;  // 材料所在格子
+}
+
+// 物品合成响应
+message G2CComposeItemResponse {
+    int32 code = 1;         // 错误码
+    string message = 2;     // 错误信息
+    bool success = 3;       // 是否成功
+    ItemInfo new_item = 4;  // 合成的新物品
+    repeated ItemInfo remain_items = 5;  // 剩余材料
+}
+
+// 物品分解请求
+message C2GDecomposeItemRequest {
+    string token = 1;       // JWT令牌
+    repeated int32 item_slots = 2;  // 要分解的物品格子
+}
+
+// 物品分解响应
+message G2CDecomposeItemResponse {
+    int32 code = 1;         // 错误码
+    string message = 2;     // 错误信息
+    repeated ItemInfo result_items = 3;  // 分解获得的物品
+}
+```
+
 ## 2. 接口说明
 
 ### 2.1 登录接口

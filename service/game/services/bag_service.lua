@@ -614,4 +614,62 @@ function M.unlock_slot(user_id, bag_type, slot_index)
     return bag_dao.update_slot_state(user_id, bag_type, slot_index, bag_model.SLOT_STATE.EMPTY)
 end
 
+-- 获取背包信息
+function M.get_bag_info(user_id, bag_type)
+    -- 获取背包数据
+    local bag = bag_dao.get_user_bag(user_id, bag_type)
+    if not bag then
+        return nil, "背包不存在"
+    end
+    
+    return {
+        size = bag.size,
+        bag_type = bag_type
+    }
+end
+
+-- 获取背包最大容量
+function M.get_max_bag_size(bag_type)
+    local config = BAG_CONFIG[bag_type]
+    if not config then
+        return nil, "无效的背包类型"
+    end
+    return config.max_size
+end
+
+-- 扩展背包
+function M.expand_bag(user_id, bag_type, add_size)
+    -- 1. 获取背包信息
+    local bag = bag_dao.get_user_bag(user_id, bag_type)
+    if not bag then
+        return false, nil, "背包不存在"
+    end
+
+    -- 2. 检查背包配置
+    local config = BAG_CONFIG[bag_type]
+    if not config then
+        return false, nil, "无效的背包类型"
+    end
+
+    -- 3. 检查是否超过最大容量
+    local new_size = bag.size + add_size
+    if new_size > config.max_size then
+        return false, nil, "超过背包最大容量限制"
+    end
+
+    -- 4. 更新背包大小
+    local ok = bag_dao.update_bag_size(user_id, bag_type, new_size)
+    if not ok then
+        return false, nil, "更新背包大小失败"
+    end
+
+    -- 5. 获取最新的物品列表
+    local items = item_dao.get_user_items(user_id)
+    if not items then
+        return false, nil, "获取物品列表失败"
+    end
+
+    return true, new_size, nil, items
+end
+
 return M 

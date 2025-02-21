@@ -103,4 +103,8 @@ function CMD.update_slot_state(params)
     return wrap_call(bag.update_slot_state, params)
 end
 
+function CMD.update_bag_size(params)
+    return wrap_call(bag.update_bag_size, params)
+end
+
 return CMD 

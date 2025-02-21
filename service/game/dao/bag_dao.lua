@@ -173,4 +173,49 @@ function M.create_bag(user_id, bag_type, size)
     return bag
 end
 
+-- 更新背包大小
+function M.update_bag_size(user_id, bag_type, new_size)
+    -- 1. 更新数据库
+    local ok = db_client.update_bag_size(user_id, bag_type, new_size)
+    if not ok then
+        return false
+    end
+    
+    -- 2. 更新缓存中的背包大小
+    local bag = cache.get_user_bag(user_id, bag_type)
+    if bag then
+        bag.size = new_size
+        cache.set_user_bag(user_id, bag_type, bag)
+    end
+    
+    -- 3. 初始化新增格子
+    local slots = cache.get_bag_slots(user_id, bag_type) or {}
+    local now = os.time()
+    
+    -- 添加新格子
+    for i = (#slots + 1), new_size do
+        table.insert(slots, bag_model.new_slot({
+            user_id = user_id,
+            bag_type = bag_type,
+            slot_index = i-1,
+            state = bag_model.SLOT_STATE.EMPTY,
+            create_time = now,
+            update_time = now
+        }))
+    end
+    
+    -- 4. 保存新格子到数据库
+    ok = db_client.batch_create_slots(slots)
+    if not ok then
+        -- 回滚背包大小
+        db_client.update_bag_size(user_id, bag_type, #slots)
+        return false
+    end
+    
+    -- 5. 更新格子缓存
+    cache.set_bag_slots(user_id, bag_type, slots)
+    
+    return true
+end
+
 return M 

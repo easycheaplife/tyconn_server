@@ -86,4 +86,11 @@ M.UPDATE_SLOT_STATE = [[
     WHERE user_id = %d AND bag_type = %d AND slot_index = %d
 ]]
 
+-- 更新背包大小
+M.UPDATE_BAG_SIZE = [[
+    UPDATE user_bags 
+    SET size = %d, update_time = %d
+    WHERE user_id = %d AND bag_type = %d
+]]
+
 return M 

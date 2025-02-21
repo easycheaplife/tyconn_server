@@ -80,6 +80,38 @@ class GameClient extends BaseClient {
         return this.decodeResponse(response, 'command.G2CUseItemResponse');
     }
 
+    // 扩展背包
+    async expandBag(params) {
+        // 确保已经初始化
+        if (!this.protoHelper.initialized) {
+            await this.protoHelper.init();
+        }
+
+        // 如果指定了bag_type，使用指定的值，否则使用默认值
+        let bag_type = params.bag_type;
+        if (bag_type === undefined) {
+            bag_type = 1;  // BAG_TYPE_MAIN
+        }
+
+        // 构造请求
+        const expandBagRequest = {
+            token: this.token,
+            bag_type: bag_type,
+            add_size: Number(params.add_size)
+        };
+
+        // 打印请求信息
+        console.log('\nSending expand bag request:', expandBagRequest);
+
+        try {
+            const response = await this.sendRequest('C2G_EXPAND_BAG_REQUEST', expandBagRequest);
+            return this.decodeResponse(response, 'command.G2CExpandBagResponse');
+        } catch (error) {
+            console.error('Failed to expand bag:', error);
+            throw error;
+        }
+    }
+
     decodeResponse(response, responseType) {
         // 检查基础响应中的错误码
         if (response.errorCode !== 0) {

@@ -35,6 +35,8 @@ function M.init()
         require "game.handlers.bag_info")
     M.register(pb.enum("common.MessageID", "C2G_USE_ITEM_REQUEST"),
         require "game.handlers.use_item")
+    M.register(pb.enum("common.MessageID", "C2G_EXPAND_BAG_REQUEST"),
+        require "game.handlers.expand_bag")
     
     logger.info("Message handlers initialized")
     return true

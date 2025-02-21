@@ -164,4 +164,29 @@ function M.update_slot_state(user_id, bag_type, slot_index, state)
     })
 end
 
+-- 更新背包大小
+function M.update_bag_size(user_id, bag_type, new_size)
+    -- 检查参数
+    if not user_id or not bag_type or not new_size then
+        logger.error("update_bag_size: invalid params, user_id: %d, bag_type: %d, new_size: %d",
+            user_id, bag_type, new_size)
+        return false
+    end
+
+    -- 调用数据库服务
+    local ok, result = pcall(call_db, "update_bag_size", {
+        user_id = user_id,
+        bag_type = bag_type,
+        size = new_size,
+        update_time = os.time()
+    })
+    
+    if not ok then
+        logger.error("Failed to update bag size: %s", result)
+        return false
+    end
+
+    return result
+end
+
 return M 

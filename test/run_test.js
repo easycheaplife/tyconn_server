@@ -8,6 +8,7 @@ const BagInfoTest = require('./cases/bag_info_test');
 const UseItemTest = require('./cases/use_item_test');
 const TokenTest = require('./cases/token_test');
 const LoginTest = require('./cases/login_test');
+const ExpandBagTest = require('./cases/expand_bag_test');
 
 // 所有测试用例
 const ALL_TESTS = {
@@ -17,7 +18,8 @@ const ALL_TESTS = {
     bag_info: BagInfoTest,
     use_item: UseItemTest,
     token: TokenTest,
-    login: LoginTest
+    login: LoginTest,
+    expand_bag: ExpandBagTest
 };
 
 async function runTests() {

@@ -130,4 +130,21 @@ function M.update_slot_state(params)
     return db_util.query(query)
 end
 
+-- 更新背包大小
+function M.update_bag_size(params)
+    -- 检查参数
+    if not params or not params.user_id or not params.bag_type or not params.size then
+        return false
+    end
+
+    local query = string.format(sql.UPDATE_BAG_SIZE,
+        params.size,
+        params.update_time,
+        params.user_id,
+        params.bag_type
+    )
+    
+    return db_util.query(query)
+end
+
 return M 

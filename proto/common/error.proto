@@ -18,7 +18,11 @@ enum ErrorCode {
     ERROR_CODE_DB_ERROR = 12;                // 数据库错误
     ERROR_CODE_ITEM_NOT_FOUND = 13;           // 物品不存在
     ERROR_CODE_ITEM_NOT_ENOUGH = 14;         // 物品数量不足
-
-    
-
+    ERROR_CODE_BAG_NOT_EXIST = 15;           // 背包不存在
+    ERROR_CODE_BAG_MAX_SIZE_LIMIT = 16;      // 超过背包最大容量限制
+    ERROR_CODE_BAG_EXPAND_FAILED = 17;       // 扩展背包失败
+    ERROR_CODE_INVALID_BAG_TYPE = 18;        // 无效的背包类型
+    ERROR_CODE_INSUFFICIENT_SPACE = 19;       // 背包空间不足
+    ERROR_CODE_INVALID_SLOT = 20;            // 无效的格子
+    ERROR_CODE_SLOT_LOCKED = 21;             // 格子被锁定
 } 

@@ -23,6 +23,11 @@ class BaseClient {
             throw new Error('Server info not set');
         }
 
+        // 确保proto已初始化
+        if (!this.protoHelper.initialized) {
+            await this.protoHelper.init();
+        }
+
         const wsUrl = `${this.serverInfo.protocol}://${this.serverInfo.host}:${this.serverInfo.port}`;
         return new Promise((resolve, reject) => {
             this.ws = new WebSocket(wsUrl, {

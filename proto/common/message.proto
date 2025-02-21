@@ -16,6 +16,16 @@ enum MessageID {
     G2C_BAG_INFO_RESPONSE = 10;     // 获取背包信息响应
     C2G_USE_ITEM_REQUEST = 11;      // 使用物品请求
     G2C_USE_ITEM_RESPONSE = 12;     // 使用物品响应
+    C2G_EXPAND_BAG_REQUEST = 13;    // 扩展背包请求
+    G2C_EXPAND_BAG_RESPONSE = 14;   // 扩展背包响应
+    C2G_SORT_BAG_REQUEST = 15;      // 整理背包请求
+    G2C_SORT_BAG_RESPONSE = 16;     // 整理背包响应
+    C2G_MOVE_ITEM_REQUEST = 17;     // 移动物品请求
+    G2C_MOVE_ITEM_RESPONSE = 18;    // 移动物品响应
+    C2G_COMPOSE_ITEM_REQUEST = 19;  // 物品合成请求
+    G2C_COMPOSE_ITEM_RESPONSE = 20; // 物品合成响应
+    C2G_DECOMPOSE_ITEM_REQUEST = 21;// 物品分解请求
+    G2C_DECOMPOSE_ITEM_RESPONSE = 22;// 物品分解响应
 }
 
 // 会话信息

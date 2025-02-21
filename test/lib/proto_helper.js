@@ -121,7 +121,12 @@ class ProtoHelper {
             'C2G_USER_INFO_REQUEST': 'command.C2GUserInfoRequest',
             'C2G_USER_CARDS_REQUEST': 'command.C2GUserCardsRequest',
             'C2G_BAG_INFO_REQUEST': 'command.C2GBagInfoRequest',
-            'C2G_USE_ITEM_REQUEST': 'command.C2GUseItemRequest'  
+            'C2G_USE_ITEM_REQUEST': 'command.C2GUseItemRequest',
+            'C2G_EXPAND_BAG_REQUEST': 'command.C2GExpandBagRequest',
+            'C2G_SORT_BAG_REQUEST': 'command.C2GSortBagRequest',
+            'C2G_MOVE_ITEM_REQUEST': 'command.C2GMoveItemRequest',
+            'C2G_COMPOSE_ITEM_REQUEST': 'command.C2GComposeItemRequest',
+            'C2G_DECOMPOSE_ITEM_REQUEST': 'command.C2GDecomposeItemRequest'
         };
 
         const type = requestTypes[messageId];
@@ -332,6 +337,60 @@ class ProtoHelper {
             }
         });
         return types;
+    }
+
+    // 加载所有枚举
+    loadEnums() {
+        const common = this.root.lookup('common');
+        if (!common) {
+            console.error('Root contents:', this.root);
+            throw new Error('common package not found');
+        }
+
+        // 加载消息ID枚举
+        const MessageID = common.lookupEnum('MessageID');
+        if (MessageID) {
+            this.MessageID = MessageID.values;
+            console.log('Loaded MessageID enum:', this.MessageID);
+        } else {
+            console.warn('MessageID enum not found in common package');
+        }
+
+        // 加载错误码枚举
+        const ErrorCode = common.lookupEnum('ErrorCode');
+        if (ErrorCode) {
+            this.ErrorCode = ErrorCode.values;
+            console.log('Loaded ErrorCode enum:', this.ErrorCode);
+        } else {
+            console.warn('ErrorCode enum not found in common package');
+        }
+
+        // 加载背包类型枚举
+        const BagType = common.lookupEnum('BagType');
+        if (BagType) {
+            this.BagType = BagType.values;
+            console.log('Loaded BagType enum:', this.BagType);
+        } else {
+            console.warn('BagType enum not found in common package');
+            // 设置默认值
+            this.BagType = {
+                BAG_TYPE_NONE: 0,
+                BAG_TYPE_MAIN: 1,
+                BAG_TYPE_STORAGE: 2
+            };
+            console.log('Using default BagType enum:', this.BagType);
+        }
+    }
+
+    // 获取错误码名称
+    getErrorCodeName(code) {
+        // 查找错误码对应的名称
+        for (const [name, value] of Object.entries(this.ErrorCode)) {
+            if (value === code) {
+                return name;
+            }
+        }
+        return `UNKNOWN_ERROR(${code})`;
     }
 }
 
