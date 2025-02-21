@@ -1,6 +1,6 @@
 const BaseTest = require('../lib/base_test');
 const assert = require('assert');
-const ProtoHelper = require('../lib/proto_helper');
+
 class UseItemTest extends BaseTest {
     constructor() {
         super('Use Item Test');
@@ -46,7 +46,7 @@ class UseItemTest extends BaseTest {
                     response: error.response,
                     errorCode: error.response ? error.response.errorCode : undefined,
                     errorMsg: error.response ? error.response.errorMsg : undefined,
-                    expectedErrorCode: ProtoHelper.ErrorCode.ERROR_CODE_INVALID_PARAM
+                    expectedErrorCode: 2  // ERROR_CODE_INVALID_PARAM
                 });
 
                 assert(error.response, 'Should have error response');

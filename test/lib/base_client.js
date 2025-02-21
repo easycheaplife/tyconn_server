@@ -5,7 +5,7 @@ const config = require('../config/config');
 class BaseClient {
     constructor() {
         this.ws = null;
-        this.protoHelper = new ProtoHelper();
+        this.protoHelper = ProtoHelper.getInstance();
         this.token = null;
         this.serverInfo = null;
         this.connected = false;
@@ -24,9 +24,7 @@ class BaseClient {
         }
 
         // 确保proto已初始化
-        if (!this.protoHelper.initialized) {
-            await this.protoHelper.init();
-        }
+        await this.protoHelper.ensureInitialized();
 
         const wsUrl = `${this.serverInfo.protocol}://${this.serverInfo.host}:${this.serverInfo.port}`;
         return new Promise((resolve, reject) => {
