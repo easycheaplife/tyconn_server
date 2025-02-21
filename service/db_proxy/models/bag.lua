@@ -147,4 +147,11 @@ function M.update_bag_size(params)
     return db_util.query(query)
 end
 
+-- 获取背包格子
+function M.get_bag_slots(user_id, bag_type)
+    local query = string.format(sql.GET_BAG_SLOTS, user_id, bag_type)
+    local slots = db_util.query(query)
+    return slots
+end
+
 return M 

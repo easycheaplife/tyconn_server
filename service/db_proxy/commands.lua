@@ -107,4 +107,8 @@ function CMD.update_bag_size(params)
     return wrap_call(bag.update_bag_size, params)
 end
 
+function CMD.get_bag_slots(user_id, bag_type)
+    return wrap_call(bag.get_bag_slots, user_id, bag_type)
+end
+
 return CMD 
