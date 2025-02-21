@@ -8,7 +8,7 @@ function M.new(params)
     local now = os.time()
     return {
         -- 基础信息
-        id = params.id or snowflake.generate(),
+        id = params.id or snowflake.next_id(snowflake.ID_TYPE.CARD),
         user_id = params.user_id,
         card_id = params.card_id,
         card_type = params.card_type,

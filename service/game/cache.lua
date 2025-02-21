@@ -198,4 +198,94 @@ function M.remove_user_items(user_id)
     return redis.del(key) > 0
 end
 
+-- 获取单个背包
+function M.get_user_bag(user_id, bag_type)
+    local key = make_key(PREFIX.user_bag, string.format("%d:%d", user_id, bag_type))
+    local data = redis.get(key)
+    if data then
+        local ok, bag = pcall(cjson.decode, data)
+        if ok then
+            return bag
+        end
+        logger.error("Failed to decode bag data: %s", data)
+    end
+    return nil
+end
+
+-- 设置单个背包
+function M.set_user_bag(user_id, bag_type, bag_data)
+    local key = make_key(PREFIX.user_bag, string.format("%d:%d", user_id, bag_type))
+    local ok, data = pcall(cjson.encode, bag_data)
+    if not ok then
+        logger.error("Failed to encode bag data: %s", data)
+        return false
+    end
+    
+    ok = redis.set(key, data)
+    if ok then
+        redis.expire(key, EXPIRE.user_bag)
+    end
+    return ok
+end
+
+-- 获取用户所有背包
+function M.get_user_bags(user_id)
+    local key = make_key(PREFIX.user_bags, user_id)
+    local data = redis.get(key)
+    if data then
+        local ok, bags = pcall(cjson.decode, data)
+        if ok then
+            return bags
+        end
+        logger.error("Failed to decode bags data: %s", data)
+    end
+    return nil
+end
+
+-- 设置用户所有背包
+function M.set_user_bags(user_id, bags)
+    local key = make_key(PREFIX.user_bags, user_id)
+    local ok, data = pcall(cjson.encode, bags)
+    if not ok then
+        logger.error("Failed to encode bags data: %s", data)
+        return false
+    end
+    
+    ok = redis.set(key, data)
+    if ok then
+        redis.expire(key, EXPIRE.user_bags)
+    end
+    return ok
+end
+
+-- 获取背包格子状态
+function M.get_bag_slots(user_id, bag_type)
+    local key = make_key(PREFIX.bag_slots, string.format("%d:%d", user_id, bag_type))
+    local data = redis.get(key)
+    if data then
+        local ok, slots = pcall(cjson.decode, data)
+        if ok then
+            return slots
+        end
+        logger.error("Failed to decode slots data: %s", data)
+    end
+    return nil
+end
+
+-- 设置背包格子状态
+function M.set_bag_slots(user_id, bag_type, slots)
+    local key = make_key(PREFIX.bag_slots, string.format("%d:%d", user_id, bag_type))
+    local ok, data = pcall(cjson.encode, slots)
+    if not ok then
+        logger.error("Failed to encode slots data: %s", data)
+        return false
+    end
+    
+    ok = redis.set(key, data)
+    if ok then
+        redis.expire(key, EXPIRE.bag_slots)
+    end
+    return ok
+end
+
 return M

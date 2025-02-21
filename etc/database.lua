@@ -16,6 +16,9 @@ M.redis = {
         card = "card:",      -- 卡牌信息缓存前缀
         user_cards = "user_cards:",  -- 用户卡组缓存前缀
         user_items = "user_items:",  -- 用户物品缓存前缀
+        user_bag = "bag:",
+        user_bags = "bags:",
+        bag_slots = "slots:",
     },
 
     -- 缓存过期时间(秒)
@@ -24,7 +27,10 @@ M.redis = {
         user = 3600 * 24,      -- 用户信息 24小时
         card = 1800,        -- 卡牌信息缓存30分钟
         user_cards = 3600 * 24, -- 用户卡牌 24小时
-        user_items = 3600 * 24  -- 用户物品 24小时
+        user_items = 3600 * 24,  -- 用户物品 24小时
+        user_bag = 7200,    -- 2小时
+        user_bags = 7200,   -- 2小时
+        bag_slots = 7200,   -- 2小时
     }
 }
 

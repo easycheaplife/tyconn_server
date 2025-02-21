@@ -1,6 +1,10 @@
+local skynet = require "skynet"
 local logger = require "logger"
 local config_loader = require "game.config_loader"
 local utils = require "utils"
+local item_dao = require "dao.item_dao"
+local bag_model = require "models.bag_model"
+local item_model = require "models.item_model"
 
 local M = {}
 
@@ -24,6 +28,179 @@ local CALC_TYPE = {
     VALUE = 1,    -- 直接值
     PERCENT = 2   -- 万分比
 }
+
+-- 属性类型
+local PROP_TYPE = {
+    ATK = "atk",           -- 攻击力
+    DEF = "def",           -- 防御力
+    HP = "hp",             -- 生命值
+    MP = "mp",             -- 魔法值
+    CRIT_RATE = "crit",    -- 暴击率
+    CRIT_DMG = "crit_dmg", -- 暴击伤害
+    SPEED = "speed",       -- 速度
+    DODGE = "dodge"        -- 闪避率
+}
+
+-- 计算装备基础属性
+local function calc_base_props(equip)
+    local props = {}
+    local config = require("config.item_config")[equip.item_id]
+    if not config or not config.base_props then
+        return props
+    end
+    
+    -- 复制基础属性
+    for prop_type, value in pairs(config.base_props) do
+        props[prop_type] = value
+    end
+    
+    return props
+end
+
+-- 计算强化属性
+local function calc_enhance_props(equip)
+    local props = {}
+    if not equip.enhance_level or equip.enhance_level <= 0 then
+        return props
+    end
+    
+    local config = require("config.enhance_config")[equip.enhance_level]
+    if not config then
+        return props
+    end
+    
+    -- 计算强化加成
+    local base_props = calc_base_props(equip)
+    for prop_type, base_value in pairs(base_props) do
+        props[prop_type] = math.floor(base_value * config.prop_ratio)
+    end
+    
+    return props
+end
+
+-- 计算精炼属性
+local function calc_refine_props(equip)
+    local props = {}
+    if not equip.refine_level or equip.refine_level <= 0 then
+        return props
+    end
+    
+    local config = require("config.refine_config")[equip.refine_level]
+    if not config then
+        return props
+    end
+    
+    -- 计算精炼加成
+    local base_props = calc_base_props(equip)
+    for prop_type, base_value in pairs(base_props) do
+        props[prop_type] = math.floor(base_value * config.prop_ratio)
+    end
+    
+    return props
+end
+
+-- 计算宝石属性
+local function calc_gem_props(equip)
+    local props = {}
+    if not equip.gem_slots then
+        return props
+    end
+    
+    -- 累加所有宝石属性
+    for _, slot in pairs(equip.gem_slots) do
+        if slot.state == item_model.GEM_SLOT_STATE.OCCUPIED then
+            local gem_config = require("config.item_config")[slot.gem_id]
+            if gem_config and gem_config.props then
+                for prop_type, value in pairs(gem_config.props) do
+                    props[prop_type] = (props[prop_type] or 0) + value
+                end
+            end
+        end
+    end
+    
+    return props
+end
+
+-- 合并属性
+local function merge_props(...)
+    local result = {}
+    for _, props in ipairs({...}) do
+        for prop_type, value in pairs(props) do
+            result[prop_type] = (result[prop_type] or 0) + value
+        end
+    end
+    return result
+end
+
+-- 计算单件装备的所有属性
+local function calc_equip_props(equip)
+    -- 计算各部分属性
+    local base = calc_base_props(equip)
+    local enhance = calc_enhance_props(equip)
+    local refine = calc_refine_props(equip)
+    local gem = calc_gem_props(equip)
+    
+    -- 合并所有属性
+    return merge_props(base, enhance, refine, gem)
+end
+
+-- 重新计算装备属性
+function M.recalc_equip_props(user_id)
+    -- 1. 获取所有装备
+    local items = item_dao.get_user_items(user_id)
+    if not items then
+        return false
+    end
+    
+    -- 2. 计算总属性
+    local total_props = {}
+    for _, item in ipairs(items) do
+        if item.bag_type == bag_model.BAG_TYPE.EQUIP then
+            local props = calc_equip_props(item)
+            total_props = merge_props(total_props, props)
+        end
+    end
+    
+    -- 3. 更新用户属性
+    local user_service = require "services.user_service"
+    local ok = user_service.update_equip_props(user_id, total_props)
+    if not ok then
+        return false
+    end
+    
+    -- 4. 触发属性更新事件
+    skynet.send(".event", "lua", "trigger_event", "on_property_changed", {
+        user_id = user_id,
+        props = total_props,
+        source = "equip"
+    })
+    
+    return true
+end
+
+-- 获取装备评分
+function M.get_equip_score(equip)
+    -- 1. 获取所有属性
+    local props = calc_equip_props(equip)
+    
+    -- 2. 计算评分
+    local score = 0
+    local config = require("config.score_config")
+    
+    for prop_type, value in pairs(props) do
+        local weight = config.prop_weight[prop_type] or 1
+        score = score + value * weight
+    end
+    
+    -- 3. 品质加成
+    local item_config = require("config.item_config")[equip.item_id]
+    if item_config and item_config.quality then
+        local quality_ratio = config.quality_ratio[item_config.quality] or 1
+        score = score * quality_ratio
+    end
+    
+    return math.floor(score)
+end
 
 -- 查找属性配置
 local function find_property_list(property_id, level)
@@ -113,6 +290,38 @@ function M.get_unit_property(unit_id, level)
         attack = calculate_property(property_list, PROPERTY_TYPE.ATTACK),
         defense = calculate_property(property_list, PROPERTY_TYPE.DEFENSE)
     }
+end
+
+-- 重新计算装备属性
+function M.recalc_equip_property(user_id)
+    -- 1. 获取装备栏
+    local bag_service = require "services.bag_service"
+    local equip_bag = bag_service.get_user_bag(user_id, item_model.BAG_TYPE.EQUIP)
+    if not equip_bag then
+        return false, "获取装备栏失败"
+    end
+    
+    -- 2. 计算总属性
+    local total_property = {
+        hp = 0,
+        attack = 0,
+        defense = 0
+    }
+    
+    -- 3. 遍历装备
+    for _, slot in pairs(equip_bag.slots) do
+        if slot.state == item_model.SLOT_STATE.OCCUPIED then
+            local config = get_item_config(slot.item_id)
+            if config then
+                total_property.hp = total_property.hp + (config.hp or 0)
+                total_property.attack = total_property.attack + (config.attack or 0)
+                total_property.defense = total_property.defense + (config.defense or 0)
+            end
+        end
+    end
+    
+    -- 4. 更新用户属性
+    return user_service.update_equip_property(user_id, total_property)
 end
 
 return M 

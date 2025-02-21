@@ -78,4 +78,72 @@ function M.clear_user_items_cache(user_id)
     return cache.remove_user_items(user_id)
 end
 
+-- 获取物品使用次数
+function M.get_use_count(user_id, item_id)
+    -- 1. 从缓存获取
+    local key = string.format("item_use_count:%d:%d", user_id, item_id)
+    local count = cache.get(key)
+    if count then
+        return tonumber(count)
+    end
+    
+    -- 2. 从数据库获取
+    local result = db_client.get_item_use_count(user_id, item_id)
+    if not result then
+        return 0
+    end
+    
+    -- 3. 写入缓存
+    cache.set(key, result.count)
+    
+    return result.count
+end
+
+-- 更新物品使用次数
+function M.update_use_count(user_id, item_id, count)
+    -- 1. 更新数据库
+    local ok = db_client.update_item_use_count(user_id, item_id, count)
+    if not ok then
+        return false
+    end
+    
+    -- 2. 更新缓存
+    local key = string.format("item_use_count:%d:%d", user_id, item_id)
+    cache.set(key, count)
+    
+    return true
+end
+
+-- 获取最后使用时间
+function M.get_last_use_time(user_id, item_id)
+    -- 1. 从缓存获取
+    local key = string.format("item_last_use:%d:%d", user_id, item_id)
+    local time = cache.get(key)
+    if time then
+        return tonumber(time)
+    end
+    
+    -- 2. 从数据库获取
+    local result = db_client.get_item_last_use(user_id, item_id)
+    if not result then
+        return nil
+    end
+    
+    -- 3. 写入缓存
+    cache.set(key, result.time)
+    
+    return result.time
+end
+
+-- 记录交易日志
+function M.log_trade(from_user, to_user, item_id, count)
+    return db_client.log_item_trade({
+        from_user = from_user,
+        to_user = to_user,
+        item_id = item_id,
+        count = count,
+        time = os.time()
+    })
+end
+
 return M 

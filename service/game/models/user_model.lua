@@ -1,3 +1,5 @@
+local snowflake = require "utils.snowflake"
+
 -- 用户数据模型定义
 local M = {}
 
@@ -5,6 +7,7 @@ local M = {}
 function M.new(params)
     local now = os.time()
     return {
+        id = params.id or snowflake.next_id(snowflake.ID_TYPE.USER),  -- 指定类型为用户
         -- 基础信息
         user_id = params.user_id,
         account = params.account,
