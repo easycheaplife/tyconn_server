@@ -3,30 +3,12 @@ const path = require('path');
 const fs = require('fs');
 
 class ProtoHelper {
-    static ErrorCode = {
-        ERROR_CODE_SUCCESS : 0,               // 成功
-        ERROR_CODE_SYSTEM_ERROR : 1,         // 系统错误
-        ERROR_CODE_INVALID_PARAM : 2,         // 无效参数
-        ERROR_CODE_INVALID_ACCOUNT : 3,        // 无效账号
-        ERROR_CODE_WRONG_PASSWORD : 4,         // 密码错误
-        ERROR_CODE_ACCOUNT_EXISTS : 5,         // 账号已存在
-        ERROR_CODE_ACCOUNT_NOT_EXIST : 6,      // 账号不存在
-        ERROR_CODE_TOKEN_INVALID : 7,           // 无效的令牌
-        ERROR_CODE_TOKEN_EXPIRED : 8,           // 令牌已过期
-        ERROR_CODE_SERVER_BUSY : 9,             // 服务器繁忙
-        ERROR_CODE_VERSION_MISMATCH : 10,        // 版本不匹配
-        ERROR_CODE_GATE_NOT_AVAILABLE : 11,       // 网关不可用
-        ERROR_CODE_DB_ERROR : 12,                // 数据库错误
-        ERROR_CODE_ITEM_NOT_FOUND : 13,          // 物品不存在
-        ERROR_CODE_ITEM_NOT_ENOUGH : 14,         // 物品数量不足
-    };
-
     constructor() {
         this.root = null;
         this.MessageID = {};
         this.initialized = false;
         this.sequence = 0;
-        this.ErrorCode = ProtoHelper.ErrorCode;
+        this.ErrorCode = {};  // 改为空对象，等待动态加载
         this.init();
     }
 
@@ -47,29 +29,20 @@ class ProtoHelper {
                 return path.resolve(protoPath, target);
             };
 
-            // 只加载必要的 proto 文件
-            const protoFiles = [
-                'common/message.proto',
-                'common/error.proto',
-                'command/command.proto'
-            ];
+            // 扫描proto目录
+            const protoFiles = await this.scanProtoDir(protoPath);
+            console.log('Found proto files:', protoFiles);
 
-            // 验证文件是否存在
+            // 验证并加载文件
             for (const file of protoFiles) {
                 const fullPath = path.join(protoPath, file);
                 if (!fs.existsSync(fullPath)) {
                     throw new Error(`Proto file not found: ${fullPath}`);
                 }
-            }
-
-            // 加载文件
-            for (const file of protoFiles) {
-                const fullPath = path.join(protoPath, file);
                 console.log(`Loading: ${file}`);
-                await this.root.load(fullPath, {
+                await this.root.load(file, {
                     keepCase: true,
-                    alternateCommentMode: true,
-                    preferTrailingComment: true
+                    alternateCommentMode: true
                 });
             }
 
@@ -90,17 +63,32 @@ class ProtoHelper {
             this.initialized = true;
         } catch (error) {
             console.error('Failed to load proto files:', error);
-            if (error.code === 'ENOENT') {
-                console.error('Required proto files:');
-                console.error('proto/');
-                console.error('  ├── common/');
-                console.error('  │   ├── message.proto');
-                console.error('  │   └── error.proto');
-                console.error('  └── command/');
-                console.error('      └── command.proto');
-            }
             throw error;
         }
+    }
+
+    // 扫描proto目录
+    async scanProtoDir(dir) {
+        const files = [];
+        
+        // 读取目录内容
+        const entries = fs.readdirSync(dir, { withFileTypes: true });
+        
+        // 处理每个条目
+        for (const entry of entries) {
+            const fullPath = path.join(dir, entry.name);
+            if (entry.isDirectory()) {
+                // 递归扫描子目录
+                const subFiles = await this.scanProtoDir(fullPath);
+                files.push(...subFiles);
+            } else if (entry.isFile() && entry.name.endsWith('.proto')) {
+                // 添加.proto文件，使用相对路径
+                const relativePath = path.relative(path.join(__dirname, '../../proto'), fullPath);
+                files.push(relativePath);
+            }
+        }
+
+        return files;
     }
 
     // 获取请求消息类型
@@ -115,25 +103,42 @@ class ProtoHelper {
             messageId = messageNames[0];
         }
 
-        const requestTypes = {
-            'C2L_LOGIN_REQUEST': 'command.C2LLoginRequest',
-            'C2G_HEARTBEAT_REQUEST': 'command.C2GHeartbeatRequest',
-            'C2G_USER_INFO_REQUEST': 'command.C2GUserInfoRequest',
-            'C2G_USER_CARDS_REQUEST': 'command.C2GUserCardsRequest',
-            'C2G_BAG_INFO_REQUEST': 'command.C2GBagInfoRequest',
-            'C2G_USE_ITEM_REQUEST': 'command.C2GUseItemRequest',
-            'C2G_EXPAND_BAG_REQUEST': 'command.C2GExpandBagRequest',
-            'C2G_SORT_BAG_REQUEST': 'command.C2GSortBagRequest',
-            'C2G_MOVE_ITEM_REQUEST': 'command.C2GMoveItemRequest',
-            'C2G_COMPOSE_ITEM_REQUEST': 'command.C2GComposeItemRequest',
-            'C2G_DECOMPOSE_ITEM_REQUEST': 'command.C2GDecomposeItemRequest'
-        };
+        // 从消息ID名称自动生成消息类型名称
+        // 例如: C2G_BAG_INFO_REQUEST -> command.C2GBagInfoRequest
+        if (typeof messageId === 'string') {
+            // 1. 移除 _REQUEST 后缀
+            let typeName = messageId.replace(/_REQUEST$/, '');
+            
+            // 2. 保持前缀(C2L/C2G等)的大小写，将其他部分转换为驼峰命名
+            const parts = typeName.split('_');
+            const prefix = parts[0];  // C2L/C2G等
+            const restParts = parts.slice(1);
+            
+            typeName = prefix + restParts.map(part => 
+                part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()
+            ).join('');
+            
+            // 3. 添加Request后缀
+            typeName += 'Request';
 
-        const type = requestTypes[messageId];
-        if (!type) {
-            throw new Error(`Unknown message type for: ${messageId}`);
+            // 4. 添加command.前缀
+            const fullTypeName = `command.${typeName}`;
+
+            // 验证类型是否存在
+            try {
+                if (this.root.lookupType(fullTypeName)) {
+                    return fullTypeName;
+                }
+            } catch (error) {
+                console.error(`Failed to lookup type: ${fullTypeName}`);
+                console.error('Available types:', this.listAvailableTypes());
+                throw error;
+            }
+
+            throw new Error(`Message type not found: ${fullTypeName} (from ${messageId})`);
         }
-        return type;
+
+        throw new Error(`Invalid message ID type: ${typeof messageId}`);
     }
 
     // 构建基础请求
@@ -391,6 +396,18 @@ class ProtoHelper {
             }
         }
         return `UNKNOWN_ERROR(${code})`;
+    }
+
+    // 获取错误码值
+    getErrorCode(name) {
+        if (typeof name === 'number') {
+            return name;  // 如果已经是数字，直接返回
+        }
+        const code = this.ErrorCode[name];
+        if (code === undefined) {
+            throw new Error(`Unknown error code name: ${name}`);
+        }
+        return code;
     }
 }
 
