@@ -11,6 +11,7 @@ local M = {}
 function M.handle(client_id, base_request)
     local messageId = pb.enum("common.MessageID", "L2C_LOGIN_RESPONSE")
     base_request.session.timestamp = os.time()
+    base_request.session.messageId = messageId
     -- 解码登录请求
     local ok, request = pcall(pb.decode, "command.C2LLoginRequest", base_request.payload)
     if not ok then
