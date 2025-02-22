@@ -25,10 +25,10 @@ TyConn是一个基于Skynet的游戏服务器框架,提供基础的游戏服务�
 
 ```bash
 # 克隆仓库
-git clone git@github.com:easycheaplife/tyconn_server.git
-cd tyconn_server
 git clone https://github.com/cloudwu/skynet.git
-ln -s skynet/skynet ./skynet
+git clone https://github.com/easycheaplife/tyconn_server.git
+cd tyconn_server
+ln -s ../skynet/skynet ./skynet
 ```
 
 ### 配置
@@ -73,5 +73,5 @@ cd test
 npm install
 
 # 运行测试
-npm test
+npm run test
 ```

@@ -104,11 +104,8 @@ message C2GBagInfoRequest {
 
 // 获取背包信息响应
 message G2CBagInfoResponse {
-    int32 code = 1;        // 错误码
-    string message = 2;    // 错误信息
-    repeated ItemInfo items = 3;  // 物品列表
+    repeated common.BagInfo bags = 1;  // 背包信息列表
 }
-
 // 使用物品请求
 message C2GUseItemRequest {
     string token = 1;      // JWT令牌
@@ -133,31 +130,7 @@ message ItemInfo {
 }
 ```
 
-### 1.6 物品变化通知
-```protobuf
-// 物品变化通知
-message C2GItemChangeNotify {
-    string token = 1;       // JWT令牌
-    repeated ItemChange changes = 2;  // 物品变化列表
-}
-
-// 物品变化信息
-message ItemChange {
-    int32 item_id = 1;     // 物品ID
-    int32 count = 2;       // 变化数量
-    int32 type = 3;        // 变化类型
-    string source = 4;     // 变化来源
-}
-
-// 物品变化通知响应
-message G2CItemChangeNotify {
-    int32 code = 1;        // 错误码
-    string message = 2;    // 错误信息
-    repeated ItemInfo items = 3;  // 最新物品列表
-}
-```
-
-### 1.7 背包与物品扩展协议
+### 1.6 背包与物品扩展协议
 ```protobuf
 // 背包类型
 enum BagType {
@@ -222,7 +195,7 @@ message G2CMoveItemResponse {
 }
 ```
 
-### 1.8 物品合成与分解协议
+### 1.7 物品合成与分解协议
 ```protobuf
 // 物品合成请求
 message C2GComposeItemRequest {
