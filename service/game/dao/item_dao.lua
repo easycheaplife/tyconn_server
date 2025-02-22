@@ -3,6 +3,7 @@ local logger = require "logger"
 local db_client = require "game.db_client"
 local cache = require "game.cache"
 local item_model = require "models.item_model"
+local utils = require "utils"
 
 local M = {}
 

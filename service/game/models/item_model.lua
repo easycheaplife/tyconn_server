@@ -221,6 +221,8 @@ function M.new(params)
         id = params.id or snowflake.next_id(snowflake.ID_TYPE.ITEM),  -- 指定类型为物品
         user_id = params.user_id,
         item_id = params.item_id,
+        bag_type = params.bag_type,
+        slot_index = params.slot_index,
         count = params.count or 1,
         state = params.state or M.ITEM_STATE.NORMAL,  -- 默认正常状态
         trade_state = params.trade_state or M.TRADE_STATE.NONE,  -- 默认无交易
