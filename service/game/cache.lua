@@ -308,4 +308,33 @@ function M.set_bag_slots(user_id, bag_type, slots)
     return ok
 end
 
+-- 背包相关缓存操作
+function M.remove_user_bag(user_id, bag_type)
+    local key = make_key(PREFIX.user_bag, string.format("%d:%d", user_id, bag_type))
+    return redis.del(key) > 0
+end
+
+function M.remove_user_bags(user_id)
+    local key = make_key(PREFIX.user_bags, user_id)
+    return redis.del(key) > 0
+end
+
+function M.remove_bag_slots(user_id, bag_type)
+    local key = make_key(PREFIX.bag_slots, string.format("%d:%d", user_id, bag_type))
+    return redis.del(key) > 0
+end
+
+-- 清除用户所有背包相关缓存
+function M.clear_bag_cache(user_id)
+    -- 清除背包列表缓存
+    M.remove_user_bags(user_id)
+    
+    -- 清除各个背包缓存
+    local bag_types = {1, 2, 3}  -- 主背包、仓库、装备栏
+    for _, bag_type in ipairs(bag_types) do
+        M.remove_user_bag(user_id, bag_type)
+        M.remove_bag_slots(user_id, bag_type)
+    end
+end
+
 return M

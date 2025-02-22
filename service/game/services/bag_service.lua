@@ -639,35 +639,48 @@ end
 
 -- 扩展背包
 function M.expand_bag(user_id, bag_type, add_size)
-    -- 1. 获取背包信息
+    -- 1. 参数验证
+    if not user_id or not bag_type then
+        return false, nil, "用户ID或背包类型无效"
+    end
+
+    -- 验证扩展大小
+    if not add_size or add_size <= 0 then
+        return false, nil, "扩展大小必须大于0"
+    end
+
+    -- 2. 获取背包信息
     local bag = bag_dao.get_user_bag(user_id, bag_type)
     if not bag then
         return false, nil, "背包不存在"
     end
 
-    -- 2. 检查背包配置
+    -- 3. 检查背包配置
     local config = BAG_CONFIG[bag_type]
     if not config then
         return false, nil, "无效的背包类型"
     end
 
-    -- 3. 检查是否超过最大容量
+    -- 4. 检查是否超过最大容量
     local new_size = bag.size + add_size
     if new_size > config.max_size then
         return false, nil, "超过背包最大容量限制"
     end
 
-    -- 4. 更新背包大小
+    -- 5. 更新背包大小
     local ok = bag_dao.update_bag_size(user_id, bag_type, new_size)
     if not ok then
         return false, nil, "更新背包大小失败"
     end
 
-    -- 5. 获取最新的物品列表
+    -- 6. 获取最新的物品列表
     local items = item_dao.get_user_items(user_id)
     if not items then
         return false, nil, "获取物品列表失败"
     end
+
+    -- 7. 清除缓存
+    bag_dao.clear_cache(user_id)
 
     return true, new_size, nil, items
 end

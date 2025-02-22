@@ -154,4 +154,31 @@ function M.get_bag_slots(user_id, bag_type)
     return slots
 end
 
+-- 获取用户所有背包
+function M.get_user_bags(user_id)
+    if not user_id then
+        return nil
+    end
+
+    -- 1. 获取所有背包基本信息
+    local query = string.format(sql.GET_USER_BAGS, user_id)
+    local bags = db_util.query(query)
+    if not bags then
+        return nil
+    end
+
+    -- 2. 获取每个背包的格子信息
+    for _, bag in ipairs(bags) do
+        query = string.format(sql.GET_BAG_SLOTS, user_id, bag.bag_type)
+        local slots = db_util.query(query)
+        if slots then
+            bag.slots = slots
+        else
+            bag.slots = {}
+        end
+    end
+
+    return bags
+end
+
 return M 

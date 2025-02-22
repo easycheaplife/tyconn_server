@@ -4,6 +4,7 @@ local pb = require "pb"
 local item_service = require "services.item_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message = require "message"
+local utils = require "utils"
 
 local M = {}
 
@@ -24,10 +25,10 @@ function M.handle(client_id, msg)
             pb.enum("common.MessageID", "G2C_BAG_INFO_RESPONSE"))
     end
 
-    -- 获取用户物品列表
-    local items = item_service.get_user_items(user.user_id)
-    if not items then
-        logger.error("Failed to get items for user: %d", user.user_id)
+    -- 获取用户背包信息
+    local bags = item_service.get_user_bags(user.user_id)
+    if not bags then
+        logger.error("Failed to get bags for user: %d", user.user_id)
         return message.create_error_response(
             base_request, 
             pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"), 
@@ -38,9 +39,9 @@ function M.handle(client_id, msg)
 
     -- 构造响应数据
     local response_data = {
-        items = items
+        bags = bags
     }
-
+    logger.info("response_data: %s", utils.table_to_string(response_data))
     -- 返回成功响应
     return message.create_success_response(
         base_request,

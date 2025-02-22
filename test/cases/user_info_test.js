@@ -62,7 +62,22 @@ class UserInfoTest extends BaseTest {
 
                 // 验证新用户的物品初始化
                 const bagResponse = await this.client.getBagInfo();
-                assert(bagResponse.items && bagResponse.items.length > 0, 'New user should have initial items');
+                assert(bagResponse.bags && bagResponse.bags.length > 0, 'New user should have bags');
+
+                // 检查主背包中的物品
+                console.log(bagResponse.bags);
+                const mainBag = bagResponse.bags.find(bag => bag.bag_type === 1); // 1 = MAIN
+                assert(mainBag, 'Should have main bag');
+                assert(mainBag.items && mainBag.items.length > 0, 'New user should have initial items in main bag');
+
+                // 验证初始物品
+                const hasExpPotion = mainBag.items.some(item => 
+                    item.item_id === 1001 && item.count === 100); // 经验药水
+                const hasGold = mainBag.items.some(item => 
+                    item.item_id === 2001 && item.count === 1000); // 金币
+
+                assert(hasExpPotion, 'New user should have initial exp potions');
+                assert(hasGold, 'New user should have initial gold');
             }
 
             // 测试5: 用户名格式

@@ -59,7 +59,7 @@ message C2GBagInfoRequest {
 
 // 背包信息响应 {{Res:10}}
 message G2CBagInfoResponse {
-    repeated common.ItemInfo items = 1;  // 背包物品列表
+    repeated common.BagInfo bags = 1;  // 背包信息列表
 }
 
 // 使用物品请求 {{Req:11}}
@@ -92,9 +92,9 @@ message G2CExpandBagResponse {
 
 // 整理背包请求 {{Req:15}}  
 message C2GSortBagRequest {
-    required string token = 1;       // JWT令牌
-    required common.BagType bag_type = 2;   // 背包类型
-    required int32 sort_rule = 3;    // 整理规则(1:类型 2:品质 3:等级)
+    string token = 1;       // JWT令牌
+    common.BagType bag_type = 2;   // 背包类型
+    int32 sort_rule = 3;    // 整理规则(1:类型 2:品质 3:等级)
 }
 
 // 整理背包响应 {{Res:16}}  

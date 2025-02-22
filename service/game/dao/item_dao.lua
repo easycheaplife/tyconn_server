@@ -15,6 +15,13 @@ function M.get_user_items(user_id)
     -- 1. 从缓存获取
     local items = cache.get_user_items(user_id)
     if items then
+        -- 确保数值类型
+        for _, item in ipairs(items) do
+            item.item_id = tonumber(item.item_id)
+            item.count = tonumber(item.count)
+            item.slot_index = tonumber(item.slot_index or 0)
+            item.bag_type = tonumber(item.bag_type)
+        end
         return items
     end
 
@@ -22,6 +29,14 @@ function M.get_user_items(user_id)
     local result = db_client.get_user_items(user_id)
     if not result then
         return {}, "获取物品失败"
+    end
+
+    -- 确保数值类型
+    for _, item in ipairs(result) do
+        item.item_id = tonumber(item.item_id)
+        item.count = tonumber(item.count)
+        item.slot_index = tonumber(item.slot_index or 0)
+        item.bag_type = tonumber(item.bag_type)
     end
 
     -- 3. 写入缓存

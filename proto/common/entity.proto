@@ -29,9 +29,14 @@ message CardInfo {
 
 // 物品信息
 message ItemInfo {
-    int64 id = 1;           // 物品实例ID
-    int32 item_id = 2;      // 物品配置ID
-    int32 count = 3;        // 数量
-    int64 create_time = 4;  // 获得时间
-    int64 update_time = 5;  // 更新时间
+    int32 item_id = 1;
+    int32 count = 2;
+    int32 slot = 3;  // 确保这个字段存在
+}
+
+// 背包信息
+message BagInfo {
+    int32 bag_type = 1;
+    int32 size = 2;
+    repeated ItemInfo items = 3;
 }

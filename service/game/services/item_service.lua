@@ -395,7 +395,7 @@ function M.get_user_items(user_id)
         -- 新用户，返回空列表
         return {}
     end
-
+    logger.info("items: %s", utils.table_to_string(items))
     return items
 end
 
@@ -2265,6 +2265,54 @@ function M.remove_gem(user_id, equip_id, slot_index, protect_item)
         result = result,
         equip = equip
     }
+end
+
+-- 获取用户所有背包信息
+function M.get_user_bags(user_id)
+    if not user_id then
+        return nil, "无效的用户ID"
+    end
+
+    -- 获取用户所有背包
+    local bags = bag_dao.get_user_all_bags(user_id)
+    if not bags then
+        return nil, "获取背包失败"
+    end
+
+    -- 获取用户所有物品
+    local items = M.get_user_items(user_id)
+    if not items then
+        items = {}
+    end
+
+    -- 构造返回的背包信息列表
+    local bag_info_list = {}
+    for _, bag in ipairs(bags) do
+        -- 获取该背包中的物品
+        local bag_items = {}
+        for _, item in ipairs(items) do
+            if item.bag_type == bag.bag_type then
+                -- 确保所有字段都是数值类型
+                local item_info = {
+                    item_id = tonumber(item.item_id),
+                    count = tonumber(item.count),
+                    slot = tonumber(item.slot_index or 0)  -- 确保有默认值
+                }
+                table.insert(bag_items, item_info)
+            end
+        end
+
+        -- 构造背包信息
+        local bag_info = {
+            bag_type = tonumber(bag.bag_type),
+            size = tonumber(bag.size),
+            items = bag_items
+        }
+        
+        table.insert(bag_info_list, bag_info)
+    end
+
+    return bag_info_list
 end
 
 return M 

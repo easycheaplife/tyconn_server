@@ -93,4 +93,18 @@ M.UPDATE_BAG_SIZE = [[
     WHERE user_id = %d AND bag_type = %d
 ]]
 
+-- 获取用户所有背包
+M.GET_USER_BAGS = [[
+    SELECT 
+        id,
+        user_id,
+        bag_type,
+        size,
+        create_time,
+        update_time
+    FROM user_bags 
+    WHERE user_id = %d
+    ORDER BY bag_type ASC
+]]
+
 return M 

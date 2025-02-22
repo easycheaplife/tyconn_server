@@ -111,4 +111,8 @@ function CMD.get_bag_slots(user_id, bag_type)
     return wrap_call(bag.get_bag_slots, user_id, bag_type)
 end
 
+function CMD.get_user_bags(user_id)
+    return wrap_call(bag.get_user_bags, user_id)
+end
+
 return CMD 
