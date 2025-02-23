@@ -14,7 +14,7 @@ function M.init()
     -- 2. 其他初始化代码...
     local item_service = require "services.item_service"
     item_service.init_default_items()
-
+    item_service.init_item_config()
     logger.info("Game server initialized")
     return true
 end

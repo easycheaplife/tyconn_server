@@ -15,9 +15,6 @@ function M.handle(client_id, msg)
     -- 验证请求并获取用户信息
     local base_request, request, error_code, error_message, user, claims = handler_helper.verify_request_with_user(
         client_id, msg, "command.C2GExpandBagRequest")
-        logger.debug("================================================")
-        logger.debug("request: %s", utils.table_to_string(request))
-        logger.debug("================================================")
     if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
         logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", 
             client_id, error_code, error_message)

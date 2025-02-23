@@ -1,4 +1,7 @@
 // 导出所有处理器
+const getBagInfo = require('./bag/get_bag_info');
+const expandBag = require('./bag/expand_bag');
+
 module.exports = {
     // 背包相关
     getBagInfo: require('./bag/get_bag_info'),
@@ -12,5 +15,8 @@ module.exports = {
     getUserCards: require('./user/get_user_cards'),
     
     // 系统相关
-    sendHeartbeat: require('./system/heartbeat')
+    sendHeartbeat: require('./system/heartbeat'),
+    
+    // GM相关
+    gm_command: require('./gm/gm_command')
 }; 

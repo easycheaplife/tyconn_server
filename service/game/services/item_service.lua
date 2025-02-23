@@ -14,16 +14,61 @@ local utils = require "utils"
 local M = {}
 
 -- 物品配置
-local ITEM_CONFIG = {
-    [1001] = {  -- 初级经验药水
-        effect_type = item_model.EFFECT_TYPE.EXP,
-        effect_value = 100
-    },
-    [1000] = {  -- 金币
-        effect_type = item_model.EFFECT_TYPE.GOLD,
-        effect_value = 1000
-    }
-}
+local ITEM_CONFIG = {}
+
+-- 加载物品配置
+function M.init_item_config()
+    -- 读取配置文件
+    local file, err = io.open("config/Dfw_item.json", "r")
+    if not file then
+        logger.error("Failed to open item config file: %s", err)
+        return false
+    end
+
+    -- 读取文件内容
+    local content = file:read("*a")
+    file:close()
+
+    -- 解析 JSON
+    local ok, config = pcall(cjson.decode, content)
+    if not ok then
+        logger.error("Failed to decode item config JSON: %s", config)
+        return false
+    end
+
+    -- 转换配置格式
+    for id, item_data in pairs(config) do
+        local item_id = tonumber(item_data.Item_id)
+        if item_id then
+            ITEM_CONFIG[item_id] = {
+                id = item_id,
+                name = item_data.L_name,
+                type = tonumber(item_data.Type) or 1,
+                quality = tonumber(item_data.Qua) or 1,
+                class = tonumber(item_data.Class) or 1,
+                max_stack = tonumber(item_data.Max) or 99,
+                description = item_data.L_des,
+                icon = item_data.Icon,
+                show = tonumber(item_data.Show) or 0,
+                order = tonumber(item_data.Order) or 0
+            }
+        end
+    end
+
+    -- 添加测试物品配置
+    ITEM_CONFIG[1001] = ITEM_CONFIG[1001] or {}  -- 保留原有配置
+    ITEM_CONFIG[1001].effect_type = item_model.EFFECT_TYPE.EXP
+    ITEM_CONFIG[1001].effect_value = 100
+    ITEM_CONFIG[1001].max_stack = 10000
+
+    ITEM_CONFIG[2012] = ITEM_CONFIG[2012] or {}  -- 保留原有配置
+    ITEM_CONFIG[2012].effect_type = item_model.EFFECT_TYPE.GOLD
+    ITEM_CONFIG[2012].effect_value = 1000
+    ITEM_CONFIG[2012].max_stack = 10000
+
+    logger.info("Item config loaded: %d items", #ITEM_CONFIG)
+    return true
+end
 
 -- 从配置文件读取新手默认物品
 local DEFAULT_ITEMS = {}
@@ -37,7 +82,6 @@ function M.init_default_items()  -- 改为 M. 导出
 
     -- 读取文件内容
     local content = file:read("*a")
-    logger.debug("Config file content: %s", content)
     file:close()
 
     -- 解析 JSON
@@ -61,7 +105,7 @@ function M.init_default_items()  -- 改为 M. 导出
             count = tonumber(item_data[2] or 1)  -- 第二个元素是数量，默认为1
         })
     end
-
+    logger.info("Default items loaded: %d items", #DEFAULT_ITEMS)
 end
 
 -- 物品查询条件
@@ -88,7 +132,7 @@ local SORT_RULE = {
 
 -- 获取物品排序权重
 local function get_item_weight(item, rule)
-    local config = require("config.item_config")[item.item_id]
+    local config = ITEM_CONFIG[item.item_id]
     if not config then
         return 0
     end
@@ -429,7 +473,7 @@ local function validate_item(item)
     end
     
     -- 2. 检查物品配置
-    local config = require("config.item_config")[item.item_id]
+    local config = ITEM_CONFIG[item.item_id]
     if not config then
         return false, "物品配置不存在"
     end
@@ -558,7 +602,7 @@ function M.compose_item(user_id, target_id)
     if result == item_model.COMPOSE_RESULT.SUCCESS then
         -- 添加合成物品
         local new_item = item_model.new({
-            id = snowflake.generate(),
+            id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
             user_id = user_id,
             item_id = target_id,
             count = compose_config.output_count or 1
@@ -573,7 +617,7 @@ function M.compose_item(user_id, target_id)
         -- 返还材料
         for item_id, count in pairs(compose_config.materials) do
             local new_item = item_model.new({
-                id = snowflake.generate(),
+                id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
                 user_id = user_id,
                 item_id = item_id,
                 count = count
@@ -661,7 +705,7 @@ function M.decompose_item(user_id, item_id, count)
         
         -- 创建新物品
         local new_item = item_model.new({
-            id = snowflake.generate(),
+            id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
             user_id = user_id,
             item_id = output_id,
             count = output_count
@@ -716,7 +760,7 @@ function M.batch_add_items(user_id, item_list)
     for _, item_info in ipairs(item_list) do
         -- 创建新物品
         local new_item = item_model.new({
-            id = snowflake.generate(),
+            id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
             user_id = user_id,
             item_id = item_info.item_id,
             count = item_info.count or 1,
@@ -837,7 +881,7 @@ function M.trade_items(from_user, to_user, item_list)
         end
         
         -- 获取物品配置
-        local config = require("config.item_config")[item_info.item_id]
+        local config = ITEM_CONFIG[item_info.item_id]
         if not config then
             return false, string.format("物品%d配置不存在", item_info.item_id)
         end
@@ -984,7 +1028,7 @@ local function filter_items(items, conditions)
     for _, item in ipairs(items) do
         local match = true
         for _, condition in ipairs(conditions) do
-            local config = require("config.item_config")[item.item_id]
+            local config = ITEM_CONFIG[item.item_id]
             if not config then
                 match = false
                 break
@@ -1051,8 +1095,8 @@ function M.query_user_items(user_id, conditions)
     -- 3. 按条件排序
     if conditions and conditions.sort_by then
         table.sort(filtered, function(a, b)
-            local config_a = require("config.item_config")[a.item_id]
-            local config_b = require("config.item_config")[b.item_id]
+            local config_a = ITEM_CONFIG[a.item_id]
+            local config_b = ITEM_CONFIG[b.item_id]
             
             if conditions.sort_by == "quality" then
                 if config_a.quality == config_b.quality then
@@ -1100,7 +1144,7 @@ end
 
 -- 获取物品最大堆叠数
 local function get_max_stack(item_id)
-    local config = require("config.item_config")[item_id]
+    local config = ITEM_CONFIG[item_id]   
     if not config then
         return 1
     end
@@ -1316,7 +1360,7 @@ function M.search_items(user_id, keyword, options)
     
     -- 3. 遍历物品
     for _, item in ipairs(items) do
-        local config = require("config.item_config")[item.item_id]
+        local config = ITEM_CONFIG[item.item_id]  
         if config then
             local match = false
             
@@ -1368,8 +1412,8 @@ function M.search_items(user_id, keyword, options)
     -- 5. 应用排序
     if options.sort_by then
         table.sort(result, function(a, b)
-            local config_a = require("config.item_config")[a.item_id]
-            local config_b = require("config.item_config")[b.item_id]
+            local config_a = ITEM_CONFIG[a.item_id]   
+            local config_b = ITEM_CONFIG[b.item_id]
             
             if options.sort_by == "name" then
                 return config_a.name < config_b.name
@@ -1407,7 +1451,7 @@ end
 
 -- 检查物品标签
 local function check_item_tags(item, tags)
-    local config = require("config.item_config")[item.item_id]
+    local config = ITEM_CONFIG[item.item_id]  
     if not config or not config.tags then
         return false
     end
@@ -1430,7 +1474,7 @@ end
 
 -- 获取物品分类
 local function get_item_category(item)
-    local config = require("config.item_config")[item.item_id]
+    local config = ITEM_CONFIG[item.item_id]  
     if not config then
         return item_model.ITEM_CATEGORY.OTHER
     end
@@ -1458,7 +1502,7 @@ end
 
 -- 获取物品标签
 function M.get_item_tags(item_id)
-    local config = require("config.item_config")[item_id]
+    local config = ITEM_CONFIG[item_id]   
     if not config then
         return {}
     end
@@ -1487,7 +1531,7 @@ function M.equip_item(user_id, item_id, slot_id)
     end
     
     -- 3. 检查物品类型
-    local config = require("config.item_config")[item_id]
+    local config = ITEM_CONFIG[item_id]   
     if not config or config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
         return false, "物品不是装备"
     end
@@ -1632,7 +1676,7 @@ function M.enhance_equipment(user_id, equip_id, material_list, protect_item)
     end
     
     -- 3. 检查装备类型
-    local config = require("config.item_config")[equip.item_id]
+    local config = ITEM_CONFIG[equip.item_id] 
     if not config or config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
         return false, "物品不是装备"
     end
@@ -1648,7 +1692,7 @@ function M.enhance_equipment(user_id, equip_id, material_list, protect_item)
     local materials = {}
     local total_exp = 0
     for _, material in ipairs(material_list) do
-        local mat_config = require("config.item_config")[material.item_id]
+        local mat_config = ITEM_CONFIG[material.item_id]
         if not mat_config then
             return false, "材料配置不存在"
         end
@@ -1784,7 +1828,7 @@ function M.refine_equipment(user_id, equip_id, material_list, protect_item)
     end
     
     -- 3. 检查装备类型
-    local config = require("config.item_config")[equip.item_id]
+    local config = ITEM_CONFIG[equip.item_id] 
     if not config or config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
         return false, "物品不是装备"
     end
@@ -1800,7 +1844,7 @@ function M.refine_equipment(user_id, equip_id, material_list, protect_item)
     local materials = {}
     local total_exp = 0
     for _, material in ipairs(material_list) do
-        local mat_config = require("config.item_config")[material.item_id]
+        local mat_config = ITEM_CONFIG[material.item_id]
         if not mat_config then
             return false, "材料配置不存在"
         end
@@ -1914,7 +1958,7 @@ function M.reforge_equipment(user_id, equip_id, material_list)
     end
     
     -- 3. 检查装备类型
-    local config = require("config.item_config")[equip.item_id]
+    local config = ITEM_CONFIG[equip.item_id] 
     if not config or config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
         return false, "物品不是装备"
     end
@@ -1923,7 +1967,7 @@ function M.reforge_equipment(user_id, equip_id, material_list)
     local materials = {}
     local reforge_power = 0
     for _, material in ipairs(material_list) do
-        local mat_config = require("config.item_config")[material.item_id]
+        local mat_config = ITEM_CONFIG[material.item_id]
         if not mat_config then
             return false, "材料配置不存在"
         end
@@ -2026,8 +2070,8 @@ function M.inlay_gem(user_id, equip_id, gem_id, slot_index, protect_item)
     end
     
     -- 3. 检查装备和宝石类型
-    local equip_config = require("config.item_config")[equip.item_id]
-    local gem_config = require("config.item_config")[gem.item_id]
+    local equip_config = ITEM_CONFIG[equip.item_id]   
+    local gem_config = ITEM_CONFIG[gem.item_id]
     
     if not equip_config or equip_config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
         return false, "物品不是装备"
@@ -2197,7 +2241,7 @@ function M.remove_gem(user_id, equip_id, slot_index, protect_item)
     }
     
     -- 7. 更新装备属性
-    local gem_config = require("config.item_config")[slot.gem_id]
+    local gem_config = ITEM_CONFIG[slot.gem_id]
     if gem_config and gem_config.props then
         for prop_type, value in pairs(gem_config.props) do
             if equip.gem_props then

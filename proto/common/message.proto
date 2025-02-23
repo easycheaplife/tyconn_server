@@ -26,6 +26,8 @@ enum MessageID {
     G2C_COMPOSE_ITEM_RESPONSE = 20; // 物品合成响应
     C2G_DECOMPOSE_ITEM_REQUEST = 21;// 物品分解请求
     G2C_DECOMPOSE_ITEM_RESPONSE = 22;// 物品分解响应
+    C2G_GM_COMMAND_REQUEST = 23; // GM命令请求
+    G2C_GM_COMMAND_RESPONSE = 24; // GM命令响应
 }
 
 // 会话信息

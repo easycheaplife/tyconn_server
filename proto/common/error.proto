@@ -25,4 +25,6 @@ enum ErrorCode {
     ERROR_CODE_INSUFFICIENT_SPACE = 19;       // 背包空间不足
     ERROR_CODE_INVALID_SLOT = 20;            // 无效的格子
     ERROR_CODE_SLOT_LOCKED = 21;             // 格子被锁定
+    ERROR_CODE_GM_COMMAND_FAILED = 22;       // GM指令执行失败  
+    ERROR_CODE_PERMISSION_DENIED = 23;       // 权限不足
 } 
