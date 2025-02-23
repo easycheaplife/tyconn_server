@@ -1,11 +1,12 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
+local cjson = require "cjson"
 local item_model = require "models.item_model"
 local item_dao = require "dao.item_dao"
 local user_service = require "services.user_service"
 local snowflake = require "utils.snowflake"
-local bag_dao = require "dao.bag_dao"  -- 直接使用 dao 层
+local bag_dao = require "dao.bag_dao"
 local property_service = require "services.property_service"
 local bag_model = require "models.bag_model"
 local utils = require "utils"
@@ -18,23 +19,53 @@ local ITEM_CONFIG = {
         effect_type = item_model.EFFECT_TYPE.EXP,
         effect_value = 100
     },
-    [2001] = {  -- 金币
+    [1000] = {  -- 金币
         effect_type = item_model.EFFECT_TYPE.GOLD,
         effect_value = 1000
     }
 }
 
--- 新手默认物品
-local DEFAULT_ITEMS = {
-    {
-        item_id = 1001,  -- 初级经验药水
-        count = 100
-    },
-    {
-        item_id = 2001,  -- 金币
-        count = 1000
-    }
-}
+-- 从配置文件读取新手默认物品
+local DEFAULT_ITEMS = {}
+local function init_default_items()
+    -- 读取配置文件
+    local file, err = io.open("config/Dfw_Initial.json", "r")
+    if not file then
+        logger.error("Failed to open initial config file: %s", err)
+        return
+    end
+
+    -- 读取文件内容
+    local content = file:read("*a")
+    logger.debug("Config file content: %s", content)
+    file:close()
+
+    -- 解析 JSON
+    local ok, initial_config = pcall(cjson.decode, content)
+    if not ok then
+        logger.error("Failed to decode JSON: %s", initial_config)
+        return
+    end
+
+    -- 获取第一个玩家的配置
+    local player_config = initial_config["1"]
+    if not player_config or not player_config.Item then
+        logger.error("Invalid config format: %s", utils.table_to_string(initial_config))
+        return
+    end
+
+    -- 转换配置格式
+    for _, item_data in ipairs(player_config.Item) do
+        table.insert(DEFAULT_ITEMS, {
+            item_id = tonumber(item_data[1]),  -- 第一个元素是物品ID
+            count = tonumber(item_data[2] or 1)  -- 第二个元素是数量，默认为1
+        })
+    end
+    
+    logger.info("Loaded default items: %s", utils.table_to_string(DEFAULT_ITEMS))
+end
+
+init_default_items()
 
 -- 物品查询条件
 local QUERY_CONDITION = {
@@ -353,7 +384,7 @@ function M.init_user_items(user_id)
         return false, "无效的用户ID"
     end
 
-    logger.info("Initializing items for new user: %d", user_id)
+    logger.info("Initializing items for user: %d", user_id)
 
     -- 1. 创建主背包
     local bag = bag_dao.get_user_bag(user_id, bag_model.BAG_TYPE.MAIN)
@@ -364,20 +395,13 @@ function M.init_user_items(user_id)
         end
     end
 
-    -- 2. 准备默认物品
-    local items = {}
-    for _, default_item in ipairs(DEFAULT_ITEMS) do
-        table.insert(items, {
-            item_id = default_item.item_id,
-            count = default_item.count
-        })
-    end
-
-    -- 3. 添加物品到背包格子
-    local ok, err = M.add_items_to_slot(user_id, items)
-    if not ok then
-        logger.error("Failed to add default items for user %d: %s", user_id, err)
-        return false, err
+    -- 2. 添加默认物品
+    if #DEFAULT_ITEMS > 0 then
+        local ok, err = M.add_items_to_slot(user_id, DEFAULT_ITEMS)
+        if not ok then
+            logger.error("Failed to add default items for user %d: %s", user_id, err)
+            return false, err
+        end
     end
 
     return true
