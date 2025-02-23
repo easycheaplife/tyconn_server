@@ -27,7 +27,7 @@ local ITEM_CONFIG = {
 
 -- 从配置文件读取新手默认物品
 local DEFAULT_ITEMS = {}
-local function init_default_items()
+function M.init_default_items()  -- 改为 M. 导出
     -- 读取配置文件
     local file, err = io.open("config/Dfw_Initial.json", "r")
     if not file then
@@ -61,11 +61,8 @@ local function init_default_items()
             count = tonumber(item_data[2] or 1)  -- 第二个元素是数量，默认为1
         })
     end
-    
-    logger.info("Loaded default items: %s", utils.table_to_string(DEFAULT_ITEMS))
-end
 
-init_default_items()
+end
 
 -- 物品查询条件
 local QUERY_CONDITION = {
@@ -700,70 +697,6 @@ local function check_item_expired(item)
     end
     
     return false
-end
-
--- 清理过期物品
-function M.clean_expired_items(user_id)
-    -- 1. 获取用户物品
-    local items = M.get_user_items(user_id)
-    if not items then
-        return true
-    end
-    
-    -- 2. 检查并移除过期物品
-    local need_update = false
-    for i = #items, 1, -1 do
-        local item = items[i]
-        if check_item_expired(item) then
-            -- 记录物品变化
-            item_dao.log_change(user_id, item.item_id, item.count,
-                item_model.CHANGE_TYPE.REDUCE, "expire",
-                item.count, 0)
-            
-            -- 移除物品
-            table.remove(items, i)
-            need_update = true
-            
-            -- 记录日志
-            logger.info("Removed expired item - user_id: %d, item_id: %d, count: %d",
-                user_id, item.item_id, item.count)
-        end
-    end
-    
-    -- 3. 如果有物品被移除，更新数据库
-    if need_update then
-        local ok = item_dao.update_user_items(user_id, items)
-        if not ok then
-            return false, "更新物品失败"
-        end
-    end
-    
-    return true
-end
-
--- 定时清理过期物品
-function M.schedule_clean_expired_items()
-    -- 每天凌晨4点执行清理
-    local now = os.time()
-    local next_time = utils.get_next_time(4, 0, 0)
-    local delay = next_time - now
-    
-    skynet.timeout(delay * 100, function()
-        -- 获取所有在线用户
-        local online_users = user_service.get_online_users()
-        
-        -- 清理每个用户的过期物品
-        for user_id, _ in pairs(online_users) do
-            local ok, err = M.clean_expired_items(user_id)
-            if not ok then
-                logger.error("Failed to clean expired items for user %d: %s",
-                    user_id, err)
-            end
-        end
-        
-        -- 继续下一次调度
-        M.schedule_clean_expired_items()
-    end)
 end
 
 -- 批量添加物品

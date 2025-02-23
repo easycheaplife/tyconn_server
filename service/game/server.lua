@@ -3,6 +3,7 @@ local logger = require "logger"
 local message = require "message"  -- 更新引用路径
 local message_mgr = require "game.message_mgr"
 local cmd_mgr = require "game.cmd_mgr"
+local init = require "game.init"
 
 -- 心跳相关配置
 local heartbeat_timeout = tonumber(skynet.getenv("heartbeat_timeout")) or 180  -- 默认180秒超时
@@ -23,6 +24,14 @@ end
 
 -- 服务入口
 skynet.start(function()
+    -- 加载并初始化
+    local ok = init.init()
+    if not ok then
+        logger.error("Failed to initialize game server")
+        skynet.exit()
+        return
+    end
+    
     logger.info("Game server starting...")
     
     -- 初始化命令管理器
