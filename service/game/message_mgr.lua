@@ -26,19 +26,19 @@ function M.init()
 
     -- 注册处理器
     M.register(pb.enum("common.MessageID", "C2G_USER_INFO_REQUEST"), 
-        require "game.handlers.user_info")
+        require "game.handlers.user_info_handler")
     M.register(pb.enum("common.MessageID", "C2G_HEARTBEAT_REQUEST"), 
-        require "game.handlers.heartbeat")
+        require "game.handlers.heartbeat_handler")
     M.register(pb.enum("common.MessageID", "C2G_USER_CARDS_REQUEST"), 
-        require "game.handlers.user_cards")
+        require "game.handlers.user_cards_handler")
     M.register(pb.enum("common.MessageID", "C2G_BAG_INFO_REQUEST"),
-        require "game.handlers.bag_info")
+        require "game.handlers.bag_info_handler")
     M.register(pb.enum("common.MessageID", "C2G_USE_ITEM_REQUEST"),
-        require "game.handlers.use_item")
+        require "game.handlers.use_item_handler")
     M.register(pb.enum("common.MessageID", "C2G_EXPAND_BAG_REQUEST"),
-        require "game.handlers.expand_bag")
+        require "game.handlers.expand_bag_handler")
     M.register(pb.enum("common.MessageID", "C2G_GM_COMMAND_REQUEST"),
-        require "game.handlers.gm_command")
+        require "game.handlers.gm_command_handler")
     
     logger.info("Message handlers initialized")
     return true

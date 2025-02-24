@@ -1,7 +1,7 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local mysql = require "db.mysql"
-local sql = require "db_proxy.sql.user"
+local sql = require "db_proxy.sql.user_sql"
 local db_util = require "db_proxy.utils.db_util"
 local utils = require "utils"
 

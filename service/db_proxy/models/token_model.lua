@@ -1,7 +1,7 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local mysql = require "db.mysql"
-local sql = require "db_proxy.sql.token"
+local sql = require "db_proxy.sql.token_sql"
 local db_util = require "db_proxy.utils.db_util"
 
 -- 续费配置

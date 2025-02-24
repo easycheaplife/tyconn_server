@@ -1,5 +1,5 @@
 local db_util = require "db_proxy.utils.db_util"
-local sql = require "db_proxy.sql.bag"
+local sql = require "db_proxy.sql.bag_sql"
 local logger = require "logger"
 local snowflake = require "utils.snowflake"
 

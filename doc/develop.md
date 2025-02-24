@@ -112,7 +112,7 @@ return M
 ```lua
 -- service/game/message_mgr.lua
 M.register(pb.enum("common.MessageID", "C2G_USER_INFO_REQUEST"), 
-    require "game.handlers.user_info")
+    require "game.handlers.user_info_handler")
 ```
 
 ### 2. 修复Bug
