@@ -157,10 +157,7 @@ message C2GExpandBagRequest {
 
 // 扩展背包响应
 message G2CExpandBagResponse {
-    int32 code = 1;         // 错误码
-    string message = 2;     // 错误信息
-    BagType bag_type = 3;   // 背包类型
-    int32 new_size = 4;     // 新背包大小
+    BagInfo bag = 1;   // 背包信息
 }
 
 // 整理背包请求

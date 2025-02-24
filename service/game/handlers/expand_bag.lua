@@ -111,14 +111,13 @@ function M.handle(client_id, msg)
             nil,
             pb.enum("common.MessageID", "G2C_EXPAND_BAG_RESPONSE"))
     end
-
+    
+    bag_info.size = new_size
+    bag_info.items = items
+    
     -- 构造响应数据
     local response_data = {
-        code = pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
-        message = "success",
-        bag_type = bag_type,
-        new_size = new_size,
-        items = items
+        bag = bag_info
     }
 
     -- 返回成功响应

@@ -14,12 +14,8 @@ function M.decode_request(msg, request_type)
         logger.error("Failed to decode base request: %s", base_request)
         return nil
     end
-    
     if base_request and base_request.session then
-        logger.debug("Decoded base request: messageId=%d, sequence=%d", 
-            base_request.session.messageId or 0,
-            base_request.session.sequence or 0
-        )
+        logger.debug("Decoded base request: %s", utils.table_to_string(base_request.session))
     end
 
     -- 如果没有指定具体请求类型，直接返回基础请求
@@ -33,7 +29,7 @@ function M.decode_request(msg, request_type)
         logger.error("Failed to decode request payload: %s", request)
         return nil
     end
-
+    logger.debug("Decoded request: %s", utils.table_to_string(request))
     return base_request, request
 end
 

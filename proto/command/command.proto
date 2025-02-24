@@ -83,9 +83,7 @@ message C2GExpandBagRequest {
 
 // 扩展背包响应 {{Res:14}}
 message G2CExpandBagResponse {
-    common.BagType bag_type = 1;  // 背包类型
-    int32 new_size = 2;          // 新的背包大小
-    repeated common.ItemInfo items = 3;  // 物品列表
+    common.BagInfo bag = 1;  // 背包信息
 }
 
 // 整理背包请求 {{Req:15}}  
