@@ -1,7 +1,6 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
-local cjson = require "cjson"
 local item_model = require "models.item_model"
 local item_dao = require "dao.item_dao"
 local user_service = require "services.user_service"
@@ -10,34 +9,32 @@ local bag_dao = require "dao.bag_dao"
 local property_service = require "services.property_service"
 local bag_model = require "models.bag_model"
 local utils = require "utils"
+local config_loader = require "game.config_loader"
 
 local M = {}
 
 -- 物品配置
 local ITEM_CONFIG = {}
 
+-- 计算table中的键值对数量
+local function count_pairs(t)
+    local count = 0
+    for _ in pairs(t) do
+        count = count + 1
+    end
+    return count
+end
+
 -- 加载物品配置
 function M.init_item_config()
     -- 读取配置文件
-    local file, err = io.open("config/Dfw_item.json", "r")
-    if not file then
-        logger.error("Failed to open item config file: %s", err)
+    local data = config_loader.get_config("Dfw_item")
+    if not data then
+        logger.error("Failed to load item config")
         return false
     end
-
-    -- 读取文件内容
-    local content = file:read("*a")
-    file:close()
-
-    -- 解析 JSON
-    local ok, config = pcall(cjson.decode, content)
-    if not ok then
-        logger.error("Failed to decode item config JSON: %s", config)
-        return false
-    end
-
     -- 转换配置格式
-    for id, item_data in pairs(config) do
+    for id, item_data in pairs(data) do
         local item_id = tonumber(item_data.Item_id)
         if item_id then
             ITEM_CONFIG[item_id] = {
@@ -66,36 +63,25 @@ function M.init_item_config()
     ITEM_CONFIG[2012].effect_value = 1000
     ITEM_CONFIG[2012].max_stack = 10000
 
-    logger.info("Item config loaded: %d items", #ITEM_CONFIG)
+    logger.info("Item config loaded: %d items", count_pairs(ITEM_CONFIG))
     return true
 end
 
 -- 从配置文件读取新手默认物品
 local DEFAULT_ITEMS = {}
-function M.init_default_items()  -- 改为 M. 导出
+function M.init_default_items()
     -- 读取配置文件
-    local file, err = io.open("config/Dfw_Initial.json", "r")
-    if not file then
-        logger.error("Failed to open initial config file: %s", err)
-        return
-    end
-
-    -- 读取文件内容
-    local content = file:read("*a")
-    file:close()
-
-    -- 解析 JSON
-    local ok, initial_config = pcall(cjson.decode, content)
-    if not ok then
-        logger.error("Failed to decode JSON: %s", initial_config)
-        return
+    local data = config_loader.get_config("Dfw_Initial")
+    if not data then
+        logger.error("Failed to load initial config")
+        return false
     end
 
     -- 获取第一个玩家的配置
-    local player_config = initial_config["1"]
+    local player_config = data["1"]
     if not player_config or not player_config.Item then
-        logger.error("Invalid config format: %s", utils.table_to_string(initial_config))
-        return
+        logger.error("Invalid config format: %s", utils.table_to_string(data))
+        return false
     end
 
     -- 转换配置格式
@@ -106,6 +92,7 @@ function M.init_default_items()  -- 改为 M. 导出
         })
     end
     logger.info("Default items loaded: %d items", #DEFAULT_ITEMS)
+    return true
 end
 
 -- 物品查询条件
@@ -444,7 +431,7 @@ function M.init_user_items(user_id)
             return false, err
         end
     end
-
+    logger.info("User default item config loaded: %d items", count_pairs(DEFAULT_ITEMS))
     return true
 end
 
