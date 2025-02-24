@@ -105,23 +105,19 @@ function M.add_exp(user_id, exp)
 
     -- 确保经验值存在
     user_info.exp = (user_info.exp or 0) + exp
-    
-    -- 更新数据库和缓存
-    local ok = user_dao.update_user(user_info)
-    if ok then
-        M.cache_user(user_info)
-    end
-
     -- 检查是否升级
     local old_level = user_info.level
     local new_level = M.calculate_level(user_info.exp)
-    
     if new_level > old_level then
         user_info.level = new_level
         -- 更新属性
         user_info = M.update_user_property(user_info)
     end
-
+    -- 更新数据库和缓存
+    local ok = user_dao.update_user(user_info)
+    if ok then
+        M.cache_user(user_info)
+    end
     return true
 end
 
@@ -273,8 +269,25 @@ end
 
 -- 根据用户ID获取用户
 function M.get_user_by_id(user_id)
-    local users = user_dao.get_user_by_id(user_id)
-    return users and users[1]
+    -- 1. 先从缓存获取
+    local user = cache.get_user_info(user_id)
+    if user then
+        logger.debug("Got user from cache by ID: %d", user_id)
+        return user
+    end
+
+    -- 2. 从数据库获取
+    local user = user_dao.get_user_by_id(user_id)
+    if not user then
+        logger.error("Failed to get user from db by ID: %d", user_id)
+        return nil
+    end
+
+    -- 3. 写入缓存
+    M.cache_user_by_id(user)
+    
+    logger.debug("Got user from db by ID: %d", user_id)
+    return user
 end
 
 -- 根据用户名获取用户
@@ -293,4 +306,7 @@ function M.get_stats()
     return user_dao.get_stats()
 end
 
+function M.check_gm_permission(user_id)
+    return true
+end
 return M 

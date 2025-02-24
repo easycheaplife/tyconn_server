@@ -81,6 +81,14 @@ function M.get_user(account)
     return results[1]
 end
 
+-- 获取用户信息
+function M.get_user_info(user_id)
+    local query = string.format(sql.GET_USER_BY_ID, user_id)
+    log_sql(query)
+    local results = db_util.query(query)
+    return results[1]
+end
+
 -- 更新用户信息
 function M.update_user(user)
     if not user or not user.account then

@@ -10,50 +10,50 @@ local M = {}
 local GM_HANDLERS = {
     -- 添加物品
     add_item = function(user_id, params)
-        if #params < 2 then
+        if #params < 1 then
             return false, "参数不足"
         end
-        
-        local item_id = tonumber(params[1])
-        local count = tonumber(params[2])
-        if not item_id or not count then
-            return false, "无效的参数"
-        end
 
-        -- 使用batch_add_items保持与item_service一致
-        local ok, err = item_service.batch_add_items(user_id, {
-            { item_id = item_id, count = count }
+        local item_id = tonumber(params[1])
+        local count = tonumber(params[2] or 1)
+        if not item_id or not count or count <= 0 then
+            logger.error("add_item - params: %s", utils.table_to_string(params))
+            return false, "参数无效"
+        end
+        
+        local result, err = item_service.add_items_to_slot(user_id, {
+            {
+                item_id = item_id,
+                count = count
+            }
         })
-        if not ok then
+        logger.info("add_item - result: %s, err: %s", result, err)
+        if not result then
             return false, err
         end
-        
-        logger.info("GM added items - user_id: %d, item_id: %d, count: %d",
-            user_id, item_id, count)
-        return true, string.format("添加物品成功: %d x %d", item_id, count)
+
+        return true, "添加物品成功"
     end,
 
     -- 删除物品
     del_item = function(user_id, params)
-        if #params < 2 then
+        if #params < 1 then
             return false, "参数不足"
         end
 
         local item_id = tonumber(params[1])
-        local count = tonumber(params[2])
-        if not item_id or not count then
-            return false, "无效的参数"
+        local count = tonumber(params[2] or 1)
+        
+        if not item_id or count <= 0 then
+            return false, "参数无效"
         end
-
-        -- 使用use_item保持与item_service一致
-        local ok, err = item_service.use_item(user_id, item_id, count)
-        if not ok then
-            return false, err
-        end
-
-        logger.info("GM deleted items - user_id: %d, item_id: %d, count: %d",
-            user_id, item_id, count)
-        return true, string.format("删除物品成功: %d x %d", item_id, count)
+        
+        return item_service.batch_remove_items(user_id, {
+            {
+                item_id = item_id,
+                count = count
+            }
+        })
     end,
 
     -- 清空背包
@@ -64,8 +64,8 @@ local GM_HANDLERS = {
             return false, "获取背包失败"
         end
 
-        -- 使用batch_delete_items保持与item_service一致
-        local ok = item_service.batch_delete_items(user_id, items)
+        -- 使用batch_remove_items保持与item_service一致
+        local ok = item_service.batch_remove_items(user_id, items)
         if not ok then
             return false, "清空背包失败"
         end
@@ -79,52 +79,80 @@ local GM_HANDLERS = {
         if #params < 1 then
             return false, "参数不足"
         end
-
+        
         local level = tonumber(params[1])
-        if not level then
-            return false, "无效的等级参数"
+        logger.info("GM set level - level: %d", level)
+        if not level or level <= 0 then
+            return false, "等级参数无效"
         end
 
-        -- 检查GM权限
-        if not user_service.check_gm_permission(user_id) then
-            return false, "没有GM权限"
+        -- 计算所需经验值
+        local need_exp = (level - 1) * 1000
+        
+        -- 获取当前用户信息
+        logger.info("GM set level - user_id: %d, level: %d", user_id, level)
+        local user = user_service.get_user_by_id(user_id)
+        logger.info("GM set level - user: %s", utils.table_to_string(user))
+        if not user then
+            return false, "用户不存在"
         end
 
-        local ok, err = user_service.set_level(user_id, level)
+        if user.level >= level then
+            return true, "等级已达到"
+        end
+        -- 设置经验值会自动更新等级
+        local ok, err = user_service.add_exp(user_id, need_exp - (user.exp or 0))
         if not ok then
             return false, err
         end
-
-        logger.info("GM set level - user_id: %d, level: %d", user_id, level)
+        logger.info("GM set level - ok: %s, err: %s", ok, err)
         return true, string.format("设置等级成功: %d", level)
+    end,
+
+    -- 重置用户
+    reset_user = function(user_id, params)
+        return user_service.reset_user(user_id)
+    end,
+
+    -- 封禁用户
+    ban_user = function(user_id, params)
+        local target_id = tonumber(params[1])
+        local duration = tonumber(params[2] or 3600) -- 默认1小时
+        
+        if not target_id or duration <= 0 then
+            return false, "参数无效"
+        end
+        
+        return user_service.ban_user(target_id, duration)
     end
 }
 
 -- 执行GM指令
 function M.execute_command(user_id, command, params)
-    -- 检查参数
-    if not user_id or not command then
-        return false, "参数错误"
+    -- 1. 检查权限
+    local ok, err = user_service.check_gm_permission(user_id)
+    if not ok then
+        return false, err
     end
 
-    -- 获取处理函数
+    -- 2. 获取命令处理器
     local handler = GM_HANDLERS[command]
     if not handler then
         logger.warn("Invalid GM command: %s", command)
-        return false, "无效的GM指令"
+        return false, "未知的GM命令"
     end
 
-    -- 执行指令
-    local ok, msg = xpcall(function()
+    -- 3. 执行命令
+    local ok, result = xpcall(function()
         return handler(user_id, params)
     end, debug.traceback)
 
     if not ok then
-        logger.error("GM command failed: %s", msg)
+        logger.error("GM command failed: %s", result)
         return false, "GM指令执行失败"
     end
 
-    return msg
+    return result
 end
 
 return M 

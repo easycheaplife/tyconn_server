@@ -26,6 +26,10 @@ function CMD.get_user(account)
     return wrap_call(user_model.get_user, account)
 end
 
+function CMD.get_user_info(user_id)
+    return wrap_call(user_model.get_user_info, user_id)
+end
+
 function CMD.update_user(user)
     return wrap_call(user_model.update_user, user)
 end

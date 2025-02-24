@@ -47,7 +47,8 @@ function M.handle(client_id, msg)
             base_request,
             pb.enum("common.ErrorCode", "ERROR_CODE_GM_COMMAND_FAILED"),
             RESP_TYPE,
-            msg)
+            msg,
+            pb.enum("common.MessageID", "G2C_GM_COMMAND_RESPONSE"))
     end
 
     -- 构造响应数据

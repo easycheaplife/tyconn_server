@@ -29,10 +29,21 @@ function M.get_user_by_username(username)
     return user
 end
 
--- 根据用户ID获取用户
+-- 根据ID获取用户
 function M.get_user_by_id(user_id)
-    local users = call_db("get_user_by_id", user_id)
-    return users and users[1]
+    if not user_id then
+        return nil
+    end
+    
+    local ok, result = call_db("get_user_by_id", {
+        user_id = user_id
+    })
+    
+    if not ok or not result then
+        return nil
+    end
+    
+    return result
 end
 
 -- 创建用户

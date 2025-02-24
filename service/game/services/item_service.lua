@@ -743,57 +743,6 @@ local function check_item_expired(item)
     return false
 end
 
--- 批量添加物品
-function M.batch_add_items(user_id, item_list)
-    -- 1. 参数检查
-    if not user_id or not item_list or #item_list == 0 then
-        return false, "参数无效"
-    end
-    
-    -- 2. 获取当前物品
-    local current_items = M.get_user_items(user_id)
-    if not current_items then
-        return false, "获取物品失败"
-    end
-    
-    -- 3. 批量添加
-    for _, item_info in ipairs(item_list) do
-        -- 创建新物品
-        local new_item = item_model.new({
-            id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
-            user_id = user_id,
-            item_id = item_info.item_id,
-            count = item_info.count or 1,
-            expire_time = item_info.expire_time,
-            use_limit_type = item_info.use_limit_type,
-            use_limit_count = item_info.use_limit_count
-        })
-        
-        -- 验证物品数据
-        local ok, err = validate_item(new_item)
-        if not ok then
-            logger.error("Invalid item data: %s", err)
-            return false, err
-        end
-        
-        -- 添加到列表
-        table.insert(current_items, new_item)
-        
-        -- 记录变化
-        item_dao.log_change(user_id, new_item.item_id, new_item.count,
-            item_model.CHANGE_TYPE.ADD, item_info.source or "batch_add",
-            0, new_item.count)
-    end
-    
-    -- 4. 保存更新
-    local ok = item_dao.update_user_items(user_id, current_items)
-    if not ok then
-        return false, "保存物品失败"
-    end
-    
-    return true
-end
-
 -- 批量移除物品
 function M.batch_remove_items(user_id, item_list)
     -- 1. 参数检查
@@ -899,10 +848,10 @@ function M.trade_items(from_user, to_user, item_list)
     end
     
     -- 4. 添加物品到目标用户
-    ok, err = M.batch_add_items(to_user, item_list)
+    ok, err = M.add_items_to_slot(to_user, item_list)
     if not ok then
         -- 交易失败，回滚源用户物品
-        M.batch_add_items(from_user, item_list)
+        M.add_items_to_slot(from_user, item_list)
         return false, err
     end
     
@@ -1731,7 +1680,7 @@ function M.enhance_equipment(user_id, equip_id, material_list, protect_item)
             ok, err = M.use_item(user_id, protect_item.item_id, 1)
             if not ok then
                 -- 返还材料
-                M.batch_add_items(user_id, materials)
+                M.add_items_to_slot(user_id, materials)
                 return false, err
             end
             result = item_model.ENHANCE_RESULT.FAIL
@@ -1878,7 +1827,7 @@ function M.refine_equipment(user_id, equip_id, material_list, protect_item)
             ok, err = M.use_item(user_id, protect_item.item_id, 1)
             if not ok then
                 -- 返还材料
-                M.batch_add_items(user_id, materials)
+                M.add_items_to_slot(user_id, materials)
                 return false, err
             end
             result = item_model.REFINE_RESULT.FAIL
