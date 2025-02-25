@@ -1,0 +1,104 @@
+# 更新日志
+
+## [0.2.0] - 2024-02-25
+
+### 新增功能
+- GM命令系统
+  - 添加基础GM命令框架
+  - 添加GM命令日志
+  - 添加背包相关GM指令:
+    - add_item: 添加物品到背包
+    - clear_bag: 清空背包
+    - expand_bag: 扩展背包格子
+    - list_bag: 查看背包信息
+
+- 物品系统
+  - 添加物品自动堆叠功能
+  - 添加物品数量上限检查
+  - 添加背包格子管理
+  - 添加背包扩展功能
+
+### 代码重构
+- 游戏服务器架构优化
+  - 重构消息处理流程，提高代码可维护性
+  - 优化服务器启动流程
+  - 添加服务器配置热更新支持
+  - 改进错误处理和日志记录
+
+- 代码结构优化
+  - 统一代码风格和命名规范
+  - 优化目录结构
+  - 添加代码注释和文档
+  - 提取公共组件到独立模块
+
+### 消息变更
+- 重新编号所有消息ID，使用更清晰的编号规则：
+  - 1-99: 基础系统消息
+    - 登录相关: 1-20
+    - 心跳相关: 21-40
+    - 用户信息: 41-60
+  - 100-199: 卡牌相关消息
+  - 200-299: 背包相关消息
+  - 300-399: GM相关消息
+
+### 协议更新
+- 基础系统消息
+  - C2L_LOGIN_REQUEST (1): 登录请求
+  - L2C_LOGIN_RESPONSE (2): 登录响应
+  - C2G_HEARTBEAT_REQUEST (21): 心跳请求
+  - G2C_HEARTBEAT_RESPONSE (22): 心跳响应
+  - C2G_USER_INFO_REQUEST (41): 获取用户信息
+  - G2C_USER_INFO_RESPONSE (42): 用户信息响应
+
+- 卡牌相关消息
+  - C2G_USER_CARDS_REQUEST (100): 获取用户卡牌
+  - G2C_USER_CARDS_RESPONSE (101): 用户卡牌响应
+
+- 背包相关消息
+  - C2G_BAG_INFO_REQUEST (200): 获取背包信息
+    - 移除 token 字段，使用 session 中的认证信息
+    - 添加 bag_type 字段，支持获取指定类型背包
+  - G2C_BAG_INFO_RESPONSE (201): 背包信息响应
+    - 修改返回格式，支持多个背包信息
+  - C2G_USE_ITEM_REQUEST (202): 使用物品
+  - G2C_USE_ITEM_RESPONSE (203): 使用物品响应
+  - C2G_EXPAND_BAG_REQUEST (204): 扩展背包
+  - G2C_EXPAND_BAG_RESPONSE (205): 扩展背包响应
+  - C2G_SORT_BAG_REQUEST (206): 整理背包
+  - G2C_SORT_BAG_RESPONSE (207): 整理背包响应
+  - C2G_MOVE_ITEM_REQUEST (208): 移动物品（待实现）
+  - G2C_MOVE_ITEM_RESPONSE (209): 移动物品响应（待实现）
+  - C2G_COMPOSE_ITEM_REQUEST (210): 物品合成
+  - G2C_COMPOSE_ITEM_RESPONSE (211): 物品合成响应
+  - C2G_DECOMPOSE_ITEM_REQUEST (212): 物品分解
+  - G2C_DECOMPOSE_ITEM_RESPONSE (213): 物品分解响应
+
+- GM相关消息
+  - C2G_GM_COMMAND_REQUEST (300): GM命令请求
+  - G2C_GM_COMMAND_RESPONSE (301): GM命令响应
+
+### 测试更新
+- 添加物品堆叠基准测试
+- 添加背包操作基准测试
+- 添加背包扩展基准测试
+- 添加GM命令基准测试
+- 重构基准测试框架，添加基类
+- 更新测试用例支持新的背包协议
+- 添加服务器性能测试
+- 添加数据库性能测试
+
+### 待实现功能
+- 物品移动/堆叠功能
+- 物品合成系统
+- 物品分解系统
+- 背包自动整理功能
+
+## [0.1.0] - 2024-02-10
+
+### 初始功能
+- 使用skynet框架搭建基础框架
+- 基础登录系统
+- 心跳机制
+- 用户信息 
+- 卡牌信息
+- 背包信息
