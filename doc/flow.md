@@ -220,3 +220,60 @@ sequenceDiagram
 12. 清除相关缓存
 13. 游戏服务器返回扩展结果
 14. 网关将响应发送给客户端
+
+### 5.4 GM 指令流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. GM指令请求(token, command, params)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token和权限
+    DB-->>GM: 4. 权限验证通过
+    
+    alt add_item 命令
+        GM->>DB: 5a. 获取背包信息
+        DB-->>GM: 6a. 返回背包数据
+        GM->>GM: 7a. 验证物品参数
+        GM->>DB: 8a. 更新物品数据
+        DB-->>GM: 9a. 更新成功
+        GM->>DB: 10a. 记录物品变化
+    else del_item 命令
+        GM->>DB: 5b. 获取物品信息
+        DB-->>GM: 6b. 返回物品数据
+        GM->>GM: 7b. 验证删除参数
+        GM->>DB: 8b. 更新物品数据
+        DB-->>GM: 9b. 更新成功
+        GM->>DB: 10b. 记录物品变化
+    else set_level 命令
+        GM->>DB: 5c. 获取用户信息
+        DB-->>GM: 6c. 返回用户数据
+        GM->>GM: 7c. 验证等级参数
+        GM->>DB: 8c. 更新用户等级
+        DB-->>GM: 9c. 更新成功
+        GM->>DB: 10c. 记录等级变化
+    end
+    
+    GM-->>G: 11. 返回执行结果
+    G-->>C: 12. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送GM指令请求，包含令牌、命令和参数
+2. 网关转发请求到游戏服务器
+3. 游戏服务器验证Token和GM权限
+4. 权限验证通过
+5. 根据命令类型执行不同操作：
+   - add_item: 添加物品到背包
+   - del_item: 从背包删除物品
+   - set_level: 设置用户等级
+6. 获取相关数据
+7. 验证操作参数
+8. 更新数据到数据库
+9. 数据库更新成功
+10. 记录操作日志
+11. 游戏服务器返回执行结果
+12. 网关将响应发送给客户端

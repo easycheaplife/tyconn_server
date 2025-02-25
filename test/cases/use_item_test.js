@@ -51,13 +51,13 @@ class UseItemTest extends BaseTest {
                     response: error.response,
                     errorCode: error.response ? error.response.errorCode : undefined,
                     errorMsg: error.response ? error.response.errorMsg : undefined,
-                    expectedErrorCode: 2  // ERROR_CODE_INVALID_PARAM
+                    expectedErrorCode: this.client.protoHelper.ErrorCode.ERROR_CODE_INVALID_PARAM  // ERROR_CODE_INVALID_PARAM
                 });
 
                 assert(error.response, 'Should have error response');
                 assert.strictEqual(
                     error.response.errorCode,
-                    2,  // ERROR_CODE_INVALID_PARAM
+                    this.client.protoHelper.ErrorCode.ERROR_CODE_INVALID_PARAM,  // ERROR_CODE_INVALID_PARAM
                     'Should have invalid params error code'
                 );
                 assert.strictEqual(
@@ -75,7 +75,7 @@ class UseItemTest extends BaseTest {
             } catch (error) {
                 assert.strictEqual(
                     error.response.errorCode,
-                    13,  // ERROR_CODE_ITEM_NOT_FOUND
+                    this.client.protoHelper.ErrorCode.ERROR_CODE_ITEM_NOT_FOUND,  
                     'Should have item not found error code'
                 );
             }
@@ -92,12 +92,12 @@ class UseItemTest extends BaseTest {
                     response: error.response,
                     errorCode: error.response ? error.response.errorCode : undefined,
                     errorMsg: error.response ? error.response.errorMsg : undefined,
-                    expectedErrorCode: 14  // ERROR_CODE_ITEM_NOT_ENOUGH
+                    expectedErrorCode: this.client.protoHelper.ErrorCode.ERROR_CODE_ITEM_NOT_ENOUGH  // ERROR_CODE_ITEM_NOT_ENOUGH
                 });
 
                 assert.strictEqual(
                     error.response.errorCode,
-                    14,  // ERROR_CODE_ITEM_NOT_ENOUGH
+                    this.client.protoHelper.ErrorCode.ERROR_CODE_ITEM_NOT_ENOUGH,
                     'Should have item not enough error code'
                 );
             }

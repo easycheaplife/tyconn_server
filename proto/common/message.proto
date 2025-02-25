@@ -4,30 +4,38 @@ package common;
 // 消息ID定义
 enum MessageID {
     NONE = 0;
-    C2L_LOGIN_REQUEST = 1;     // 客户端到登录服务器的登录请求
-    L2C_LOGIN_RESPONSE = 2;    // 登录服务器到客户端的登录响应
-    C2G_HEARTBEAT_REQUEST = 3;         // 客户端到游戏服务器的心跳请求
-    G2C_HEARTBEAT_RESPONSE = 4;         // 游戏服务器到客户端的心跳响应
-    C2G_USER_INFO_REQUEST = 5;  // 获取用户信息请求
-    G2C_USER_INFO_RESPONSE = 6; // 获取用户信息响应
-    C2G_USER_CARDS_REQUEST = 7;     // 获取用户卡牌请求
-    G2C_USER_CARDS_RESPONSE = 8;    // 获取用户卡牌响应
-    C2G_BAG_INFO_REQUEST = 9;        // 获取背包信息请求
-    G2C_BAG_INFO_RESPONSE = 10;     // 获取背包信息响应
-    C2G_USE_ITEM_REQUEST = 11;      // 使用物品请求
-    G2C_USE_ITEM_RESPONSE = 12;     // 使用物品响应
-    C2G_EXPAND_BAG_REQUEST = 13;    // 扩展背包请求
-    G2C_EXPAND_BAG_RESPONSE = 14;   // 扩展背包响应
-    C2G_SORT_BAG_REQUEST = 15;      // 整理背包请求
-    G2C_SORT_BAG_RESPONSE = 16;     // 整理背包响应
-    C2G_MOVE_ITEM_REQUEST = 17;     // 移动物品请求
-    G2C_MOVE_ITEM_RESPONSE = 18;    // 移动物品响应
-    C2G_COMPOSE_ITEM_REQUEST = 19;  // 物品合成请求
-    G2C_COMPOSE_ITEM_RESPONSE = 20; // 物品合成响应
-    C2G_DECOMPOSE_ITEM_REQUEST = 21;// 物品分解请求
-    G2C_DECOMPOSE_ITEM_RESPONSE = 22;// 物品分解响应
-    C2G_GM_COMMAND_REQUEST = 23; // GM命令请求
-    G2C_GM_COMMAND_RESPONSE = 24; // GM命令响应
+    
+    // 账号系统 (1-99)
+    C2L_LOGIN_REQUEST = 1;          // 客户端到登录服务器的登录请求
+    L2C_LOGIN_RESPONSE = 2;         // 登录服务器到客户端的登录响应
+    C2G_HEARTBEAT_REQUEST = 3;      // 客户端到游戏服务器的心跳请求
+    G2C_HEARTBEAT_RESPONSE = 4;     // 游戏服务器到客户端的心跳响应
+    C2G_USER_INFO_REQUEST = 5;      // 获取用户信息请求
+    G2C_USER_INFO_RESPONSE = 6;     // 获取用户信息响应
+    
+    // 卡牌系统 (100-199)
+    C2G_USER_CARDS_REQUEST = 100;   // 获取用户卡牌请求
+    G2C_USER_CARDS_RESPONSE = 101;  // 获取用户卡牌响应
+    
+    // 物品系统 (200-299)
+    C2G_BAG_INFO_REQUEST = 200;     // 获取背包信息请求
+    G2C_BAG_INFO_RESPONSE = 201;    // 获取背包信息响应
+    C2G_USE_ITEM_REQUEST = 202;     // 使用物品请求
+    G2C_USE_ITEM_RESPONSE = 203;    // 使用物品响应
+    C2G_EXPAND_BAG_REQUEST = 204;   // 扩展背包请求
+    G2C_EXPAND_BAG_RESPONSE = 205;  // 扩展背包响应
+    C2G_SORT_BAG_REQUEST = 206;     // 整理背包请求
+    G2C_SORT_BAG_RESPONSE = 207;    // 整理背包响应
+    C2G_MOVE_ITEM_REQUEST = 208;    // 移动物品请求
+    G2C_MOVE_ITEM_RESPONSE = 209;   // 移动物品响应
+    C2G_COMPOSE_ITEM_REQUEST = 210; // 物品合成请求
+    G2C_COMPOSE_ITEM_RESPONSE = 211;// 物品合成响应
+    C2G_DECOMPOSE_ITEM_REQUEST = 212;// 物品分解请求
+    G2C_DECOMPOSE_ITEM_RESPONSE = 213;// 物品分解响应
+    
+    // GM系统 (300-399)
+    C2G_GM_COMMAND_REQUEST = 300;   // GM命令请求
+    G2C_GM_COMMAND_RESPONSE = 301;  // GM命令响应
 }
 
 // 会话信息

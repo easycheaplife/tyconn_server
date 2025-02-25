@@ -1,6 +1,6 @@
 # 协议说明
 
-## 1. 通信协议
+## 1. 基础协议
 
 ### 1.1 基础消息格式
 ```protobuf
@@ -28,111 +28,102 @@ message Session {
 ```protobuf
 enum MessageID {
     NONE = 0;
+    // 账号系统 (1-99)
     C2L_LOGIN_REQUEST = 1;          // 客户端到登录服务器的登录请求
     L2C_LOGIN_RESPONSE = 2;         // 登录服务器到客户端的登录响应
     C2G_HEARTBEAT_REQUEST = 3;      // 客户端到游戏服务器的心跳请求
     G2C_HEARTBEAT_RESPONSE = 4;     // 游戏服务器到客户端的心跳响应
     C2G_USER_INFO_REQUEST = 5;      // 获取用户信息请求
     G2C_USER_INFO_RESPONSE = 6;     // 获取用户信息响应
-    C2G_USER_CARDS_REQUEST = 7;      // 获取用户卡牌列表请求
-    G2C_USER_CARDS_RESPONSE = 8;     // 获取用户卡牌列表响应
-    C2G_BAG_INFO_REQUEST = 9;      // 获取背包信息请求
-    G2C_BAG_INFO_RESPONSE = 10;    // 获取背包信息响应
-    C2G_USE_ITEM_REQUEST = 11;     // 使用物品请求
-    G2C_USE_ITEM_RESPONSE = 12;    // 使用物品响应
+
+    // 卡牌系统 (100-199)
+    C2G_USER_CARDS_REQUEST = 100;   // 获取用户卡牌请求
+    G2C_USER_CARDS_RESPONSE = 101;  // 获取用户卡牌响应
+
+    // 物品系统 (200-299)
+    C2G_BAG_INFO_REQUEST = 200;     // 获取背包信息请求
+    G2C_BAG_INFO_RESPONSE = 201;    // 获取背包信息响应
+    C2G_USE_ITEM_REQUEST = 202;     // 使用物品请求
+    G2C_USE_ITEM_RESPONSE = 203;    // 使用物品响应
+    C2G_EXPAND_BAG_REQUEST = 204;   // 扩展背包请求
+    G2C_EXPAND_BAG_RESPONSE = 205;  // 扩展背包响应
+    C2G_SORT_BAG_REQUEST = 206;     // 整理背包请求
+    G2C_SORT_BAG_RESPONSE = 207;    // 整理背包响应
+    C2G_MOVE_ITEM_REQUEST = 208;    // 移动物品请求
+    G2C_MOVE_ITEM_RESPONSE = 209;   // 移动物品响应
+    C2G_COMPOSE_ITEM_REQUEST = 210; // 物品合成请求
+    G2C_COMPOSE_ITEM_RESPONSE = 211;// 物品合成响应
+    C2G_DECOMPOSE_ITEM_REQUEST = 212;// 物品分解请求
+    C2G_DECOMPOSE_ITEM_RESPONSE = 213;// 物品分解响应
+
+    // GM系统 (300-399)
+    C2G_GM_COMMAND_REQUEST = 300;   // GM命令请求
+    G2C_GM_COMMAND_RESPONSE = 301;  // GM命令响应
+}
+```
+### 1.3 错误码
+```protobuf
+enum ErrorCode {
+    // 系统错误 (0-99)
+    ERROR_CODE_SUCCESS = 0;              // 成功
+    ERROR_CODE_SYSTEM_ERROR = 1;         // 系统错误
+    ERROR_CODE_INVALID_PARAM = 2;        // 无效参数
+    ERROR_CODE_SERVER_BUSY = 9;          // 服务器繁忙
+    ERROR_CODE_VERSION_MISMATCH = 10;    // 版本不匹配
+    ERROR_CODE_DB_ERROR = 12;            // 数据库错误
+
+    // 账号相关 (100-199)
+    ERROR_CODE_INVALID_ACCOUNT = 100;      // 无效账号
+    ERROR_CODE_WRONG_PASSWORD = 101;       // 密码错误
+    ERROR_CODE_ACCOUNT_EXISTS = 102;       // 账号已存在
+    ERROR_CODE_ACCOUNT_NOT_EXIST = 103;    // 账号不存在
+    ERROR_CODE_TOKEN_INVALID = 104;        // 无效的令牌
+    ERROR_CODE_TOKEN_EXPIRED = 105;        // 令牌已过期
+    ERROR_CODE_GATE_NOT_AVAILABLE = 106;   // 网关不可用
+
+    // 物品系统 (200-299)
+    ERROR_CODE_ITEM_NOT_FOUND = 200;      // 物品不存在
+    ERROR_CODE_ITEM_NOT_ENOUGH = 201;     // 物品数量不足
+    ERROR_CODE_BAG_NOT_EXIST = 202;       // 背包不存在
+    ERROR_CODE_BAG_MAX_SIZE_LIMIT = 203;  // 超过背包最大容量限制
+    ERROR_CODE_BAG_EXPAND_FAILED = 204;   // 扩展背包失败
+    ERROR_CODE_INVALID_BAG_TYPE = 205;    // 无效的背包类型
+    ERROR_CODE_INSUFFICIENT_SPACE = 206;   // 背包空间不足
+    ERROR_CODE_INVALID_SLOT = 207;        // 无效的格子
+    ERROR_CODE_SLOT_LOCKED = 208;         // 格子被锁定
+
+    // GM系统 (300-399)
+    ERROR_CODE_GM_COMMAND_FAILED = 300;   // GM指令执行失败
+    ERROR_CODE_PERMISSION_DENIED = 301;   // 权限不足
+
+    // 卡牌系统 (400-499)
+    ERROR_CODE_CARD_NOT_FOUND = 400;      // 卡牌不存在
+    ERROR_CODE_CARD_ALREADY_EXISTS = 401; // 卡牌已存在
+    ERROR_CODE_CARD_NOT_ENOUGH = 402;     // 卡牌数量不足
 }
 ```
 
-### 1.3 心跳协议
+## 2. 功能模块
+
+### 2.1 账号系统
+- 登录协议
+- 心跳协议
+- 用户信息协议
+
+### 2.2 卡牌系统
+- 卡牌列表协议
+- 卡牌操作协议
+
+### 2.3 物品系统
+#### 2.3.1 基础定义
 ```protobuf
-// 心跳请求
-message C2GHeartbeatRequest {
-    int64 timestamp = 1;    // 时间戳
-    string token = 2;       // JWT令牌,用于身份验证
-}
-
-// 心跳响应
-message G2CHeartbeatResponse {
-    int64 timestamp = 1;    // 服务器时间戳
-}
-```
-
-### 1.4 卡牌系统
-```protobuf
-// 获取用户卡牌列表请求
-message C2GUserCardsRequest {
-    string token = 1;       // JWT令牌
-}
-
-// 获取用户卡牌列表响应
-message G2CUserCardsResponse {
-    int32 code = 1;        // 错误码
-    string message = 2;    // 错误信息
-    repeated CardInfo cards = 3;  // 卡牌列表
-}
-```
-
-### 1.5 物品系统
-```protobuf
-// 物品效果类型
+// 物品相关枚举定义
 enum ItemEffectType {
     EFFECT_TYPE_NONE = 0;    // 无效果
     EFFECT_TYPE_EXP = 1;     // 经验
     EFFECT_TYPE_GOLD = 2;    // 金币
 }
 
-// 物品变化类型
-enum ItemChangeType {
-    CHANGE_TYPE_NONE = 0;    // 无变化
-    CHANGE_TYPE_ADD = 1;     // 增加
-    CHANGE_TYPE_REDUCE = 2;  // 减少
-    CHANGE_TYPE_USE = 3;     // 使用
-}
-
-// 物品变化来源
-enum ItemChangeSource {
-    SOURCE_NONE = 0;         // 未知来源
-    SOURCE_INIT = 1;         // 初始化
-    SOURCE_REWARD = 2;       // 奖励
-    SOURCE_USE = 3;          // 使用
-}
-
-// 获取背包信息请求
-message C2GBagInfoRequest {
-    string token = 1;       // JWT令牌
-}
-
-// 获取背包信息响应
-message G2CBagInfoResponse {
-    repeated common.BagInfo bags = 1;  // 背包信息列表
-}
-// 使用物品请求
-message C2GUseItemRequest {
-    string token = 1;      // JWT令牌
-    int32 item_id = 2;     // 物品ID
-    int32 count = 3;       // 使用数量
-}
-
-// 使用物品响应
-message G2CUseItemResponse {
-    int32 code = 1;        // 错误码
-    string message = 2;    // 错误信息
-    repeated ItemInfo items = 3;  // 变化的物品列表
-}
-
-// 物品信息
-message ItemInfo {
-    int64 id = 1;          // 物品实例ID
-    int32 item_id = 2;     // 物品类型ID
-    int32 count = 3;       // 数量
-    int64 create_time = 4; // 获得时间
-    int64 update_time = 5; // 更新时间
-}
-```
-
-### 1.6 背包与物品扩展协议
-```protobuf
-// 背包类型
 enum BagType {
     BAG_TYPE_NONE = 0;
     BAG_TYPE_MAIN = 1;      // 主背包
@@ -140,93 +131,99 @@ enum BagType {
     BAG_TYPE_EQUIP = 3;     // 装备栏
 }
 
-// 格子状态
-enum SlotState {
-    SLOT_STATE_NONE = 0;
-    SLOT_STATE_EMPTY = 1;   // 空格子
-    SLOT_STATE_NORMAL = 2;  // 正常
-    SLOT_STATE_LOCKED = 3;  // 锁定
+enum ItemChangeType {
+    CHANGE_TYPE_NONE = 0;    // 无变化
+    CHANGE_TYPE_ADD = 1;     // 增加
+    CHANGE_TYPE_REDUCE = 2;  // 减少
+    CHANGE_TYPE_USE = 3;     // 使用
 }
 
-// 扩展背包请求
+enum ItemChangeSource {
+    SOURCE_NONE = 0;
+    SOURCE_SYSTEM = 1;
+    SOURCE_USER = 2;
+}
+
+// 物品基础信息
+message ItemInfo {
+    int64 id = 1;          // 物品实例ID
+    int32 item_id = 2;     // 物品类型ID
+    int32 count = 3;       // 数量
+    int32 slot_index = 4;  // 格子索引
+    int32 bag_type = 5;    // 所属背包类型
+    int64 create_time = 6; // 获得时间
+    int64 update_time = 7; // 更新时间
+}
+
+// 背包信息
+message BagInfo {
+    int32 bag_type = 1;    // 背包类型
+    int32 size = 2;        // 背包大小
+    repeated ItemInfo items = 3;  // 物品列表
+}
+```
+
+#### 2.3.2 协议消息
+```protobuf
+// 获取背包信息
+message C2GBagInfoRequest {
+    string token = 1;       // JWT令牌
+}
+
+message G2CBagInfoResponse {
+    int32 code = 1;        // 错误码
+    string message = 2;    // 错误信息
+    repeated common.BagInfo bags = 3;  // 背包信息列表
+}
+
+// 扩展背包
 message C2GExpandBagRequest {
     string token = 1;       // JWT令牌
     BagType bag_type = 2;   // 背包类型
     int32 add_size = 3;     // 扩展格子数
 }
 
-// 扩展背包响应
 message G2CExpandBagResponse {
-    BagInfo bag = 1;   // 背包信息
+    int32 code = 1;        // 错误码
+    string message = 2;    // 错误信息
+    BagInfo bag = 3;      // 背包信息
 }
 
-// 整理背包请求
-message C2GSortBagRequest {
-    string token = 1;       // JWT令牌
-    BagType bag_type = 2;   // 背包类型
-    int32 sort_rule = 3;    // 整理规则(1:类型 2:品质 3:等级)
+// 使用物品
+message C2GUseItemRequest {
+    string token = 1;      // JWT令牌
+    int32 item_id = 2;     // 物品ID
+    int32 count = 3;       // 使用数量
 }
 
-// 整理背包响应
-message G2CSortBagResponse {
-    int32 code = 1;         // 错误码
-    string message = 2;     // 错误信息
-    repeated ItemInfo items = 3;  // 整理后的物品列表
+message G2CUseItemResponse {
+    int32 code = 1;        // 错误码
+    string message = 2;    // 错误信息
+    repeated ItemInfo items = 3;  // 变化的物品列表
 }
 
-// 物品移动请求
-message C2GMoveItemRequest {
-    string token = 1;       // JWT令牌
-    BagType from_bag = 2;   // 源背包
-    int32 from_slot = 3;    // 源格子
-    BagType to_bag = 4;     // 目标背包
-    int32 to_slot = 5;      // 目标格子
-    int32 count = 6;        // 移动数量
+// 物品变化通知
+message G2CItemChangeNotify {
+    repeated ItemChangeInfo changes = 1;  // 物品变化列表
 }
 
-// 物品移动响应
-message G2CMoveItemResponse {
-    int32 code = 1;         // 错误码
-    string message = 2;     // 错误信息
-    repeated ItemInfo changed_items = 3;  // 变化的物品
+message ItemChangeInfo {
+    int32 item_id = 1;      // 物品ID
+    int32 count = 2;        // 变化数量
+    ItemChangeType type = 3; // 变化类型
+    int32 source = 4;       // 变化来源
+    int64 timestamp = 5;    // 变化时间
+    string reason = 6;      // 变化原因
 }
 ```
 
-### 1.7 物品合成与分解协议
-```protobuf
-// 物品合成请求
-message C2GComposeItemRequest {
-    string token = 1;       // JWT令牌
-    int32 target_id = 2;    // 目标物品ID
-    repeated int32 material_slots = 3;  // 材料所在格子
-}
+### 2.4 GM系统
+- GM指令协议
+- 权限控制
 
-// 物品合成响应
-message G2CComposeItemResponse {
-    int32 code = 1;         // 错误码
-    string message = 2;     // 错误信息
-    bool success = 3;       // 是否成功
-    ItemInfo new_item = 4;  // 合成的新物品
-    repeated ItemInfo remain_items = 5;  // 剩余材料
-}
+## 3. 接口说明
 
-// 物品分解请求
-message C2GDecomposeItemRequest {
-    string token = 1;       // JWT令牌
-    repeated int32 item_slots = 2;  // 要分解的物品格子
-}
-
-// 物品分解响应
-message G2CDecomposeItemResponse {
-    int32 code = 1;         // 错误码
-    string message = 2;     // 错误信息
-    repeated ItemInfo result_items = 3;  // 分解获得的物品
-}
-```
-
-## 2. 接口说明
-
-### 2.1 登录接口
+### 3.1 登录接口
 
 **连接类型:** `WebSocket`  
 **请求路径:** `/ws`
@@ -252,13 +249,13 @@ message L2CLoginResponse {
 ```
 
 **错误码说明:**
-- 0: 成功
-- 3: 无效账号
-- 4: 密码错误
-- 6: 账号不存在
-- 9: 服务器繁忙
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_INVALID_ACCOUNT: 无效账号
+- ERROR_CODE_WRONG_PASSWORD: 密码错误
+- ERROR_CODE_ACCOUNT_NOT_EXIST: 账号不存在
+- ERROR_CODE_SERVER_BUSY: 服务器繁忙
 
-### 2.2 心跳接口
+### 3.2 心跳接口
 
 **连接类型:** `WebSocket`  
 **请求路径:** `/ws`
@@ -266,26 +263,24 @@ message L2CLoginResponse {
 **请求格式:**
 ```protobuf
 message C2GHeartbeatRequest {
-    string token = 1;       // JWT令牌
-    int64 timestamp = 2;    // 时间戳
+    int64 timestamp = 1;    // 时间戳
+    string token = 2;       // JWT令牌,用于身份验证
 }
 ```
 
 **响应格式:**
 ```protobuf
 message G2CHeartbeatResponse {
-    int32 code = 1;        // 错误码
-    string message = 2;    // 错误信息
-    int64 server_time = 3; // 服务器时间
+    int64 timestamp = 1;    // 服务器时间戳
 }
 ```
 
 **错误码说明:**
-- 0: 成功
-- 7: 无效的令牌
-- 8: 令牌已过期
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
 
-### 2.3 获取用户信息
+### 3.3 获取用户信息
 
 **连接类型:** `WebSocket`  
 **请求路径:** `/ws`
@@ -316,7 +311,7 @@ message UserInfo {
 }
 ```
 
-### 2.4 获取用户卡牌列表
+### 3.4 获取用户卡牌列表
 
 **连接类型:** `WebSocket`  
 **请求路径:** `/ws`
@@ -349,11 +344,14 @@ message CardInfo {
 ```
 
 **错误码说明:**
-- 0: 成功
-- 7: 无效的令牌
-- 8: 令牌已过期
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+- ERROR_CODE_CARD_NOT_FOUND: 卡牌不存在
 
-### 2.5 获取背包信息
+### 3.5 物品系统接口
+
+#### 3.5.1 获取背包信息
 
 **连接类型:** `WebSocket`  
 **请求路径:** `/ws`
@@ -370,19 +368,52 @@ message C2GBagInfoRequest {
 message G2CBagInfoResponse {
     int32 code = 1;        // 错误码
     string message = 2;    // 错误信息
-    repeated ItemInfo items = 3;  // 物品列表
+    repeated common.BagInfo bags = 3;  // 背包信息列表
 }
 ```
 
 **错误码说明:**
-- 0: 成功
-- 7: 无效的令牌
-- 8: 令牌已过期
-- 10: 物品不存在
-- 11: 物品数量不足
-- 12: 使用失败
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+- ERROR_CODE_ITEM_NOT_FOUND: 物品不存在
+- ERROR_CODE_ITEM_NOT_ENOUGH: 物品数量不足
+- ERROR_CODE_BAG_NOT_EXIST: 背包不存在
+- ERROR_CODE_INSUFFICIENT_SPACE: 背包空间不足
 
-### 2.6 使用物品
+#### 3.5.2 扩展背包
+
+**连接类型:** `WebSocket`
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf
+message C2GExpandBagRequest {
+    string token = 1;       // JWT令牌
+    BagType bag_type = 2;   // 背包类型
+    int32 add_size = 3;     // 扩展格子数
+}
+```
+
+**响应格式:**
+```protobuf
+message G2CExpandBagResponse {
+    int32 code = 1;        // 错误码
+    string message = 2;    // 错误信息
+    BagInfo bag = 3;      // 背包信息
+}
+```
+
+**错误码说明:**
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+- ERROR_CODE_BAG_NOT_EXIST: 背包不存在
+- ERROR_CODE_BAG_MAX_SIZE_LIMIT: 超过背包最大容量限制
+- ERROR_CODE_BAG_EXPAND_FAILED: 扩展背包失败
+- ERROR_CODE_INVALID_BAG_TYPE: 无效的背包类型
+
+#### 3.5.3 使用物品
 
 **连接类型:** `WebSocket`  
 **请求路径:** `/ws`
@@ -406,36 +437,84 @@ message G2CUseItemResponse {
 ```
 
 **错误码说明:**
-- 0: 成功
-- 7: 无效的令牌
-- 8: 令牌已过期
-- 10: 物品不存在
-- 11: 物品数量不足
-- 12: 使用失败
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+- ERROR_CODE_ITEM_NOT_FOUND: 物品不存在
+- ERROR_CODE_ITEM_NOT_ENOUGH: 物品数量不足
+- ERROR_CODE_BAG_NOT_EXIST: 背包不存在
+- ERROR_CODE_INVALID_SLOT: 无效的格子
+- ERROR_CODE_SLOT_LOCKED: 格子被锁定
 
-## 3. 服务端口
+#### 3.5.4 物品变化通知
+```protobuf
+message G2CItemChangeNotify {
+    repeated ItemChangeInfo changes = 1;  // 物品变化列表
+}
 
-### 3.1 外部端口
+message ItemChangeInfo {
+    int32 item_id = 1;      // 物品ID
+    int32 count = 2;        // 变化数量
+    ItemChangeType type = 3; // 变化类型
+    int32 source = 4;       // 变化来源
+    int64 timestamp = 5;    // 变化时间
+    string reason = 6;      // 变化原因
+}
+```
+
+#### 3.5.5 整理背包
+[添加整理背包接口说明]
+
+#### 3.5.6 移动物品
+[添加移动物品接口说明]
+
+#### 3.5.7 物品合成
+[添加物品合成接口说明]
+
+#### 3.5.8 物品分解
+[添加物品分解接口说明]
+
+### 3.6 GM指令接口
+**连接类型:** `WebSocket`
+**请求路径:** `/ws`
+
+**GM 指令列表:**
+| 指令 | 参数 | 说明 | 示例 |
+|------|------|------|------|
+| add_item | item_id, count | 添加物品 | add_item 1001 100 |
+| del_item | item_id, count | 删除物品 | del_item 1001 50 |
+| set_level | level | 设置等级 | set_level 99 |
+
+**错误码说明:**
+- ERROR_CODE_PERMISSION_DENIED: 无权限
+- ERROR_CODE_GM_COMMAND_FAILED: GM指令执行失败
+- ERROR_CODE_INVALID_PARAM: 无效参数
+
+## 4. 系统配置
+
+### 4.1 服务端口
+
+### 4.1.1 外部端口
 - 登录服务器: 8021 (WebSocket)
 - 游戏网关: 8031, 8032 (WebSocket)
 - HTTP代理: 8010 (HTTP/WS)
 - HTTPS代理: 8011 (HTTPS/WSS)
 
-### 3.2 内部端口
+### 4.1.2 内部端口
 - 数据库代理: 12001
 - 登录服务器: 13001  
 - 游戏服务器: 14001, 14002
 - 网关服务器: 15001, 15002
 
-## 4. 协议规范
+### 4.2 协议规范
 
-### 4.1 命名规则
+### 4.2.1 命名规则
 - 请求消息: C2G/C2L 前缀 + 功能名 + Request
 - 响应消息: G2C/L2C 前缀 + 功能名 + Response
 - 通知消息: C2G/G2C 前缀 + 功能名 + Notify
 - 字段名称: 小写下划线命名
 
-### 4.2 版本控制
+### 4.2.2 版本控制
 - 每个消息都包含版本号
 - 向下兼容原则
 - 不删除已有字段
@@ -452,52 +531,3 @@ message G2CUseItemResponse {
 - 客户端确认接收
 - 支持批量通知
 - 保证通知送达
-
-## 5. 错误码定义
-```protobuf
-enum ErrorCode {
-    ERROR_CODE_SUCCESS = 0;              // 成功
-    ERROR_CODE_SYSTEM_ERROR = 1;         // 系统错误
-    ERROR_CODE_INVALID_PARAM = 2;        // 无效参数
-    ERROR_CODE_INVALID_ACCOUNT = 3;      // 无效账号
-    ERROR_CODE_WRONG_PASSWORD = 4;       // 密码错误
-    ERROR_CODE_ACCOUNT_EXISTS = 5;       // 账号已存在
-    ERROR_CODE_ACCOUNT_NOT_EXIST = 6;    // 账号不存在
-    ERROR_CODE_TOKEN_INVALID = 7;        // 无效的令牌
-    ERROR_CODE_TOKEN_EXPIRED = 8;        // 令牌已过期
-    ERROR_CODE_SERVER_BUSY = 9;          // 服务器繁忙
-    ERROR_CODE_ITEM_NOT_EXIST = 10;    // 物品不存在
-    ERROR_CODE_ITEM_NOT_ENOUGH = 11;   // 物品数量不足
-    ERROR_CODE_USE_ITEM_FAILED = 12;   // 使用物品失败
-    ERROR_CODE_NOTIFY_FAILED = 13;     // 通知发送失败
-    ERROR_CODE_NOTIFY_TIMEOUT = 14;    // 通知超时
-}
-```
-
-## 6. 物品配置
-
-### 6.1 物品类型
-```
-1001: 初级经验药水
-  - 效果类型: 经验
-  - 效果值: 100
-  - 描述: 使用后可获得100点经验值
-
-1002: 中级经验药水
-  - 效果类型: 经验
-  - 效果值: 500
-  - 描述: 使用后可获得500点经验值
-
-2001: 金币
-  - 效果类型: 金币
-  - 效果值: 1000
-  - 描述: 使用后可获得1000金币
-
-2002: 钻石
-  - 效果类型: 钻石
-  - 效果值: 100
-  - 描述: 高级货币
-```
-
-### 6.2 新手初始物品
-```

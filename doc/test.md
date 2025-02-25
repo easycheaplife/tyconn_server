@@ -80,6 +80,50 @@ class LoginTest extends BaseTest {
 }
 ```
 
+### 3.2 GM 指令测试
+```javascript
+// test/cases/gm_command_test.js
+class GMCommandTest extends BaseTest {
+    async testAddItem() {
+        // 添加物品测试
+        const response = await this.client.gm_command('add_item', ['1001', '100']);
+        assert.strictEqual(response.result, 'success');
+        
+        // 验证物品数量
+        const bagInfo = await this.client.getBagInfo();
+        const totalCount = bagInfo.bags[0].items
+            .filter(i => i.item_id === 1001)
+            .reduce((sum, i) => sum + i.count, 0);
+        assert.strictEqual(totalCount, 100);
+    }
+}
+```
+
+#### GM 指令说明
+| 指令 | 参数 | 说明 | 示例 |
+|------|------|------|------|
+| add_item | item_id, count | 添加物品 | add_item 1001 100 |
+| del_item | item_id, count | 删除物品 | del_item 1001 50 |
+| set_level | level | 设置等级 | set_level 99 |
+
+#### 运行测试
+```bash
+# 运行所有 GM 测试
+node test/run_test.js -t gm_command
+
+# 运行指定测试用例
+node test/run_test.js -t gm_command add_item     # 测试添加物品
+node test/run_test.js -t gm_command delete_item  # 测试删除物品
+node test/run_test.js -t gm_command set_level    # 测试设置等级
+node test/run_test.js -t gm_command error_cases  # 测试错误处理
+```
+
+#### 注意事项
+- 测试前确保服务器正常运行
+- 测试账号需要有 GM 权限
+- 背包需要有足够空间
+- 物品 1001 和 2012 的最大堆叠数量为 2000
+
 ## 4. 压力测试
 
 ### 4.1 使用方法

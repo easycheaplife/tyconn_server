@@ -32,7 +32,7 @@ class TokenTest extends BaseTest {
                 await this.client.sendHeartbeat('invalid.token.format');
                 assert.fail('Invalid token format should fail');
             } catch (error) {
-                assert.strictEqual(error.response.errorCode, 7, 'Should have invalid token error code');
+                assert.strictEqual(error.response.errorCode, this.client.protoHelper.ErrorCode.ERROR_CODE_TOKEN_INVALID, 'Should have invalid token error code');
             }
 
             // 测试3: 缺少token
@@ -41,7 +41,7 @@ class TokenTest extends BaseTest {
                 await this.client.sendHeartbeat('');
                 assert.fail('Missing token should fail');
             } catch (error) {
-                assert.strictEqual(error.response.errorCode, 7, 'Should have invalid token error code');
+                assert.strictEqual(error.response.errorCode, this.client.protoHelper.ErrorCode.ERROR_CODE_TOKEN_INVALID, 'Should have invalid token error code');
             }
 
             // 测试4: 错误密钥签名的token
@@ -55,7 +55,7 @@ class TokenTest extends BaseTest {
                 await this.client.sendHeartbeat(wrongToken);
                 assert.fail('Wrong secret token should fail');
             } catch (error) {
-                assert.strictEqual(error.response.errorCode, 7, 'Should have invalid token error code');
+                assert.strictEqual(error.response.errorCode, this.client.protoHelper.ErrorCode.ERROR_CODE_TOKEN_INVALID, 'Should have invalid token error code');
             }
 
             return true;
