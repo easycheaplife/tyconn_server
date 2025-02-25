@@ -113,7 +113,7 @@ end
 
 -- 加载单位配置
 function M.load_unit_config()
-    local data = config_loader.get_config("Dfw_Unit")
+    local data = config_loader.get_config("Dfw_unit")
     if not data then
         return false
     end
