@@ -4,7 +4,7 @@ const LoginClient = require('../lib/login_client');
 const config = require('../config/config');
 
 async function heartbeatBenchmark(options = {}) {
-    // 先登录获取token
+    // 先登录获取token和网关信息
     const loginClient = new LoginClient();
     const loginResult = await loginClient.login(
         config.testAccount,
@@ -18,12 +18,34 @@ async function heartbeatBenchmark(options = {}) {
     });
 
     // 创建一个长连接的客户端
-    const client = new GameClient(loginResult.gateInfo);
+    const client = new GameClient();
+    // 设置认证信息
+    client.setAuth(loginResult.token, {
+        protocol: 'ws',
+        host: loginResult.gateInfo.host,
+        port: loginResult.gateInfo.port
+    });
+    
     await client.connect();
-    await client.auth(loginResult.token);
+
+    // 获取用户信息
+    const userInfo = await client.sendRequest(client.protoHelper.MessageID.C2G_USER_INFO_REQUEST, {
+        token: loginResult.token
+    });
+    console.log('User info:', userInfo);
+
+    // 发送一次心跳测试
+    const heartbeatResponse = await client.sendRequest(client.protoHelper.MessageID.C2G_HEARTBEAT_REQUEST, {
+        token: loginResult.token,
+        timestamp: Date.now()
+    });
+    console.log('Test heartbeat response:', heartbeatResponse);
 
     const report = await benchmark.run(async () => {
-        await client.heartbeat();
+        await client.sendRequest(client.protoHelper.MessageID.C2G_HEARTBEAT_REQUEST, {
+            token: loginResult.token,
+            timestamp: Date.now()
+        });
     });
 
     // 关闭连接
