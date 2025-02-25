@@ -106,13 +106,98 @@ enum ErrorCode {
 ## 2. 功能模块
 
 ### 2.1 账号系统
-- 登录协议
-- 心跳协议
-- 用户信息协议
+#### 2.1.1 基础定义
+```protobuf
+// 账号状态
+enum AccountStatus {
+    ACCOUNT_STATUS_NONE = 0;    // 无效状态
+    ACCOUNT_STATUS_NORMAL = 1;  // 正常
+    ACCOUNT_STATUS_BANNED = 2;  // 封禁
+    ACCOUNT_STATUS_DELETED = 3; // 删除
+}
+
+// 登录类型
+enum LoginType {
+    LOGIN_TYPE_NONE = 0;     // 无效类型
+    LOGIN_TYPE_ACCOUNT = 1;  // 账号密码
+    LOGIN_TYPE_GUEST = 2;    // 游客
+    LOGIN_TYPE_WECHAT = 3;   // 微信
+    LOGIN_TYPE_GOOGLE = 4;   // Google
+}
+```
+
+#### 2.1.2 协议消息
+```protobuf
+// 登录协议
+message C2LLoginRequest {
+    string account = 1;      // 账号
+    string password = 2;     // 密码
+    string device_id = 3;    // 设备ID
+    string platform = 4;     // 平台标识
+    string version = 5;      // 客户端版本
+    LoginType login_type = 6;// 登录类型
+}
+
+message L2CLoginResponse {
+    string token = 1;       // JWT令牌
+    string ws_addr = 2;     // WebSocket地址
+    int32 ws_port = 3;      // WebSocket端口
+    AccountStatus status = 4;// 账号状态
+}
+
+// 心跳协议
+message C2GHeartbeatRequest {
+    int64 timestamp = 1;    // 时间戳
+    string token = 2;       // JWT令牌
+}
+
+message G2CHeartbeatResponse {
+    int64 timestamp = 1;    // 服务器时间戳
+    int32 online_time = 2;  // 在线时长(秒)
+}
+
+// 用户信息协议
+message C2GUserInfoRequest {
+    string token = 1;       // JWT令牌
+}
+
+message G2CUserInfoResponse {
+    UserInfo user = 1;      // 用户信息
+}
+```
 
 ### 2.2 卡牌系统
-- 卡牌列表协议
-- 卡牌操作协议
+#### 2.2.1 基础定义
+```protobuf
+// 卡牌品质
+enum CardQuality {
+    CARD_QUALITY_NONE = 0;   // 无品质
+    CARD_QUALITY_WHITE = 1;  // 白色
+    CARD_QUALITY_GREEN = 2;  // 绿色
+    CARD_QUALITY_BLUE = 3;   // 蓝色
+    CARD_QUALITY_PURPLE = 4; // 紫色
+    CARD_QUALITY_ORANGE = 5; // 橙色
+}
+
+// 卡牌类型
+enum CardType {
+    CARD_TYPE_NONE = 0;      // 无类型
+}
+```
+
+#### 2.2.2 协议消息
+```protobuf
+// 获取卡牌列表
+message C2GUserCardsRequest {
+    string token = 1;       // JWT令牌
+    CardType card_type = 2; // 卡牌类型(可选)
+    int32 quality = 3;      // 品质(可选)
+}
+
+message G2CUserCardsResponse {
+    repeated CardInfo cards = 1;  // 卡牌列表
+}
+```
 
 ### 2.3 物品系统
 #### 2.3.1 基础定义
@@ -200,20 +285,6 @@ message G2CUseItemResponse {
     int32 code = 1;        // 错误码
     string message = 2;    // 错误信息
     repeated ItemInfo items = 3;  // 变化的物品列表
-}
-
-// 物品变化通知
-message G2CItemChangeNotify {
-    repeated ItemChangeInfo changes = 1;  // 物品变化列表
-}
-
-message ItemChangeInfo {
-    int32 item_id = 1;      // 物品ID
-    int32 count = 2;        // 变化数量
-    ItemChangeType type = 3; // 变化类型
-    int32 source = 4;       // 变化来源
-    int64 timestamp = 5;    // 变化时间
-    string reason = 6;      // 变化原因
 }
 ```
 
