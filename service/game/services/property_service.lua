@@ -1,20 +1,12 @@
 local skynet = require "skynet"
 local logger = require "logger"
-local config_loader = require "game.config_loader"
 local utils = require "utils"
 local item_dao = require "dao.item_dao"
 local bag_model = require "models.bag_model"
 local item_model = require "models.item_model"
+local config_service = require "services.config_service"
 
 local M = {}
-
--- 加载配置
-local unit_config = config_loader.get_config("Dfw_unit")
-local property_config = config_loader.get_config("Dfw_property")
-
-if not unit_config or not property_config then
-    logger.error("Failed to load required configs")
-end
 
 -- 属性类型定义
 local PROPERTY_TYPE = {
@@ -44,7 +36,7 @@ local PROP_TYPE = {
 -- 计算装备基础属性
 local function calc_base_props(equip)
     local props = {}
-    local config = require("config.item_config")[equip.item_id]
+    local config = config_service.get_item_config(equip.item_id)
     if not config or not config.base_props then
         return props
     end
@@ -109,7 +101,7 @@ local function calc_gem_props(equip)
     -- 累加所有宝石属性
     for _, slot in pairs(equip.gem_slots) do
         if slot.state == item_model.GEM_SLOT_STATE.OCCUPIED then
-            local gem_config = require("config.item_config")[slot.gem_id]
+            local gem_config = config_service.get_item_config(slot.gem_id)
             if gem_config and gem_config.props then
                 for prop_type, value in pairs(gem_config.props) do
                     props[prop_type] = (props[prop_type] or 0) + value
@@ -205,25 +197,24 @@ end
 -- 查找属性配置
 local function find_property_list(property_id, level)
     logger.info("Finding property list for id: %s, level: %d", property_id, level)
-    -- 遍历找到对应的 property_id 配置
-    for _, config in pairs(property_config) do
-        if config.Property_id == property_id and config.Level == level then
-            local result = {}
-            -- 遍历 Property 数组获取具体属性
-            for _, prop in pairs(config.Property) do
-                table.insert(result, {
-                    prop[1],  -- Property_type (102=HP, 103=攻击, 104=防御)
-                    prop[2],  -- Calc_type (1=值, 2=万分比)
-                    prop[3]   -- Value
-                })
-            end
-            logger.info("Found property list: %s", utils.table_to_string(result))
-            return result
-        end
+    -- 直接获取对应的属性配置
+    local config = config_service.get_property_config(property_id, level)
+    if not config then
+        logger.error("No property config found for id: %s, level: %d", property_id, level)
+        return {}
     end
-    
-    logger.error("No property config found for id: %s", property_id)
-    return {}
+
+    local result = {}
+    -- 遍历 Property 数组获取具体属性
+    for _, prop in pairs(config.property) do
+        table.insert(result, {
+            prop[1],  -- Property_type (102=HP, 103=攻击, 104=防御)
+            prop[2],  -- Calc_type (1=值, 2=万分比)
+            prop[3]   -- Value
+        })
+    end
+    logger.info("Found property list: %s", utils.table_to_string(result))
+    return result
 end
 
 -- 计算单个属性的最终值
@@ -256,22 +247,16 @@ end
 -- 获取单位属性
 function M.get_unit_property(unit_id, level)
     logger.info("Getting unit property - unit_id: %d, level: %d", unit_id, level)
+    
     -- 1. 从unit配置中获取property_id
-    local target_unit
-    for _, unit in pairs(unit_config) do
-        if unit.Unit_id == unit_id then
-            target_unit = unit
-            break
-        end
-    end
-
+    local target_unit = config_service.get_unit_config(unit_id)
     if not target_unit then
         logger.error("Unit not found in config: %d", unit_id)
         return nil
     end
     
     logger.info("Found target unit: %s", utils.table_to_string(target_unit))
-    local property_id = target_unit.Property_id
+    local property_id = target_unit.property_id
     if not property_id then
         logger.error("Property_id not found for unit: %d", unit_id)
         return nil
@@ -280,16 +265,19 @@ function M.get_unit_property(unit_id, level)
     -- 2. 查找对应的属性配置列表
     local property_list = find_property_list(property_id, level)
     if not property_list or #property_list == 0 then
-        logger.error("Property not found for id: %s", property_id)
+        logger.error("Property not found for id: %s, level: %d", property_id, level)
         return nil
     end
 
     -- 3. 计算各个属性的最终值
-    return {
+    local result = {
         hp = calculate_property(property_list, PROPERTY_TYPE.HP),
         attack = calculate_property(property_list, PROPERTY_TYPE.ATTACK),
         defense = calculate_property(property_list, PROPERTY_TYPE.DEFENSE)
     }
+
+    logger.info("Calculated unit property: %s", utils.table_to_string(result))
+    return result
 end
 
 -- 重新计算装备属性

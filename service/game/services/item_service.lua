@@ -9,89 +9,37 @@ local bag_dao = require "dao.bag_dao"
 local property_service = require "services.property_service"
 local bag_model = require "models.bag_model"
 local utils = require "utils"
-local config_loader = require "game.config_loader"
+local config_service = require "services.config_service"
 
 local M = {}
 
--- 物品配置
-local ITEM_CONFIG = {}
-
--- 计算table中的键值对数量
-local function count_pairs(t)
-    local count = 0
-    for _ in pairs(t) do
-        count = count + 1
+-- 初始化新用户物品
+function M.init_user_items(user_id)
+    if not user_id then
+        return false, "无效的用户ID"
     end
-    return count
-end
 
--- 加载物品配置
-function M.init_item_config()
-    -- 读取配置文件
-    local data = config_loader.get_config("Dfw_item")
-    if not data then
-        logger.error("Failed to load item config")
-        return false
-    end
-    -- 转换配置格式
-    for id, item_data in pairs(data) do
-        local item_id = tonumber(item_data.Item_id)
-        if item_id then
-            ITEM_CONFIG[item_id] = {
-                id = item_id,
-                name = item_data.L_name,
-                type = tonumber(item_data.Type) or 1,
-                quality = tonumber(item_data.Qua) or 1,
-                class = tonumber(item_data.Class) or 1,
-                max_stack = tonumber(item_data.Max) or 99,
-                description = item_data.L_des,
-                icon = item_data.Icon,
-                show = tonumber(item_data.Show) or 0,
-                order = tonumber(item_data.Order) or 0
-            }
+    logger.info("Initializing items for user: %d", user_id)
+
+    -- 1. 创建主背包
+    local bag = bag_dao.get_user_bag(user_id, bag_model.BAG_TYPE.MAIN)
+    if not bag then
+        bag = bag_dao.create_bag(user_id, bag_model.BAG_TYPE.MAIN, 20)  -- 默认20格
+        if not bag then
+            return false, "创建背包失败"
         end
     end
 
-    -- 添加测试物品配置
-    ITEM_CONFIG[1001] = ITEM_CONFIG[1001] or {}  -- 保留原有配置
-    ITEM_CONFIG[1001].effect_type = item_model.EFFECT_TYPE.EXP
-    ITEM_CONFIG[1001].effect_value = 100
-    ITEM_CONFIG[1001].max_stack = 10000
-
-    ITEM_CONFIG[2012] = ITEM_CONFIG[2012] or {}  -- 保留原有配置
-    ITEM_CONFIG[2012].effect_type = item_model.EFFECT_TYPE.GOLD
-    ITEM_CONFIG[2012].effect_value = 1000
-    ITEM_CONFIG[2012].max_stack = 10000
-
-    logger.info("Item config loaded: %d items", count_pairs(ITEM_CONFIG))
-    return true
-end
-
--- 从配置文件读取新手默认物品
-local DEFAULT_ITEMS = {}
-function M.init_default_items()
-    -- 读取配置文件
-    local data = config_loader.get_config("Dfw_Initial")
-    if not data then
-        logger.error("Failed to load initial config")
-        return false
+    -- 2. 添加默认物品
+    local default_items = config_service.get_initial_items()
+    if #default_items > 0 then
+        local ok, err = M.add_items_to_slot(user_id, default_items)
+        if not ok then
+            logger.error("Failed to add default items for user %d: %s", user_id, err)
+            return false, err
+        end
     end
 
-    -- 获取第一个玩家的配置
-    local player_config = data["1"]
-    if not player_config or not player_config.Item then
-        logger.error("Invalid config format: %s", utils.table_to_string(data))
-        return false
-    end
-
-    -- 转换配置格式
-    for _, item_data in ipairs(player_config.Item) do
-        table.insert(DEFAULT_ITEMS, {
-            item_id = tonumber(item_data[1]),  -- 第一个元素是物品ID
-            count = tonumber(item_data[2] or 1)  -- 第二个元素是数量，默认为1
-        })
-    end
-    logger.info("Default items loaded: %d items", #DEFAULT_ITEMS)
     return true
 end
 
@@ -119,7 +67,7 @@ local SORT_RULE = {
 
 -- 获取物品排序权重
 local function get_item_weight(item, rule)
-    local config = ITEM_CONFIG[item.item_id]
+    local config = config_service.get_item_config(item.item_id)
     if not config then
         return 0
     end
@@ -142,7 +90,7 @@ end
 local function apply_item_effect(user_id, item_id, count)
     logger.debug("Applying item effect - user_id: %d, item_id: %d, count: %d", 
         user_id, item_id, count)
-    local config = ITEM_CONFIG[item_id]
+    local config = config_service.get_item_config(item_id)
     if not config then
         return false, "物品配置不存在"
     end
@@ -406,35 +354,6 @@ function M.use_item(user_id, item_id, count)
     return true, {target_item}
 end
 
--- 初始化新用户物品
-function M.init_user_items(user_id)
-    if not user_id then
-        return false, "无效的用户ID"
-    end
-
-    logger.info("Initializing items for user: %d", user_id)
-
-    -- 1. 创建主背包
-    local bag = bag_dao.get_user_bag(user_id, bag_model.BAG_TYPE.MAIN)
-    if not bag then
-        bag = bag_dao.create_bag(user_id, bag_model.BAG_TYPE.MAIN, 20)  -- 默认20格
-        if not bag then
-            return false, "创建背包失败"
-        end
-    end
-
-    -- 2. 添加默认物品
-    if #DEFAULT_ITEMS > 0 then
-        local ok, err = M.add_items_to_slot(user_id, DEFAULT_ITEMS)
-        if not ok then
-            logger.error("Failed to add default items for user %d: %s", user_id, err)
-            return false, err
-        end
-    end
-    logger.info("User default item config loaded: %d items", count_pairs(DEFAULT_ITEMS))
-    return true
-end
-
 -- 获取用户物品列表
 function M.get_user_items(user_id)
     if not user_id then
@@ -460,7 +379,7 @@ local function validate_item(item)
     end
     
     -- 2. 检查物品配置
-    local config = ITEM_CONFIG[item.item_id]
+    local config = config_service.get_item_config(item.item_id)
     if not config then
         return false, "物品配置不存在"
     end
@@ -817,7 +736,7 @@ function M.trade_items(from_user, to_user, item_list)
         end
         
         -- 获取物品配置
-        local config = ITEM_CONFIG[item_info.item_id]
+        local config = config_service.get_item_config(item_info.item_id)
         if not config then
             return false, string.format("物品%d配置不存在", item_info.item_id)
         end
@@ -964,7 +883,7 @@ local function filter_items(items, conditions)
     for _, item in ipairs(items) do
         local match = true
         for _, condition in ipairs(conditions) do
-            local config = ITEM_CONFIG[item.item_id]
+            local config = config_service.get_item_config(item.item_id)
             if not config then
                 match = false
                 break
@@ -1031,8 +950,8 @@ function M.query_user_items(user_id, conditions)
     -- 3. 按条件排序
     if conditions and conditions.sort_by then
         table.sort(filtered, function(a, b)
-            local config_a = ITEM_CONFIG[a.item_id]
-            local config_b = ITEM_CONFIG[b.item_id]
+            local config_a = config_service.get_item_config(a.item_id)
+            local config_b = config_service.get_item_config(b.item_id)
             
             if conditions.sort_by == "quality" then
                 if config_a.quality == config_b.quality then
@@ -1080,7 +999,7 @@ end
 
 -- 获取物品最大堆叠数
 local function get_max_stack(item_id)
-    local config = ITEM_CONFIG[item_id]   
+    local config = config_service.get_item_config(item_id)   
     if not config then
         return 1
     end
@@ -1296,7 +1215,7 @@ function M.search_items(user_id, keyword, options)
     
     -- 3. 遍历物品
     for _, item in ipairs(items) do
-        local config = ITEM_CONFIG[item.item_id]  
+        local config = config_service.get_item_config(item.item_id)  
         if config then
             local match = false
             
@@ -1348,8 +1267,8 @@ function M.search_items(user_id, keyword, options)
     -- 5. 应用排序
     if options.sort_by then
         table.sort(result, function(a, b)
-            local config_a = ITEM_CONFIG[a.item_id]   
-            local config_b = ITEM_CONFIG[b.item_id]
+            local config_a = config_service.get_item_config(a.item_id)   
+            local config_b = config_service.get_item_config(b.item_id)
             
             if options.sort_by == "name" then
                 return config_a.name < config_b.name
@@ -1387,7 +1306,7 @@ end
 
 -- 检查物品标签
 local function check_item_tags(item, tags)
-    local config = ITEM_CONFIG[item.item_id]  
+    local config = config_service.get_item_config(item.item_id)  
     if not config or not config.tags then
         return false
     end
@@ -1410,7 +1329,7 @@ end
 
 -- 获取物品分类
 local function get_item_category(item)
-    local config = ITEM_CONFIG[item.item_id]  
+    local config = config_service.get_item_config(item.item_id)  
     if not config then
         return item_model.ITEM_CATEGORY.OTHER
     end
@@ -1438,7 +1357,7 @@ end
 
 -- 获取物品标签
 function M.get_item_tags(item_id)
-    local config = ITEM_CONFIG[item_id]   
+    local config = config_service.get_item_config(item_id)   
     if not config then
         return {}
     end
@@ -1467,7 +1386,7 @@ function M.equip_item(user_id, item_id, slot_id)
     end
     
     -- 3. 检查物品类型
-    local config = ITEM_CONFIG[item_id]   
+    local config = config_service.get_item_config(item_id)   
     if not config or config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
         return false, "物品不是装备"
     end
@@ -1612,7 +1531,7 @@ function M.enhance_equipment(user_id, equip_id, material_list, protect_item)
     end
     
     -- 3. 检查装备类型
-    local config = ITEM_CONFIG[equip.item_id] 
+    local config = config_service.get_item_config(equip.item_id) 
     if not config or config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
         return false, "物品不是装备"
     end
@@ -1628,7 +1547,7 @@ function M.enhance_equipment(user_id, equip_id, material_list, protect_item)
     local materials = {}
     local total_exp = 0
     for _, material in ipairs(material_list) do
-        local mat_config = ITEM_CONFIG[material.item_id]
+        local mat_config = config_service.get_item_config(material.item_id)
         if not mat_config then
             return false, "材料配置不存在"
         end
@@ -1764,7 +1683,7 @@ function M.refine_equipment(user_id, equip_id, material_list, protect_item)
     end
     
     -- 3. 检查装备类型
-    local config = ITEM_CONFIG[equip.item_id] 
+    local config = config_service.get_item_config(equip.item_id) 
     if not config or config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
         return false, "物品不是装备"
     end
@@ -1780,7 +1699,7 @@ function M.refine_equipment(user_id, equip_id, material_list, protect_item)
     local materials = {}
     local total_exp = 0
     for _, material in ipairs(material_list) do
-        local mat_config = ITEM_CONFIG[material.item_id]
+        local mat_config = config_service.get_item_config(material.item_id)
         if not mat_config then
             return false, "材料配置不存在"
         end
@@ -1894,7 +1813,7 @@ function M.reforge_equipment(user_id, equip_id, material_list)
     end
     
     -- 3. 检查装备类型
-    local config = ITEM_CONFIG[equip.item_id] 
+    local config = config_service.get_item_config(equip.item_id) 
     if not config or config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
         return false, "物品不是装备"
     end
@@ -1903,7 +1822,7 @@ function M.reforge_equipment(user_id, equip_id, material_list)
     local materials = {}
     local reforge_power = 0
     for _, material in ipairs(material_list) do
-        local mat_config = ITEM_CONFIG[material.item_id]
+        local mat_config = config_service.get_item_config(material.item_id)
         if not mat_config then
             return false, "材料配置不存在"
         end
@@ -2006,8 +1925,8 @@ function M.inlay_gem(user_id, equip_id, gem_id, slot_index, protect_item)
     end
     
     -- 3. 检查装备和宝石类型
-    local equip_config = ITEM_CONFIG[equip.item_id]   
-    local gem_config = ITEM_CONFIG[gem.item_id]
+    local equip_config = config_service.get_item_config(equip.item_id)   
+    local gem_config = config_service.get_item_config(gem.item_id)
     
     if not equip_config or equip_config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
         return false, "物品不是装备"
@@ -2177,7 +2096,7 @@ function M.remove_gem(user_id, equip_id, slot_index, protect_item)
     }
     
     -- 7. 更新装备属性
-    local gem_config = ITEM_CONFIG[slot.gem_id]
+    local gem_config = config_service.get_item_config(slot.gem_id)
     if gem_config and gem_config.props then
         for prop_type, value in pairs(gem_config.props) do
             if equip.gem_props then

@@ -246,6 +246,7 @@ end
 
 -- 将用户信息存入缓存
 function M.cache_user(user_info)
+    logger.info("Caching user info: %s", utils.table_to_string(user_info))
     if not user_info or not user_info.user_id then
         return false, "Invalid user info"
     end

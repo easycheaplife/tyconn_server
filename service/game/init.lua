@@ -1,6 +1,7 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local snowflake = require "utils.snowflake"
+local config_service = require "services.config_service"
 
 local M = {}
 
@@ -11,10 +12,13 @@ function M.init()
     local node_id = tonumber(skynet.getenv("node_id")) or 1
     snowflake.set_worker_id(node_id)
 
-    -- 2. 其他初始化代码...
-    local item_service = require "services.item_service"
-    item_service.init_default_items()
-    item_service.init_item_config()
+    -- 2. 初始化配置
+    local ok = config_service.init()
+    if not ok then
+        logger.error("Failed to init config service")
+        return false
+    end
+
     logger.info("Game server initialized")
     return true
 end
