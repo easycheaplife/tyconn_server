@@ -34,4 +34,10 @@ enum ErrorCode {
     // GM系统 (300-399)
     ERROR_CODE_GM_COMMAND_FAILED = 300;   // GM指令执行失败
     ERROR_CODE_PERMISSION_DENIED = 301;   // 权限不足
+
+    // 卡牌系统 (400-499)
+    ERROR_CODE_CARD_NOT_FOUND = 400;      // 卡牌不存在
+    ERROR_CODE_CARD_ALREADY_EXISTS = 401; // 卡牌已存在
+    ERROR_CODE_CARD_NOT_ENOUGH = 402;     // 卡牌数量不足
+    
 } 

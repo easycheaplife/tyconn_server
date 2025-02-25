@@ -1,13 +1,15 @@
 const loginBenchmark = require('./login_benchmark');
-const bagBenchmark = require('./bag_benchmark');
 const heartbeatBenchmark = require('./heartbeat_benchmark');
+const bagBenchmark = require('./bag_benchmark');
 const useItemBenchmark = require('./use_item_benchmark');
+const stackItemBenchmark = require('./stack_item_benchmark');
 
 const benchmarks = {
     login: loginBenchmark,
-    bag: bagBenchmark,
     heartbeat: heartbeatBenchmark,
-    useItem: useItemBenchmark
+    bag: bagBenchmark,
+    useItem: useItemBenchmark,
+    stackItem: stackItemBenchmark
 };
 
 async function runBenchmark(name) {
