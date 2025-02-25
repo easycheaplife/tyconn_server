@@ -147,7 +147,7 @@ end
 
 -- 加载属性配置
 function M.load_property_config()
-    local data = config_loader.get_config("Dfw_Property")
+    local data = config_loader.get_config("Dfw_property")
     if not data then
         return false
     end
