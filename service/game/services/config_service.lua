@@ -75,12 +75,12 @@ function M.load_item_config()
     CONFIG_CACHE.items[1001] = CONFIG_CACHE.items[1001] or {}
     CONFIG_CACHE.items[1001].effect_type = item_model.EFFECT_TYPE.EXP
     CONFIG_CACHE.items[1001].effect_value = 100
-    CONFIG_CACHE.items[1001].max_stack = 10000
+    CONFIG_CACHE.items[1001].max_stack = 2000
 
     CONFIG_CACHE.items[2012] = CONFIG_CACHE.items[2012] or {}
     CONFIG_CACHE.items[2012].effect_type = item_model.EFFECT_TYPE.GOLD
     CONFIG_CACHE.items[2012].effect_value = 1000
-    CONFIG_CACHE.items[2012].max_stack = 10000
+    CONFIG_CACHE.items[2012].max_stack = 2000
 
     logger.info("Item config loaded: %d items", count_pairs(CONFIG_CACHE.items))
     return true

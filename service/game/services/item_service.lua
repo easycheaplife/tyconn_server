@@ -164,81 +164,118 @@ function M.add_items_to_slot(user_id, items)
     -- 1. 获取背包信息
     local bag = bag_dao.get_user_bag(user_id, bag_model.BAG_TYPE.MAIN)
     if not bag then
-        -- 需要先创建背包
-        logger.info("Creating main bag for user %d", user_id)
-        bag = bag_dao.create_bag(user_id, bag_model.BAG_TYPE.MAIN, 20)  -- 默认20格
-        if not bag then
-            return false, "创建背包失败"
+        return false, "获取背包失败"
+    end
+
+    -- 2. 获取现有物品
+    local existing_items = M.get_user_items(user_id)
+    if not existing_items then
+        existing_items = {}
+    end
+
+    -- 3. 获取已使用的格子
+    local used_slots = {}
+    for _, item in ipairs(existing_items) do
+        if item.bag_type == bag_model.BAG_TYPE.MAIN then
+            used_slots[item.slot_index] = true
         end
     end
 
-    -- 2. 检查背包空间
-    local need_slots = #items
-    local empty_slots = {}
-    for _, slot in ipairs(bag.slots) do
-        if slot.state == bag_model.SLOT_STATE.EMPTY then
-            table.insert(empty_slots, slot)
+    -- 4. 检查每个物品
+    local need_slots = 0
+    for _, item_info in ipairs(items) do
+        local item_id = item_info.item_id
+        local count = item_info.count or 1
+
+        -- 获取物品配置
+        local config = config_service.get_item_config(item_id)
+        if not config then
+            return false, string.format("物品%d配置不存在", item_id)
+        end
+
+        -- 先尝试堆叠到现有物品上
+        local remaining_count = count
+        for _, existing_item in ipairs(existing_items) do
+            if existing_item.item_id == item_id and existing_item.bag_type == bag_model.BAG_TYPE.MAIN then
+                local max_stack = config.max_stack or 99
+                local can_stack = max_stack - existing_item.count
+                if can_stack > 0 then
+                    local stack_count = math.min(remaining_count, can_stack)
+                    existing_item.count = existing_item.count + stack_count
+                    existing_item.update_time = os.time()
+                    
+                    -- 记录物品变化
+                    item_dao.log_change(
+                        user_id,
+                        item_id,
+                        stack_count,
+                        item_model.CHANGE_TYPE.ADD,
+                        item_model.CHANGE_SOURCE.ADD,
+                        existing_item.count - stack_count,
+                        existing_item.count
+                    )
+                    
+                    remaining_count = remaining_count - stack_count
+                    if remaining_count <= 0 then
+                        break
+                    end
+                end
+            end
+        end
+
+        -- 如果还有剩余物品，需要新格子
+        if remaining_count > 0 then
+            local max_stack = config.max_stack or 99
+            while remaining_count > 0 do
+                -- 找到下一个可用格子
+                local next_slot = 1
+                while used_slots[next_slot] do
+                    next_slot = next_slot + 1
+                end
+                
+                local stack_count = math.min(remaining_count, max_stack)
+                table.insert(existing_items, {
+                    id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
+                    user_id = user_id,
+                    item_id = item_id,
+                    count = stack_count,
+                    bag_type = bag_model.BAG_TYPE.MAIN,
+                    slot_index = next_slot,
+                    create_time = os.time(),
+                    update_time = os.time()
+                })
+                
+                used_slots[next_slot] = true
+                need_slots = need_slots + 1
+                remaining_count = remaining_count - stack_count
+                
+                -- 记录物品变化
+                item_dao.log_change(
+                    user_id,
+                    item_id,
+                    stack_count,
+                    item_model.CHANGE_TYPE.ADD,
+                    item_model.CHANGE_SOURCE.ADD,
+                    0,
+                    stack_count
+                )
+            end
         end
     end
 
-    if #empty_slots < need_slots then
+    -- 5. 检查背包空间
+    local empty_slots = bag.size - #existing_items + need_slots
+    if need_slots > empty_slots then
         return false, "背包空间不足"
     end
 
-    -- 3. 获取当前物品列表(用于记录变化)
-    local current_items = item_dao.get_user_items(user_id) or {}
-    local item_map = {}
-    for _, item in ipairs(current_items) do
-        item_map[item.item_id] = item
-    end
-
-    -- 4. 创建物品实例并记录变化
-    local new_items = {}
-    for i, item in ipairs(items) do
-        -- 创建新物品
-        local new_item = item_model.new({
-            id = item.id or snowflake.next_id(snowflake.ID_TYPE.ITEM),
-            user_id = user_id,
-            item_id = item.item_id,
-            count = item.count or 1,
-            bag_type = bag_model.BAG_TYPE.MAIN,
-            slot_index = empty_slots[i].slot_index,
-            create_time = os.time(),
-            update_time = os.time()
-        })
-        
-        table.insert(new_items, new_item)
-        
-        -- 记录物品变化
-        local before_count = item_map[item.item_id] and item_map[item.item_id].count or 0
-        item_dao.log_change(
-            user_id,
-            item.item_id,
-            item.count,
-            item_model.CHANGE_TYPE.ADD,
-            item_model.CHANGE_SOURCE.INIT,
-            before_count,
-            before_count + item.count
-        )
-    end
-    
-    -- 5. 保存物品
-    local ok = item_dao.update_user_items(user_id, new_items)
+    -- 6. 保存更新
+    local ok = item_dao.update_user_items(user_id, existing_items)
     if not ok then
-        return false, "保存物品失败"
+        return false, "更新物品失败"
     end
 
-    -- 6. 更新格子状态
-    for i, slot in ipairs(empty_slots) do
-        if i > #items then break end
-        bag_dao.update_slot_state(user_id, bag_model.BAG_TYPE.MAIN, slot.slot_index, bag_model.SLOT_STATE.NORMAL)
-    end
-
-    -- 7. 记录操作日志
-    logger.info("Added items to slots - user_id: %d, items: %s", 
-        user_id, utils.table_to_string(items))
-
-    return true, new_items
+    return true
 end
 
 -- 检查物品是否被锁定
