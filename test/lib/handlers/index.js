@@ -2,6 +2,7 @@
 const getBagInfo = require('./bag/get_bag_info');
 const expandBag = require('./bag/expand_bag');
 const sortBag = require('./bag/sort_bag');
+const moveItem = require('./bag/move_item');
 const useItem = require('./item/use_item');
 const getUserInfo = require('./user/get_user_info');
 const getUserCards = require('./user/get_user_cards');
@@ -13,6 +14,7 @@ module.exports = {
     getBagInfo,
     expandBag,
     sortBag,
+    moveItem,
     
     // 物品相关
     useItem,

@@ -98,17 +98,19 @@ message G2CSortBagResponse {
     repeated common.ItemInfo items = 1;     // 整理后的物品列表
 }
 
-// 移动物品请求 {{Req:208}}
+// 移动物品请求
 message C2GMoveItemRequest {
-    string token = 1;        // 用户令牌
-    int32 source_slot = 2;   // 源格子
-    int32 target_slot = 3;   // 目标格子
-    int32 count = 4;         // 移动数量
+    string token = 1;
+    int32 src_bag_type = 2;     // 源背包类型
+    int32 src_slot = 3;         // 源格子位置
+    int32 dst_bag_type = 4;     // 目标背包类型
+    int32 dst_slot = 5;         // 目标格子位置
+    int32 count = 6;   // 可选的移动数量
 }
 
-// 移动物品响应 {{Res:209}}
+// 移动物品响应
 message G2CMoveItemResponse {
-    repeated common.ItemInfo changed_items = 1;  // 变化的物品
+    repeated common.ItemInfo changed_items = 1;  // 所有变化的物品
 }
 
 // 物品合成请求 {{Req:210}}

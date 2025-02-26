@@ -41,7 +41,9 @@ function M.init()
         require "game.handlers.sort_bag_handler")
     M.register(pb.enum("common.MessageID", "C2G_GM_COMMAND_REQUEST"),
         require "game.handlers.gm_command_handler")
-    
+    M.register(pb.enum("common.MessageID", "C2G_MOVE_ITEM_REQUEST"),
+        require "game.handlers.move_item_handler")
+
     logger.info("Message handlers initialized")
     return true
 end

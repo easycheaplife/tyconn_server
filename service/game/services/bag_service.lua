@@ -133,86 +133,113 @@ local function check_move_valid(user_id, from_bag, from_slot, to_bag, to_slot)
     return true
 end
 
--- 移动物品(支持堆叠)
-function M.move_item(user_id, from_bag, from_slot, to_bag, to_slot)
-    -- 1. 检查移动是否合法
-    local ok, err = check_move_valid(user_id, from_bag, from_slot, to_bag, to_slot)
-    if not ok then
-        return false, err
-    end
-    
-    -- 2. 如果是装备栏操作，转给装备服务处理
-    if from_bag == bag_model.BAG_TYPE.EQUIP or to_bag == bag_model.BAG_TYPE.EQUIP then
-        local equip_service = require "services.equip_service"
-        return equip_service.move_equipment(user_id, from_bag, from_slot, to_bag, to_slot)
-    end
-    
-    -- 3. 获取物品列表
+-- 移动物品
+function M.move_item(user_id, src_bag_type, src_slot, dst_bag_type, dst_slot, count)
+    -- 1. 获取物品列表
     local items = item_dao.get_user_items(user_id)
     if not items then
         return false, "获取物品失败"
     end
     
-    -- 4. 执行移动
-    -- 2. 查找源格子物品
-    local from_item = nil
+    -- 2. 查找源物品和目标物品
+    local src_item = nil
+    local dst_item = nil
+    
     for _, item in ipairs(items) do
-        if item.bag_type == from_bag and item.slot_index == from_slot then
-            from_item = item
-            break
+        if item.bag_type == src_bag_type and item.slot_index == src_slot then
+            src_item = item
+        elseif item.bag_type == dst_bag_type and item.slot_index == dst_slot then
+            dst_item = item
         end
     end
     
-    if not from_item then
+    -- 3. 检查源物品是否存在
+    if not src_item then
         return false, "源格子没有物品"
     end
     
-    -- 3. 查找目标格子物品
-    local to_item = nil
-    for _, item in ipairs(items) do
-        if item.bag_type == to_bag and item.slot_index == to_slot then
-            to_item = item
-            break
-        end
+    -- 跟踪变化的物品
+    local changed_items = {}
+    
+    -- 4. 处理部分移动
+    local move_count = count or src_item.count
+    if move_count <= 0 or move_count > src_item.count then
+        move_count = src_item.count
     end
     
-    -- 4. 处理堆叠
-    if to_item and to_item.item_id == from_item.item_id and can_stack(to_item.item_id) then
-        local stack_limit = get_stack_limit(to_item.item_id)
-        local can_add = stack_limit - to_item.count
-        
-        if can_add > 0 then
-            -- 计算实际堆叠数量
-            local add_count = math.min(can_add, from_item.count)
+    -- 5. 处理移动逻辑
+    if dst_item then
+        -- 如果目标格子有物品
+        if src_item.item_id == dst_item.item_id and 
+           config_service.get_item_config(src_item.item_id).max_stack > dst_item.count then
+            -- 相同物品且可以堆叠，执行堆叠
+            local stack_limit = config_service.get_item_config(src_item.item_id).max_stack
+            local stack_count = math.min(move_count, stack_limit - dst_item.count)
             
-            -- 更新数量
-            to_item.count = to_item.count + add_count
-            from_item.count = from_item.count - add_count
+            -- 堆叠到目标物品
+            dst_item.count = dst_item.count + stack_count
+            src_item.count = src_item.count - stack_count
             
-            -- 如果源物品数量为0，移除该物品
-            if from_item.count <= 0 then
+            -- 记录变化
+            table.insert(changed_items, dst_item)
+            
+            -- 如果源物品堆叠完，清空该格子
+            if src_item.count <= 0 then
+                -- 从列表中移除
                 for i, item in ipairs(items) do
-                    if item == from_item then
+                    if item == src_item then
                         table.remove(items, i)
                         break
                     end
                 end
+                src_item = nil
+            else
+                -- 源物品也发生变化
+                table.insert(changed_items, src_item)
             end
         else
-            return false, "目标格子已达到堆叠上限"
+            -- 不能堆叠，交换位置
+            if move_count < src_item.count and count > 0 then
+                -- 部分移动且目标格子有物品，无法执行
+                return false, "部分移动时目标格子必须为空"
+            end
+            
+            src_item.bag_type, dst_item.bag_type = dst_item.bag_type, src_item.bag_type
+            src_item.slot_index, dst_item.slot_index = dst_item.slot_index, src_item.slot_index
+            
+            -- 记录变化
+            table.insert(changed_items, src_item)
+            table.insert(changed_items, dst_item)
         end
     else
-        -- 5. 不能堆叠时交换位置
-        if to_item then
-            -- 两个格子都有物品,交换位置
-            from_item.bag_type = to_bag
-            from_item.slot_index = to_slot
-            to_item.bag_type = from_bag
-            to_item.slot_index = from_slot
+        -- 目标格子为空
+        if move_count < src_item.count and count > 0 then
+            -- 部分移动到空格子，创建新物品
+            local new_item = item_model.new({
+                id = snowflake.next_id(),
+                user_id = user_id,
+                item_id = src_item.item_id,
+                count = move_count,
+                bag_type = dst_bag_type,
+                slot_index = dst_slot
+            })
+            
+            -- 更新源物品
+            src_item.count = src_item.count - move_count
+            
+            -- 添加新物品
+            table.insert(items, new_item)
+            
+            -- 记录变化
+            table.insert(changed_items, src_item)
+            table.insert(changed_items, new_item)
         else
-            -- 目标格子为空,直接移动
-            from_item.bag_type = to_bag
-            from_item.slot_index = to_slot
+            -- 全部移动到空格子
+            src_item.bag_type = dst_bag_type
+            src_item.slot_index = dst_slot
+            
+            -- 记录变化
+            table.insert(changed_items, src_item)
         end
     end
     
@@ -222,7 +249,7 @@ function M.move_item(user_id, from_bag, from_slot, to_bag, to_slot)
         return false, "保存物品失败"
     end
     
-    return true
+    return true, nil, changed_items
 end
 
 -- 整理背包

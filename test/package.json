@@ -9,7 +9,8 @@
     "test:user_cards": "node test/run_test.js -t user_cards",
     "test:bag": "node test/run_test.js -t bag_info",
     "test:item": "node test/run_test.js -t use_item",
-    "test:sort_bag": "node test/run_test.js -t sort_bag"
+    "test:sort_bag": "node test/run_test.js -t sort_bag",
+    "test:move_item": "node test/run_test.js -t move_item"
   },
   "dependencies": {
     "jsonwebtoken": "^9.0.2",

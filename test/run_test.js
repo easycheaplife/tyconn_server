@@ -11,6 +11,7 @@ const LoginTest = require('./cases/login_test');
 const ExpandBagTest = require('./cases/expand_bag_test');
 const GMCommandTest = require('./cases/gm_command_test');
 const SortBagTest = require('./cases/sort_bag_test');
+const MoveItemTest = require('./cases/move_item_test');
 
 // 所有测试用例
 const ALL_TESTS = {
@@ -23,7 +24,8 @@ const ALL_TESTS = {
     login: LoginTest,
     expand_bag: ExpandBagTest,
     gm_command: GMCommandTest,
-    sort_bag: SortBagTest
+    sort_bag: SortBagTest,
+    move_item: MoveItemTest
 };
 
 async function runTests() {
