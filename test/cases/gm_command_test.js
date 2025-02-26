@@ -9,7 +9,8 @@ class GMCommandTest extends BaseTest {
             'add_item': this.testAddItem.bind(this),
             'delete_item': this.testDeleteItem.bind(this),
             'set_level': this.testSetLevel.bind(this),
-            'error_cases': this.testErrorCases.bind(this)
+            'error_cases': this.testErrorCases.bind(this),
+            'clear_bag': this.testClearBag.bind(this)
         };
     }
 
@@ -131,6 +132,21 @@ class GMCommandTest extends BaseTest {
         } catch (err) {
             assert(err.errorCode === this.client.protoHelper.ErrorCode.ERROR_CODE_INVALID_PARAMS);
         }
+    }
+
+    async testClearBag() {
+        console.log('\nTesting clear bag command...');
+        
+        // 执行清空背包命令
+        const response = await this.client.gmCommand('clear_bag', ['1']);
+        assert(response.result === 'success', "清空背包失败");
+        
+        // 获取背包信息验证是否成功
+        const bagInfo = await this.client.getBagInfo();
+        const mainBag = bagInfo.bags.find(bag => bag.bag_type === this.client.protoHelper.BagType.BAG_TYPE_MAIN);
+        assert(mainBag.items.length === 0, "背包未清空");
+        
+        return true;
     }
 }
 
