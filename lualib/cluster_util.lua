@@ -43,4 +43,20 @@ function M.init_node(node_name)
     return env
 end
 
+-- 从cluster配置中获取指定前缀的所有节点
+function M.get_nodes_by_prefix(prefix)
+    local nodes = {}
+    -- 使用load_cluster_config获取配置
+    local cluster_config = M.load_cluster_config()
+    
+    for node_name, _ in pairs(cluster_config) do
+        -- 跳过特殊配置项
+        if node_name ~= "__nowaiting" and string.match(node_name, "^" .. prefix) then
+            table.insert(nodes, node_name)
+        end
+    end
+    
+    return nodes
+end
+
 return M 

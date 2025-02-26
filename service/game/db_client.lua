@@ -2,12 +2,15 @@ local skynet = require "skynet"
 local cluster = require "skynet.cluster"
 local logger = require "logger"
 local utils = require "utils"
+local db_balancer = require "db_balancer"
 
 local M = {}
 
 -- 调用数据库服务
 local function call_db(...)
-    return cluster.call("db_proxy", "@db_proxy", ...)
+    -- 从db_balancer获取db_proxy节点
+    local node = db_balancer.get_db_proxy()
+    return cluster.call(node, "@"..node, ...)
 end
 
 -- 批量创建卡牌
@@ -58,14 +61,36 @@ end
 
 -- 记录物品变化
 function M.log_item_change(user_id, item_id, count, type, source, before_count, after_count)
+    -- 添加参数检查
+    if not user_id then
+        logger.error("log_item_change: missing user_id")
+        return false
+    end
+    if not item_id then
+        logger.error("log_item_change: missing item_id")
+        return false
+    end
+    if not count then
+        logger.error("log_item_change: missing count")
+        return false
+    end
+    if not type then
+        logger.error("log_item_change: missing type")
+        return false
+    end
+    if not source then
+        logger.error("log_item_change: missing source")
+        return false
+    end
+    
     return call_db("log_item_change", {
         user_id = user_id,
         item_id = item_id,
         count = count,
         type = type,
-        source = source,
-        before_count = before_count,
-        after_count = after_count,
+        source = source or "unknown",  -- 提供默认值
+        before_count = before_count or 0,  -- 提供默认值
+        after_count = after_count or 0,    -- 提供默认值
         create_time = os.time()
     })
 end

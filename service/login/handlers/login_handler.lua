@@ -4,8 +4,32 @@ local pb = require "pb"
 local login_mgr = require "login.login_mgr"
 local gate_mgr = require "login.gate_mgr"
 local cluster = require "skynet.cluster"
+local db_balancer = require "db_balancer"
 
 local M = {}
+
+-- 保存token到数据库
+local function save_token_to_db(account, token, device_id, platform)
+    -- 从db_balancer获取db_proxy节点
+    local node = db_balancer.get_db_proxy()
+    
+    -- 调用db_proxy保存token，使用节点名作为服务名
+    local ok, err = pcall(cluster.call, node, "@"..node, "sync_jwt", {
+        account = account,
+        token = token,
+        device_id = device_id,
+        platform = platform,
+        expire_time = os.time() + login_mgr.get_token_expire(),
+        create_time = os.time()
+    })
+    
+    if not ok then
+        logger.error("Failed to save token for account %s: %s", account, err)
+        return false
+    end
+    
+    return true
+end
 
 -- 处理登录请求
 function M.handle(client_id, base_request)
@@ -60,16 +84,9 @@ function M.handle(client_id, base_request)
 
     -- 保存token到数据库
     logger.info("Saving token to database - Account: %s", user_info.account)
-    local ok, err = pcall(cluster.call, "db_proxy", "@db_proxy", "sync_jwt", {
-        account = user_info.account,
-        token = token,
-        device_id = request.device_id,
-        platform = request.platform,
-        expire_time = os.time() + login_mgr.get_token_expire(),
-        create_time = os.time()
-    })
+    local ok = save_token_to_db(user_info.account, token, request.device_id, request.platform)
     if not ok then
-        logger.error("Failed to save token for account %s: %s", user_info.account, tostring(err))
+        logger.error("Failed to save token for account %s", user_info.account)
         return {
             code = pb.enum("common.ErrorCode", "ERROR_CODE_SYSTEM_ERROR"),
             message = "system error",
