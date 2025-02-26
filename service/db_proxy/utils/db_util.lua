@@ -1,6 +1,6 @@
 local skynet = require "skynet"
 local logger = require "logger"
-local mysql = require "db.mysql"
+local mysql = require "mysql"
 local pool = require "db_proxy.db.pool"
 local database = require "database"
 
