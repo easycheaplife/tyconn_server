@@ -6,7 +6,7 @@ local protoloader = require "protoloader"
 local ws_server = require "login.network.ws_server"
 local login_mgr = require "login.login_mgr"
 local gate_mgr = require "login.gate_mgr"
-local db_balancer = require "db_balancer"
+local service_balancer = require "service_balancer"
 
 local CMD = {}
 
@@ -51,12 +51,12 @@ function CMD.start(conf)
     end
     logger.info("Proto files loaded")
     
-    -- 初始化db_balancer
-    if not db_balancer.init() then
-        logger.error("Failed to initialize db_balancer")
+    -- 初始化service_balancer
+    if not service_balancer.init("db_proxy") then
+        logger.error("Failed to initialize db_proxy balancer")
         return false
     end
-    logger.info("DB balancer initialized")
+    logger.info("DB proxy balancer initialized")
     
     -- 启动WebSocket服务器
     local id = socket.listen("0.0.0.0", conf.port)

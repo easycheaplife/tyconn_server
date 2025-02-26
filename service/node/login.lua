@@ -22,8 +22,8 @@ skynet.start(function()
     end
     
     -- 注册集群服务
-    cluster.register("login", login_server)
-    logger.info("Login service registered with handle %d", login_server)
+    cluster.register(node_name, login_server)
+    logger.info("Login service registered as %s with handle %s", node_name, tostring(login_server))
     
     -- 打开集群端口
     cluster.open(node_name)

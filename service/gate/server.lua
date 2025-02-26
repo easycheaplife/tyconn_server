@@ -6,6 +6,7 @@ local node_selector = require "node_selector"
 local pb = require "pb"
 local protoloader = require "protoloader"
 local cluster = require "skynet.cluster"
+local service_balancer = require "service_balancer"
 
 local connections = {}  -- client_id -> agent
 local game_nodes    -- 游戏节点列表
@@ -64,26 +65,14 @@ end
 
 local CMD = {}
 
--- 同步状态到登录服务器
-local function sync_status()
-    local node_name = skynet.getenv("node_name")
-    if not node_name then
-        logger.error("Missing node_name in environment")
-        return
-    end
-    
-    local host = skynet.getenv("websocket_host")
-    local port = tonumber(skynet.getenv("websocket_port"))
-    if not host or not port then
-        logger.error("Missing websocket configuration: host=%s, port=%s", host, port)
-        return
-    end
-    
+-- 同步状态到所有login节点
+local function sync_status_to_login()
+    -- 构建状态数据
     local status = {
-        node_name = node_name,
+        node_name = skynet.getenv("node_name"),
         service_type = "gate",
-        host = host,
-        port = port,
+        host = skynet.getenv("websocket_host"),
+        port = tonumber(skynet.getenv("websocket_port")),
         client_count = 0,
         timestamp = os.time(),
         extra = {}
@@ -94,16 +83,21 @@ local function sync_status()
         status.client_count = status.client_count + 1
     end
     
+    -- 编码状态数据
     local ok, encoded = pcall(pb.encode, "internal.ServiceStatus", status)
-    if ok then
-        local ok2, err = pcall(function()
-            return cluster.call("login", "@login", "update_gate_status", encoded)
-        end)
-        if not ok2 then
-            logger.error("Failed to sync status to login server: %s, node=%s", err, node_name)
-        end
-    else
+    if not ok then
         logger.error("Failed to encode gate status: %s", encoded)
+        return
+    end
+    
+    -- 广播到所有login节点
+    local results = service_balancer.broadcast("login", "update_gate_status", encoded)
+    
+    -- 检查结果
+    for node, result in pairs(results) do
+        if not result then
+            logger.error("Failed to sync status to login server: node=%s", node)
+        end
     end
 end
 
@@ -136,13 +130,21 @@ function CMD.start(conf)
     logger.info("WebSocket server started on ws://0.0.0.0:%d (selector: %s)", 
         port, selector_type)
     
+    -- 初始化service_balancer
+    if not service_balancer.init("login") then
+        logger.error("Failed to initialize login balancer")
+        skynet.exit()
+        return
+    end
+    logger.info("Login balancer initialized")
+    
     -- 立即进行第一次状态同步
-    sync_status()
+    sync_status_to_login()
     
     -- 启动状态同步定时器
     skynet.fork(function()
         while true do
-            sync_status()
+            sync_status_to_login()
             skynet.sleep(sync_interval * 100)  -- 转换为centiseconds
         end
     end)

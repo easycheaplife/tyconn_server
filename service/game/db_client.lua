@@ -2,14 +2,15 @@ local skynet = require "skynet"
 local cluster = require "skynet.cluster"
 local logger = require "logger"
 local utils = require "utils"
-local db_balancer = require "db_balancer"
+local service_balancer = require "service_balancer"
 
 local M = {}
 
 -- 调用数据库服务
 local function call_db(...)
-    -- 从db_balancer获取db_proxy节点
-    local node = db_balancer.get_db_proxy()
+    -- 从balancer获取db_proxy节点
+    local node = service_balancer.get_node("db_proxy")
+    -- 使用 @node 作为服务名，因为是跨节点调用
     return cluster.call(node, "@"..node, ...)
 end
 

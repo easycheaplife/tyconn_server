@@ -9,7 +9,7 @@ start = "node/login"
 
 -- 集群配置
 cluster = "etc/cluster.lua"
-node_name = "login"
+node_name = "login1"
 websocket_port = 8021  -- 添加WebSocket端口配置
 
 -- JWT配置
