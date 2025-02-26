@@ -1,7 +1,7 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
-local item_service = require "services.item_service"
+local bag_service = require "services.bag_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message = require "message"
 local utils = require "utils"
@@ -26,7 +26,7 @@ function M.handle(client_id, msg)
     end
 
     -- 获取用户背包信息
-    local bags = item_service.get_user_bags(user.user_id)
+    local bags = bag_service.get_user_bags(user.user_id)
     if not bags then
         logger.error("Failed to get bags for user: %d", user.user_id)
         return message.create_error_response(

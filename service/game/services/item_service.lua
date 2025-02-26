@@ -2076,54 +2076,6 @@ function M.remove_gem(user_id, equip_id, slot_index, protect_item)
     }
 end
 
--- 获取用户所有背包信息
-function M.get_user_bags(user_id)
-    if not user_id then
-        return nil, "无效的用户ID"
-    end
-
-    -- 获取用户所有背包
-    local bags = bag_dao.get_user_all_bags(user_id)
-    if not bags then
-        return nil, "获取背包失败"
-    end
-
-    -- 获取用户所有物品
-    local items = M.get_user_items(user_id)
-    if not items then
-        items = {}
-    end
-
-    -- 构造返回的背包信息列表
-    local bag_info_list = {}
-    for _, bag in ipairs(bags) do
-        -- 获取该背包中的物品
-        local bag_items = {}
-        for _, item in ipairs(items) do
-            if item.bag_type == bag.bag_type then
-                -- 确保所有字段都是数值类型
-                local item_info = {
-                    item_id = tonumber(item.item_id),
-                    count = tonumber(item.count),
-                    slot = tonumber(item.slot_index or 0)  -- 确保有默认值
-                }
-                table.insert(bag_items, item_info)
-            end
-        end
-
-        -- 构造背包信息
-        local bag_info = {
-            bag_type = tonumber(bag.bag_type),
-            size = tonumber(bag.size),
-            items = bag_items
-        }
-        
-        table.insert(bag_info_list, bag_info)
-    end
-
-    return bag_info_list
-end
-
 -- 检查物品是否可装备
 local function can_equip(item_id, slot_index)
     local config = config_service.get_item_config(item_id)
@@ -2138,6 +2090,198 @@ local function can_equip(item_id, slot_index)
     
     -- 检查装备类型与槽位是否匹配
     return config.equip_type == slot_index
+end
+
+-- 创建新物品
+function M.create_item(user_id, item_id, count)
+    if not user_id or not item_id or not count or count <= 0 then
+        return nil, "无效的参数"
+    end
+    
+    -- 检查物品配置是否存在
+    local config = config_service.get_item_config(item_id)
+    if not config then
+        return nil, "物品不存在"
+    end
+    
+    -- 创建物品对象
+    local item = item_model.new({
+        id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
+        user_id = user_id,
+        item_id = item_id,
+        count = count
+    })
+    
+    -- 记录物品变化
+    item_dao.log_change(user_id, item_id, count,
+        item_model.CHANGE_TYPE.ADD, item_model.CHANGE_SOURCE.CREATE,
+        0, count)
+    
+    return item
+end
+
+-- 应用物品效果
+function M.apply_item_effect(user_id, item_id, count)
+    -- 获取物品配置
+    local config = config_service.get_item_config(item_id)
+    if not config then
+        return nil
+    end
+    
+    local results = {}
+    
+    -- 应用效果
+    for _, effect in ipairs(config.effects) do
+        local effect_count = effect.value * count
+        
+        if effect.type == "HEAL" then
+            -- 治疗效果
+            local health_added = character_service.add_health(user_id, effect_count)
+            results.health_added = health_added
+            
+        elseif effect.type == "MANA" then
+            -- 魔法效果
+            local mana_added = character_service.add_mana(user_id, effect_count)
+            results.mana_added = mana_added
+            
+        elseif effect.type == "EXP" then
+            -- 经验效果
+            local exp_added = character_service.add_exp(user_id, effect_count)
+            results.exp_added = exp_added
+            
+        elseif effect.type == "GOLD" then
+            -- 金币效果
+            local gold_added = currency_service.add_gold(user_id, effect_count)
+            results.gold_added = gold_added
+        end
+    end
+    
+    return results
+end
+
+-- 【核心功能】处理物品合成逻辑（不涉及背包）
+function M.process_compose(target_id, material_items)
+    -- 1. 获取合成配置
+    local compose_config = config_service.get_compose_config(target_id)
+    if not compose_config then
+        return false, "未找到合成配方", nil, nil
+    end
+    
+    -- 2. 验证材料是否足够
+    local material_map = {}
+    for _, material in ipairs(compose_config.materials) do
+        material_map[material.item_id] = material.count
+    end
+    
+    -- 检查材料
+    for item_id, required_count in pairs(material_map) do
+        local sufficient = false
+        for _, item in ipairs(material_items) do
+            if item.item_id == item_id and item.count >= required_count then
+                sufficient = true
+                break
+            end
+        end
+        
+        if not sufficient then
+            return false, "材料不足", nil, nil
+        end
+    end
+    
+    -- 3. 计算剩余材料
+    local remain_items = {}
+    for _, item in ipairs(material_items) do
+        local required = material_map[item.item_id]
+        if required then
+            -- 创建一个新的物品表而不是使用clone函数
+            local new_item = {
+                id = item.id,
+                user_id = item.user_id,
+                item_id = item.item_id,
+                count = item.count - required,
+                bag_type = item.bag_type,
+                slot_index = item.slot_index
+            }
+            
+            if new_item.count > 0 then
+                -- 如果材料有剩余，记录到剩余物品中
+                table.insert(remain_items, new_item)
+            end
+        else
+            -- 不需要的材料保持不变
+            -- 创建一个新的物品表而不是使用clone函数
+            local new_item = {
+                id = item.id,
+                user_id = item.user_id,
+                item_id = item.item_id,
+                count = item.count,
+                bag_type = item.bag_type,
+                slot_index = item.slot_index
+            }
+            table.insert(remain_items, new_item)
+        end
+    end
+    
+    -- 4. 随机判定是否成功
+    local result = item_model.COMPOSE_RESULT.SUCCESS
+    if compose_config.success_rate then
+        if math.random() > compose_config.success_rate then
+            result = compose_config.fail_keep_material and 
+                item_model.COMPOSE_RESULT.FAIL or 
+                item_model.COMPOSE_RESULT.FAIL_CONSUME
+        end
+    end
+    
+    -- 5. 创建结果物品
+    local new_item = nil
+    if result == item_model.COMPOSE_RESULT.SUCCESS then
+        new_item = {
+            item_id = target_id,
+            count = compose_config.result_count or 1
+        }
+    end
+    
+    return true, result, new_item, remain_items
+end
+
+-- 【核心功能】处理物品分解逻辑（不涉及背包）
+function M.process_decompose(items_to_decompose)
+    if not items_to_decompose or #items_to_decompose == 0 then
+        return false, "无效的参数", nil
+    end
+    
+    -- 1. 检查物品是否可分解并收集结果
+    local result_items = {}
+    for _, item in ipairs(items_to_decompose) do
+        -- 获取分解配方
+        local decompose_config = config_service.get_decompose_config(item.item_id)
+        if not decompose_config then
+            return false, "物品不可分解", nil
+        end
+        
+        -- 收集分解结果
+        for _, result in ipairs(decompose_config.results) do
+            local found = false
+            -- 检查是否已有该物品，尝试堆叠
+            for _, res_item in ipairs(result_items) do
+                if res_item.item_id == result.item_id then
+                    res_item.count = res_item.count + result.count * item.count
+                    found = true
+                    break
+                end
+            end
+            
+            -- 如果没有找到，创建新的结果物品
+            if not found then
+                table.insert(result_items, {
+                    item_id = result.item_id,
+                    count = result.count * item.count
+                })
+            end
+        end
+    end
+    
+    return true, nil, result_items
 end
 
 return M 
