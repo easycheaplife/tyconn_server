@@ -866,4 +866,121 @@ function M.clear_bag(user_id, bag_type)
     return true, "背包已清空"
 end
 
+-- 物品分解函数
+function M.decompose_item(user_id, item_slots)
+    -- 1. 验证参数
+    if not user_id or not item_slots or #item_slots == 0 then
+        return false, "无效的参数"
+    end
+    
+    -- 2. 获取物品
+    local items = item_dao.get_user_items(user_id)
+    if not items then
+        return false, "获取物品失败"
+    end
+    
+    -- 3. 找到要分解的物品
+    local decompose_items = {}
+    for _, slot in ipairs(item_slots) do
+        local found = false
+        for _, item in ipairs(items) do
+            if item.bag_type == bag_model.BAG_TYPE.MAIN and item.slot_index == slot then
+                table.insert(decompose_items, item)
+                found = true
+                break
+            end
+        end
+        if not found then
+            return false, "背包格子不存在"
+        end
+    end
+    
+    -- 4. 检查物品是否可分解
+    local result_items = {}
+    for _, item in ipairs(decompose_items) do
+        -- 获取分解配方
+        local decompose_config = config_service.get_decompose_config(item.item_id)
+        if not decompose_config then
+            return false, "物品不可分解"
+        end
+        
+        -- 收集分解结果
+        for _, result in ipairs(decompose_config.results) do
+            local found = false
+            -- 检查是否已有该物品，尝试堆叠
+            for _, res_item in ipairs(result_items) do
+                if res_item.item_id == result.item_id then
+                    res_item.count = res_item.count + result.count * item.count
+                    found = true
+                    break
+                end
+            end
+            
+            -- 如果没有找到，创建新的结果物品
+            if not found then
+                table.insert(result_items, {
+                    item_id = result.item_id,
+                    count = result.count * item.count
+                })
+            end
+        end
+    end
+    
+    -- 5. 从背包中移除要分解的物品
+    for _, item in ipairs(decompose_items) do
+        for i, it in ipairs(items) do
+            if it.id == item.id then
+                table.remove(items, i)
+                break
+            end
+        end
+    end
+    
+    -- 6. 添加分解结果物品到背包
+    local result_item_objects = {}
+    for _, result in ipairs(result_items) do
+        -- 寻找空格子
+        local empty_slot = nil
+        for i = 0, 99 do  -- 假设背包最大100格
+            local occupied = false
+            for _, item in ipairs(items) do
+                if item.bag_type == bag_model.BAG_TYPE.MAIN and item.slot_index == i then
+                    occupied = true
+                    break
+                end
+            end
+            if not occupied then
+                empty_slot = i
+                break
+            end
+        end
+        
+        if not empty_slot then
+            return false, "背包已满"
+        end
+        
+        -- 创建结果物品
+        local new_item = item_model.new({
+            id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
+            user_id = user_id,
+            item_id = result.item_id,
+            count = result.count,
+            bag_type = bag_model.BAG_TYPE.MAIN,
+            slot_index = empty_slot
+        })
+        
+        -- 添加到物品列表
+        table.insert(items, new_item)
+        table.insert(result_item_objects, new_item)
+    end
+    
+    -- 7. 保存更新
+    local ok = item_dao.update_user_items(user_id, items)
+    if not ok then
+        return false, "保存物品失败"
+    end
+    
+    return true, nil, result_item_objects
+end
+
 return M 

@@ -45,6 +45,8 @@ function M.init()
         require "game.handlers.move_item_handler")
     M.register(pb.enum("common.MessageID", "C2G_COMPOSE_ITEM_REQUEST"), 
         require "game.handlers.compose_item_handler")
+    M.register(pb.enum("common.MessageID", "C2G_DECOMPOSE_ITEM_REQUEST"),
+        require "game.handlers.decompose_item_handler")
 
     logger.info("Message handlers initialized")
     return true

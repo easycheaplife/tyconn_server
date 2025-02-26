@@ -245,4 +245,27 @@ function M.get_compose_config(target_id)
     return compose_configs[target_id]
 end
 
+-- 获取物品分解配置
+function M.get_decompose_config(item_id)
+    -- 只使用已知存在的物品ID (1001-1005, 2012)
+    local decompose_configs = {
+        -- 分解高级草药(1004)
+        [1004] = {
+            results = {
+                {item_id = 1001, count = 1},  -- 分解为1个草药
+                {item_id = 2012, count = 1}   -- 分解为1个金币物品
+            }
+        },
+        -- 分解高级物品(1005)
+        [1005] = {
+            results = {
+                {item_id = 1002, count = 1},  -- 分解为1个水晶
+                {item_id = 1003, count = 1}   -- 分解为1个其他物品
+            }
+        }
+    }
+    
+    return decompose_configs[item_id]
+end
+
 return M
