@@ -1,0 +1,15 @@
+include "../config/path.lua"
+
+thread = 8
+harbor = 0
+
+-- 启动配置
+bootstrap = "snlua bootstrap"
+start = "node/db_proxy"
+
+-- 集群配置
+cluster = "etc/cluster.lua"
+node_name = "db_proxy1"
+
+-- 日志配置
+LOG_LEVEL = 1
