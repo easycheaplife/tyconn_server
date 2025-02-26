@@ -3,7 +3,7 @@
  * @param {string[]} params - 命令参数
  * @returns {Promise<object>} 响应结果
  */
-async function gm_command(command, params) {
+async function gmCommand(command, params) {
     // 参数检查
     if (!command) {
         throw new Error('Command is required');
@@ -40,4 +40,4 @@ async function gm_command(command, params) {
     }
 }
 
-module.exports = gm_command; 
+module.exports = gmCommand; 

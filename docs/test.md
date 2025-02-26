@@ -86,7 +86,7 @@ class LoginTest extends BaseTest {
 class GMCommandTest extends BaseTest {
     async testAddItem() {
         // 添加物品测试
-        const response = await this.client.gm_command('add_item', ['1001', '100']);
+        const response = await this.client.gmCommand('add_item', ['1001', '100']);
         assert.strictEqual(response.result, 'success');
         
         // 验证物品数量

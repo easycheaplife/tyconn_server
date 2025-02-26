@@ -6,7 +6,7 @@ const useItem = require('./item/use_item');
 const getUserInfo = require('./user/get_user_info');
 const getUserCards = require('./user/get_user_cards');
 const sendHeartbeat = require('./system/heartbeat');
-const gm_command = require('./gm/gm_command');
+const gmCommand = require('./gm/gm_command');
 
 module.exports = {
     // 背包相关
@@ -25,5 +25,5 @@ module.exports = {
     sendHeartbeat,
     
     // GM相关
-    gm_command
+    gmCommand
 }; 

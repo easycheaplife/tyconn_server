@@ -53,7 +53,7 @@ class GMCommandTest extends BaseTest {
         const initialItems = mainBag.items;
         
         // 执行GM命令添加物品
-        const response = await this.client.gm_command('add_item', ['1001', '100']);
+        const response = await this.client.gmCommand('add_item', ['1001', '100']);
         assert(response.result === 'success', 'Add item should succeed');
         
         // 获取更新后的背包
@@ -78,7 +78,7 @@ class GMCommandTest extends BaseTest {
         console.log('\nTesting delete item command...');
         
         // 1. 先添加物品
-        let response = await this.client.gm_command('add_item', ['1001', '100']);
+        let response = await this.client.gmCommand('add_item', ['1001', '100']);
         assert.strictEqual(response.result, 'success');
 
         // 验证添加成功
@@ -88,7 +88,7 @@ class GMCommandTest extends BaseTest {
             .reduce((sum, i) => sum + i.count, 0);
         
         // 2. 删除物品
-        response = await this.client.gm_command('del_item', ['1001', '50']);
+        response = await this.client.gmCommand('del_item', ['1001', '50']);
         assert.strictEqual(response.result, 'success');
 
         // 3. 验证背包
@@ -109,7 +109,7 @@ class GMCommandTest extends BaseTest {
         console.log('\nTesting set level command...');
         
         // 设置等级
-        const response = await this.client.gm_command('set_level', ['99']);
+        const response = await this.client.gmCommand('set_level', ['99']);
         assert.strictEqual(response.result, 'success');
     }
 
@@ -118,7 +118,7 @@ class GMCommandTest extends BaseTest {
         
         // 测试无效命令
         try {
-            await this.client.gm_command('invalid_command', []);
+            await this.client.gmCommand('invalid_command', []);
             assert.fail('Should throw error for invalid command');
         } catch (err) {
             assert(err.errorCode === this.client.protoHelper.ErrorCode.ERROR_CODE_UNKNOWN_GM_COMMAND);
@@ -126,7 +126,7 @@ class GMCommandTest extends BaseTest {
 
         // 测试无效参数
         try {
-            await this.client.gm_command('add_item', ['invalid']);
+            await this.client.gmCommand('add_item', ['invalid']);
             assert.fail('Should throw error for invalid params');
         } catch (err) {
             assert(err.errorCode === this.client.protoHelper.ErrorCode.ERROR_CODE_INVALID_PARAMS);

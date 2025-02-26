@@ -13,8 +13,8 @@ class SortBagTest extends BaseTest {
             assert(initBagInfo.bags)
 
             // 2. 添加测试物品
-            await this.client.gm_command('add_item', ['1001', '1']) // 武器
-            await this.client.gm_command('add_item', ['2012', '1']) // 消耗品
+            await this.client.gmCommand('add_item', ['1001', '1']) // 武器
+            await this.client.gmCommand('add_item', ['2012', '1']) // 消耗品
 
             // 3. 执行背包排序
             const sortResp = await this.client.sortBag(
