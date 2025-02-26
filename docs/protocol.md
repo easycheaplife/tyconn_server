@@ -286,6 +286,54 @@ message G2CUseItemResponse {
     string message = 2;    // 错误信息
     repeated ItemInfo items = 3;  // 变化的物品列表
 }
+
+// 整理背包
+message C2GSortBagRequest {
+    string token = 1;       // JWT令牌
+    BagType bag_type = 2;   // 背包类型
+    int32 sort_rule = 3;    // 整理规则(1:类型 2:品质 3:等级)
+}
+
+message G2CSortBagResponse {    
+    repeated common.ItemInfo items = 1;     // 整理后的物品列表
+}
+
+// 移动物品
+message C2GMoveItemRequest {
+    string token = 1;
+    int32 src_bag_type = 2;     // 源背包类型
+    int32 src_slot = 3;         // 源格子位置
+    int32 dst_bag_type = 4;     // 目标背包类型
+    int32 dst_slot = 5;         // 目标格子位置
+    int32 count = 6;   // 可选的移动数量
+}
+
+message G2CMoveItemResponse {
+    repeated common.ItemInfo changed_items = 1;  // 所有变化的物品
+}
+
+// 物品合成
+message C2GComposeItemRequest {
+    string token = 1;
+    int32 target_id = 2;    // 目标物品ID
+    repeated int32 material_slots = 3;  // 材料所在格子
+}
+
+message G2CComposeItemResponse {
+    bool success = 1;       // 是否成功
+    common.ItemInfo new_item = 2;  // 合成的新物品
+    repeated common.ItemInfo remain_items = 3;  // 剩余材料
+}
+
+// 物品分解
+message C2GDecomposeItemRequest {
+    string token = 1;
+    repeated int32 item_slots = 2;   // 要分解的物品格子
+}   
+
+message G2CDecomposeItemResponse {
+    repeated common.ItemInfo result_items = 1;  // 分解获得的物品
+}
 ```
 
 ### 2.4 GM系统
@@ -517,33 +565,118 @@ message G2CUseItemResponse {
 - ERROR_CODE_INVALID_SLOT: 无效的格子
 - ERROR_CODE_SLOT_LOCKED: 格子被锁定
 
-#### 3.5.4 物品变化通知
-```protobuf
-message G2CItemChangeNotify {
-    repeated ItemChangeInfo changes = 1;  // 物品变化列表
-}
+#### 3.5.5 整理背包
 
-message ItemChangeInfo {
-    int32 item_id = 1;      // 物品ID
-    int32 count = 2;        // 变化数量
-    ItemChangeType type = 3; // 变化类型
-    int32 source = 4;       // 变化来源
-    int64 timestamp = 5;    // 变化时间
-    string reason = 6;      // 变化原因
+**连接类型:** `WebSocket`  
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf
+message C2GSortBagRequest {
+    string token = 1;       // JWT令牌
+    BagType bag_type = 2;   // 背包类型
+    int32 sort_rule = 3;    // 整理规则(1:类型 2:品质 3:等级)
+}
+``` 
+
+**响应格式:**
+```protobuf
+message G2CSortBagResponse {
+    repeated common.ItemInfo items = 1;     // 整理后的物品列表
+}
+``` 
+
+**错误码说明:**
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+- ERROR_CODE_BAG_NOT_EXIST: 背包不存在
+- ERROR_CODE_INVALID_SORT_RULE: 无效的整理规则
+
+
+#### 3.5.6 移动物品
+
+**连接类型:** `WebSocket`  
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf
+message C2GMoveItemRequest {
+    string token = 1;
+    int32 src_bag_type = 2;     // 源背包类型
+    int32 src_slot = 3;         // 源格子位置
+    int32 dst_bag_type = 4;     // 目标背包类型
+    int32 dst_slot = 5;         // 目标格子位置
+    int32 count = 6;   // 可选的移动数量
+}   
+```
+
+**响应格式:**
+```protobuf
+message G2CMoveItemResponse {
+    repeated common.ItemInfo changed_items = 1;  // 所有变化的物品
+}   
+```
+
+**错误码说明:**
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期  
+
+#### 3.5.7 物品合成
+**连接类型:** `WebSocket`  
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf
+message C2GComposeItemRequest {
+    string token = 1;
+    int32 target_id = 2;    // 目标物品ID
+    repeated int32 material_slots = 3;  // 材料所在格子
+}   
+```
+
+**响应格式:**
+```protobuf 
+message G2CComposeItemResponse {
+    bool success = 1;       // 是否成功
+    common.ItemInfo new_item = 2;  // 合成的新物品
+    repeated common.ItemInfo remain_items = 3;  // 剩余材料
+}
+``` 
+
+**错误码说明:**
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+- ERROR_CODE_ITEM_NOT_FOUND: 物品不存在
+- ERROR_CODE_ITEM_NOT_ENOUGH: 物品数量不足      
+
+#### 3.5.8 物品分解
+**连接类型:** `WebSocket`  
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf
+message C2GDecomposeItemRequest {
+    string token = 1;
+    repeated int32 item_slots = 2;   // 要分解的物品格子
 }
 ```
 
-#### 3.5.5 整理背包
-[添加整理背包接口说明]
+**响应格式:**
+```protobuf
+message G2CDecomposeItemResponse {
+    repeated common.ItemInfo result_items = 1;  // 分解获得的物品
+}
+```
 
-#### 3.5.6 移动物品
-[添加移动物品接口说明]
-
-#### 3.5.7 物品合成
-[添加物品合成接口说明]
-
-#### 3.5.8 物品分解
-[添加物品分解接口说明]
+**错误码说明:** 
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+- ERROR_CODE_ITEM_NOT_FOUND: 物品不存在
+- ERROR_CODE_ITEM_NOT_ENOUGH: 物品数量不足
 
 ### 3.6 GM指令接口
 **连接类型:** `WebSocket`
@@ -555,6 +688,7 @@ message ItemChangeInfo {
 | add_item | item_id, count | 添加物品 | add_item 1001 100 |
 | del_item | item_id, count | 删除物品 | del_item 1001 50 |
 | set_level | level | 设置等级 | set_level 99 |
+| clear_bag | bag_type | 清空背包 | clear_bag 1 |
 
 **错误码说明:**
 - ERROR_CODE_PERMISSION_DENIED: 无权限

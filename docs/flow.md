@@ -221,9 +221,157 @@ sequenceDiagram
 13. 游戏服务器返回扩展结果
 14. 网关将响应发送给客户端
 
-### 5.4 GM 指令流程
+### 5.4 整理背包流程
 ```mermaid
 sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 整理背包请求(token, bag_type, sort_rule)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>DB: 5. 获取背包信息    
+    DB-->>GM: 6. 返回背包数据
+    GM->>GM: 7. 验证整理规则
+    GM->>DB: 8. 更新背包排序
+    DB-->>GM: 9. 更新成功
+    GM->>DB: 10. 获取最新物品列表
+    DB-->>GM: 11. 返回物品数据  
+    GM->>GM: 12. 清除缓存
+    GM-->>G: 13. 返回整理结果
+    G-->>C: 14. 返回响应
+```
+
+**流程说明:**   
+1. 客户端发送整理背包请求，包含令牌、背包类型和整理规则
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器查询当前背包信息
+6. DB代理返回背包数据   
+7. 游戏服务器验证整理规则
+8. 更新背包排序到数据库
+9. 数据库更新成功
+10. 获取最新的物品列表
+11. DB代理返回物品数据
+12. 清除相关缓存
+13. 游戏服务器返回整理结果  
+14. 网关将响应发送给客户端
+
+### 5.5 移动物品流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 移动物品请求(token, src_bag_type, src_slot, dst_bag_type, dst_slot, count)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>DB: 5. 获取物品信息
+    DB-->>GM: 6. 返回物品数据
+    GM->>GM: 7. 验证移动参数
+    GM->>DB: 8. 更新物品位置
+    DB-->>GM: 9. 更新成功
+    GM->>DB: 10. 记录物品变化
+    GM-->>G: 11. 返回移动结果
+    G-->>C: 12. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送移动物品请求，包含令牌、源背包类型、源格子位置、目标背包类型、目标格子位置和可选的移动数量
+2. 网关转发请求到游戏服务器 
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器查询物品信息
+6. DB代理返回物品数据
+7. 游戏服务器验证移动参数
+8. 更新物品位置到数据库 
+9. 数据库更新成功
+10. 记录物品变化
+11. 游戏服务器返回移动结果
+12. 网关将响应发送给客户端
+
+### 5.6 物品合成流程    
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server   
+    participant DB as DB Proxy
+    
+    C->>G: 1. 物品合成请求(token, target_id, material_slots)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效  
+    GM->>DB: 5. 获取物品信息
+    DB-->>GM: 6. 返回物品数据
+    GM->>GM: 7. 验证合成参数
+    GM->>DB: 8. 更新物品数据
+    DB-->>GM: 9. 更新成功
+    GM->>DB: 10. 记录物品变化   
+    GM-->>G: 11. 返回合成结果
+    G-->>C: 12. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送物品合成请求，包含令牌、目标物品ID和材料格子位置列表
+2. 网关转发请求到游戏服务器 
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器查询物品信息
+6. DB代理返回物品数据
+7. 游戏服务器验证合成参数
+8. 更新物品数据到数据库 
+9. 数据库更新成功       
+10. 记录物品变化
+11. 游戏服务器返回合成结果
+12. 网关将响应发送给客户端
+
+### 5.7 物品分解流程    
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 物品分解请求(token, item_slots)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>DB: 5. 获取物品信息
+    DB-->>GM: 6. 返回物品数据
+    GM->>GM: 7. 验证分解参数
+    GM->>DB: 8. 更新物品数据
+    DB-->>GM: 9. 更新成功
+    GM->>DB: 10. 记录物品变化
+    GM-->>G: 11. 返回分解结果
+    G-->>C: 12. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送物品分解请求，包含令牌和物品格子位置列表
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器查询物品信息
+6. DB代理返回物品数据
+7. 游戏服务器验证分解参数
+8. 更新物品数据到数据库
+9. 数据库更新成功
+10. 记录物品变化
+11. 游戏服务器返回分解结果
+12. 网关将响应发送给客户端  
+
+## 6. GM 指令流程   
+### 6.1 GM 指令流程
+```mermaid
     participant C as Client
     participant G as Gate Server
     participant GM as Game Server
@@ -270,6 +418,7 @@ sequenceDiagram
    - add_item: 添加物品到背包
    - del_item: 从背包删除物品
    - set_level: 设置用户等级
+   - clear_bag: 清空背包
 6. 获取相关数据
 7. 验证操作参数
 8. 更新数据到数据库
