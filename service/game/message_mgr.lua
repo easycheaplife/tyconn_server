@@ -37,6 +37,8 @@ function M.init()
         require "game.handlers.use_item_handler")
     M.register(pb.enum("common.MessageID", "C2G_EXPAND_BAG_REQUEST"),
         require "game.handlers.expand_bag_handler")
+    M.register(pb.enum("common.MessageID", "C2G_SORT_BAG_REQUEST"),
+        require "game.handlers.sort_bag_handler")
     M.register(pb.enum("common.MessageID", "C2G_GM_COMMAND_REQUEST"),
         require "game.handlers.gm_command_handler")
     

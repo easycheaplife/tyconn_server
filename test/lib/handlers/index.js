@@ -1,22 +1,29 @@
 // 导出所有处理器
 const getBagInfo = require('./bag/get_bag_info');
 const expandBag = require('./bag/expand_bag');
+const sortBag = require('./bag/sort_bag');
+const useItem = require('./item/use_item');
+const getUserInfo = require('./user/get_user_info');
+const getUserCards = require('./user/get_user_cards');
+const sendHeartbeat = require('./system/heartbeat');
+const gm_command = require('./gm/gm_command');
 
 module.exports = {
     // 背包相关
-    getBagInfo: require('./bag/get_bag_info'),
-    expandBag: require('./bag/expand_bag'),
+    getBagInfo,
+    expandBag,
+    sortBag,
     
     // 物品相关
-    useItem: require('./item/use_item'),
+    useItem,
     
     // 用户相关
-    getUserInfo: require('./user/get_user_info'),
-    getUserCards: require('./user/get_user_cards'),
+    getUserInfo,
+    getUserCards,
     
     // 系统相关
-    sendHeartbeat: require('./system/heartbeat'),
+    sendHeartbeat,
     
     // GM相关
-    gm_command: require('./gm/gm_command')
+    gm_command
 }; 

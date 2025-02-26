@@ -4,6 +4,7 @@ local bag_dao = require "dao.bag_dao"
 local item_dao = require "dao.item_dao"
 local bag_model = require "models.bag_model"
 local item_model = require "models.item_model"
+local config_service = require "services.config_service"
 
 local M = {}
 
@@ -36,14 +37,6 @@ local EQUIP_SLOTS = {
     BOOTS = 6       -- 靴子
 }
 
--- 获取物品配置
-local function get_item_config(item_id)
-    local config = require("config.item_config")[item_id]
-    if not config then
-        return nil
-    end
-    return config
-end
 
 -- 检查物品是否可堆叠
 local function can_stack(item_id)
@@ -61,22 +54,6 @@ local function get_stack_limit(item_id)
         return 1
     end
     return config.stack_limit
-end
-
--- 检查物品是否可装备
-local function can_equip(item_id, slot_index)
-    local config = get_item_config(item_id)
-    if not config then
-        return false
-    end
-    
-    -- 检查物品类型
-    if config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
-        return false
-    end
-    
-    -- 检查装备类型与槽位是否匹配
-    return config.equip_type == slot_index
 end
 
 -- 初始化用户背包系统
@@ -267,8 +244,8 @@ function M.sort_bag(user_id, bag_type)
     -- 3. 按规则排序
     table.sort(bag_items, function(a, b)
         -- 按物品类型、品质、等级排序
-        local config_a = require("config.item_config")[a.item_id]
-        local config_b = require("config.item_config")[b.item_id]
+        local config_a = config_service.get_item_config(a.item_id)
+        local config_b = config_service.get_item_config(b.item_id)
         
         if config_a.type ~= config_b.type then
             return config_a.type < config_b.type
@@ -278,7 +255,7 @@ function M.sort_bag(user_id, bag_type)
             return config_a.quality > config_b.quality
         end
         
-        return config_a.level > config_b.level
+        return config_a.id < config_b.id
     end)
     
     -- 4. 重新分配格子
@@ -290,6 +267,39 @@ function M.sort_bag(user_id, bag_type)
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
         return false, "保存物品失败"
+    end
+    
+    return true, '整理成功', items
+end
+
+-- 整理所有背包
+function M.sort_all_bags(user_id, rule)
+    -- 1. 检查用户ID
+    if not user_id then
+        return false, "无效的用户ID"
+    end
+    
+    -- 2. 整理各类型背包
+    local bag_types = {
+        item_model.BAG_TYPE.MAIN,
+        item_model.BAG_TYPE.STORAGE
+    }
+    
+    for _, bag_type in ipairs(bag_types) do
+        local ok, err = M.sort_bag(user_id, bag_type, rule)
+        if not ok then
+            logger.error("Failed to sort bag %d for user %d: %s", 
+                bag_type, user_id, err)
+        end
+    end
+    
+    -- 3. 尝试堆叠
+    for _, bag_type in ipairs(bag_types) do
+        local ok, need_update = M.quick_stack(user_id, bag_type)
+        if ok and need_update then
+            -- 如果有堆叠，重新排序
+            M.sort_bag(user_id, bag_type, rule)
+        end
     end
     
     return true

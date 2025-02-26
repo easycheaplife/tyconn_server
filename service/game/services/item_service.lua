@@ -13,6 +13,28 @@ local config_service = require "services.config_service"
 
 local M = {}
 
+-- 物品查询条件
+local QUERY_CONDITION = {
+    TYPE = 1,       -- 按类型查询
+    QUALITY = 2,    -- 按品质查询
+    LEVEL = 3,      -- 按等级查询
+    EXPIRED = 4,    -- 按过期状态查询
+    LOCKED = 5,     -- 按锁定状态查询
+    NAME = 6,       -- 按名称查询
+    TAG = 7,        -- 按标签查询
+    EFFECT = 8,     -- 按效果查询
+    CATEGORY = 9    -- 按分类查询
+}
+
+-- 排序规则
+local SORT_RULE = {
+    TYPE = 1,       -- 按类型排序
+    QUALITY = 2,    -- 按品质排序
+    LEVEL = 3,      -- 按等级排序
+    COUNT = 4,      -- 按数量排序
+    TIME = 5        -- 按时间排序
+}
+
 -- 初始化新用户物品
 function M.init_user_items(user_id)
     if not user_id then
@@ -42,28 +64,6 @@ function M.init_user_items(user_id)
 
     return true
 end
-
--- 物品查询条件
-local QUERY_CONDITION = {
-    TYPE = 1,       -- 按类型查询
-    QUALITY = 2,    -- 按品质查询
-    LEVEL = 3,      -- 按等级查询
-    EXPIRED = 4,    -- 按过期状态查询
-    LOCKED = 5,     -- 按锁定状态查询
-    NAME = 6,       -- 按名称查询
-    TAG = 7,        -- 按标签查询
-    EFFECT = 8,     -- 按效果查询
-    CATEGORY = 9    -- 按分类查询
-}
-
--- 排序规则
-local SORT_RULE = {
-    TYPE = 1,       -- 按类型排序
-    QUALITY = 2,    -- 按品质排序
-    LEVEL = 3,      -- 按等级排序
-    COUNT = 4,      -- 按数量排序
-    TIME = 5        -- 按时间排序
-}
 
 -- 获取物品排序权重
 local function get_item_weight(item, rule)
@@ -1154,90 +1154,6 @@ function M.quick_stack(user_id, bag_type)
     return true, need_update
 end
 
--- 整理背包
-function M.sort_bag(user_id, bag_type, rule)
-    -- 1. 获取背包
-    local bag = bag_dao.get_user_bag(user_id, bag_type)  -- 直接使用 dao 层
-    if not bag then
-        return false, "获取背包失败"
-    end
-    
-    -- 2. 收集所有物品
-    local items = {}
-    for _, slot in pairs(bag.slots) do
-        if slot.state == item_model.SLOT_STATE.OCCUPIED then
-            table.insert(items, slot)
-        end
-    end
-    
-    -- 3. 按规则排序
-    table.sort(items, function(a, b)
-        local weight_a = get_item_weight(a, rule or SORT_RULE.TYPE)
-        local weight_b = get_item_weight(b, rule or SORT_RULE.TYPE)
-        if weight_a == weight_b then
-            return a.item_id < b.item_id
-        end
-        return weight_a > weight_b
-    end)
-    
-    -- 4. 重新放置物品
-    local slot_index = 1
-    for i = 1, bag.size do
-        if i <= #items then
-            -- 放置物品
-            bag.slots[i] = items[i]
-            bag.slots[i].index = i
-        else
-            -- 清空格子
-            bag.slots[i] = {
-                index = i,
-                state = item_model.SLOT_STATE.EMPTY
-            }
-        end
-    end
-    
-    -- 5. 保存更新
-    local ok = bag_dao.update_user_bag(user_id, bag_type, bag)
-    if not ok then
-        return false, "保存背包失败"
-    end
-    
-    return true
-end
-
--- 整理所有背包
-function M.sort_all_bags(user_id, rule)
-    -- 1. 检查用户ID
-    if not user_id then
-        return false, "无效的用户ID"
-    end
-    
-    -- 2. 整理各类型背包
-    local bag_types = {
-        item_model.BAG_TYPE.MAIN,
-        item_model.BAG_TYPE.STORAGE
-    }
-    
-    for _, bag_type in ipairs(bag_types) do
-        local ok, err = M.sort_bag(user_id, bag_type, rule)
-        if not ok then
-            logger.error("Failed to sort bag %d for user %d: %s", 
-                bag_type, user_id, err)
-        end
-    end
-    
-    -- 3. 尝试堆叠
-    for _, bag_type in ipairs(bag_types) do
-        local ok, need_update = M.quick_stack(user_id, bag_type)
-        if ok and need_update then
-            -- 如果有堆叠，重新排序
-            M.sort_bag(user_id, bag_type, rule)
-        end
-    end
-    
-    return true
-end
-
 -- 搜索物品
 function M.search_items(user_id, keyword, options)
     -- 1. 获取物品列表
@@ -2206,6 +2122,22 @@ function M.get_user_bags(user_id)
     end
 
     return bag_info_list
+end
+
+-- 检查物品是否可装备
+local function can_equip(item_id, slot_index)
+    local config = config_service.get_item_config(item_id)
+    if not config then
+        return false
+    end
+    
+    -- 检查物品类型
+    if config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
+        return false
+    end
+    
+    -- 检查装备类型与槽位是否匹配
+    return config.equip_type == slot_index
 end
 
 return M 

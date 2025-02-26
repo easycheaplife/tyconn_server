@@ -299,7 +299,7 @@ function M.recalc_equip_property(user_id)
     -- 3. 遍历装备
     for _, slot in pairs(equip_bag.slots) do
         if slot.state == item_model.SLOT_STATE.OCCUPIED then
-            local config = get_item_config(slot.item_id)
+            local config = config_service.get_item_config(slot.item_id)
             if config then
                 total_property.hp = total_property.hp + (config.hp or 0)
                 total_property.attack = total_property.attack + (config.attack or 0)

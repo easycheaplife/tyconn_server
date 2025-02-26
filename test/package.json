@@ -1,6 +1,7 @@
 {
   "scripts": {
     "test": "node run_test.js",
+    "benchmark": "node benchmark/cli.js",
     "test:login": "node test/run_test.js -t login",
     "test:user": "node test/run_test.js -t user_info",
     "test:heartbeat": "node test/run_test.js -t heartbeat",
@@ -8,7 +9,7 @@
     "test:user_cards": "node test/run_test.js -t user_cards",
     "test:bag": "node test/run_test.js -t bag_info",
     "test:item": "node test/run_test.js -t use_item",
-    "benchmark": "node benchmark/cli.js"
+    "test:sort_bag": "node test/run_test.js -t sort_bag"
   },
   "dependencies": {
     "jsonwebtoken": "^9.0.2",
