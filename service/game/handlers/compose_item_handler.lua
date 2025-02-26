@@ -1,0 +1,89 @@
+local skynet = require "skynet"
+local logger = require "logger"
+local pb = require "pb"
+local bag_service = require "services.bag_service"
+local handler_helper = require "game.handlers.handler_helper"
+local message = require "message"
+local utils = require "utils"
+local config_service = require "services.config_service"
+
+local M = {}
+
+function M.handle(client_id, msg)
+    logger.debug("Handling compose item request from client %d", client_id)
+    
+    -- 验证请求并获取用户信息
+    local base_request, request, error_code, error_message, user, claims = handler_helper.verify_request_with_user(
+        client_id, msg, "command.C2GComposeItemRequest")
+    if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+        logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", 
+            client_id, error_code, error_message)
+        return message.create_error_response(
+            base_request, 
+            error_code, 
+            "command.G2CComposeItemResponse", 
+            nil, 
+            pb.enum("common.MessageID", "G2C_COMPOSE_ITEM_RESPONSE"))
+    end
+
+    -- 验证参数
+    if not request.target_id or not request.material_slots or #request.material_slots == 0 then
+        return message.create_error_response(
+            base_request,
+            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAM"),
+            "command.G2CComposeItemResponse",
+            "Invalid parameters: target_id and material_slots are required",
+            pb.enum("common.MessageID", "G2C_COMPOSE_ITEM_RESPONSE"))
+    end
+    
+    -- 调用背包服务进行物品合成
+    local ok, err, new_item, remain_items = bag_service.compose_item(
+        user.user_id, 
+        request.target_id,
+        request.material_slots
+    )
+    
+    if not ok then
+        logger.error("Failed to compose item for user: %d, error: %s", user.user_id, err)
+        return message.create_error_response(
+            base_request,
+            pb.enum("common.ErrorCode", "ERROR_CODE_COMPOSE_ITEM_FAILED"),
+            "command.G2CComposeItemResponse",
+            err,
+            pb.enum("common.MessageID", "G2C_COMPOSE_ITEM_RESPONSE"))
+    end
+
+    logger.info("Compose item success - user_id: %d, target_id: %d", 
+        user.user_id, request.target_id)
+    
+    -- 构造返回物品信息
+    local new_item_info = new_item and {
+        item_id = new_item.item_id,
+        count = new_item.count,
+        slot = new_item.slot_index,
+        bag_type = new_item.bag_type
+    } or nil
+    
+    local remain_items_info = {}
+    for _, item in ipairs(remain_items or {}) do
+        table.insert(remain_items_info, {
+            item_id = item.item_id,
+            count = item.count,
+            slot = item.slot_index,
+            bag_type = item.bag_type
+        })
+    end
+    
+    -- 返回成功响应
+    return message.create_success_response(
+        base_request,
+        "command.G2CComposeItemResponse",
+        { 
+            success = true,
+            new_item = new_item_info,
+            remain_items = remain_items_info
+        },
+        pb.enum("common.MessageID", "G2C_COMPOSE_ITEM_RESPONSE"))
+end
+
+return M 

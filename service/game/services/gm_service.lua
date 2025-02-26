@@ -57,21 +57,25 @@ local GM_HANDLERS = {
     end,
 
     -- 清空背包
-    clear_bag = function(user_id, params)
-        -- 先获取所有物品
-        local items = item_service.get_user_items(user_id)
-        if not items then
-            return false, "获取背包失败"
+    clear_bag = function(user_id, args)
+        -- 参数检查
+        if not args[1] then
+            return false, "缺少背包类型参数"
         end
-
-        -- 使用batch_remove_items保持与item_service一致
-        local ok = item_service.batch_remove_items(user_id, items)
+        
+        local bag_type = tonumber(args[1])
+        if not bag_type then
+            return false, "背包类型必须是数字"
+        end
+        
+        -- 调用背包服务清空背包
+        local bag_service = require "services.bag_service"
+        local ok, msg = bag_service.clear_bag(user_id, bag_type)
         if not ok then
-            return false, "清空背包失败"
+            return false, msg
         end
-
-        logger.info("GM cleared bag - user_id: %d", user_id)
-        return true, "清空背包成功"
+        
+        return true, "背包已清空"
     end,
 
     -- 设置等级

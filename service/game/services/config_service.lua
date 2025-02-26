@@ -77,6 +77,26 @@ function M.load_item_config()
     CONFIG_CACHE.items[1001].effect_value = 100
     CONFIG_CACHE.items[1001].max_stack = 2000
 
+    CONFIG_CACHE.items[1002] = CONFIG_CACHE.items[1002] or {}
+    CONFIG_CACHE.items[1002].effect_type = item_model.EFFECT_TYPE.EXP
+    CONFIG_CACHE.items[1002].effect_value = 100
+    CONFIG_CACHE.items[1002].max_stack = 2000
+
+    CONFIG_CACHE.items[1003] = CONFIG_CACHE.items[1003] or {}
+    CONFIG_CACHE.items[1003].effect_type = item_model.EFFECT_TYPE.EXP
+    CONFIG_CACHE.items[1003].effect_value = 100
+    CONFIG_CACHE.items[1003].max_stack = 2000
+
+    CONFIG_CACHE.items[1004] = CONFIG_CACHE.items[1004] or {}
+    CONFIG_CACHE.items[1004].effect_type = item_model.EFFECT_TYPE.EXP
+    CONFIG_CACHE.items[1004].effect_value = 100
+    CONFIG_CACHE.items[1004].max_stack = 2000
+
+    CONFIG_CACHE.items[1005] = CONFIG_CACHE.items[1005] or {}
+    CONFIG_CACHE.items[1005].effect_type = item_model.EFFECT_TYPE.EXP
+    CONFIG_CACHE.items[1005].effect_value = 100
+    CONFIG_CACHE.items[1005].max_stack = 2000
+
     CONFIG_CACHE.items[2012] = CONFIG_CACHE.items[2012] or {}
     CONFIG_CACHE.items[2012].effect_type = item_model.EFFECT_TYPE.GOLD
     CONFIG_CACHE.items[2012].effect_value = 1000
@@ -190,6 +210,39 @@ end
 function M.get_property_config(property_id, level)
     local key = string.format("%d_%d", property_id, level)
     return CONFIG_CACHE.properties[key]
+end
+
+-- 获取物品合成配置
+function M.get_compose_config(target_id)
+    -- 只使用已知存在的物品ID (1001-1005, 2012)
+    local compose_configs = {
+        -- 草药合成配方 (1001 -> 1004)
+        [1004] = {
+            materials = {
+                {item_id = 1001, count = 2},  -- 需要2个草药
+                {item_id = 2012, count = 1}   -- 需要1个金币物品
+            },
+            result_count = 1  -- 合成1个高级草药(1004)
+        },
+        -- 水晶合成配方 (1002 -> 1005)
+        [1005] = {
+            materials = {
+                {item_id = 1002, count = 2},  -- 需要2个水晶
+                {item_id = 1003, count = 1}   -- 需要1个其他物品
+            },
+            result_count = 1  -- 合成1个高级物品(1005)
+        },
+        -- 高级合成 (1003 + 1004 -> 1005)
+        [1005] = {
+            materials = {
+                {item_id = 1003, count = 3},  -- 需要3个物品1003
+                {item_id = 1004, count = 2}   -- 需要2个物品1004
+            },
+            result_count = 1  -- 合成1个高级物品(1005)
+        }
+    }
+    
+    return compose_configs[target_id]
 end
 
 return M

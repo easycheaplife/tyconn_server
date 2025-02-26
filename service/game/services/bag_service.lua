@@ -5,6 +5,7 @@ local item_dao = require "dao.item_dao"
 local bag_model = require "models.bag_model"
 local item_model = require "models.item_model"
 local config_service = require "services.config_service"
+local snowflake = require "utils.snowflake"
 
 local M = {}
 
@@ -216,7 +217,7 @@ function M.move_item(user_id, src_bag_type, src_slot, dst_bag_type, dst_slot, co
         if move_count < src_item.count and count > 0 then
             -- 部分移动到空格子，创建新物品
             local new_item = item_model.new({
-                id = snowflake.next_id(),
+                id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
                 user_id = user_id,
                 item_id = src_item.item_id,
                 count = move_count,
@@ -720,6 +721,149 @@ function M.expand_bag(user_id, bag_type, add_size)
     bag_dao.clear_cache(user_id)
 
     return true, new_size, nil, items
+end
+
+-- 物品合成
+function M.compose_item(user_id, target_id, material_slots)
+    -- 1. 获取物品列表
+    local items = item_dao.get_user_items(user_id)
+    if not items then
+        return false, "获取物品失败"
+    end
+    
+    -- 2. 获取合成配置
+    local compose_config = config_service.get_compose_config(target_id)
+    if not compose_config then
+        return false, "物品不可合成"
+    end
+    
+    -- 3. 检查材料槽位是否有效
+    if #material_slots ~= #compose_config.materials then
+        return false, "材料数量不匹配"
+    end
+    
+    -- 4. 收集材料物品
+    local material_items = {}
+    local material_map = {}
+    
+    -- 构建材料ID到需求数量的映射
+    for _, material in ipairs(compose_config.materials) do
+        material_map[material.item_id] = material.count
+    end
+    
+    -- 验证用户提供的材料
+    for _, slot in ipairs(material_slots) do
+        local found = false
+        for _, item in ipairs(items) do
+            if item.slot_index == slot and item.bag_type == bag_model.BAG_TYPE.MAIN then
+                if material_map[item.item_id] then
+                    -- 验证数量是否足够
+                    if item.count < material_map[item.item_id] then
+                        return false, "材料数量不足"
+                    end
+                    material_items[#material_items + 1] = item
+                    found = true
+                    break
+                else
+                    return false, "无效的材料"
+                end
+            end
+        end
+        if not found then
+            return false, "背包格子不存在"
+        end
+    end
+    
+    -- 5. 扣除材料
+    local remain_items = {}
+    for i, item in ipairs(material_items) do
+        local required = material_map[item.item_id]
+        item.count = item.count - required
+        
+        if item.count > 0 then
+            -- 如果材料有剩余，记录到剩余物品中
+            remain_items[#remain_items + 1] = item
+        else
+            -- 如果材料用完，从物品列表中移除
+            for j, it in ipairs(items) do
+                if it.id == item.id then
+                    table.remove(items, j)
+                    break
+                end
+            end
+        end
+    end
+    
+    -- 6. 寻找空格子放置合成物品
+    local empty_slot = nil
+    for i = 0, 99 do  -- 假设背包最大100格
+        local occupied = false
+        for _, item in ipairs(items) do
+            if item.bag_type == bag_model.BAG_TYPE.MAIN and item.slot_index == i then
+                occupied = true
+                break
+            end
+        end
+        if not occupied then
+            empty_slot = i
+            break
+        end
+    end
+    
+    if not empty_slot then
+        return false, "背包已满"
+    end
+    
+    -- 7. 创建合成物品
+    local new_item = item_model.new({
+        id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
+        user_id = user_id,
+        item_id = target_id,
+        count = compose_config.result_count or 1,
+        bag_type = bag_model.BAG_TYPE.MAIN,
+        slot_index = empty_slot
+    })
+    
+    -- 添加到物品列表
+    table.insert(items, new_item)
+    
+    -- 8. 保存更新
+    local ok = item_dao.update_user_items(user_id, items)
+    if not ok then
+        return false, "保存物品失败"
+    end
+    
+    return true, nil, new_item, remain_items
+end
+
+-- 清空背包
+function M.clear_bag(user_id, bag_type)
+    -- 验证背包类型
+    if not bag_model.is_valid_bag_type(bag_type) then
+        return false, "无效的背包类型"
+    end
+    
+    -- 获取用户所有物品
+    local items = item_dao.get_user_items(user_id)
+    if not items then
+        return false, "获取物品失败"
+    end
+    
+    -- 筛选出不在指定背包的物品
+    local filtered_items = {}
+    for _, item in ipairs(items) do
+        if item.bag_type ~= bag_type then
+            table.insert(filtered_items, item)
+        end
+    end
+    
+    -- 保存更新后的物品列表
+    local ok = item_dao.update_user_items(user_id, filtered_items)
+    if not ok then
+        return false, "保存物品失败"
+    end
+    
+    return true, "背包已清空"
 end
 
 return M 

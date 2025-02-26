@@ -90,4 +90,11 @@ function M.validate_slot(slot)
     return true
 end
 
+-- 验证背包类型是否有效
+function M.is_valid_bag_type(bag_type)
+    return bag_type == M.BAG_TYPE.MAIN or 
+           bag_type == M.BAG_TYPE.STORAGE or 
+           bag_type == M.BAG_TYPE.EQUIP
+end
+
 return M 
