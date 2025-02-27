@@ -1,20 +1,7 @@
 local snowflake = require "utils.snowflake"
+local enum = require "game.define.enum"
 
 local M = {}
-
--- 背包类型
-M.BAG_TYPE = {
-    MAIN = 1,      -- 主背包
-    STORAGE = 2,   -- 仓库
-    EQUIP = 3,     -- 装备栏
-}
-
--- 格子状态
-M.SLOT_STATE = {
-    EMPTY = 0,     -- 空格子
-    NORMAL = 1,    -- 正常
-    LOCKED = 2,    -- 锁定
-}
 
 -- 创建背包模型
 function M.new_bag(params)
@@ -38,7 +25,7 @@ function M.new_slot(params)
         user_id = params.user_id,
         bag_type = params.bag_type,
         slot_index = params.slot_index,
-        state = params.state or M.SLOT_STATE.EMPTY,
+        state = params.state or enum.SlotState.SLOT_STATE_EMPTY,
         create_time = params.create_time or now,
         update_time = params.update_time or now
     }
@@ -92,9 +79,9 @@ end
 
 -- 验证背包类型是否有效
 function M.is_valid_bag_type(bag_type)
-    return bag_type == M.BAG_TYPE.MAIN or 
-           bag_type == M.BAG_TYPE.STORAGE or 
-           bag_type == M.BAG_TYPE.EQUIP
+    return bag_type == enum.BagType.BAG_TYPE_MAIN or 
+           bag_type == enum.BagType.BAG_TYPE_STORAGE or 
+           bag_type == enum.BagType.BAG_TYPE_EQUIP
 end
 
 return M 

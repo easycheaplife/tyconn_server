@@ -5,6 +5,8 @@ package common;
 enum BagType {
     BAG_TYPE_NONE = 0;
     BAG_TYPE_MAIN = 1;      // 主背包
+    BAG_TYPE_STORAGE = 2;   // 仓库
+    BAG_TYPE_EQUIP = 3;     // 装备栏
 }
 
 // 物品类型
@@ -16,6 +18,19 @@ enum ItemType {
     ITEM_TYPE_PARTNER = 4;          // 伙伴
     ITEM_TYPE_PARTNER_FRAGMENT = 5; // 伙伴碎片
     ITEM_TYPE_TREASURE = 9;         // 宝箱
+}
+
+// 物品分类
+enum ItemCategory {
+    ITEM_CATEGORY_NONE = 0;
+    ITEM_CATEGORY_WEAPON = 1;      // 武器
+    ITEM_CATEGORY_ARMOR = 2;       // 防具
+    ITEM_CATEGORY_ACCESSORY = 3;   // 饰品
+    ITEM_CATEGORY_POTION = 4;      // 药水
+    ITEM_CATEGORY_SCROLL = 5;      // 卷轴
+    ITEM_CATEGORY_MATERIAL = 6;    // 材料
+    ITEM_CATEGORY_QUEST = 7;       // 任务
+    ITEM_CATEGORY_OTHER = 8;       // 其他
 }
 
 // 格子状态
@@ -41,11 +56,15 @@ enum ChangeSource {
     SOURCE_NONE = 0;
     SOURCE_INIT = 1;         // 初始化
     SOURCE_REWARD = 2;       // 奖励
-    SOURCE_USE = 3;          // 使用
-    SOURCE_COMPOSE = 4;      // 合成
-    SOURCE_DECOMPOSE = 5;    // 分解
-    SOURCE_TRADE = 6;        // 交易
-    SOURCE_MAIL = 7;         // 邮件
+    SOURCE_CREATE = 3;      // 创建
+    SOURCE_USE = 4;          // 使用
+    SOURCE_COMPOSE = 5;      // 合成
+    SOURCE_DECOMPOSE = 6;    // 分解
+    SOURCE_STACK = 7;        // 堆叠
+    SOURCE_BATCH_REMOVE = 8; // 批量删除
+    SOURCE_TRADE = 9;        // 交易
+    SOURCE_MAIL = 10;         // 邮件
+   
 }
 
 // 效果类型

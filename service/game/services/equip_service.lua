@@ -5,6 +5,7 @@ local item_dao = require "dao.item_dao"
 local bag_model = require "models.bag_model"
 local item_model = require "models.item_model"
 local property_service = require "services.property_service"
+local enum = require "game.define.enum"
 
 local M = {}
 
@@ -81,14 +82,14 @@ function M.equip_item(user_id, from_bag, from_slot, equip_slot)
     -- 4. 查找当前装备
     local curr_equip = nil
     for _, item in ipairs(items) do
-        if item.bag_type == bag_model.BAG_TYPE.EQUIP and item.slot_index == equip_slot then
+        if item.bag_type == enum.BagType.BAG_TYPE_EQUIP and item.slot_index == equip_slot then
             curr_equip = item
             break
         end
     end
     
     -- 5. 交换位置
-    from_item.bag_type = bag_model.BAG_TYPE.EQUIP
+    from_item.bag_type = enum.BagType.BAG_TYPE_EQUIP
     from_item.slot_index = equip_slot
     
     if curr_equip then
@@ -128,7 +129,7 @@ function M.unequip_item(user_id, equip_slot, to_bag, to_slot)
     -- 2. 查找装备
     local equip = nil
     for _, item in ipairs(items) do
-        if item.bag_type == bag_model.BAG_TYPE.EQUIP and item.slot_index == equip_slot then
+        if item.bag_type == enum.BagType.BAG_TYPE_EQUIP and item.slot_index == equip_slot then
             equip = item
             break
         end
@@ -171,7 +172,7 @@ end
 
 -- 移动装备(处理装备栏相关的移动)
 function M.move_equipment(user_id, from_bag, from_slot, to_bag, to_slot)
-    if from_bag == bag_model.BAG_TYPE.EQUIP then
+    if from_bag == enum.BagType.BAG_TYPE_EQUIP then
         -- 从装备栏卸下
         return M.unequip_item(user_id, from_slot, to_bag, to_slot)
     else
@@ -191,7 +192,7 @@ function M.get_equipments(user_id)
     -- 2. 过滤装备栏物品
     local equipments = {}
     for _, item in ipairs(items) do
-        if item.bag_type == bag_model.BAG_TYPE.EQUIP then
+        if item.bag_type == enum.BagType.BAG_TYPE_EQUIP then
             equipments[item.slot_index] = item
         end
     end
@@ -214,7 +215,7 @@ function M.check_equipment_expired(user_id)
     for slot, equip in pairs(equipments) do
         if equip.expire_time and equip.expire_time <= now then
             -- 自动卸下过期装备
-            local ok = M.unequip_item(user_id, slot, bag_model.BAG_TYPE.MAIN, 0)
+            local ok = M.unequip_item(user_id, slot, enum.BagType.BAG_TYPE_MAIN, 0)
             if ok then
                 need_update = true
             end

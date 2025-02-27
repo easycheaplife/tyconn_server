@@ -5,6 +5,7 @@ local item_dao = require "dao.item_dao"
 local bag_model = require "models.bag_model"
 local item_model = require "models.item_model"
 local config_service = require "services.config_service"
+local enum = require "game.define.enum"
 
 local M = {}
 
@@ -147,7 +148,7 @@ function M.recalc_equip_props(user_id)
     -- 2. 计算总属性
     local total_props = {}
     for _, item in ipairs(items) do
-        if item.bag_type == bag_model.BAG_TYPE.EQUIP then
+        if item.bag_type == enum.BagType.BAG_TYPE_EQUIP then
             local props = calc_equip_props(item)
             total_props = merge_props(total_props, props)
         end
@@ -284,7 +285,7 @@ end
 function M.recalc_equip_property(user_id)
     -- 1. 获取装备栏
     local bag_service = require "services.bag_service"
-    local equip_bag = bag_service.get_user_bag(user_id, item_model.BAG_TYPE.EQUIP)
+    local equip_bag = bag_service.get_user_bag(user_id, enum.BagType.BAG_TYPE_EQUIP)
     if not equip_bag then
         return false, "获取装备栏失败"
     end
@@ -298,7 +299,7 @@ function M.recalc_equip_property(user_id)
     
     -- 3. 遍历装备
     for _, slot in pairs(equip_bag.slots) do
-        if slot.state == item_model.SLOT_STATE.OCCUPIED then
+        if slot.state == enum.SlotState.SLOT_STATE_OCCUPIED then
             local config = config_service.get_item_config(slot.item_id)
             if config then
                 total_property.hp = total_property.hp + (config.hp or 0)

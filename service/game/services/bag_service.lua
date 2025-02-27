@@ -8,22 +8,23 @@ local config_service = require "services.config_service"
 local item_service = require "services.item_service"
 local snowflake = require "utils.snowflake"
 local user_service = require "services.user_service"
+local enum = require "game.define.enum"
 
 local M = {}
 
 -- 背包初始化配置
 local BAG_CONFIG = {
-    [bag_model.BAG_TYPE.MAIN] = {
+    [enum.BagType.BAG_TYPE_MAIN] = {
         init_size = 20,    -- 初始格子数
         max_size = 100,    -- 最大格子数
         unlock_level = 1   -- 解锁等级
     },
-    [bag_model.BAG_TYPE.STORAGE] = {
+    [enum.BagType.BAG_TYPE_STORAGE] = {
         init_size = 50,
         max_size = 200,
         unlock_level = 10
     },
-    [bag_model.BAG_TYPE.EQUIP] = {
+    [enum.BagType.BAG_TYPE_EQUIP] = {
         init_size = 8,
         max_size = 8,
         unlock_level = 1
@@ -105,7 +106,7 @@ local function check_slot_state(user_id, bag_type, slot_index)
     end
     
     -- 3. 检查格子状态
-    if slot.state == bag_model.SLOT_STATE.LOCKED then
+    if slot.state == enum.SlotState.SLOT_STATE_LOCKED then
         return false, "格子已锁定"
     end
     
@@ -127,7 +128,7 @@ local function check_move_valid(user_id, from_bag, from_slot, to_bag, to_slot)
     end
     
     -- 3. 检查背包类型
-    if to_bag == bag_model.BAG_TYPE.EQUIP then
+    if to_bag == enum.BagType.BAG_TYPE_EQUIP then
         -- 移动到装备栏需要特殊检查
         return equip_service.check_can_equip(user_id, from_bag, from_slot, to_slot)
     end
@@ -172,7 +173,7 @@ function M.add_item_to_bag(user_id, item_data, bag_type, slot_index)
     end
     
     -- 2. 处理背包类型和格子位置
-    local target_bag_type = bag_type or bag_model.BAG_TYPE.MAIN
+    local target_bag_type = bag_type or enum.BagType.BAG_TYPE_MAIN
     local target_slot = slot_index
     
     -- 如果未指定格子位置，找一个空格子
@@ -223,7 +224,7 @@ function M.compose_item(user_id, target_id, material_slots)
     for _, slot in ipairs(material_slots) do
         local found = false
         for _, item in ipairs(items) do
-            if item.bag_type == bag_model.BAG_TYPE.MAIN and item.slot_index == slot then
+            if item.bag_type == enum.BagType.BAG_TYPE_MAIN and item.slot_index == slot then
                 table.insert(material_items, item)
                 found = true
                 break
@@ -272,7 +273,7 @@ function M.compose_item(user_id, target_id, material_slots)
     local created_item = nil
     if result == item_model.COMPOSE_RESULT.SUCCESS and new_item_data then
         -- 找一个空格子
-        local empty_slot = M.find_empty_slot(user_id, bag_model.BAG_TYPE.MAIN, items)
+        local empty_slot = M.find_empty_slot(user_id, enum.BagType.BAG_TYPE_MAIN, items)
         if not empty_slot then
             return false, "背包已满"
         end
@@ -283,7 +284,7 @@ function M.compose_item(user_id, target_id, material_slots)
             user_id = user_id,
             item_id = new_item_data.item_id,
             count = new_item_data.count,
-            bag_type = bag_model.BAG_TYPE.MAIN,
+            bag_type = enum.BagType.BAG_TYPE_MAIN,
             slot_index = empty_slot
         })
         
@@ -319,7 +320,7 @@ function M.decompose_item(user_id, item_slots)
     for _, slot in ipairs(item_slots) do
         local found = false
         for _, item in ipairs(items) do
-            if item.bag_type == bag_model.BAG_TYPE.MAIN and item.slot_index == slot then
+            if item.bag_type == enum.BagType.BAG_TYPE_MAIN and item.slot_index == slot then
                 table.insert(decompose_items, item)
                 found = true
                 break
@@ -350,7 +351,7 @@ function M.decompose_item(user_id, item_slots)
     local result_item_objects = {}
     for _, result_data in ipairs(result_items_data) do
         -- 寻找空格子
-        local empty_slot = M.find_empty_slot(user_id, bag_model.BAG_TYPE.MAIN, items)
+        local empty_slot = M.find_empty_slot(user_id, enum.BagType.BAG_TYPE_MAIN, items)
         if not empty_slot then
             return false, "背包已满"
         end
@@ -361,7 +362,7 @@ function M.decompose_item(user_id, item_slots)
             user_id = user_id,
             item_id = result_data.item_id,
             count = result_data.count,
-            bag_type = bag_model.BAG_TYPE.MAIN,
+            bag_type = enum.BagType.BAG_TYPE_MAIN,
             slot_index = empty_slot
         })
         
@@ -563,8 +564,8 @@ function M.sort_all_bags(user_id, rule)
     
     -- 2. 整理各类型背包
     local bag_types = {
-        item_model.BAG_TYPE.MAIN,
-        item_model.BAG_TYPE.STORAGE
+        enum.BagType.BAG_TYPE_MAIN,
+        enum.BagType.BAG_TYPE_STORAGE
     }
     
     for _, bag_type in ipairs(bag_types) do
@@ -649,7 +650,7 @@ end
 function M.equip_item(user_id, from_bag, from_slot, equip_slot)
     -- 1. 检查源背包
     local src_bag = M.get_user_bag(user_id, from_bag)
-    local equip_bag = M.get_user_bag(user_id, item_model.BAG_TYPE.EQUIP)
+    local equip_bag = M.get_user_bag(user_id, enum.BagType.BAG_TYPE_EQUIP)
     if not src_bag or not equip_bag then
         return false, "背包不存在"
     end
@@ -660,7 +661,7 @@ function M.equip_item(user_id, from_bag, from_slot, equip_slot)
     end
     
     local src_item = src_bag.slots[from_slot]
-    if src_item.state ~= item_model.SLOT_STATE.OCCUPIED then
+    if src_item.state ~= enum.SlotState.SLOT_STATE_OCCUPIED then
         return false, "源格子没有物品"
     end
     
@@ -676,12 +677,12 @@ function M.equip_item(user_id, from_bag, from_slot, equip_slot)
     
     -- 5. 卸下当前装备(如果有)
     local curr_equip = equip_bag.slots[equip_slot]
-    if curr_equip.state == item_model.SLOT_STATE.OCCUPIED then
+    if curr_equip.state == enum.SlotState.SLOT_STATE_OCCUPIED then
         -- 查找主背包空格子
-        local main_bag = M.get_user_bag(user_id, item_model.BAG_TYPE.MAIN)
+        local main_bag = M.get_user_bag(user_id, enum.BagType.BAG_TYPE_MAIN)
         local empty_slot = nil
         for i = 1, main_bag.size do
-            if main_bag.slots[i].state == item_model.SLOT_STATE.EMPTY then
+            if main_bag.slots[i].state == enum.SlotState.SLOT_STATE_EMPTY then
                 empty_slot = i
                 break
             end
@@ -696,7 +697,7 @@ function M.equip_item(user_id, from_bag, from_slot, equip_slot)
         main_bag.slots[empty_slot].index = empty_slot
         
         -- 保存主背包更新
-        local ok = bag_dao.update_user_bag(user_id, item_model.BAG_TYPE.MAIN, main_bag)
+        local ok = bag_dao.update_user_bag(user_id, enum.BagType.BAG_TYPE_MAIN, main_bag)
         if not ok then
             return false, "更新背包失败"
         end
@@ -709,7 +710,7 @@ function M.equip_item(user_id, from_bag, from_slot, equip_slot)
     -- 7. 清空源格子
     src_bag.slots[from_slot] = {
         index = from_slot,
-        state = item_model.SLOT_STATE.EMPTY
+        state = enum.SlotState.SLOT_STATE_EMPTY
     }
     
     -- 8. 保存更新
@@ -718,7 +719,7 @@ function M.equip_item(user_id, from_bag, from_slot, equip_slot)
         return false, "更新源背包失败"
     end
     
-    ok = bag_dao.update_user_bag(user_id, item_model.BAG_TYPE.EQUIP, equip_bag)
+    ok = bag_dao.update_user_bag(user_id, enum.BagType.BAG_TYPE_EQUIP, equip_bag)
     if not ok then
         return false, "更新装备栏失败"
     end
@@ -756,7 +757,7 @@ local function validate_bag(bag)
         end
         
         -- 检查状态
-        if slot.state == item_model.SLOT_STATE.OCCUPIED then
+        if slot.state == enum.SlotState.SLOT_STATE_OCCUPIED then
             -- 检查物品数据
             if not slot.item_id then
                 return false, string.format("格子 %d 物品ID为空", i)
@@ -862,7 +863,7 @@ function M.find_empty_slots(user_id, bag_type, count)
     -- 2. 查找空格子
     local empty_slots = {}
     for _, slot in ipairs(slots) do
-        if slot.state == bag_model.SLOT_STATE.EMPTY then
+        if slot.state == enum.SlotState.SLOT_STATE_EMPTY then
             table.insert(empty_slots, slot)
             if #empty_slots >= count then
                 break
@@ -907,12 +908,12 @@ end
 
 -- 锁定格子
 function M.lock_slot(user_id, bag_type, slot_index)
-    return bag_dao.update_slot_state(user_id, bag_type, slot_index, bag_model.SLOT_STATE.LOCKED)
+    return bag_dao.update_slot_state(user_id, bag_type, slot_index, enum.SlotState.SLOT_STATE_LOCKED)
 end
 
 -- 解锁格子
 function M.unlock_slot(user_id, bag_type, slot_index)
-    return bag_dao.update_slot_state(user_id, bag_type, slot_index, bag_model.SLOT_STATE.EMPTY)
+    return bag_dao.update_slot_state(user_id, bag_type, slot_index, enum.SlotState.SLOT_STATE_EMPTY)
 end
 
 -- 获取背包信息

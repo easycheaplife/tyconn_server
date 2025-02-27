@@ -10,6 +10,7 @@ local property_service = require "services.property_service"
 local bag_model = require "models.bag_model"
 local utils = require "utils"
 local config_service = require "services.config_service"
+local enum = require "game.define.enum"
 
 local M = {}
 
@@ -44,9 +45,9 @@ function M.init_user_items(user_id)
     logger.info("Initializing items for user: %d", user_id)
 
     -- 1. 创建主背包
-    local bag = bag_dao.get_user_bag(user_id, bag_model.BAG_TYPE.MAIN)
+    local bag = bag_dao.get_user_bag(user_id, enum.BagType.BAG_TYPE_MAIN)
     if not bag then
-        bag = bag_dao.create_bag(user_id, bag_model.BAG_TYPE.MAIN, 20)  -- 默认20格
+        bag = bag_dao.create_bag(user_id, enum.BagType.BAG_TYPE_MAIN, 20)  -- 默认20格
         if not bag then
             return false, "创建背包失败"
         end
@@ -162,7 +163,7 @@ function M.add_items_to_slot(user_id, items)
     end
 
     -- 1. 获取背包信息
-    local bag = bag_dao.get_user_bag(user_id, bag_model.BAG_TYPE.MAIN)
+    local bag = bag_dao.get_user_bag(user_id, enum.BagType.BAG_TYPE_MAIN)
     if not bag then
         return false, "获取背包失败"
     end
@@ -176,7 +177,7 @@ function M.add_items_to_slot(user_id, items)
     -- 3. 获取已使用的格子
     local used_slots = {}
     for _, item in ipairs(existing_items) do
-        if item.bag_type == bag_model.BAG_TYPE.MAIN then
+        if item.bag_type == enum.BagType.BAG_TYPE_MAIN then
             used_slots[item.slot_index] = true
         end
     end
@@ -196,7 +197,7 @@ function M.add_items_to_slot(user_id, items)
         -- 先尝试堆叠到现有物品上
         local remaining_count = count
         for _, existing_item in ipairs(existing_items) do
-            if existing_item.item_id == item_id and existing_item.bag_type == bag_model.BAG_TYPE.MAIN then
+            if existing_item.item_id == item_id and existing_item.bag_type == enum.BagType.BAG_TYPE_MAIN then
                 local max_stack = config.max_stack or 99
                 local can_stack = max_stack - existing_item.count
                 if can_stack > 0 then
@@ -239,7 +240,7 @@ function M.add_items_to_slot(user_id, items)
                     user_id = user_id,
                     item_id = item_id,
                     count = stack_count,
-                    bag_type = bag_model.BAG_TYPE.MAIN,
+                    bag_type = enum.BagType.BAG_TYPE_MAIN,
                     slot_index = next_slot,
                     create_time = os.time(),
                     update_time = os.time()
@@ -365,7 +366,7 @@ function M.use_item(user_id, item_id, count)
         
         -- 更新格子状态为空
         if bag_type and slot_index then
-            bag_dao.update_slot_state(user_id, bag_type, slot_index, bag_model.SLOT_STATE.EMPTY)
+            bag_dao.update_slot_state(user_id, bag_type, slot_index, enum.SlotState.SLOT_STATE_EMPTY)
         end
     end
 
@@ -1060,11 +1061,11 @@ function M.stack_items(user_id, bag_type, from_slot, to_slot)
     local src_slot = bag.slots[from_slot]
     local dst_slot = bag.slots[to_slot]
     
-    if src_slot.state ~= item_model.SLOT_STATE.OCCUPIED then
+    if src_slot.state ~= enum.SlotState.SLOT_STATE_OCCUPIED then
         return false, "源格子没有物品"
     end
     
-    if dst_slot.state ~= item_model.SLOT_STATE.OCCUPIED then
+    if dst_slot.state ~= enum.SlotState.SLOT_STATE_OCCUPIED then
         return false, "目标格子没有物品"
     end
     
@@ -1109,7 +1110,7 @@ function M.stack_items(user_id, bag_type, from_slot, to_slot)
     if src_slot.count <= 0 then
         bag.slots[from_slot] = {
             index = from_slot,
-            state = item_model.SLOT_STATE.EMPTY
+            state = enum.SlotState.SLOT_STATE_EMPTY
         }
     end
     
@@ -1134,11 +1135,11 @@ function M.quick_stack(user_id, bag_type)
     local need_update = false
     for i = 1, bag.size do
         local src_slot = bag.slots[i]
-        if src_slot.state == item_model.SLOT_STATE.OCCUPIED then
+        if src_slot.state == enum.SlotState.SLOT_STATE_OCCUPIED then
             -- 查找可堆叠的目标格子
             for j = 1, i-1 do
                 local dst_slot = bag.slots[j]
-                if dst_slot.state == item_model.SLOT_STATE.OCCUPIED and
+                if dst_slot.state == enum.SlotState.SLOT_STATE_OCCUPIED and
                     dst_slot.item_id == src_slot.item_id then
                     -- 尝试堆叠
                     local ok = M.stack_items(user_id, bag_type, i, j)
@@ -1350,7 +1351,7 @@ function M.equip_item(user_id, item_id, slot_id)
     end
     
     -- 5. 获取装备栏
-    local equip_bag = bag_dao.get_user_bag(user_id, item_model.BAG_TYPE.EQUIP)  -- 直接使用 dao 层
+    local equip_bag = bag_dao.get_user_bag(user_id, enum.BagType.BAG_TYPE_EQUIP)  -- 直接使用 dao 层
     if not equip_bag then
         return false, "获取装备栏失败"
     end
@@ -1365,7 +1366,7 @@ function M.equip_item(user_id, item_id, slot_id)
     
     -- 7. 卸下当前装备
     local current_equip = equip_bag.slots[slot_id]
-    if current_equip and current_equip.state == item_model.SLOT_STATE.OCCUPIED then
+    if current_equip and current_equip.state == enum.SlotState.SLOT_STATE_OCCUPIED then
         -- 移动到背包
         local ok, err = M.unequip_item(user_id, slot_id)
         if not ok then
@@ -1376,7 +1377,7 @@ function M.equip_item(user_id, item_id, slot_id)
     -- 8. 装备新物品
     equip_bag.slots[slot_id] = {
         index = slot_id,
-        state = item_model.SLOT_STATE.OCCUPIED,
+        state = enum.SlotState.SLOT_STATE_OCCUPIED,
         item_id = item_id,
         count = 1,
         equip_time = os.time()
@@ -1394,7 +1395,7 @@ function M.equip_item(user_id, item_id, slot_id)
     end
     
     -- 10. 保存更新
-    local ok = bag_dao.update_user_bag(user_id, item_model.BAG_TYPE.EQUIP, equip_bag)
+    local ok = bag_dao.update_user_bag(user_id, enum.BagType.BAG_TYPE_EQUIP, equip_bag)
     if not ok then
         return false, "保存装备栏失败"
     end
@@ -1413,14 +1414,14 @@ end
 -- 卸下装备
 function M.unequip_item(user_id, slot_id)
     -- 1. 获取装备栏
-    local equip_bag = bag_dao.get_user_bag(user_id, item_model.BAG_TYPE.EQUIP)  -- 直接使用 dao 层
+    local equip_bag = bag_dao.get_user_bag(user_id, enum.BagType.BAG_TYPE_EQUIP)  -- 直接使用 dao 层
     if not equip_bag then
         return false, "获取装备栏失败"
     end
     
     -- 2. 检查装备槽位
     local equip = equip_bag.slots[slot_id]
-    if not equip or equip.state ~= item_model.SLOT_STATE.OCCUPIED then
+    if not equip or equip.state ~= enum.SlotState.SLOT_STATE_OCCUPIED then
         return false, "装备槽位为空"
     end
     
@@ -1438,11 +1439,11 @@ function M.unequip_item(user_id, slot_id)
     -- 4. 清空装备槽位
     equip_bag.slots[slot_id] = {
         index = slot_id,
-        state = item_model.SLOT_STATE.EMPTY
+            state = enum.SlotState.SLOT_STATE_EMPTY
     }
     
     -- 5. 保存更新
-    ok = bag_dao.update_user_bag(user_id, item_model.BAG_TYPE.EQUIP, equip_bag)
+    ok = bag_dao.update_user_bag(user_id, enum.BagType.BAG_TYPE_EQUIP, equip_bag)
     if not ok then
         return false, "保存装备栏失败"
     end

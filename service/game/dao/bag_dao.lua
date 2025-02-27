@@ -6,6 +6,7 @@ local item_model = require "models.item_model"
 local bag_model = require "models.bag_model"
 local snowflake = require "utils.snowflake"
 local utils = require "utils"
+local enum = require "game.define.enum"
 
 local M = {}
 
@@ -153,7 +154,7 @@ function M.create_bag(user_id, bag_type, size)
             user_id = user_id,
             bag_type = bag_type,
             slot_index = i-1,
-            state = bag_model.SLOT_STATE.EMPTY,
+            state = enum.SlotState.SLOT_STATE_EMPTY,
             create_time = now,
             update_time = now
         }))
@@ -199,7 +200,7 @@ function M.update_bag_size(user_id, bag_type, new_size)
             user_id = user_id,
             bag_type = bag_type,
             slot_index = i-1,
-            state = bag_model.SLOT_STATE.EMPTY,
+            state = enum.SlotState.SLOT_STATE_EMPTY,
             create_time = now,
             update_time = now
         }))
@@ -243,19 +244,19 @@ function M.get_user_all_bags(user_id)
     if not bags then
         -- 3. 如果没有背包记录,创建默认背包
         -- 创建主背包(默认20格)
-        local main_bag = M.create_bag(user_id, bag_model.BAG_TYPE.MAIN, 20)
+        local main_bag = M.create_bag(user_id, enum.BagType.BAG_TYPE_MAIN, 20)
         if not main_bag then
             return nil
         end
         
         -- 创建仓库背包(默认30格)
-        local storage_bag = M.create_bag(user_id, bag_model.BAG_TYPE.STORAGE, 30)
+        local storage_bag = M.create_bag(user_id, enum.BagType.BAG_TYPE_STORAGE, 30)
         if not storage_bag then
             return nil
         end
 
         -- 创建装备背包(默认12格)
-        local equip_bag = M.create_bag(user_id, bag_model.BAG_TYPE.EQUIP, 12)
+        local equip_bag = M.create_bag(user_id, enum.BagType.BAG_TYPE_EQUIP, 12)
         if not equip_bag then
             return nil
         end
