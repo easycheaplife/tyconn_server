@@ -7,6 +7,17 @@ enum BagType {
     BAG_TYPE_MAIN = 1;      // 主背包
 }
 
+// 物品类型
+enum ItemType {
+    ITEM_TYPE_NONE = 0;
+    ITEM_TYPE_RESOURCE = 1;         // 资源
+    ITEM_TYPE_NORMAL = 2;           // 普通
+    ITEM_TYPE_EQUIP = 3;            // 装备
+    ITEM_TYPE_PARTNER = 4;          // 伙伴
+    ITEM_TYPE_PARTNER_FRAGMENT = 5; // 伙伴碎片
+    ITEM_TYPE_TREASURE = 9;         // 宝箱
+}
+
 // 格子状态
 enum SlotState {
     SLOT_STATE_NONE = 0;
