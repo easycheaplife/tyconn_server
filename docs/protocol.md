@@ -212,8 +212,6 @@ enum ItemEffectType {
 enum BagType {
     BAG_TYPE_NONE = 0;
     BAG_TYPE_MAIN = 1;      // 主背包
-    BAG_TYPE_STORAGE = 2;   // 仓库
-    BAG_TYPE_EQUIP = 3;     // 装备栏
 }
 
 enum ItemChangeType {

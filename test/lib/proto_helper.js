@@ -417,7 +417,6 @@ class ProtoHelper {
             this.BagType = {
                 BAG_TYPE_NONE: 0,
                 BAG_TYPE_MAIN: 1,
-                BAG_TYPE_STORAGE: 2
             };
             console.log('Using default BagType enum:', this.BagType);
         }

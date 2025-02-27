@@ -38,8 +38,7 @@ function M.handle(client_id, msg)
 
     -- 验证背包类型
     local valid_bag_types = {
-        [pb.enum("common.BagType", "BAG_TYPE_MAIN")] = true,
-        [pb.enum("common.BagType", "BAG_TYPE_STORAGE")] = true
+        [pb.enum("common.BagType", "BAG_TYPE_MAIN")] = true
     }
 
     -- 打印原始请求数据
