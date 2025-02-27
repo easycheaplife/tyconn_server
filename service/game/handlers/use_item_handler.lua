@@ -52,9 +52,8 @@ function M.handle(client_id, msg)
     local ok, result = item_service.use_item(user.user_id, request.item_id, request.count)
     if not ok then
         -- 检查是否是错误码
-        local error_code = type(result) == "number" and result or 
-            pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_NOT_FOUND")
-        local error_msg = type(result) == "string" and result or "物品不存在"
+        local error_code = result
+        local error_msg = "use item failed"
         
         return message.create_error_response(
             base_request,

@@ -49,7 +49,7 @@ function M.init_user_items(user_id)
     if not bag then
         bag = bag_dao.create_bag(user_id, enum.BagType.BAG_TYPE_MAIN, 20)  -- 默认20格
         if not bag then
-            return false, "创建背包失败"
+            return false, "create bag failed"
         end
     end
 
@@ -93,7 +93,7 @@ local function apply_item_effect(user_id, item_id, count)
         user_id, item_id, count)
     local config = config_service.get_item_config(item_id)
     if not config then
-        return false, "物品配置不存在"
+        return false, "item config is not exist"
     end
     
     -- 2. 检查使用限制
@@ -104,7 +104,7 @@ local function apply_item_effect(user_id, item_id, count)
         -- 获取已使用次数
         local used_count = item_dao.get_use_count(user_id, item_id)
         if not used_count then
-            return false, "获取使用次数失败"
+            return false, "get use count failed"
         end
         
         -- 检查是否超过限制
@@ -123,13 +123,13 @@ local function apply_item_effect(user_id, item_id, count)
         end
         
         if used_count + count > limit_count then
-            return false, "超过使用次数限制"
+            return false, "exceed use count limit"
         end
         
         -- 更新使用次数
         local ok = item_dao.update_use_count(user_id, item_id, used_count + count)
         if not ok then
-            return false, "更新使用次数失败"
+            return false, "update use count failed"
         end
     end
     
@@ -159,13 +159,13 @@ end
 -- 添加物品到指定格子
 function M.add_items_to_slot(user_id, items)
     if not user_id or not items then
-        return false, "参数无效"
+        return false, "invalid params"
     end
 
     -- 1. 获取背包信息
     local bag = bag_dao.get_user_bag(user_id, enum.BagType.BAG_TYPE_MAIN)
     if not bag then
-        return false, "获取背包失败"
+        return false, "get bag failed"
     end
 
     -- 2. 获取现有物品
@@ -267,13 +267,13 @@ function M.add_items_to_slot(user_id, items)
     -- 5. 检查背包空间
     local empty_slots = bag.size - #existing_items + need_slots
     if need_slots > empty_slots then
-        return false, "背包空间不足"
+        return false, "bag space is not enough"
     end
 
     -- 6. 保存更新
     local ok = item_dao.update_user_items(user_id, existing_items)
     if not ok then
-        return false, "更新物品失败"
+        return false, "update item failed"
     end
 
     return true
@@ -282,38 +282,29 @@ end
 -- 检查物品是否被锁定
 local function check_item_locked(item)
     if not item then
-        return false
-    end
-    
-    -- 检查物品状态
-    if item.state == enum.ItemState.LOCKED then
         return true
     end
     
-    -- 检查物品是否在交易中
-    if item.trade_state and item.trade_state ~= enum.TradeState.NONE then
-        return true
-    end
-    
-    -- 检查物品是否在拍卖中
-    if item.auction_state and item.auction_state ~= enum.AuctionState.NONE then
-        return true
-    end
-    
-    return false
+    -- 添加日志输出
+    logger.debug("Checking item lock state - user_id: %d, item_id: %d, count: %d, state: %d",
+        item.user_id, item.item_id, item.count, item.state)
+        
+    return item.state == enum.ItemState.ITEM_STATE_LOCKED or
+           item.state == enum.ItemState.ITEM_STATE_TRADING or
+           item.state == enum.ItemState.ITEM_STATE_AUCTIONING
 end
 
 -- 使用物品
 function M.use_item(user_id, item_id, count)
     -- 1. 检查参数
     if not user_id or not item_id or not count or count <= 0 then
-        return false, "参数错误"
+        return false, pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAMS")             
     end
     
-    -- 2. 获取物品
+    -- 2. 获取物品列表
     local items = item_dao.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, pb.enum("common.ErrorCode", "ERROR_CODE_GET_ITEM_FAILED")
     end
     
     -- 3. 查找物品
@@ -328,12 +319,15 @@ function M.use_item(user_id, item_id, count)
     end
     
     if not target_item then
-        return false, "物品不存在"
+        return false, pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_NOT_FOUND")
     end
     
     -- 4. 检查物品是否被锁定
     if check_item_locked(target_item) then
-        return false, "物品已被锁定"
+        -- 添加详细的错误日志
+        logger.error("Item is locked - user_id: %d, item_id: %d, count: %d, state: %s",
+            user_id, item_id, count, target_item.state or "nil")
+        return false, pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_LOCKED")
     end
     
     -- 检查物品数量是否足够
@@ -342,7 +336,7 @@ function M.use_item(user_id, item_id, count)
             user_id, item_id, count, target_item.count)
         return false, pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_NOT_ENOUGH")
     end
-
+    
     -- 记录变更前数量
     local before_count = target_item.count
     
@@ -395,7 +389,7 @@ end
 -- 获取用户物品列表
 function M.get_user_items(user_id)
     if not user_id then
-        return nil, "无效的用户ID"
+        return nil, "invalid user id"
     end
 
     -- 从 dao 层获取物品列表
@@ -419,12 +413,12 @@ local function validate_item(item)
     -- 2. 检查物品配置
     local config = config_service.get_item_config(item.item_id)
     if not config then
-        return false, "物品配置不存在"
+        return false, "item config is not exist"
     end
     
     -- 3. 检查堆叠数量
     if config.max_stack and item.count > config.max_stack then
-        return false, "超过最大堆叠数量"
+        return false, "exceed max stack count"
     end
     
     return true
@@ -454,7 +448,7 @@ function M.repair_user_items(user_id)
     if #valid_items < #items then
         local ok = item_dao.update_user_items(user_id, valid_items)
         if not ok then
-            return false, "保存物品数据失败"
+            return false, "save item data failed"
         end
     end
     
@@ -493,18 +487,18 @@ function M.compose_item(user_id, target_id)
     -- 1. 获取合成配置
     local compose_config = get_compose_config(target_id)
     if not compose_config then
-        return false, "物品不可合成"
+        return false, "item is not composeable"
     end
     
     -- 2. 获取用户物品
     local items = M.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get item failed"
     end
     
     -- 3. 检查材料是否足够
     if not check_compose_materials(items, compose_config.materials) then
-        return false, "材料不足"
+        return false, "materials are not enough"
     end
     
     -- 4. 扣除材料
@@ -573,7 +567,7 @@ function M.compose_item(user_id, target_id)
     -- 7. 保存更新
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "保存物品失败"
+        return false, "save item failed"
     end
     
     return true, result
@@ -593,13 +587,13 @@ function M.decompose_item(user_id, item_id, count)
     -- 1. 获取分解配置
     local decompose_config = get_decompose_config(item_id)
     if not decompose_config then
-        return false, "物品不可分解"
+        return false, "item is not decomposeable"
     end
     
     -- 2. 获取用户物品
     local items = M.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get item failed"
     end
     
     -- 3. 查找要分解的物品
@@ -608,7 +602,7 @@ function M.decompose_item(user_id, item_id, count)
         if item.item_id == item_id then
             -- 检查数量是否足够
             if item.count < count then
-                return false, "物品数量不足"
+                return false, "item count is not enough"
             end
             
             -- 记录变更前数量
@@ -634,7 +628,7 @@ function M.decompose_item(user_id, item_id, count)
     end
     
     if not found then
-        return false, "物品不存在"
+        return false, "item is not exist"
     end
     
     -- 4. 添加分解产物
@@ -665,7 +659,7 @@ function M.decompose_item(user_id, item_id, count)
     -- 5. 保存更新
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "保存物品失败"
+        return false, "save item failed"
     end
     
     return true
@@ -691,13 +685,13 @@ end
 function M.batch_remove_items(user_id, item_list)
     -- 1. 参数检查
     if not user_id or not item_list or #item_list == 0 then
-        return false, "参数无效"
+        return false, "params error"
     end
     
     -- 2. 获取当前物品
     local current_items = M.get_user_items(user_id)
     if not current_items then
-        return false, "获取物品失败"
+        return false, "get item failed"
     end
     
     -- 3. 检查数量是否足够
@@ -713,7 +707,7 @@ function M.batch_remove_items(user_id, item_list)
     
     for item_id, count in pairs(need_count) do
         if (have_count[item_id] or 0) < count then
-            return false, string.format("物品%d数量不足", item_id)
+            return false, string.format("item %d count is not enough", item_id)
         end
     end
     
@@ -746,7 +740,7 @@ function M.batch_remove_items(user_id, item_list)
     -- 5. 保存更新
     local ok = item_dao.update_user_items(user_id, current_items)
     if not ok then
-        return false, "保存物品失败"
+        return false, "save item failed"
     end
     
     return true
@@ -756,7 +750,7 @@ end
 function M.trade_items(from_user, to_user, item_list)
     -- 1. 参数检查
     if not from_user or not to_user or not item_list or #item_list == 0 then
-        return false, "参数无效"
+        return false, "params error"
     end
     
     -- 2. 检查是否可交易
@@ -776,12 +770,12 @@ function M.trade_items(from_user, to_user, item_list)
         -- 获取物品配置
         local config = config_service.get_item_config(item_info.item_id)
         if not config then
-            return false, string.format("物品%d配置不存在", item_info.item_id)
+            return false, string.format("item %d config is not exist", item_info.item_id)
         end
         
         -- 检查是否可交易
         if config.no_trade then
-            return false, string.format("物品%d不可交易", item_info.item_id)
+            return false, string.format("item %d is not tradeable", item_info.item_id)
         end
     end
     
@@ -811,13 +805,13 @@ end
 function M.lock_item(user_id, item_id, lock_type, reason)
     -- 1. 参数检查
     if not user_id or not item_id then
-        return false, "参数无效"
+        return false, "params error"
     end
     
     -- 2. 获取物品列表
     local items = M.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get item failed"
     end
     
     -- 3. 查找并锁定物品
@@ -847,13 +841,13 @@ function M.lock_item(user_id, item_id, lock_type, reason)
     end
     
     if not found then
-        return false, "物品不存在"
+        return false, "item is not exist"
     end
     
     -- 4. 保存更新
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "保存物品失败"
+        return false, "save item failed"
     end
     
     return true
@@ -863,13 +857,13 @@ end
 function M.unlock_item(user_id, item_id)
     -- 1. 参数检查
     if not user_id or not item_id then
-        return false, "参数无效"
+        return false, "params error"
     end
     
     -- 2. 获取物品列表
     local items = M.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get item failed"
     end
     
     -- 3. 查找并解锁物品
@@ -879,7 +873,7 @@ function M.unlock_item(user_id, item_id)
             -- 检查是否已锁定
             local locked = check_item_locked(item)
             if not locked then
-                return false, "物品未锁定"
+                return false, "item is not locked"
             end
             
             -- 解锁物品
@@ -899,13 +893,13 @@ function M.unlock_item(user_id, item_id)
     end
     
     if not found then
-        return false, "物品不存在"
+        return false, "item is not exist"
     end
     
     -- 4. 保存更新
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "保存物品失败"
+        return false, "save item failed"
     end
     
     return true
@@ -1049,12 +1043,12 @@ function M.stack_items(user_id, bag_type, from_slot, to_slot)
     -- 1. 获取背包
     local bag = bag_dao.get_user_bag(user_id, bag_type)  -- 直接使用 dao 层
     if not bag then
-        return false, "获取背包失败"
+        return false, "get bag failed"
     end
     
     -- 2. 检查格子
     if not bag.slots[from_slot] or not bag.slots[to_slot] then
-        return false, "格子不存在"
+        return false, "slot is not exist"
     end
     
     -- 3. 检查源格子和目标格子
@@ -1062,28 +1056,28 @@ function M.stack_items(user_id, bag_type, from_slot, to_slot)
     local dst_slot = bag.slots[to_slot]
     
     if src_slot.state ~= enum.SlotState.SLOT_STATE_OCCUPIED then
-        return false, "源格子没有物品"
+        return false, "src slot is not occupied"
     end
     
     if dst_slot.state ~= enum.SlotState.SLOT_STATE_OCCUPIED then
-        return false, "目标格子没有物品"
+        return false, "dst slot is not occupied"
     end
     
     -- 4. 检查是否为同类物品
     if src_slot.item_id ~= dst_slot.item_id then
-        return false, "不同类型的物品不能堆叠"
+        return false, "different type of items cannot be stacked"
     end
     
     -- 5. 检查是否可堆叠
     local max_stack = get_max_stack(src_slot.item_id)
     if max_stack <= 1 then
-        return false, "物品不可堆叠"
+        return false, "item cannot be stacked"
     end
     
     -- 6. 计算可堆叠数量
     local can_stack = max_stack - dst_slot.count
     if can_stack <= 0 then
-        return false, "目标格子已达到最大堆叠数"
+        return false, "dst slot has reached the max stack"
     end
     
     -- 7. 执行堆叠
@@ -1117,7 +1111,7 @@ function M.stack_items(user_id, bag_type, from_slot, to_slot)
     -- 8. 保存更新
     local ok = bag_dao.update_user_bag(user_id, bag_type, bag)
     if not ok then
-        return false, "保存背包失败"
+        return false, "save bag failed"
     end
     
     return true
@@ -1128,7 +1122,7 @@ function M.quick_stack(user_id, bag_type)
     -- 1. 获取背包
     local bag = bag_dao.get_user_bag(user_id, bag_type)  -- 直接使用 dao 层
     if not bag then
-        return false, "获取背包失败"
+        return false, "get bag failed"
     end
     
     -- 2. 遍历所有格子尝试堆叠
@@ -1323,7 +1317,7 @@ function M.equip_item(user_id, item_id, slot_id)
     -- 1. 获取物品
     local items = M.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get item failed"
     end
     
     -- 2. 查找物品
@@ -1336,31 +1330,31 @@ function M.equip_item(user_id, item_id, slot_id)
     end
     
     if not item then
-        return false, "物品不存在"
+        return false, "item is not exist"
     end
     
     -- 3. 检查物品类型
     local config = config_service.get_item_config(item_id)   
     if not config or config.type ~= enum.ItemType.ITEM_TYPE_EQUIPMENT then
-        return false, "物品不是装备"
+        return false, "item is not equipment"
     end
     
     -- 4. 检查装备槽位
     if not config.equip_slot or config.equip_slot ~= slot_id then
-        return false, "装备槽位不匹配"
+        return false, "equip slot is not match"
     end
     
     -- 5. 获取装备栏
     local equip_bag = bag_dao.get_user_bag(user_id, enum.BagType.BAG_TYPE_EQUIP)  -- 直接使用 dao 层
     if not equip_bag then
-        return false, "获取装备栏失败"
+        return false, "get equip bag failed"
     end
     
     -- 6. 检查等级限制
     if config.level_required then
         local user_level = user_service.get_user_level(user_id)
         if user_level < config.level_required then
-            return false, "等级不足"
+            return false, "level is not enough"
         end
     end
     
@@ -1397,12 +1391,12 @@ function M.equip_item(user_id, item_id, slot_id)
     -- 10. 保存更新
     local ok = bag_dao.update_user_bag(user_id, enum.BagType.BAG_TYPE_EQUIP, equip_bag)
     if not ok then
-        return false, "保存装备栏失败"
+        return false, "save equip bag failed"
     end
     
     ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "保存背包失败"
+        return false, "save item failed"
     end
     
     -- 11. 更新属性
@@ -1416,13 +1410,13 @@ function M.unequip_item(user_id, slot_id)
     -- 1. 获取装备栏
     local equip_bag = bag_dao.get_user_bag(user_id, enum.BagType.BAG_TYPE_EQUIP)  -- 直接使用 dao 层
     if not equip_bag then
-        return false, "获取装备栏失败"
+        return false, "get equip bag failed"
     end
     
     -- 2. 检查装备槽位
     local equip = equip_bag.slots[slot_id]
     if not equip or equip.state ~= enum.SlotState.SLOT_STATE_OCCUPIED then
-        return false, "装备槽位为空"
+        return false, "equip slot is empty"
     end
     
     -- 3. 添加到背包
@@ -1445,7 +1439,7 @@ function M.unequip_item(user_id, slot_id)
     -- 5. 保存更新
     ok = bag_dao.update_user_bag(user_id, enum.BagType.BAG_TYPE_EQUIP, equip_bag)
     if not ok then
-        return false, "保存装备栏失败"
+        return false, "save equip bag failed"
     end
     
     -- 6. 更新属性
@@ -1468,7 +1462,7 @@ function M.enhance_equipment(user_id, equip_id, material_list, protect_item)
     -- 1. 获取装备
     local items = M.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get item failed"
     end
     
     -- 2. 查找装备
@@ -1481,20 +1475,20 @@ function M.enhance_equipment(user_id, equip_id, material_list, protect_item)
     end
     
     if not equip then
-        return false, "装备不存在"
+        return false, "equip is not exist"
     end
     
     -- 3. 检查装备类型
     local config = config_service.get_item_config(equip.item_id) 
     if not config or config.type ~= enum.ItemType.ITEM_TYPE_EQUIPMENT then
-        return false, "物品不是装备"
+        return false, "item is not equipment"
     end
     
     -- 4. 获取强化配置
     local enhance_level = equip.enhance_level or 0
     local enhance_config = get_enhance_config(enhance_level + 1)
     if not enhance_config then
-        return false, "已达到最大强化等级"
+        return false, "has reached the max enhance level"
     end
     
     -- 5. 检查材料
@@ -1503,11 +1497,11 @@ function M.enhance_equipment(user_id, equip_id, material_list, protect_item)
     for _, material in ipairs(material_list) do
         local mat_config = config_service.get_item_config(material.item_id)
         if not mat_config then
-            return false, "材料配置不存在"
+            return false, "material config is not exist"
         end
         
         if not mat_config.enhance_exp then
-            return false, "物品不能用作强化材料"
+            return false, "item cannot be used as enhance material"
         end
         
         total_exp = total_exp + mat_config.enhance_exp * material.count
@@ -1515,7 +1509,7 @@ function M.enhance_equipment(user_id, equip_id, material_list, protect_item)
     end
     
     if total_exp < enhance_config.need_exp then
-        return false, "强化经验不足"
+        return false, "enhance exp is not enough"
     end
     
     -- 6. 移除材料
@@ -1593,7 +1587,7 @@ function M.enhance_equipment(user_id, equip_id, material_list, protect_item)
     -- 9. 保存更新
     ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "保存装备失败"
+        return false, "save item failed"
     end
     
     -- 10. 更新属性
@@ -1620,7 +1614,7 @@ function M.refine_equipment(user_id, equip_id, material_list, protect_item)
     -- 1. 获取装备
     local items = M.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get item failed"
     end
     
     -- 2. 查找装备
@@ -1633,20 +1627,20 @@ function M.refine_equipment(user_id, equip_id, material_list, protect_item)
     end
     
     if not equip then
-        return false, "装备不存在"
+        return false, "equip is not exist"
     end
     
     -- 3. 检查装备类型
     local config = config_service.get_item_config(equip.item_id) 
     if not config or config.type ~= enum.ItemType.ITEM_TYPE_EQUIPMENT then
-        return false, "物品不是装备"
+        return false, "item is not equipment"
     end
     
     -- 4. 获取精炼配置
     local refine_level = equip.refine_level or 0
     local refine_config = get_refine_config(refine_level + 1)
     if not refine_config then
-        return false, "已达到最大精炼等级"
+        return false, "has reached the max refine level"
     end
     
     -- 5. 检查材料
@@ -1655,11 +1649,11 @@ function M.refine_equipment(user_id, equip_id, material_list, protect_item)
     for _, material in ipairs(material_list) do
         local mat_config = config_service.get_item_config(material.item_id)
         if not mat_config then
-            return false, "材料配置不存在"
+            return false, "material config is not exist"
         end
         
         if not mat_config.refine_exp then
-            return false, "物品不能用作精炼材料"
+            return false, "item cannot be used as refine material"
         end
         
         total_exp = total_exp + mat_config.refine_exp * material.count
@@ -1667,7 +1661,7 @@ function M.refine_equipment(user_id, equip_id, material_list, protect_item)
     end
     
     if total_exp < refine_config.need_exp then
-        return false, "精炼经验不足"
+        return false, "refine exp is not enough"
     end
     
     -- 6. 移除材料
@@ -1733,7 +1727,7 @@ function M.refine_equipment(user_id, equip_id, material_list, protect_item)
     -- 9. 保存更新
     ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "保存装备失败"
+        return false, "save item failed"
     end
     
     -- 10. 更新属性
@@ -1750,7 +1744,7 @@ function M.reforge_equipment(user_id, equip_id, material_list)
     -- 1. 获取装备
     local items = M.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get item failed"
     end
     
     -- 2. 查找装备
@@ -1763,13 +1757,13 @@ function M.reforge_equipment(user_id, equip_id, material_list)
     end
     
     if not equip then
-        return false, "装备不存在"
+        return false, "equip is not exist"
     end
     
     -- 3. 检查装备类型
     local config = config_service.get_item_config(equip.item_id) 
     if not config or config.type ~= enum.ItemType.ITEM_TYPE_EQUIPMENT then
-        return false, "物品不是装备"
+        return false, "item is not equipment"
     end
     
     -- 4. 检查材料
@@ -1778,11 +1772,11 @@ function M.reforge_equipment(user_id, equip_id, material_list)
     for _, material in ipairs(material_list) do
         local mat_config = config_service.get_item_config(material.item_id)
         if not mat_config then
-            return false, "材料配置不存在"
+            return false, "material config is not exist"
         end
         
         if not mat_config.reforge_power then
-            return false, "物品不能用作洗练材料"
+            return false, "item cannot be used as reforge material"
         end
         
         reforge_power = reforge_power + mat_config.reforge_power * material.count
@@ -1841,7 +1835,7 @@ function M.reforge_equipment(user_id, equip_id, material_list)
     -- 9. 保存更新
     ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "保存装备失败"
+        return false, "save item failed"
     end
     
     -- 10. 更新属性
@@ -1858,7 +1852,7 @@ function M.inlay_gem(user_id, equip_id, gem_id, slot_index, protect_item)
     -- 1. 获取装备和宝石
     local items = M.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get item failed"
     end
     
     -- 2. 查找装备和宝石
@@ -1872,10 +1866,10 @@ function M.inlay_gem(user_id, equip_id, gem_id, slot_index, protect_item)
     end
     
     if not equip then
-        return false, "装备不存在"
+        return false, "equip is not exist"
     end
     if not gem then
-        return false, "宝石不存在"
+        return false, "gem is not exist"
     end
     
     -- 3. 检查装备和宝石类型
@@ -1883,10 +1877,10 @@ function M.inlay_gem(user_id, equip_id, gem_id, slot_index, protect_item)
     local gem_config = config_service.get_item_config(gem.item_id)
     
     if not equip_config or equip_config.type ~= enum.ItemType.ITEM_TYPE_EQUIPMENT then
-        return false, "物品不是装备"
+        return false, "item is not equipment"
     end
     if not gem_config or gem_config.type ~= enum.ItemType.ITEM_TYPE_GEM then
-        return false, "物品不是宝石"
+        return false, "item is not gem"
     end
     
     -- 4. 检查槽位
@@ -1895,16 +1889,16 @@ function M.inlay_gem(user_id, equip_id, gem_id, slot_index, protect_item)
     end
     
     if not equip.gem_slots[slot_index] then
-        return false, "槽位不存在"
+        return false, "slot is not exist"
     end
     
     if equip.gem_slots[slot_index].state ~= enum.GemSlotState.EMPTY then
-        return false, "槽位已被占用"
+        return false, "slot is occupied"
     end
     
     -- 5. 检查宝石等级限制
     if gem_config.level_required and gem_config.level_required > equip_config.level then
-        return false, "装备等级不足"
+        return false, "equip level is not enough"
     end
     
     -- 6. 计算镶嵌结果
@@ -1970,7 +1964,7 @@ function M.inlay_gem(user_id, equip_id, gem_id, slot_index, protect_item)
     -- 8. 保存更新
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "保存物品失败"
+        return false, "save item failed"
     end
     
     -- 9. 更新属性
@@ -1987,7 +1981,7 @@ function M.remove_gem(user_id, equip_id, slot_index, protect_item)
     -- 1. 获取装备
     local items = M.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get item failed"
     end
     
     -- 2. 查找装备
@@ -2000,17 +1994,17 @@ function M.remove_gem(user_id, equip_id, slot_index, protect_item)
     end
     
     if not equip then
-        return false, "装备不存在"
+        return false, "equip is not exist"
     end
     
     -- 3. 检查槽位
     if not equip.gem_slots or not equip.gem_slots[slot_index] then
-        return false, "槽位不存在"
+        return false, "slot is not exist"
     end
     
     local slot = equip.gem_slots[slot_index]
     if slot.state ~= enum.GemSlotState.OCCUPIED then
-        return false, "槽位没有宝石"
+        return false, "slot is not occupied"
     end
     
     -- 4. 计算卸下结果
@@ -2065,7 +2059,7 @@ function M.remove_gem(user_id, equip_id, slot_index, protect_item)
     -- 8. 保存更新
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "保存装备失败"
+        return false, "save item failed"
     end
     
     -- 9. 更新属性
@@ -2096,13 +2090,13 @@ end
 -- 创建新物品
 function M.create_item(user_id, item_id, count)
     if not user_id or not item_id or not count or count <= 0 then
-        return nil, "无效的参数"
+        return nil, "invalid params"
     end
     
     -- 检查物品配置是否存在
     local config = config_service.get_item_config(item_id)
     if not config then
-        return nil, "物品不存在"
+        return nil, "item is not exist"
     end
     
     -- 创建物品对象
@@ -2165,7 +2159,7 @@ function M.process_compose(target_id, material_items)
     -- 1. 获取合成配置
     local compose_config = config_service.get_compose_config(target_id)
     if not compose_config then
-        return false, "未找到合成配方", nil, nil
+        return false, "compose config is not exist", nil, nil
     end
     
     -- 2. 验证材料是否足够
@@ -2185,7 +2179,7 @@ function M.process_compose(target_id, material_items)
         end
         
         if not sufficient then
-            return false, "材料不足", nil, nil
+            return false, "material is not enough", nil, nil
         end
     end
     
@@ -2248,7 +2242,7 @@ end
 -- 【核心功能】处理物品分解逻辑（不涉及背包）
 function M.process_decompose(items_to_decompose)
     if not items_to_decompose or #items_to_decompose == 0 then
-        return false, "无效的参数", nil
+        return false, "invalid params", nil
     end
     
     -- 1. 检查物品是否可分解并收集结果
@@ -2257,7 +2251,7 @@ function M.process_decompose(items_to_decompose)
         -- 获取分解配方
         local decompose_config = config_service.get_decompose_config(item.item_id)
         if not decompose_config then
-            return false, "物品不可分解", nil
+            return false, "item is not decomposable", nil
         end
         
         -- 收集分解结果
