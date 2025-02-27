@@ -3,7 +3,6 @@ local logger = require "logger"
 local bag_dao = require "dao.bag_dao"
 local item_dao = require "dao.item_dao"
 local bag_model = require "models.bag_model"
-local item_model = require "models.item_model"
 local property_service = require "services.property_service"
 local enum = require "game.define.enum"
 
@@ -32,7 +31,7 @@ function M.check_can_equip(user_id, from_bag, from_slot, equip_slot)
     
     -- 3. 检查物品类型
     local config = require("config.item_config")[item.item_id]
-    if not config or config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
+    if not config or config.type ~= enum.ItemType.ITEM_TYPE_EQUIPMENT then
         return false, "物品不是装备"
     end
     

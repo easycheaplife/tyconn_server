@@ -108,13 +108,13 @@ local function apply_item_effect(user_id, item_id, count)
         end
         
         -- 检查是否超过限制
-        if limit_type == item_model.USE_LIMIT_TYPE.DAILY then
+        if limit_type == enum.UseLimitType.DAILY then
             -- 检查是否跨天重置
             local last_use_time = item_dao.get_last_use_time(user_id, item_id)
             if last_use_time and not utils.is_same_day(last_use_time, os.time()) then
                 used_count = 0
             end
-        elseif limit_type == item_model.USE_LIMIT_TYPE.WEEKLY then
+        elseif limit_type == enum.UseLimitType.WEEKLY then
             -- 检查是否跨周重置
             local last_use_time = item_dao.get_last_use_time(user_id, item_id)
             if last_use_time and not utils.is_same_week(last_use_time, os.time()) then
@@ -137,14 +137,14 @@ local function apply_item_effect(user_id, item_id, count)
     local total_effect = config.effect_value * count
     
     -- 根据效果类型处理
-    if config.effect_type == item_model.EFFECT_TYPE.EXP then
+    if config.effect_type == enum.EffectType.EFFECT_TYPE_EXP then
         -- 增加经验
         local ok, err = user_service.add_exp(user_id, total_effect)
         if not ok then
             logger.error("Failed to add exp: %s", err)
             return false, err
         end
-    elseif config.effect_type == item_model.EFFECT_TYPE.GOLD then
+    elseif config.effect_type == enum.EffectType.EFFECT_TYPE_GOLD then
         -- 增加金币
         local ok, err = user_service.add_gold(user_id, total_effect)
         if not ok then
@@ -210,8 +210,8 @@ function M.add_items_to_slot(user_id, items)
                         user_id,
                         item_id,
                         stack_count,
-                        item_model.CHANGE_TYPE.ADD,
-                        item_model.CHANGE_SOURCE.ADD,
+                        enum.ChangeType.CHANGE_TYPE_ADD,
+                        enum.ChangeSource.SOURCE_ADD,
                         existing_item.count - stack_count,
                         existing_item.count
                     )
@@ -255,8 +255,8 @@ function M.add_items_to_slot(user_id, items)
                     user_id,
                     item_id,
                     stack_count,
-                    item_model.CHANGE_TYPE.ADD,
-                    item_model.CHANGE_SOURCE.ADD,
+                    enum.ChangeType.CHANGE_TYPE_ADD,
+                    enum.ChangeSource.SOURCE_ADD,
                     0,
                     stack_count
                 )
@@ -286,17 +286,17 @@ local function check_item_locked(item)
     end
     
     -- 检查物品状态
-    if item.state == item_model.ITEM_STATE.LOCKED then
+    if item.state == enum.ItemState.LOCKED then
         return true
     end
     
     -- 检查物品是否在交易中
-    if item.trade_state and item.trade_state ~= item_model.TRADE_STATE.NONE then
+    if item.trade_state and item.trade_state ~= enum.TradeState.NONE then
         return true
     end
     
     -- 检查物品是否在拍卖中
-    if item.auction_state and item.auction_state ~= item_model.AUCTION_STATE.NONE then
+    if item.auction_state and item.auction_state ~= enum.AuctionState.NONE then
         return true
     end
     
@@ -352,7 +352,7 @@ function M.use_item(user_id, item_id, count)
     
     -- 记录物品变化
     item_dao.log_change(user_id, item_id, count,
-        item_model.CHANGE_TYPE.USE, item_model.CHANGE_SOURCE.USE,
+        enum.ChangeType.CHANGE_TYPE_USE, enum.ChangeSource.SOURCE_USE,
         before_count, target_item.count)
 
     -- 如果物品数量为0，从列表中删除并清空格子
@@ -518,7 +518,7 @@ function M.compose_item(user_id, target_id)
                 
                 -- 记录物品变化
                 item_dao.log_change(user_id, item_id, use_count,
-                    item_model.CHANGE_TYPE.REDUCE, item_model.CHANGE_SOURCE.COMPOSE,
+                    enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_COMPOSE,
                     items[i].count + use_count, items[i].count)
                 
                 if items[i].count <= 0 then
@@ -533,17 +533,17 @@ function M.compose_item(user_id, target_id)
     end
     
     -- 5. 随机判定是否成功
-    local result = item_model.COMPOSE_RESULT.SUCCESS
+    local result = enum.ComposeResult.SUCCESS
     if compose_config.success_rate then
         if math.random() > compose_config.success_rate then
             result = compose_config.fail_keep_material and 
-                item_model.COMPOSE_RESULT.FAIL or 
-                item_model.COMPOSE_RESULT.FAIL_CONSUME
+                enum.ComposeResult.FAIL or 
+                enum.ComposeResult.FAIL_CONSUME
         end
     end
     
     -- 6. 处理结果
-    if result == item_model.COMPOSE_RESULT.SUCCESS then
+    if result == enum.ComposeResult.SUCCESS then
         -- 添加合成物品
         local new_item = item_model.new({
             id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
@@ -555,9 +555,9 @@ function M.compose_item(user_id, target_id)
         
         -- 记录物品变化
         item_dao.log_change(user_id, target_id, new_item.count,
-            item_model.CHANGE_TYPE.ADD, item_model.CHANGE_SOURCE.COMPOSE,
+            enum.ChangeType.CHANGE_TYPE_ADD, enum.ChangeSource.SOURCE_COMPOSE,
             0, new_item.count)
-    elseif result == item_model.COMPOSE_RESULT.FAIL then
+    elseif result == enum.ComposeResult.FAIL then
         -- 返还材料
         for item_id, count in pairs(compose_config.materials) do
             local new_item = item_model.new({
@@ -620,7 +620,7 @@ function M.decompose_item(user_id, item_id, count)
             
             -- 记录物品变化
             item_dao.log_change(user_id, item_id, count,
-                item_model.CHANGE_TYPE.REDUCE, item_model.CHANGE_SOURCE.DECOMPOSE,
+                enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_DECOMPOSE,
                 before_count, item.count)
             
             -- 如果数量为0则移除
@@ -658,7 +658,7 @@ function M.decompose_item(user_id, item_id, count)
         
         -- 记录物品变化
         item_dao.log_change(user_id, output_id, output_count,
-            item_model.CHANGE_TYPE.ADD, item_model.CHANGE_SOURCE.DECOMPOSE,
+            enum.ChangeType.CHANGE_TYPE_ADD, enum.ChangeSource.SOURCE_DECOMPOSE,
             0, output_count)
     end
     
@@ -679,7 +679,7 @@ local function check_item_expired(item)
     end
     
     -- 检查使用限制
-    if item.use_limit_type == item_model.USE_LIMIT_TYPE.TOTAL and 
+    if item.use_limit_type == enum.UseLimitType.TOTAL and 
         item.used_count >= item.use_limit_count then
         return true
     end
@@ -728,7 +728,7 @@ function M.batch_remove_items(user_id, item_list)
                 
                 -- 记录变化
                 item_dao.log_change(user_id, item_id, remove_count,
-                    item_model.CHANGE_TYPE.REDUCE, "batch_remove",
+                    enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_BATCH_REMOVE,
                     current_items[i].count + remove_count, current_items[i].count)
                 
                 -- 如果数量为0则移除
@@ -838,7 +838,7 @@ function M.lock_item(user_id, item_id, lock_type, reason)
             
             -- 记录变化
             item_dao.log_change(user_id, item_id, item.count,
-                item_model.CHANGE_TYPE.LOCK, item_model.CHANGE_SOURCE.LOCK,
+                enum.ChangeType.CHANGE_TYPE_LOCK, enum.ChangeSource.SOURCE_LOCK,
                 item.count, item.count)
             
             found = true
@@ -890,7 +890,7 @@ function M.unlock_item(user_id, item_id)
             
             -- 记录变化
             item_dao.log_change(user_id, item_id, item.count,
-                item_model.CHANGE_TYPE.UNLOCK, item_model.CHANGE_SOURCE.UNLOCK,
+                enum.ChangeType.CHANGE_TYPE_UNLOCK, enum.ChangeSource.SOURCE_UNLOCK,
                 item.count, item.count)
             
             found = true
@@ -1099,11 +1099,11 @@ function M.stack_items(user_id, bag_type, from_slot, to_slot)
     
     -- 记录物品变化
     item_dao.log_change(user_id, src_slot.item_id, stack_count,
-        item_model.CHANGE_TYPE.REDUCE, "stack",
+        enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_STACK,
         src_before, src_slot.count)
     
     item_dao.log_change(user_id, dst_slot.item_id, stack_count,
-        item_model.CHANGE_TYPE.ADD, "stack",
+        enum.ChangeType.CHANGE_TYPE_ADD, enum.ChangeSource.SOURCE_STACK,
         dst_before, dst_slot.count)
     
     -- 如果源格子数量为0，清空格子
@@ -1285,9 +1285,9 @@ end
 local function get_item_category(item)
     local config = config_service.get_item_config(item.item_id)  
     if not config then
-        return item_model.ITEM_CATEGORY.OTHER
+        return enum.ItemCategory.OTHER
     end
-    return config.category or item_model.ITEM_CATEGORY.OTHER
+    return config.category or enum.ItemCategory.OTHER
 end
 
 -- 按分类获取物品
@@ -1341,7 +1341,7 @@ function M.equip_item(user_id, item_id, slot_id)
     
     -- 3. 检查物品类型
     local config = config_service.get_item_config(item_id)   
-    if not config or config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
+    if not config or config.type ~= enum.ItemType.ITEM_TYPE_EQUIPMENT then
         return false, "物品不是装备"
     end
     
@@ -1486,7 +1486,7 @@ function M.enhance_equipment(user_id, equip_id, material_list, protect_item)
     
     -- 3. 检查装备类型
     local config = config_service.get_item_config(equip.item_id) 
-    if not config or config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
+    if not config or config.type ~= enum.ItemType.ITEM_TYPE_EQUIPMENT then
         return false, "物品不是装备"
     end
     
@@ -1525,14 +1525,14 @@ function M.enhance_equipment(user_id, equip_id, material_list, protect_item)
     end
     
     -- 7. 计算强化结果
-    local result = item_model.ENHANCE_RESULT.SUCCESS
-    local enhance_type = item_model.ENHANCE_TYPE.NORMAL
+    local result = enum.EnhanceResult.SUCCESS
+    local enhance_type = enum.EnhanceType.NORMAL
     local random = math.random()
     
     if random <= enhance_config.perfect_rate then
-        enhance_type = item_model.ENHANCE_TYPE.PERFECT
+        enhance_type = enum.EnhanceType.PERFECT
     elseif random <= enhance_config.success_rate then
-        enhance_type = item_model.ENHANCE_TYPE.LUCKY
+        enhance_type = enum.EnhanceType.LUCKY
     else
         -- 失败处理
         if protect_item then
@@ -1543,23 +1543,23 @@ function M.enhance_equipment(user_id, equip_id, material_list, protect_item)
                 M.add_items_to_slot(user_id, materials)
                 return false, err
             end
-            result = item_model.ENHANCE_RESULT.FAIL
+            result = enum.EnhanceResult.FAIL
         else
             -- 随机失败结果
             if random <= enhance_config.break_rate then
-                result = item_model.ENHANCE_RESULT.BREAK
+                result = enum.EnhanceResult.BREAK
             elseif random <= enhance_config.down_rate then
-                result = item_model.ENHANCE_RESULT.FAIL_DOWN
+                result = enum.EnhanceResult.FAIL_DOWN
             else
-                result = item_model.ENHANCE_RESULT.FAIL
+                result = enum.EnhanceResult.FAIL
             end
         end
     end
     
     -- 8. 应用强化结果
-    if result == item_model.ENHANCE_RESULT.SUCCESS or 
-        result == item_model.ENHANCE_RESULT.PERFECT or
-        result == item_model.ENHANCE_RESULT.LUCKY then
+    if result == enum.EnhanceResult.SUCCESS or 
+        result == enum.EnhanceResult.PERFECT or
+        result == enum.EnhanceResult.LUCKY then
         -- 升级强化等级
         equip.enhance_level = enhance_level + 1
         
@@ -1567,20 +1567,20 @@ function M.enhance_equipment(user_id, equip_id, material_list, protect_item)
         local props = {}
         for prop_type, base_value in pairs(config.base_props or {}) do
             local enhance_ratio = enhance_config.prop_ratio
-            if enhance_type == item_model.ENHANCE_TYPE.PERFECT then
+            if enhance_type == enum.EnhanceType.PERFECT then
                 enhance_ratio = enhance_ratio * 1.5
-            elseif enhance_type == item_model.ENHANCE_TYPE.LUCKY then
+            elseif enhance_type == enum.EnhanceType.LUCKY then
                 enhance_ratio = enhance_ratio * 1.2
             end
             props[prop_type] = math.floor(base_value * enhance_ratio)
         end
         equip.enhance_props = props
         
-    elseif result == item_model.ENHANCE_RESULT.FAIL_DOWN then
+    elseif result == enum.EnhanceResult.FAIL_DOWN then
         -- 降级
         equip.enhance_level = math.max(0, enhance_level - 1)
         
-    elseif result == item_model.ENHANCE_RESULT.BREAK then
+    elseif result == enum.EnhanceResult.BREAK then
         -- 装备破碎
         for i, item in ipairs(items) do
             if item.id == equip_id then
@@ -1638,7 +1638,7 @@ function M.refine_equipment(user_id, equip_id, material_list, protect_item)
     
     -- 3. 检查装备类型
     local config = config_service.get_item_config(equip.item_id) 
-    if not config or config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
+    if not config or config.type ~= enum.ItemType.ITEM_TYPE_EQUIPMENT then
         return false, "物品不是装备"
     end
     
@@ -1677,7 +1677,7 @@ function M.refine_equipment(user_id, equip_id, material_list, protect_item)
     end
     
     -- 7. 计算精炼结果
-    local result = item_model.REFINE_RESULT.SUCCESS
+    local result = enum.RefineResult.SUCCESS
     local random = math.random()
     
     if random > refine_config.success_rate then
@@ -1690,21 +1690,21 @@ function M.refine_equipment(user_id, equip_id, material_list, protect_item)
                 M.add_items_to_slot(user_id, materials)
                 return false, err
             end
-            result = item_model.REFINE_RESULT.FAIL
+            result = enum.RefineResult.FAIL
         else
             -- 随机失败结果
             if random <= refine_config.break_rate then
-                result = item_model.REFINE_RESULT.BREAK
+                result = enum.RefineResult.BREAK
             elseif random <= refine_config.down_rate then
-                result = item_model.REFINE_RESULT.FAIL_DOWN
+                result = enum.RefineResult.FAIL_DOWN
             else
-                result = item_model.REFINE_RESULT.FAIL
+                result = enum.RefineResult.FAIL
             end
         end
     end
     
     -- 8. 应用精炼结果
-    if result == item_model.REFINE_RESULT.SUCCESS then
+    if result == enum.RefineResult.SUCCESS then
         -- 升级精炼等级
         equip.refine_level = refine_level + 1
         
@@ -1716,11 +1716,11 @@ function M.refine_equipment(user_id, equip_id, material_list, protect_item)
         end
         equip.refine_props = props
         
-    elseif result == item_model.REFINE_RESULT.FAIL_DOWN then
+    elseif result == enum.RefineResult.FAIL_DOWN then
         -- 降级
         equip.refine_level = math.max(0, refine_level - 1)
         
-    elseif result == item_model.REFINE_RESULT.BREAK then
+    elseif result == enum.RefineResult.BREAK then
         -- 装备破碎
         for i, item in ipairs(items) do
             if item.id == equip_id then
@@ -1768,7 +1768,7 @@ function M.reforge_equipment(user_id, equip_id, material_list)
     
     -- 3. 检查装备类型
     local config = config_service.get_item_config(equip.item_id) 
-    if not config or config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
+    if not config or config.type ~= enum.ItemType.ITEM_TYPE_EQUIPMENT then
         return false, "物品不是装备"
     end
     
@@ -1796,19 +1796,19 @@ function M.reforge_equipment(user_id, equip_id, material_list)
     end
     
     -- 6. 计算洗练结果
-    local result = item_model.REFORGE_RESULT.SUCCESS
+    local result = enum.ReforgeResult.SUCCESS
     local random = math.random()
     local perfect_rate = math.min(0.3, reforge_power * 0.01)
     
     if random <= perfect_rate then
-        result = item_model.REFORGE_RESULT.PERFECT
+        result = enum.ReforgeResult.PERFECT
     elseif random > 0.7 then
-        result = item_model.REFORGE_RESULT.FAIL
+        result = enum.ReforgeResult.FAIL
     end
     
     -- 7. 生成新属性
     local new_props = {}
-    if result ~= item_model.REFORGE_RESULT.FAIL then
+    if result ~= enum.ReforgeResult.FAIL then
         -- 保留固定属性
         for prop_type, value in pairs(equip.props or {}) do
             if config.fixed_props and config.fixed_props[prop_type] then
@@ -1817,7 +1817,7 @@ function M.reforge_equipment(user_id, equip_id, material_list)
         end
         
         -- 随机新属性
-        local random_prop_count = result == item_model.REFORGE_RESULT.PERFECT and 3 or 2
+        local random_prop_count = result == enum.ReforgeResult.PERFECT and 3 or 2
         for i = 1, random_prop_count do
             local prop_type = config.random_props[math.random(#config.random_props)]
             local base_value = config.prop_ranges[prop_type]
@@ -1826,14 +1826,14 @@ function M.reforge_equipment(user_id, equip_id, material_list)
         end
         
         -- 特殊属性(完美洗练)
-        if result == item_model.REFORGE_RESULT.PERFECT and config.special_props then
+        if result == enum.ReforgeResult.PERFECT and config.special_props then
             local special_prop = config.special_props[math.random(#config.special_props)]
             new_props[special_prop.type] = special_prop.value
         end
     end
     
     -- 8. 应用洗练结果
-    if result ~= item_model.REFORGE_RESULT.FAIL then
+    if result ~= enum.ReforgeResult.FAIL then
         equip.props = new_props
         equip.reforge_count = (equip.reforge_count or 0) + 1
     end
@@ -1882,10 +1882,10 @@ function M.inlay_gem(user_id, equip_id, gem_id, slot_index, protect_item)
     local equip_config = config_service.get_item_config(equip.item_id)   
     local gem_config = config_service.get_item_config(gem.item_id)
     
-    if not equip_config or equip_config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
+    if not equip_config or equip_config.type ~= enum.ItemType.ITEM_TYPE_EQUIPMENT then
         return false, "物品不是装备"
     end
-    if not gem_config or gem_config.type ~= item_model.ITEM_TYPE.GEM then
+    if not gem_config or gem_config.type ~= enum.ItemType.ITEM_TYPE_GEM then
         return false, "物品不是宝石"
     end
     
@@ -1898,7 +1898,7 @@ function M.inlay_gem(user_id, equip_id, gem_id, slot_index, protect_item)
         return false, "槽位不存在"
     end
     
-    if equip.gem_slots[slot_index].state ~= item_model.GEM_SLOT_STATE.EMPTY then
+    if equip.gem_slots[slot_index].state ~= enum.GemSlotState.EMPTY then
         return false, "槽位已被占用"
     end
     
@@ -1908,7 +1908,7 @@ function M.inlay_gem(user_id, equip_id, gem_id, slot_index, protect_item)
     end
     
     -- 6. 计算镶嵌结果
-    local result = item_model.GEM_RESULT.SUCCESS
+    local result = enum.GemResult.SUCCESS
     local random = math.random()
     
     if random > gem_config.inlay_rate then
@@ -1919,14 +1919,14 @@ function M.inlay_gem(user_id, equip_id, gem_id, slot_index, protect_item)
             if not ok then
                 return false, err
             end
-            result = item_model.GEM_RESULT.FAIL
+            result = enum.GemResult.FAIL
         else
-            result = item_model.GEM_RESULT.BREAK
+            result = enum.GemResult.BREAK
         end
     end
     
     -- 7. 应用镶嵌结果
-    if result == item_model.GEM_RESULT.SUCCESS then
+    if result == enum.GemResult.SUCCESS then
         -- 移除宝石
         gem.count = gem.count - 1
         if gem.count <= 0 then
@@ -1940,7 +1940,7 @@ function M.inlay_gem(user_id, equip_id, gem_id, slot_index, protect_item)
         
         -- 镶嵌到装备
         equip.gem_slots[slot_index] = {
-            state = item_model.GEM_SLOT_STATE.OCCUPIED,
+            state = enum.GemSlotState.OCCUPIED,
             gem_id = gem.item_id,
             inlay_time = os.time()
         }
@@ -1954,7 +1954,7 @@ function M.inlay_gem(user_id, equip_id, gem_id, slot_index, protect_item)
             equip.gem_props[prop_type] = (equip.gem_props[prop_type] or 0) + value
         end
         
-    elseif result == item_model.GEM_RESULT.BREAK then
+    elseif result == enum.GemResult.BREAK then
         -- 宝石破碎
         gem.count = gem.count - 1
         if gem.count <= 0 then
@@ -2009,12 +2009,12 @@ function M.remove_gem(user_id, equip_id, slot_index, protect_item)
     end
     
     local slot = equip.gem_slots[slot_index]
-    if slot.state ~= item_model.GEM_SLOT_STATE.OCCUPIED then
+    if slot.state ~= enum.GemSlotState.OCCUPIED then
         return false, "槽位没有宝石"
     end
     
     -- 4. 计算卸下结果
-    local result = item_model.GEM_RESULT.SUCCESS
+    local result = enum.GemResult.SUCCESS
     local random = math.random()
     
     if random > 0.7 then  -- 30%概率失败
@@ -2024,14 +2024,14 @@ function M.remove_gem(user_id, equip_id, slot_index, protect_item)
             if not ok then
                 return false, err
             end
-            result = item_model.GEM_RESULT.FAIL
+            result = enum.GemResult.FAIL
         else
-            result = item_model.GEM_RESULT.BREAK
+            result = enum.GemResult.BREAK
         end
     end
     
     -- 5. 应用卸下结果
-    if result == item_model.GEM_RESULT.SUCCESS then
+    if result == enum.GemResult.SUCCESS then
         -- 返还宝石
         local ok, err = M.add_items_to_slot(user_id, {
             {
@@ -2046,7 +2046,7 @@ function M.remove_gem(user_id, equip_id, slot_index, protect_item)
     
     -- 6. 清空槽位
     equip.gem_slots[slot_index] = {
-        state = item_model.GEM_SLOT_STATE.EMPTY
+        state = enum.GemSlotState.EMPTY
     }
     
     -- 7. 更新装备属性
@@ -2085,7 +2085,7 @@ local function can_equip(item_id, slot_index)
     end
     
     -- 检查物品类型
-    if config.type ~= item_model.ITEM_TYPE.EQUIPMENT then
+    if config.type ~= enum.ItemType.ITEM_TYPE_EQUIPMENT then
         return false
     end
     
@@ -2115,7 +2115,7 @@ function M.create_item(user_id, item_id, count)
     
     -- 记录物品变化
     item_dao.log_change(user_id, item_id, count,
-        item_model.CHANGE_TYPE.ADD, item_model.CHANGE_SOURCE.CREATE,
+        enum.ChangeType.CHANGE_TYPE_ADD, enum.ChangeSource.SOURCE_CREATE,
         0, count)
     
     return item
@@ -2224,18 +2224,18 @@ function M.process_compose(target_id, material_items)
     end
     
     -- 4. 随机判定是否成功
-    local result = item_model.COMPOSE_RESULT.SUCCESS
+    local result = enum.ComposeResult.SUCCESS
     if compose_config.success_rate then
         if math.random() > compose_config.success_rate then
             result = compose_config.fail_keep_material and 
-                item_model.COMPOSE_RESULT.FAIL or 
-                item_model.COMPOSE_RESULT.FAIL_CONSUME
+                enum.ComposeResult.FAIL or 
+                enum.ComposeResult.FAIL_CONSUME
         end
     end
     
     -- 5. 创建结果物品
     local new_item = nil
-    if result == item_model.COMPOSE_RESULT.SUCCESS then
+    if result == enum.ComposeResult.SUCCESS then
         new_item = {
             item_id = target_id,
             count = compose_config.result_count or 1

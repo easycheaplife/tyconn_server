@@ -101,7 +101,7 @@ local function calc_gem_props(equip)
     
     -- 累加所有宝石属性
     for _, slot in pairs(equip.gem_slots) do
-        if slot.state == item_model.GEM_SLOT_STATE.OCCUPIED then
+        if slot.state == enum.GemSlotState.OCCUPIED then
             local gem_config = config_service.get_item_config(slot.gem_id)
             if gem_config and gem_config.props then
                 for prop_type, value in pairs(gem_config.props) do

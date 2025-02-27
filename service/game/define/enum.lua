@@ -1,5 +1,5 @@
 -- 从proto/common/enum.proto自动生成的枚举定义
--- 生成时间: 2025-02-27 07:10:19
+-- 生成时间: 2025-02-27 07:21:11
 
 local M = {}
 
@@ -138,6 +138,159 @@ M.EnhanceType = {
     ENHANCE_TYPE_STAR = 2,    -- 升星
     ENHANCE_TYPE_REFINE = 3,    -- 精炼
     ENHANCE_TYPE_REFORGE = 4,    -- 重铸
+}
+
+-- 物品标签
+M.ItemTag = {
+    ITEM_TAG_NONE = 0,
+    ITEM_TAG_QUEST = 1,    -- 任务物品
+    ITEM_TAG_RARE = 2,    -- 稀有物品
+    ITEM_TAG_TRADABLE = 3,    -- 可交易
+    ITEM_TAG_BIND = 4,    -- 绑定物品
+    ITEM_TAG_EXPIRE = 5,    -- 限时物品
+    ITEM_TAG_STACK = 6,    -- 可堆叠
+    ITEM_TAG_UNIQUE = 7,    -- 唯一物品
+}
+
+-- 绑定类型
+M.BindType = {
+    BIND_TYPE_NONE = 0,    -- 未绑定
+    BIND_TYPE_BIND = 1,    -- 已绑定
+}
+
+-- 合成结果类型
+M.ComposeResult = {
+    COMPOSE_RESULT_NONE = 0,
+    COMPOSE_RESULT_SUCCESS = 1,    -- 成功
+    COMPOSE_RESULT_FAIL = 2,    -- 失败但不消耗材料
+    COMPOSE_RESULT_FAIL_CONSUME = 3,    -- 失败且消耗材料
+}
+
+-- 分解结果类型
+M.DecomposeResult = {
+    DECOMPOSE_RESULT_NONE = 0,
+    DECOMPOSE_RESULT_NORMAL = 1,    -- 普通产出
+    DECOMPOSE_RESULT_EXTRA = 2,    -- 额外产出
+    DECOMPOSE_RESULT_CRITICAL = 3,    -- 暴击产出
+}
+
+-- 使用限制类型
+M.UseLimitType = {
+    USE_LIMIT_TYPE_NONE = 0,    -- 无限制
+    USE_LIMIT_TYPE_DAILY = 1,    -- 每日限制
+    USE_LIMIT_TYPE_WEEKLY = 2,    -- 每周限制
+    USE_LIMIT_TYPE_TOTAL = 3,    -- 总次数限制
+}
+
+-- 装备槽位
+M.EquipSlotType = {
+    EQUIP_SLOT_TYPE_NONE = 0,
+    EQUIP_SLOT_TYPE_WEAPON = 1,    -- 武器槽
+    EQUIP_SLOT_TYPE_HEAD = 2,    -- 头部槽
+    EQUIP_SLOT_TYPE_BODY = 3,    -- 身体槽
+    EQUIP_SLOT_TYPE_HANDS = 4,    -- 手部槽
+    EQUIP_SLOT_TYPE_FEET = 5,    -- 脚部槽
+    EQUIP_SLOT_TYPE_NECK = 6,    -- 项链槽
+    EQUIP_SLOT_TYPE_TRINKET = 9,    -- 饰品槽
+}
+
+-- 装备属性类型
+M.EquipPropType = {
+    EQUIP_PROP_TYPE_NONE = 0,
+    EQUIP_PROP_TYPE_ATK = 1,    -- 攻击力
+    EQUIP_PROP_TYPE_DEF = 2,    -- 防御力
+    EQUIP_PROP_TYPE_HP = 3,    -- 生命值
+    EQUIP_PROP_TYPE_MP = 4,    -- 魔法值
+    EQUIP_PROP_TYPE_CRIT_RATE = 5,    -- 暴击率
+    EQUIP_PROP_TYPE_CRIT_DMG = 6,    -- 暴击伤害
+    EQUIP_PROP_TYPE_SPEED = 7,    -- 速度
+    EQUIP_PROP_TYPE_DODGE = 8,    -- 闪避率
+}
+
+-- 强化结果类型
+M.EnhanceResult = {
+    ENHANCE_RESULT_NONE = 0,
+    ENHANCE_RESULT_SUCCESS = 1,    -- 成功
+    ENHANCE_RESULT_FAIL = 2,    -- 失败但不降级
+    ENHANCE_RESULT_FAIL_DOWN = 3,    -- 失败且降级
+    ENHANCE_RESULT_BREAK = 4,    -- 失败且装备破碎
+}
+
+-- 精炼结果类型
+M.RefineResult = {
+    REFINE_RESULT_NONE = 0,
+    REFINE_RESULT_SUCCESS = 1,    -- 成功
+    REFINE_RESULT_FAIL = 2,    -- 失败但不降级
+    REFINE_RESULT_FAIL_DOWN = 3,    -- 失败且降级
+    REFINE_RESULT_BREAK = 4,    -- 失败且装备破碎
+}
+
+-- 洗练属性类型
+M.ReforgePropType = {
+    REFORGE_PROP_TYPE_NONE = 0,
+    REFORGE_PROP_TYPE_FIXED = 1,    -- 固定属性
+    REFORGE_PROP_TYPE_RANDOM = 2,    -- 随机属性
+    REFORGE_PROP_TYPE_SPECIAL = 3,    -- 特殊属性
+}
+
+-- 洗练结果类型
+M.ReforgeResult = {
+    REFORGE_RESULT_NONE = 0,
+    REFORGE_RESULT_SUCCESS = 1,    -- 成功
+    REFORGE_RESULT_FAIL = 2,    -- 失败
+    REFORGE_RESULT_PERFECT = 3,    -- 完美洗练
+}
+
+-- 宝石类型
+M.GemType = {
+    GEM_TYPE_NONE = 0,
+    GEM_TYPE_ATTACK = 1,    -- 攻击宝石
+    GEM_TYPE_DEFENSE = 2,    -- 防御宝石
+    GEM_TYPE_HEALTH = 3,    -- 生命宝石
+    GEM_TYPE_CRIT = 4,    -- 暴击宝石
+    GEM_TYPE_SPEED = 5,    -- 速度宝石
+    GEM_TYPE_SPECIAL = 6,    -- 特殊宝石
+}
+
+-- 宝石槽位状态
+M.GemSlotState = {
+    GEM_SLOT_STATE_NONE = 0,
+    GEM_SLOT_STATE_EMPTY = 1,    -- 空槽位
+    GEM_SLOT_STATE_OCCUPIED = 2,    -- 已镶嵌
+    GEM_SLOT_STATE_LOCKED = 3,    -- 已锁定
+}
+
+-- 宝石操作结果
+M.GemResult = {
+    GEM_RESULT_NONE = 0,
+    GEM_RESULT_SUCCESS = 1,    -- 成功
+    GEM_RESULT_FAIL = 2,    -- 失败
+    GEM_RESULT_BREAK = 3,    -- 宝石破碎
+}
+
+-- 物品状态
+M.ItemState = {
+    ITEM_STATE_NONE = 0,
+    ITEM_STATE_NORMAL = 1,    -- 正常
+    ITEM_STATE_LOCKED = 2,    -- 锁定
+    ITEM_STATE_TRADING = 3,    -- 交易中
+    ITEM_STATE_AUCTIONING = 4,    -- 拍卖中
+}
+
+-- 交易状态
+M.TradeState = {
+    TRADE_STATE_NONE = 0,
+    TRADE_STATE_PENDING = 1,    -- 等待交易
+    TRADE_STATE_TRADING = 2,    -- 交易中
+    TRADE_STATE_COMPLETED = 3,    -- 交易完成
+}
+
+-- 拍卖状态
+M.AuctionState = {
+    AUCTION_STATE_NONE = 0,
+    AUCTION_STATE_ONGOING = 1,    -- 拍卖中
+    AUCTION_STATE_COMPLETED = 2,    -- 已成交
+    AUCTION_STATE_CANCELLED = 3,    -- 已取消
 }
 
 return M

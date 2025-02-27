@@ -271,7 +271,7 @@ function M.compose_item(user_id, target_id, material_slots)
     
     -- 7. 如果合成成功，添加新物品到背包
     local created_item = nil
-    if result == item_model.COMPOSE_RESULT.SUCCESS and new_item_data then
+    if result == enum.ComposeResult.SUCCESS and new_item_data then
         -- 找一个空格子
         local empty_slot = M.find_empty_slot(user_id, enum.BagType.BAG_TYPE_MAIN, items)
         if not empty_slot then
