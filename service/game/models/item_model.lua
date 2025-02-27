@@ -50,19 +50,19 @@ end
 -- 验证物品数据
 function M.validate(item_data)
     if not item_data then
-        return false, "物品数据为空"
+        return false, "item data is empty"
     end
     
     if not item_data.user_id then
-        return false, "用户ID不能为空"
+        return false, "user id is empty"
     end
     
     if not item_data.item_id then
-        return false, "物品ID不能为空"
+        return false, "item id is empty"
     end
     
     if not item_data.count or item_data.count <= 0 then
-        return false, "物品数量必须大于0"
+        return false, "item count must be greater than 0"
     end
     
     return true

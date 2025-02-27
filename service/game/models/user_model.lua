@@ -44,15 +44,15 @@ end
 -- 验证用户数据
 function M.validate(user_data)
     if not user_data then
-        return false, "用户数据为空"
+        return false, "user data is empty"
     end
     
     if not user_data.account then
-        return false, "账号不能为空"
+        return false, "account is empty"
     end
     
     if not user_data.username then
-        return false, "用户名不能为空"
+        return false, "username is empty"
     end
     
     return true

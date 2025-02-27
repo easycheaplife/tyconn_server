@@ -34,19 +34,19 @@ end
 -- 验证背包数据
 function M.validate_bag(bag)
     if not bag then
-        return false, "背包数据为空"
+        return false, "bag data is empty"
     end
     
     if not bag.user_id then
-        return false, "用户ID为空"
+        return false, "user id is empty"
     end
     
     if not bag.bag_type then
-        return false, "背包类型为空"
+        return false, "bag type is empty"
     end
     
     if not bag.size or bag.size <= 0 then
-        return false, "背包大小无效"
+        return false, "invalid bag size"
     end
     
     return true
@@ -55,23 +55,23 @@ end
 -- 验证格子数据
 function M.validate_slot(slot)
     if not slot then
-        return false, "格子数据为空"
+        return false, "slot data is empty"
     end
     
     if not slot.user_id then
-        return false, "用户ID为空"
+        return false, "user id is empty"
     end
     
     if not slot.bag_type then
-        return false, "背包类型为空"
+        return false, "bag type is empty"
     end
     
     if not slot.slot_index or slot.slot_index < 0 then
-        return false, "格子索引无效"
+        return false, "invalid slot index"
     end
     
     if not slot.state then
-        return false, "格子状态为空"
+        return false, "slot state is empty"
     end
     
     return true

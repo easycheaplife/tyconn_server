@@ -58,7 +58,7 @@ function M.create_user(user_data)
     local success, created_user = db_client.create_user(user_data)
     if not success then
         logger.error("Failed to create user in database")
-        return false, "数据库创建失败"
+        return false, "create user failed"
     end
 
     return true, created_user

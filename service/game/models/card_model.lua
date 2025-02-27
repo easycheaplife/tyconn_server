@@ -31,15 +31,15 @@ end
 -- 验证卡牌数据
 function M.validate(card_data)
     if not card_data then
-        return false, "卡牌数据为空"
+        return false, "card data is empty"
     end
     
     if not card_data.user_id then
-        return false, "用户ID不能为空"
+        return false, "user id is empty"
     end
     
     if not card_data.card_type then
-        return false, "卡牌类型不能为空"
+        return false, "card type is empty"
     end
     
     return true
