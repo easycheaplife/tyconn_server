@@ -30,6 +30,7 @@ enum ErrorCode {
     ERROR_CODE_INSUFFICIENT_SPACE = 206;   // 背包空间不足
     ERROR_CODE_INVALID_SLOT = 207;        // 无效的格子
     ERROR_CODE_SLOT_LOCKED = 208;         // 格子被锁定
+    ERROR_CODE_ITEM_EFFECT_FAILED = 209; // 物品效果失败
 
     // GM系统 (300-399)
     ERROR_CODE_GM_COMMAND_FAILED = 300;   // GM指令执行失败

@@ -49,12 +49,8 @@ function M.handle(client_id, msg)
     -- 使用物品
     logger.info("Use item - user_id: %d, item_id: %d, count: %d", 
         user.user_id, request.item_id, request.count)
-    local ok, result = item_service.use_item(user.user_id, request.item_id, request.count)
-    if not ok then
-        -- 检查是否是错误码
-        local error_code = result
-        local error_msg = "use item failed"
-        
+    local error_code, error_msg, result = item_service.use_item(user.user_id, request.item_id, request.count)
+    if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
         return message.create_error_response(
             base_request,
             error_code,

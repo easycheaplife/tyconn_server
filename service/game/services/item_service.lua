@@ -298,13 +298,13 @@ end
 function M.use_item(user_id, item_id, count)
     -- 1. 检查参数
     if not user_id or not item_id or not count or count <= 0 then
-        return false, pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAMS")             
+        return pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAMS"), 'invalid params' , {}            
     end
     
     -- 2. 获取物品列表
     local items = item_dao.get_user_items(user_id)
     if not items then
-        return false, pb.enum("common.ErrorCode", "ERROR_CODE_GET_ITEM_FAILED")
+        return pb.enum("common.ErrorCode", "ERROR_CODE_GET_ITEM_FAILED"), 'get item failed' , {}
     end
     
     -- 3. 查找物品
@@ -319,7 +319,7 @@ function M.use_item(user_id, item_id, count)
     end
     
     if not target_item then
-        return false, pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_NOT_FOUND")
+        return pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_NOT_FOUND"), 'item not found' , {}
     end
     
     -- 4. 检查物品是否被锁定
@@ -327,14 +327,14 @@ function M.use_item(user_id, item_id, count)
         -- 添加详细的错误日志
         logger.error("Item is locked - user_id: %d, item_id: %d, count: %d, state: %s",
             user_id, item_id, count, target_item.state or "nil")
-        return false, pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_LOCKED")
+        return pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_LOCKED"), 'item locked' , {}
     end
     
     -- 检查物品数量是否足够
     if target_item.count < count then
         logger.error("物品数量不足 - user_id: %d, item_id: %d, count: %d, have: %d", 
             user_id, item_id, count, target_item.count)
-        return false, pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_NOT_ENOUGH")
+        return pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_NOT_ENOUGH"), 'item not enough' , {}
     end
     
     -- 记录变更前数量
@@ -367,7 +367,7 @@ function M.use_item(user_id, item_id, count)
     -- 更新数据库和缓存
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR")
+        return pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"), 'db error' , {}
     end
 
     -- 应用物品效果
@@ -375,7 +375,7 @@ function M.use_item(user_id, item_id, count)
     if not ok then
         logger.error("Failed to apply item effect - user_id: %d, item_id: %d, error: %s",
             user_id, item_id, err)
-        return false, err
+        return pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_EFFECT_FAILED"), 'item effect failed' , {}
     end
 
     -- 记录操作日志
@@ -383,7 +383,7 @@ function M.use_item(user_id, item_id, count)
         user_id, item_id, count, target_item.count)
 
     -- 返回变化的物品列表
-    return true, {target_item}
+    return pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"), 'success' , {target_item}
 end
 
 -- 获取用户物品列表
@@ -1531,8 +1531,8 @@ function M.enhance_equipment(user_id, equip_id, material_list, protect_item)
         -- 失败处理
         if protect_item then
             -- 使用保护道具
-            ok, err = M.use_item(user_id, protect_item.item_id, 1)
-            if not ok then
+            error_code, error_msg, result_items = M.use_item(user_id, protect_item.item_id, 1)
+            if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
                 -- 返还材料
                 M.add_items_to_slot(user_id, materials)
                 return false, err
@@ -1678,8 +1678,8 @@ function M.refine_equipment(user_id, equip_id, material_list, protect_item)
         -- 失败处理
         if protect_item then
             -- 使用保护道具
-            ok, err = M.use_item(user_id, protect_item.item_id, 1)
-            if not ok then
+            error_code, error_msg, result_items = M.use_item(user_id, protect_item.item_id, 1)
+            if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
                 -- 返还材料
                 M.add_items_to_slot(user_id, materials)
                 return false, err
@@ -1909,9 +1909,9 @@ function M.inlay_gem(user_id, equip_id, gem_id, slot_index, protect_item)
         -- 失败处理
         if protect_item then
             -- 使用保护道具
-            local ok, err = M.use_item(user_id, protect_item.item_id, 1)
-            if not ok then
-                return false, err
+            local error_code, error_msg, result_items = M.use_item(user_id, protect_item.item_id, 1)
+            if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+                return false, error_msg
             end
             result = enum.GemResult.FAIL
         else
@@ -2014,9 +2014,9 @@ function M.remove_gem(user_id, equip_id, slot_index, protect_item)
     if random > 0.7 then  -- 30%概率失败
         if protect_item then
             -- 使用保护道具
-            local ok, err = M.use_item(user_id, protect_item.item_id, 1)
-            if not ok then
-                return false, err
+            local error_code, error_msg, result_items = M.use_item(user_id, protect_item.item_id, 1)
+            if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+                return false, error_msg
             end
             result = enum.GemResult.FAIL
         else
