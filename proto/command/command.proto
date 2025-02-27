@@ -98,7 +98,7 @@ message G2CSortBagResponse {
     repeated common.ItemInfo items = 1;     // 整理后的物品列表
 }
 
-// 移动物品请求
+// 移动物品请求 {{Req:208}}
 message C2GMoveItemRequest {
     string token = 1;
     int32 src_bag_type = 2;     // 源背包类型
@@ -108,7 +108,7 @@ message C2GMoveItemRequest {
     int32 count = 6;   // 可选的移动数量
 }
 
-// 移动物品响应
+// 移动物品响应 {{Res:209}}
 message G2CMoveItemResponse {
     repeated common.ItemInfo changed_items = 1;  // 所有变化的物品
 }
