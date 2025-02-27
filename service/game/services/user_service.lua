@@ -37,7 +37,7 @@ function M.create_user(username, password, nickname, avatar)
     -- 检查用户名是否已存在
     local exists = user_dao.get_user_by_username(username)
     if exists then
-        return nil, "用户名已存在"
+        return nil, "username already exists"
     end
     
     -- 创建用户信息
@@ -49,7 +49,7 @@ function M.create_user(username, password, nickname, avatar)
     -- 使用 dao 创建用户
     local ok, created_user = user_dao.create_user(user)
     if not ok then
-        return nil, "创建用户失败"
+        return nil, "create user failed"
     end
     
     -- 写入缓存
@@ -94,13 +94,13 @@ end
 function M.add_exp(user_id, exp)
     logger.debug("Adding exp to user %d: %d", user_id, exp)
     if not user_id or not exp or exp <= 0 then
-        return false, "参数无效"
+        return false, "invalid params"
     end
 
     -- 从缓存获取用户信息
     local user_info = cache.get_user_info(user_id)
     if not user_info then
-        return false, "用户不存在"
+        return false, "user not found"
     end
 
     -- 确保经验值存在
@@ -143,12 +143,12 @@ end
 function M.add_gold(user_id, gold)
     logger.debug("Adding gold to user %d: %d", user_id, gold)
     if not user_id or not gold or gold <= 0 then
-        return false, "参数无效"
+        return false, "invalid params"
     end
 
     local user_info = cache.get_user_info(user_id)
     if not user_info then
-        return false, "用户不存在"
+        return false, "user not found"
     end
 
     -- 确保金币值存在

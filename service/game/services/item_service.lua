@@ -39,7 +39,7 @@ local SORT_RULE = {
 -- 初始化新用户物品
 function M.init_user_items(user_id)
     if not user_id then
-        return false, "无效的用户ID"
+        return false, "invalid user id"
     end
 
     logger.info("Initializing items for user: %d", user_id)
@@ -191,7 +191,7 @@ function M.add_items_to_slot(user_id, items)
         -- 获取物品配置
         local config = config_service.get_item_config(item_id)
         if not config then
-            return false, string.format("物品%d配置不存在", item_id)
+            return false, string.format("item %d config not found", item_id)
         end
 
         -- 先尝试堆叠到现有物品上

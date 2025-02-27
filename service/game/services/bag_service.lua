@@ -102,12 +102,12 @@ local function check_slot_state(user_id, bag_type, slot_index)
     end
     
     if not slot then
-        return false, "格子不存在"
+        return false, "slot not found"
     end
     
     -- 3. 检查格子状态
     if slot.state == enum.SlotState.SLOT_STATE_LOCKED then
-        return false, "格子已锁定"
+        return false, "slot is locked"
     end
     
     return true
@@ -118,13 +118,13 @@ local function check_move_valid(user_id, from_bag, from_slot, to_bag, to_slot)
     -- 1. 检查源格子状态
     local ok, err = check_slot_state(user_id, from_bag, from_slot)
     if not ok then
-        return false, "源格子: " .. err
+        return false, "source slot: " .. err
     end
     
     -- 2. 检查目标格子状态
     ok, err = check_slot_state(user_id, to_bag, to_slot)
     if not ok then
-        return false, "目标格子: " .. err
+        return false, "target slot: " .. err
     end
     
     -- 3. 检查背包类型
@@ -143,7 +143,7 @@ function M.find_empty_slot(user_id, bag_type, items)
     if not bag_items then
         bag_items = item_dao.get_user_items(user_id)
         if not bag_items then
-            return nil, "获取物品失败"
+            return nil, "get items failed"
         end
     end
     
@@ -161,7 +161,7 @@ function M.find_empty_slot(user_id, bag_type, items)
         end
     end
     
-    return nil, "背包已满"
+    return nil, "bag is full"
 end
 
 -- 向背包中添加物品
@@ -169,7 +169,7 @@ function M.add_item_to_bag(user_id, item_data, bag_type, slot_index)
     -- 1. 获取当前物品列表
     local items = item_dao.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get items failed"
     end
     
     -- 2. 处理背包类型和格子位置
@@ -180,14 +180,14 @@ function M.add_item_to_bag(user_id, item_data, bag_type, slot_index)
     if not target_slot then
         target_slot = M.find_empty_slot(user_id, target_bag_type, items)
         if not target_slot then
-            return false, "背包已满"
+            return false, "bag is full"
         end
     end
     
     -- 3. 创建新物品
     local new_item = item_service.create_item(user_id, item_data.item_id, item_data.count)
     if not new_item then
-        return false, "创建物品失败"
+        return false, "create item failed"
     end
     
     -- 设置背包和格子信息
@@ -200,7 +200,7 @@ function M.add_item_to_bag(user_id, item_data, bag_type, slot_index)
     -- 5. 保存更新
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "保存物品失败"
+        return false, "save item failed"
     end
     
     return true, new_item
@@ -210,13 +210,13 @@ end
 function M.compose_item(user_id, target_id, material_slots)
     -- 1. 验证参数
     if not user_id or not target_id or not material_slots then
-        return false, "无效的参数"
+        return false, "invalid params"
     end
     
     -- 2. 获取物品
     local items = item_dao.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get items failed"
     end
     
     -- 3. 找到材料物品
@@ -232,7 +232,7 @@ function M.compose_item(user_id, target_id, material_slots)
         end
         
         if not found then
-            return false, "背包格子不存在"
+            return false, "bag slot not found"
         end
     end
     
@@ -275,7 +275,7 @@ function M.compose_item(user_id, target_id, material_slots)
         -- 找一个空格子
         local empty_slot = M.find_empty_slot(user_id, enum.BagType.BAG_TYPE_MAIN, items)
         if not empty_slot then
-            return false, "背包已满"
+            return false, "bag is full"
         end
         
         -- 创建新物品
@@ -295,7 +295,7 @@ function M.compose_item(user_id, target_id, material_slots)
     -- 8. 保存更新
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "保存物品失败"
+        return false, "save item failed"
     end
     
     -- 修改：返回新创建的物品对象作为第三个返回值
@@ -306,13 +306,13 @@ end
 function M.decompose_item(user_id, item_slots)
     -- 1. 验证参数
     if not user_id or not item_slots or #item_slots == 0 then
-        return false, "无效的参数"
+        return false, "invalid params"
     end
     
     -- 2. 获取物品
     local items = item_dao.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get items failed"
     end
     
     -- 3. 找到要分解的物品
@@ -327,7 +327,7 @@ function M.decompose_item(user_id, item_slots)
             end
         end
         if not found then
-            return false, "背包格子不存在"
+            return false, "bag slot not found"
         end
     end
     
@@ -353,7 +353,7 @@ function M.decompose_item(user_id, item_slots)
         -- 寻找空格子
         local empty_slot = M.find_empty_slot(user_id, enum.BagType.BAG_TYPE_MAIN, items)
         if not empty_slot then
-            return false, "背包已满"
+            return false, "bag is full"
         end
         
         -- 创建结果物品
@@ -374,7 +374,7 @@ function M.decompose_item(user_id, item_slots)
     -- 7. 保存更新
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "保存物品失败"
+        return false, "save item failed"
     end
     
     return true, nil, result_item_objects
@@ -385,7 +385,7 @@ function M.move_item(user_id, src_bag_type, src_slot, dst_bag_type, dst_slot, co
     -- 1. 获取物品列表
     local items = item_dao.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get items failed"
     end
     
     -- 2. 查找源物品和目标物品
@@ -402,7 +402,7 @@ function M.move_item(user_id, src_bag_type, src_slot, dst_bag_type, dst_slot, co
     
     -- 3. 检查源物品是否存在
     if not src_item then
-        return false, "源格子没有物品"
+        return false, "source slot is empty"
     end
     
     -- 跟踪变化的物品
@@ -493,7 +493,7 @@ function M.move_item(user_id, src_bag_type, src_slot, dst_bag_type, dst_slot, co
     -- 6. 保存更新
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "保存物品失败"
+        return false, "save item failed"
     end
     
     return true, nil, changed_items
@@ -504,7 +504,7 @@ function M.sort_bag(user_id, bag_type)
     -- 1. 获取物品列表
     local items = item_dao.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get items failed"
     end
     
     -- 2. 过滤指定背包的物品
@@ -549,7 +549,7 @@ function M.sort_bag(user_id, bag_type)
     -- 5. 保存更新
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "保存物品失败"
+        return false, "save item failed"
     end
     
     return true, nil, bag_items
@@ -559,7 +559,7 @@ end
 function M.sort_all_bags(user_id, rule)
     -- 1. 检查用户ID
     if not user_id then
-        return false, "无效的用户ID"
+        return false, "invalid user id"
     end
     
     -- 2. 整理各类型背包
@@ -593,7 +593,7 @@ function M.split_item(user_id, from_bag, from_slot, to_bag, to_slot, count)
     -- 1. 获取物品列表
     local items = item_dao.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get items failed"
     end
     
     -- 2. 查找源物品
@@ -606,18 +606,18 @@ function M.split_item(user_id, from_bag, from_slot, to_bag, to_slot, count)
     end
     
     if not from_item then
-        return false, "源格子没有物品"
+        return false, "source slot is empty"
     end
     
     -- 3. 检查数量
     if count <= 0 or count >= from_item.count then
-        return false, "拆分数量无效"
+        return false, "invalid split count"
     end
     
     -- 4. 检查目标格子是否为空
     for _, item in ipairs(items) do
         if item.bag_type == to_bag and item.slot_index == to_slot then
-            return false, "目标格子已被占用"
+            return false, "target slot is occupied"
         end
     end
     
@@ -640,7 +640,7 @@ function M.split_item(user_id, from_bag, from_slot, to_bag, to_slot, count)
     -- 8. 保存更新
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "保存物品失败"
+        return false, "save item failed"
     end
     
     return true
@@ -652,27 +652,27 @@ function M.equip_item(user_id, from_bag, from_slot, equip_slot)
     local src_bag = M.get_user_bag(user_id, from_bag)
     local equip_bag = M.get_user_bag(user_id, enum.BagType.BAG_TYPE_EQUIP)
     if not src_bag or not equip_bag then
-        return false, "背包不存在"
+        return false, "bag not found"
     end
     
     -- 2. 检查源格子
     if not src_bag.slots[from_slot] then
-        return false, "源格子不存在"
+        return false, "source slot not found"
     end
     
     local src_item = src_bag.slots[from_slot]
     if src_item.state ~= enum.SlotState.SLOT_STATE_OCCUPIED then
-        return false, "源格子没有物品"
+        return false, "source slot is empty"
     end
     
     -- 3. 检查装备槽位
     if not equip_bag.slots[equip_slot] then
-        return false, "装备槽位不存在"
+        return false, "equip slot not found"
     end
     
     -- 4. 检查物品是否可装备
     if not can_equip(src_item.item_id, equip_slot) then
-        return false, "物品不可装备到该槽位"
+        return false, "item cannot be equipped to this slot"
     end
     
     -- 5. 卸下当前装备(如果有)
@@ -689,7 +689,7 @@ function M.equip_item(user_id, from_bag, from_slot, equip_slot)
         end
         
         if not empty_slot then
-            return false, "背包已满，无法卸下当前装备"
+            return false, "bag is full, cannot unequip current item"
         end
         
         -- 移动到主背包
@@ -699,7 +699,7 @@ function M.equip_item(user_id, from_bag, from_slot, equip_slot)
         -- 保存主背包更新
         local ok = bag_dao.update_user_bag(user_id, enum.BagType.BAG_TYPE_MAIN, main_bag)
         if not ok then
-            return false, "更新背包失败"
+            return false, "failed to update main bag"
         end
     end
     
@@ -716,12 +716,12 @@ function M.equip_item(user_id, from_bag, from_slot, equip_slot)
     -- 8. 保存更新
     local ok = bag_dao.update_user_bag(user_id, from_bag, src_bag)
     if not ok then
-        return false, "更新源背包失败"
+        return false, "failed to update source bag"
     end
     
     ok = bag_dao.update_user_bag(user_id, enum.BagType.BAG_TYPE_EQUIP, equip_bag)
     if not ok then
-        return false, "更新装备栏失败"
+        return false, "failed to update equip bag"
     end
     
     -- 9. 重新计算属性
@@ -734,37 +734,37 @@ end
 -- 检查背包数据是否有效
 local function validate_bag(bag)
     if not bag then
-        return false, "背包数据为空"
+        return false, "bag data is empty"
     end
     
     if not bag.user_id then
-        return false, "用户ID为空"
+        return false, "user id is empty"
     end
     
     if not bag.bag_type then
-        return false, "背包类型为空"
+        return false, "bag type is empty"
     end
     
     if not bag.slots then
-        return false, "格子数据为空"
+        return false, "slots data is empty"
     end
     
     -- 检查每个格子
     for i, slot in pairs(bag.slots) do
         -- 检查索引
         if slot.index ~= i then
-            return false, string.format("格子索引不匹配: %d != %d", slot.index, i)
+            return false, string.format("slot index mismatch: %d != %d", slot.index, i)
         end
         
         -- 检查状态
         if slot.state == enum.SlotState.SLOT_STATE_OCCUPIED then
             -- 检查物品数据
             if not slot.item_id then
-                return false, string.format("格子 %d 物品ID为空", i)
+                return false, string.format("slot %d item id is empty", i)
             end
             
             if not slot.count or slot.count <= 0 then
-                return false, string.format("格子 %d 物品数量无效", i)
+                return false, string.format("slot %d item count is invalid", i)
             end
         end
     end
@@ -777,13 +777,13 @@ function M.repair_bag(user_id, bag_type)
     -- 1. 获取物品列表
     local items = item_dao.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get items failed"
     end
     
     -- 2. 获取背包信息
     local bag = bag_dao.get_user_bag(user_id, bag_type)
     if not bag then
-        return false, "获取背包失败"
+        return false, "get bag failed"
     end
     
     -- 3. 检查物品是否有效
@@ -825,7 +825,7 @@ function M.repair_bag(user_id, bag_type)
         -- 保存修复后的物品列表
         local ok = item_dao.update_user_items(user_id, valid_items)
         if not ok then
-            return false, "保存物品失败"
+            return false, "save item failed"
         end
     end
     
@@ -837,7 +837,7 @@ function M.repair_all_bags(user_id)
     -- 1. 检查用户是否存在
     local user = user_dao.get_user_by_id(user_id)
     if not user then
-        return false, "用户不存在"
+        return false, "user not found"
     end
     
     -- 2. 修复各类型背包
@@ -857,7 +857,7 @@ function M.find_empty_slots(user_id, bag_type, count)
     -- 1. 获取背包格子
     local slots = bag_dao.get_bag_slots(user_id, bag_type)
     if not slots then
-        return nil, "获取格子失败"
+        return nil, "get slots failed"
     end
     
     -- 2. 查找空格子
@@ -872,7 +872,7 @@ function M.find_empty_slots(user_id, bag_type, count)
     end
     
     if #empty_slots < count then
-        return nil, "空格子不足"
+        return nil, "not enough empty slots"
     end
     
     return empty_slots
@@ -883,7 +883,7 @@ function M.check_bag_capacity(user_id, bag_type, need_count)
     -- 1. 获取物品列表
     local items = item_dao.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get items failed"
     end
     
     -- 2. 统计已使用格子
@@ -897,7 +897,7 @@ function M.check_bag_capacity(user_id, bag_type, need_count)
     -- 3. 获取背包信息
     local bag = bag_dao.get_user_bag(user_id, bag_type)
     if not bag then
-        return false, "获取背包失败"
+        return false, "get bag failed"
     end
     
     -- 4. 计算剩余格子数
@@ -921,7 +921,7 @@ function M.get_bag_info(user_id, bag_type)
     -- 获取背包数据
     local bag = bag_dao.get_user_bag(user_id, bag_type)
     if not bag then
-        return nil, "背包不存在"
+        return nil, "bag not found"
     end
     
     return {
@@ -934,7 +934,7 @@ end
 function M.get_max_bag_size(bag_type)
     local config = BAG_CONFIG[bag_type]
     if not config then
-        return nil, "无效的背包类型"
+        return nil, "invalid bag type"
     end
     return config.max_size
 end
@@ -943,42 +943,42 @@ end
 function M.expand_bag(user_id, bag_type, add_size)
     -- 1. 参数验证
     if not user_id or not bag_type then
-        return false, nil, "用户ID或背包类型无效"
+        return false, nil, "user id or bag type is invalid"
     end
 
     -- 验证扩展大小
     if not add_size or add_size <= 0 then
-        return false, nil, "扩展大小必须大于0"
+        return false, nil, "expand size must be greater than 0"
     end
 
     -- 2. 获取背包信息
     local bag = bag_dao.get_user_bag(user_id, bag_type)
     if not bag then
-        return false, nil, "背包不存在"
+        return false, nil, "bag not found"
     end
 
     -- 3. 检查背包配置
     local config = BAG_CONFIG[bag_type]
     if not config then
-        return false, nil, "无效的背包类型"
+        return false, nil, "invalid bag type"
     end
 
     -- 4. 检查是否超过最大容量
     local new_size = bag.size + add_size
     if new_size > config.max_size then
-        return false, nil, "超过背包最大容量限制"
+        return false, nil, "exceeds bag max capacity limit"
     end
 
     -- 5. 更新背包大小
     local ok = bag_dao.update_bag_size(user_id, bag_type, new_size)
     if not ok then
-        return false, nil, "更新背包大小失败"
+        return false, nil, "failed to update bag size"
     end
 
     -- 6. 获取最新的物品列表
     local items = item_dao.get_user_items(user_id)
     if not items then
-        return false, nil, "获取物品列表失败"
+        return false, nil, "get items failed"
     end
 
     -- 7. 清除缓存
@@ -991,13 +991,13 @@ end
 function M.clear_bag(user_id, bag_type)
     -- 验证背包类型
     if not bag_model.is_valid_bag_type(bag_type) then
-        return false, "无效的背包类型"
+        return false, "invalid bag type"
     end
     
     -- 获取用户所有物品
     local items = item_dao.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get items failed"
     end
     
     -- 筛选出不在指定背包的物品
@@ -1011,22 +1011,22 @@ function M.clear_bag(user_id, bag_type)
     -- 保存更新后的物品列表
     local ok = item_dao.update_user_items(user_id, filtered_items)
     if not ok then
-        return false, "保存物品失败"
+        return false, "save item failed"
     end
     
-    return true, "背包已清空"
+    return true, "bag is cleared"
 end
 
 -- 获取用户所有背包信息
 function M.get_user_bags(user_id)
     if not user_id then
-        return nil, "无效的用户ID"
+        return nil, "invalid user id"
     end
 
     -- 获取用户所有背包
     local bags = bag_dao.get_user_all_bags(user_id)
     if not bags then
-        return nil, "获取背包失败"
+        return nil, "get bags failed"
     end
 
     -- 获取用户所有物品

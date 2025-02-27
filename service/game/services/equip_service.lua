@@ -13,7 +13,7 @@ function M.check_can_equip(user_id, from_bag, from_slot, equip_slot)
     -- 1. 获取物品信息
     local items = item_dao.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get items failed"
     end
     
     -- 2. 查找物品
@@ -26,25 +26,25 @@ function M.check_can_equip(user_id, from_bag, from_slot, equip_slot)
     end
     
     if not item then
-        return false, "物品不存在"
+        return false, "item not found"
     end
     
     -- 3. 检查物品类型
     local config = require("config.item_config")[item.item_id]
     if not config or config.type ~= enum.ItemType.ITEM_TYPE_EQUIPMENT then
-        return false, "物品不是装备"
+        return false, "item is not equipment"
     end
     
     -- 4. 检查装备位置
     if config.equip_slot ~= equip_slot then
-        return false, "装备位置不匹配"
+        return false, "equip slot not match"
     end
     
     -- 5. 检查等级限制
     if config.level_required then
         local user_level = user_service.get_user_level(user_id)
         if user_level < config.level_required then
-            return false, "等级不足"
+            return false, "level not enough"
         end
     end
     
@@ -62,7 +62,7 @@ function M.equip_item(user_id, from_bag, from_slot, equip_slot)
     -- 2. 获取物品列表
     local items = item_dao.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get items failed"
     end
     
     -- 3. 查找源物品
@@ -75,7 +75,7 @@ function M.equip_item(user_id, from_bag, from_slot, equip_slot)
     end
     
     if not from_item then
-        return false, "源物品不存在"
+        return false, "source item not found"
     end
     
     -- 4. 查找当前装备
@@ -100,7 +100,7 @@ function M.equip_item(user_id, from_bag, from_slot, equip_slot)
     -- 6. 保存更新
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "保存物品失败"
+        return false, "save item failed"
     end
     
     -- 7. 更新属性
@@ -122,7 +122,7 @@ function M.unequip_item(user_id, equip_slot, to_bag, to_slot)
     -- 1. 获取物品列表
     local items = item_dao.get_user_items(user_id)
     if not items then
-        return false, "获取物品失败"
+        return false, "get items failed"
     end
     
     -- 2. 查找装备
@@ -135,13 +135,13 @@ function M.unequip_item(user_id, equip_slot, to_bag, to_slot)
     end
     
     if not equip then
-        return false, "装备不存在"
+        return false, "equip not found"
     end
     
     -- 3. 检查目标格子
     for _, item in ipairs(items) do
         if item.bag_type == to_bag and item.slot_index == to_slot then
-            return false, "目标格子已被占用"
+            return false, "target slot is occupied"
         end
     end
     
@@ -152,7 +152,7 @@ function M.unequip_item(user_id, equip_slot, to_bag, to_slot)
     -- 5. 保存更新
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "保存物品失败"
+        return false, "save item failed"
     end
     
     -- 6. 更新属性

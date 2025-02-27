@@ -27,10 +27,10 @@ end
 -- 初始化所有配置
 function M.init()
     local configs_to_load = {
-        {name = "物品配置", loader = M.load_item_config},
-        {name = "初始物品配置", loader = M.load_initial_items},
-        {name = "单位配置", loader = M.load_unit_config},
-        {name = "属性配置", loader = M.load_property_config}
+        {name = "item config", loader = M.load_item_config},
+        {name = "initial item config", loader = M.load_initial_items},
+        {name = "unit config", loader = M.load_unit_config},
+        {name = "property config", loader = M.load_property_config}
     }
 
     for _, config in ipairs(configs_to_load) do

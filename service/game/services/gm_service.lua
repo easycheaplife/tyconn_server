@@ -11,14 +11,14 @@ local GM_HANDLERS = {
     -- 添加物品
     add_item = function(user_id, params)
         if #params < 1 then
-            return false, "参数不足"
+            return false, "params not enough"
         end
 
         local item_id = tonumber(params[1])
         local count = tonumber(params[2] or 1)
         if not item_id or not count or count <= 0 then
             logger.error("add_item - params: %s", utils.table_to_string(params))
-            return false, "参数无效"
+            return false, "invalid params"
         end
         
         local result, err = item_service.add_items_to_slot(user_id, {
@@ -38,14 +38,14 @@ local GM_HANDLERS = {
     -- 删除物品
     del_item = function(user_id, params)
         if #params < 1 then
-            return false, "参数不足"
+            return false, "params not enough"
         end
 
         local item_id = tonumber(params[1])
         local count = tonumber(params[2] or 1)
         
         if not item_id or count <= 0 then
-            return false, "参数无效"
+            return false, "invalid params"
         end
         
         return item_service.batch_remove_items(user_id, {
@@ -60,12 +60,12 @@ local GM_HANDLERS = {
     clear_bag = function(user_id, args)
         -- 参数检查
         if not args[1] then
-            return false, "缺少背包类型参数"
+            return false, "missing bag type param"
         end
         
         local bag_type = tonumber(args[1])
         if not bag_type then
-            return false, "背包类型必须是数字"
+            return false, "bag type must be a number"
         end
         
         -- 调用背包服务清空背包
@@ -81,13 +81,13 @@ local GM_HANDLERS = {
     -- 设置等级
     set_level = function(user_id, params)
         if #params < 1 then
-            return false, "参数不足"
+            return false, "params not enough"
         end
         
         local level = tonumber(params[1])
         logger.info("GM set level - level: %d", level)
         if not level or level <= 0 then
-            return false, "等级参数无效"
+            return false, "invalid level param"
         end
 
         -- 计算所需经验值
@@ -98,11 +98,11 @@ local GM_HANDLERS = {
         local user = user_service.get_user_by_id(user_id)
         logger.info("GM set level - user: %s", utils.table_to_string(user))
         if not user then
-            return false, "用户不存在"
+            return false, "user not found"
         end
 
         if user.level >= level then
-            return true, "等级已达到"
+            return true, "level already reached"
         end
         -- 设置经验值会自动更新等级
         local ok, err = user_service.add_exp(user_id, need_exp - (user.exp or 0))
@@ -110,7 +110,7 @@ local GM_HANDLERS = {
             return false, err
         end
         logger.info("GM set level - ok: %s, err: %s", ok, err)
-        return true, string.format("设置等级成功: %d", level)
+        return true, string.format("set level success: %d", level)
     end,
 
     -- 重置用户
@@ -124,7 +124,7 @@ local GM_HANDLERS = {
         local duration = tonumber(params[2] or 3600) -- 默认1小时
         
         if not target_id or duration <= 0 then
-            return false, "参数无效"
+            return false, "invalid params"
         end
         
         return user_service.ban_user(target_id, duration)
@@ -143,7 +143,7 @@ function M.execute_command(user_id, command, params)
     local handler = GM_HANDLERS[command]
     if not handler then
         logger.warn("Invalid GM command: %s", command)
-        return false, "未知的GM命令"
+        return false, "unknown GM command"
     end
 
     -- 3. 执行命令
@@ -153,7 +153,7 @@ function M.execute_command(user_id, command, params)
 
     if not ok then
         logger.error("GM command failed: %s", result)
-        return false, "GM指令执行失败"
+        return false, "GM command failed"
     end
 
     return result

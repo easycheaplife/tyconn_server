@@ -287,7 +287,7 @@ function M.recalc_equip_property(user_id)
     local bag_service = require "services.bag_service"
     local equip_bag = bag_service.get_user_bag(user_id, enum.BagType.BAG_TYPE_EQUIP)
     if not equip_bag then
-        return false, "获取装备栏失败"
+        return false, "get equip bag failed"
     end
     
     -- 2. 计算总属性
