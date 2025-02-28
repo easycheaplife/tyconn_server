@@ -25,7 +25,49 @@
 +----------------------------------+
 ```
 
-### 2. 服务器组成
+### 2. 服务负载均衡
+
+#### Service Balancer 原理
+```
+                          ┌→ [Node 1] ←→ [Health Check]
+[Client] → [Balancer] →   ├→ [Node 2] ←→ [Health Check]
+                          └→ [Node 3] ←→ [Health Check]
+```
+
+1. 节点管理
+- 维护服务节点列表(service_nodes)
+- 记录节点健康状态(node_status)
+- 支持动态添加/移除节点
+
+2. 健康检查
+- 定期检查节点健康状态(check_node_health)
+- 支持自定义健康检查接口(如 DB Proxy 的 ping)
+- 使用 pcall 安全处理节点调用
+- 记录节点状态变化
+
+3. 负载均衡策略
+- 轮询方式分配请求(Round Robin)
+- 只路由到健康节点
+- 自动跳过不健康节点
+- 支持节点权重(待实现)
+
+4. 故障处理
+- 自动检测节点故障
+- 将故障节点标记为不健康
+- 故障节点恢复后自动加回
+- 无健康节点时重新检查所有节点
+
+5. 调用示例
+```lua
+-- 获取健康的 DB Proxy 节点
+local node = service_balancer.get_node("db_proxy", caller_node)
+if node then
+    -- 调用节点服务
+    local ok, result = pcall(cluster.call, node, "@"..node, "some_method")
+end
+```
+
+### 3. 服务器组成
 
 #### 登录服务器 (Login Server)
 - 处理客户端登录请求
