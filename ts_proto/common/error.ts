@@ -54,6 +54,8 @@ export enum ErrorCode {
   ERROR_CODE_INVALID_SLOT = 207,
   /** ERROR_CODE_SLOT_LOCKED - 格子被锁定 */
   ERROR_CODE_SLOT_LOCKED = 208,
+  /** ERROR_CODE_ITEM_EFFECT_FAILED - 物品效果失败 */
+  ERROR_CODE_ITEM_EFFECT_FAILED = 209,
   /** ERROR_CODE_GM_COMMAND_FAILED - GM系统 (300-399) */
   ERROR_CODE_GM_COMMAND_FAILED = 300,
   /** ERROR_CODE_PERMISSION_DENIED - 权限不足 */
@@ -135,6 +137,9 @@ export function errorCodeFromJSON(object: any): ErrorCode {
     case 208:
     case "ERROR_CODE_SLOT_LOCKED":
       return ErrorCode.ERROR_CODE_SLOT_LOCKED;
+    case 209:
+    case "ERROR_CODE_ITEM_EFFECT_FAILED":
+      return ErrorCode.ERROR_CODE_ITEM_EFFECT_FAILED;
     case 300:
     case "ERROR_CODE_GM_COMMAND_FAILED":
       return ErrorCode.ERROR_CODE_GM_COMMAND_FAILED;
@@ -203,6 +208,8 @@ export function errorCodeToJSON(object: ErrorCode): string {
       return "ERROR_CODE_INVALID_SLOT";
     case ErrorCode.ERROR_CODE_SLOT_LOCKED:
       return "ERROR_CODE_SLOT_LOCKED";
+    case ErrorCode.ERROR_CODE_ITEM_EFFECT_FAILED:
+      return "ERROR_CODE_ITEM_EFFECT_FAILED";
     case ErrorCode.ERROR_CODE_GM_COMMAND_FAILED:
       return "ERROR_CODE_GM_COMMAND_FAILED";
     case ErrorCode.ERROR_CODE_PERMISSION_DENIED:

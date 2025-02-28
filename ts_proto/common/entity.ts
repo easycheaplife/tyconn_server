@@ -19,18 +19,20 @@ export interface UserInfo {
   level: number;
   /** 经验值 */
   exp: number;
+  /** 金币 */
+  gold: number;
   /** VIP等级 */
   vipLevel: number;
-  /** 创建时间 */
-  createTime: number;
-  /** 最后登录时间 */
-  loginTime: number;
   /** 生命值 */
   hp: number;
   /** 攻击力 */
   attack: number;
   /** 防御力 */
   defense: number;
+  /** 创建时间 */
+  createTime: number;
+  /** 最后登录时间 */
+  loginTime: number;
 }
 
 /** 卡牌信息 */
@@ -57,8 +59,8 @@ export interface CardInfo {
 export interface ItemInfo {
   itemId: number;
   count: number;
-  /** 确保这个字段存在 */
   slot: number;
+  itemType: number;
 }
 
 /** 背包信息 */
@@ -74,12 +76,13 @@ function createBaseUserInfo(): UserInfo {
     username: "",
     level: 0,
     exp: 0,
+    gold: 0,
     vipLevel: 0,
-    createTime: 0,
-    loginTime: 0,
     hp: 0,
     attack: 0,
     defense: 0,
+    createTime: 0,
+    loginTime: 0,
   };
 }
 
@@ -97,23 +100,26 @@ export const UserInfo: MessageFns<UserInfo> = {
     if (message.exp !== 0) {
       writer.uint32(32).int64(message.exp);
     }
+    if (message.gold !== 0) {
+      writer.uint32(40).int64(message.gold);
+    }
     if (message.vipLevel !== 0) {
-      writer.uint32(40).int32(message.vipLevel);
-    }
-    if (message.createTime !== 0) {
-      writer.uint32(48).int64(message.createTime);
-    }
-    if (message.loginTime !== 0) {
-      writer.uint32(56).int64(message.loginTime);
+      writer.uint32(48).int32(message.vipLevel);
     }
     if (message.hp !== 0) {
-      writer.uint32(64).int32(message.hp);
+      writer.uint32(56).int32(message.hp);
     }
     if (message.attack !== 0) {
-      writer.uint32(72).int32(message.attack);
+      writer.uint32(64).int32(message.attack);
     }
     if (message.defense !== 0) {
-      writer.uint32(80).int32(message.defense);
+      writer.uint32(72).int32(message.defense);
+    }
+    if (message.createTime !== 0) {
+      writer.uint32(80).int64(message.createTime);
+    }
+    if (message.loginTime !== 0) {
+      writer.uint32(88).int64(message.loginTime);
     }
     return writer;
   },
@@ -162,7 +168,7 @@ export const UserInfo: MessageFns<UserInfo> = {
             break;
           }
 
-          message.vipLevel = reader.int32();
+          message.gold = longToNumber(reader.int64());
           continue;
         }
         case 6: {
@@ -170,7 +176,7 @@ export const UserInfo: MessageFns<UserInfo> = {
             break;
           }
 
-          message.createTime = longToNumber(reader.int64());
+          message.vipLevel = reader.int32();
           continue;
         }
         case 7: {
@@ -178,7 +184,7 @@ export const UserInfo: MessageFns<UserInfo> = {
             break;
           }
 
-          message.loginTime = longToNumber(reader.int64());
+          message.hp = reader.int32();
           continue;
         }
         case 8: {
@@ -186,7 +192,7 @@ export const UserInfo: MessageFns<UserInfo> = {
             break;
           }
 
-          message.hp = reader.int32();
+          message.attack = reader.int32();
           continue;
         }
         case 9: {
@@ -194,7 +200,7 @@ export const UserInfo: MessageFns<UserInfo> = {
             break;
           }
 
-          message.attack = reader.int32();
+          message.defense = reader.int32();
           continue;
         }
         case 10: {
@@ -202,7 +208,15 @@ export const UserInfo: MessageFns<UserInfo> = {
             break;
           }
 
-          message.defense = reader.int32();
+          message.createTime = longToNumber(reader.int64());
+          continue;
+        }
+        case 11: {
+          if (tag !== 88) {
+            break;
+          }
+
+          message.loginTime = longToNumber(reader.int64());
           continue;
         }
       }
@@ -220,12 +234,13 @@ export const UserInfo: MessageFns<UserInfo> = {
       username: isSet(object.username) ? globalThis.String(object.username) : "",
       level: isSet(object.level) ? globalThis.Number(object.level) : 0,
       exp: isSet(object.exp) ? globalThis.Number(object.exp) : 0,
+      gold: isSet(object.gold) ? globalThis.Number(object.gold) : 0,
       vipLevel: isSet(object.vipLevel) ? globalThis.Number(object.vipLevel) : 0,
-      createTime: isSet(object.createTime) ? globalThis.Number(object.createTime) : 0,
-      loginTime: isSet(object.loginTime) ? globalThis.Number(object.loginTime) : 0,
       hp: isSet(object.hp) ? globalThis.Number(object.hp) : 0,
       attack: isSet(object.attack) ? globalThis.Number(object.attack) : 0,
       defense: isSet(object.defense) ? globalThis.Number(object.defense) : 0,
+      createTime: isSet(object.createTime) ? globalThis.Number(object.createTime) : 0,
+      loginTime: isSet(object.loginTime) ? globalThis.Number(object.loginTime) : 0,
     };
   },
 
@@ -243,14 +258,11 @@ export const UserInfo: MessageFns<UserInfo> = {
     if (message.exp !== 0) {
       obj.exp = Math.round(message.exp);
     }
+    if (message.gold !== 0) {
+      obj.gold = Math.round(message.gold);
+    }
     if (message.vipLevel !== 0) {
       obj.vipLevel = Math.round(message.vipLevel);
-    }
-    if (message.createTime !== 0) {
-      obj.createTime = Math.round(message.createTime);
-    }
-    if (message.loginTime !== 0) {
-      obj.loginTime = Math.round(message.loginTime);
     }
     if (message.hp !== 0) {
       obj.hp = Math.round(message.hp);
@@ -260,6 +272,12 @@ export const UserInfo: MessageFns<UserInfo> = {
     }
     if (message.defense !== 0) {
       obj.defense = Math.round(message.defense);
+    }
+    if (message.createTime !== 0) {
+      obj.createTime = Math.round(message.createTime);
+    }
+    if (message.loginTime !== 0) {
+      obj.loginTime = Math.round(message.loginTime);
     }
     return obj;
   },
@@ -273,12 +291,13 @@ export const UserInfo: MessageFns<UserInfo> = {
     message.username = object.username ?? "";
     message.level = object.level ?? 0;
     message.exp = object.exp ?? 0;
+    message.gold = object.gold ?? 0;
     message.vipLevel = object.vipLevel ?? 0;
-    message.createTime = object.createTime ?? 0;
-    message.loginTime = object.loginTime ?? 0;
     message.hp = object.hp ?? 0;
     message.attack = object.attack ?? 0;
     message.defense = object.defense ?? 0;
+    message.createTime = object.createTime ?? 0;
+    message.loginTime = object.loginTime ?? 0;
     return message;
   },
 };
@@ -456,7 +475,7 @@ export const CardInfo: MessageFns<CardInfo> = {
 };
 
 function createBaseItemInfo(): ItemInfo {
-  return { itemId: 0, count: 0, slot: 0 };
+  return { itemId: 0, count: 0, slot: 0, itemType: 0 };
 }
 
 export const ItemInfo: MessageFns<ItemInfo> = {
@@ -469,6 +488,9 @@ export const ItemInfo: MessageFns<ItemInfo> = {
     }
     if (message.slot !== 0) {
       writer.uint32(24).int32(message.slot);
+    }
+    if (message.itemType !== 0) {
+      writer.uint32(32).int32(message.itemType);
     }
     return writer;
   },
@@ -504,6 +526,14 @@ export const ItemInfo: MessageFns<ItemInfo> = {
           message.slot = reader.int32();
           continue;
         }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.itemType = reader.int32();
+          continue;
+        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -518,6 +548,7 @@ export const ItemInfo: MessageFns<ItemInfo> = {
       itemId: isSet(object.itemId) ? globalThis.Number(object.itemId) : 0,
       count: isSet(object.count) ? globalThis.Number(object.count) : 0,
       slot: isSet(object.slot) ? globalThis.Number(object.slot) : 0,
+      itemType: isSet(object.itemType) ? globalThis.Number(object.itemType) : 0,
     };
   },
 
@@ -532,6 +563,9 @@ export const ItemInfo: MessageFns<ItemInfo> = {
     if (message.slot !== 0) {
       obj.slot = Math.round(message.slot);
     }
+    if (message.itemType !== 0) {
+      obj.itemType = Math.round(message.itemType);
+    }
     return obj;
   },
 
@@ -543,6 +577,7 @@ export const ItemInfo: MessageFns<ItemInfo> = {
     message.itemId = object.itemId ?? 0;
     message.count = object.count ?? 0;
     message.slot = object.slot ?? 0;
+    message.itemType = object.itemType ?? 0;
     return message;
   },
 };

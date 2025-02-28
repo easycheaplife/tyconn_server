@@ -57,13 +57,13 @@ database = "tyconn"
 
 ## 文档
 
-- [架构设计](doc/architecture.md)
-- [协议说明](doc/protocol.md)
-- [流程说明](doc/flow.md)
-- [配置说明](doc/config.md)
-- [部署指南](doc/deploy.md)
-- [开发指南](doc/develop.md)
-- [测试说明](doc/test.md)
+- [架构设计](docs/architecture.md)
+- [协议说明](docs/protocol.md)
+- [流程说明](docs/flow.md)
+- [配置说明](docs/config.md)
+- [部署指南](docs/deploy.md)
+- [开发指南](docs/develop.md)
+- [测试说明](docs/test.md)
 
 ## 测试
 
