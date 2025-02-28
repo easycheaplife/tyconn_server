@@ -372,6 +372,7 @@ sequenceDiagram
 ## 6. GM 指令流程   
 ### 6.1 GM 指令流程
 ```mermaid
+sequenceDiagram
     participant C as Client
     participant G as Gate Server
     participant GM as Game Server
