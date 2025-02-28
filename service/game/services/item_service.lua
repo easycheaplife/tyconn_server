@@ -138,14 +138,14 @@ local function apply_item_effect(user_id, item_id, count)
     -- 根据效果类型处理
     if config.effect_type == enum.EffectType.EFFECT_TYPE_EXP then
         -- 增加经验
-        local ok, err = M.add_special_item(user_id, enum.ItemID.ITEM_ID_EXP, total_effect)
+        local ok, err = M.add_special_item(user_id, enum.SpecialItemID.ITEM_ID_EXP, total_effect)
         if not ok then
             logger.error("Failed to add exp: %s", err)
             return false, err
         end
     elseif config.effect_type == enum.EffectType.EFFECT_TYPE_GOLD then
         -- 增加金币
-        local ok, err = M.add_special_item(user_id, enum.ItemID.ITEM_ID_GOLD, total_effect)
+        local ok, err = M.add_special_item(user_id, enum.SpecialItemID.SPECIAL_ITEM_ID_GOLD, total_effect)
         if not ok then
             logger.error("Failed to add gold: %s", err)
             return false, err
