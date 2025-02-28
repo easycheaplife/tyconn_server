@@ -131,7 +131,7 @@ function CMD.start(conf)
         port, selector_type)
     
     -- 初始化service_balancer
-    if not service_balancer.init("login") then
+    if not service_balancer.init("login", skynet.getenv("node_name")) then
         logger.error("Failed to initialize login balancer")
         skynet.exit()
         return

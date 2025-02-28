@@ -11,7 +11,7 @@ local M = {}
 -- 保存token到数据库
 local function save_token_to_db(account, token, device_id, platform)
     -- 从balancer获取db_proxy节点
-    local node = service_balancer.get_node("db_proxy")
+    local node = service_balancer.get_node("db_proxy", skynet.getenv("node_name"))
     
     -- 调用db_proxy保存token
     local ok, err = pcall(cluster.call, node, "@"..node, "sync_jwt", {

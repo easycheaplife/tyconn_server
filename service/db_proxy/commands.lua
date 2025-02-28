@@ -4,6 +4,7 @@ local token_model = require "db_proxy.models.token_model"
 local card_model = require "db_proxy.models.card_model"
 local item_model = require "db_proxy.models.item_model"
 local bag_model = require "db_proxy.models.bag_model"
+local ping_handler = require "db_proxy.handlers.ping_handler"
 
 local CMD = {}
 
@@ -15,6 +16,12 @@ local function wrap_call(func, ...)
         return false, "Internal error"
     end
     return result, err
+end
+
+-- 添加 ping 命令
+function CMD.ping(node_name)
+    logger.debug("CMD.ping called with node_name: %s", node_name)
+    return wrap_call(ping_handler.ping, node_name)
 end
 
 -- 用户相关操作
@@ -119,4 +126,4 @@ function CMD.get_user_bags(user_id)
     return wrap_call(bag_model.get_user_bags, user_id)
 end
 
-return CMD 
+return CMD

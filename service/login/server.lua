@@ -52,7 +52,7 @@ function CMD.start(conf)
     logger.info("Proto files loaded")
     
     -- 初始化service_balancer
-    if not service_balancer.init("db_proxy") then
+    if not service_balancer.init("db_proxy", skynet.getenv("node_name")) then
         logger.error("Failed to initialize db_proxy balancer")
         return false
     end
