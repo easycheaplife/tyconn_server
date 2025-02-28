@@ -3,6 +3,7 @@ local logger = require "logger"
 local item_service = require "services.item_service"
 local user_service = require "services.user_service"
 local utils = require "utils"
+local enum = require "game.define.enum"
 
 local M = {}
 
@@ -26,7 +27,7 @@ local GM_HANDLERS = {
                 item_id = item_id,
                 count = count
             }
-        })
+        }, enum.ChangeSource.SOURCE_GM)
         logger.info("add_item - result: %s, err: %s", result, err)
         if not result then
             return false, err

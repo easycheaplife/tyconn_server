@@ -3,8 +3,11 @@ local logger = require "logger"
 local utils = require "utils"
 local user_model = require "models.user_model"
 local user_dao = require "dao.user_dao"
-local property_service = require "services.property_service"
 local cache = require "cache"
+local enum = require "game.define.enum"
+local property_service = require "services.property_service"
+local item_service = require "services.item_service"
+local card_service = require "services.card_service"
 
 local M = {}
 local default_unit_id = 10001
@@ -255,11 +258,14 @@ function M.cache_user(user_info)
     user_info.hp = base_property and base_property.hp or 0
     user_info.attack = base_property and base_property.attack or 0
     user_info.defense = base_property and base_property.defense or 0
-    
+    user_info.exp = item_service.get_special_item(user_info.user_id, enum.SpecialItemID.SPECIAL_ITEM_ID_EXP)
+    user_info.gold = item_service.get_special_item(user_info.user_id, enum.SpecialItemID.SPECIAL_ITEM_ID_GOLD)
     logger.debug("Caching user info: %s", utils.table_to_string({
         account = user_info.account,
         user_id = user_info.user_id,
         username = user_info.username,
+        exp = user_info.exp,
+        gold = user_info.gold,
         hp = user_info.hp,
         attack = user_info.attack,
         defense = user_info.defense
@@ -310,4 +316,21 @@ end
 function M.check_gm_permission(user_id)
     return true
 end
+
+function M.init_new_user(user_id)
+    -- 1. 初始化卡牌
+    local ok = card_service.init_user_cards(user_id)
+    if not ok then
+        logger.error("Failed to initialize cards for new user: %d", user_id)
+        -- 继续处理，不影响流程
+    end
+
+    -- 2. 初始化物品
+    local ok = item_service.init_user_items(user_id)
+    if not ok then
+        logger.error("Failed to initialize items for new user: %d", user_id)
+        -- 继续处理，不影响流程
+    end
+end
+
 return M 

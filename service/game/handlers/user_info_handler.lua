@@ -2,8 +2,6 @@ local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
 local user_service = require "services.user_service"
-local card_service = require "services.card_service"
-local item_service = require "services.item_service"
 local name_generator = require "game.utils.name_generator"
 local handler_helper = require "game.handlers.handler_helper"
 local utils = require "utils"
@@ -66,21 +64,8 @@ function M.handle(client_id, msg)
 
     -- 如果是新用户，初始化游戏数据
     if result.is_new then
-        -- 1. 初始化卡牌
-        local ok = card_service.init_user_cards(result.user.user_id)
-        if not ok then
-            logger.error("Failed to initialize cards for new user: %s", claims.account)
-            -- 继续处理，不影响登录流程
-        end
-
-        -- 2. 初始化物品
-        local ok = item_service.init_user_items(result.user.user_id)
-        if not ok then
-            logger.error("Failed to initialize items for new user: %s", claims.account)
-            -- 继续处理，不影响登录流程
-        end
+        user_service.init_new_user(result.user.user_id)
     end
-
     -- 打印最终的用户数据结构
     logger.debug("Final user data: %s", utils.table_to_string(result))
 
@@ -91,6 +76,7 @@ function M.handle(client_id, msg)
             username = result.user.username,
             level = result.user.level,
             exp = result.user.exp or 0,
+            gold = result.user.gold or 0,
             vip_level = result.user.vip_level or 0,
             create_time = result.user.create_time,
             login_time = result.user.login_time,

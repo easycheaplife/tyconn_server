@@ -1,5 +1,5 @@
 -- 从proto/common/enum.proto自动生成的枚举定义
--- 生成时间: 2025-02-27 07:21:11
+-- 生成时间: 2025-02-28 04:00:41
 
 local M = {}
 
@@ -35,6 +35,12 @@ M.ItemCategory = {
     ITEM_CATEGORY_OTHER = 8,    -- 其他
 }
 
+M.SpecialItemID = {
+    SPECIAL_ITEM_ID_NONE = 0,
+    SPECIAL_ITEM_ID_GOLD = 1001,    -- 金币
+    SPECIAL_ITEM_ID_EXP = 1005,    -- 经验
+}
+
 -- 格子状态
 M.SlotState = {
     SLOT_STATE_NONE = 0,
@@ -66,6 +72,12 @@ M.ChangeSource = {
     SOURCE_BATCH_REMOVE = 8,    -- 批量删除
     SOURCE_TRADE = 9,    -- 交易
     SOURCE_MAIL = 10,    -- 邮件
+    SOURCE_GM = 11,    -- GM
+    SOURCE_REMOVE_GEM = 12,    -- 卸下宝石
+    SOURCE_UNEQUIP = 13,    -- 卸下装备
+    SOURCE_ENHANCE = 14,    -- 强化
+    SOURCE_REFINE = 15,    -- 精炼
+    SOURCE_REFORGE = 16,    -- 洗练
 }
 
 -- 效果类型

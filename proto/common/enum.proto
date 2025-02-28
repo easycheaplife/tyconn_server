@@ -33,6 +33,12 @@ enum ItemCategory {
     ITEM_CATEGORY_OTHER = 8;       // 其他
 }
 
+enum SpecialItemID {
+    SPECIAL_ITEM_ID_NONE = 0;
+    SPECIAL_ITEM_ID_GOLD = 1001; // 金币
+    SPECIAL_ITEM_ID_EXP = 1005; // 经验
+}
+
 // 格子状态
 enum SlotState {
     SLOT_STATE_NONE = 0;
@@ -63,8 +69,13 @@ enum ChangeSource {
     SOURCE_STACK = 7;        // 堆叠
     SOURCE_BATCH_REMOVE = 8; // 批量删除
     SOURCE_TRADE = 9;        // 交易
-    SOURCE_MAIL = 10;         // 邮件
-   
+    SOURCE_MAIL = 10;        // 邮件
+    SOURCE_GM = 11;          // GM
+    SOURCE_REMOVE_GEM = 12;  // 卸下宝石
+    SOURCE_UNEQUIP = 13;     // 卸下装备
+    SOURCE_ENHANCE = 14;     // 强化
+    SOURCE_REFINE = 15;      // 精炼
+    SOURCE_REFORGE = 16;     // 洗练
 }
 
 // 效果类型

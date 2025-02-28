@@ -7,12 +7,13 @@ message UserInfo {
     string username = 2;     // 用户名
     int32 level = 3;        // 等级
     int64 exp = 4;          // 经验值
-    int32 vip_level = 5;    // VIP等级
-    int64 create_time = 6;  // 创建时间
-    int64 login_time = 7;   // 最后登录时间
-    int32 hp = 8;           // 生命值
-    int32 attack = 9;       // 攻击力
-    int32 defense = 10;     // 防御力
+    int64 gold = 5;         // 金币
+    int32 vip_level = 6;    // VIP等级
+    int32 hp = 7;           // 生命值
+    int32 attack = 8;       // 攻击力
+    int32 defense = 9;     // 防御力
+    int64 create_time = 10;  // 创建时间
+    int64 login_time = 11;   // 最后登录时间
 }
 
 // 卡牌信息

@@ -3,7 +3,6 @@ local logger = require "logger"
 local pb = require "pb"
 local item_model = require "models.item_model"
 local item_dao = require "dao.item_dao"
-local user_service = require "services.user_service"
 local snowflake = require "utils.snowflake"
 local bag_dao = require "dao.bag_dao"
 local property_service = require "services.property_service"
@@ -56,7 +55,7 @@ function M.init_user_items(user_id)
     -- 2. 添加默认物品
     local default_items = config_service.get_initial_items()
     if #default_items > 0 then
-        local ok, err = M.add_items_to_slot(user_id, default_items)
+        local ok, err = M.add_items_to_slot(user_id, default_items, enum.ChangeSource.SOURCE_INIT)
         if not ok then
             logger.error("Failed to add default items for user %d: %s", user_id, err)
             return false, err
@@ -139,14 +138,14 @@ local function apply_item_effect(user_id, item_id, count)
     -- 根据效果类型处理
     if config.effect_type == enum.EffectType.EFFECT_TYPE_EXP then
         -- 增加经验
-        local ok, err = user_service.add_exp(user_id, total_effect)
+        local ok, err = M.add_special_item(user_id, enum.ItemID.ITEM_ID_EXP, total_effect)
         if not ok then
             logger.error("Failed to add exp: %s", err)
             return false, err
         end
     elseif config.effect_type == enum.EffectType.EFFECT_TYPE_GOLD then
         -- 增加金币
-        local ok, err = user_service.add_gold(user_id, total_effect)
+        local ok, err = M.add_special_item(user_id, enum.ItemID.ITEM_ID_GOLD, total_effect)
         if not ok then
             logger.error("Failed to add gold: %s", err)
             return false, err
@@ -157,7 +156,7 @@ local function apply_item_effect(user_id, item_id, count)
 end
 
 -- 添加物品到指定格子
-function M.add_items_to_slot(user_id, items)
+function M.add_items_to_slot(user_id, items, source)
     if not user_id or not items then
         return false, "invalid params"
     end
@@ -211,7 +210,7 @@ function M.add_items_to_slot(user_id, items)
                         item_id,
                         stack_count,
                         enum.ChangeType.CHANGE_TYPE_ADD,
-                        enum.ChangeSource.SOURCE_ADD,
+                        source,
                         existing_item.count - stack_count,
                         existing_item.count
                     )
@@ -256,7 +255,7 @@ function M.add_items_to_slot(user_id, items)
                     item_id,
                     stack_count,
                     enum.ChangeType.CHANGE_TYPE_ADD,
-                    enum.ChangeSource.SOURCE_ADD,
+                    source,
                     0,
                     stack_count
                 )
@@ -786,7 +785,7 @@ function M.trade_items(from_user, to_user, item_list)
     end
     
     -- 4. 添加物品到目标用户
-    ok, err = M.add_items_to_slot(to_user, item_list)
+    ok, err = M.add_items_to_slot(to_user, item_list, enum.ChangeSource.SOURCE_TRADE)
     if not ok then
         -- 交易失败，回滚源用户物品
         M.add_items_to_slot(from_user, item_list)
@@ -1352,10 +1351,7 @@ function M.equip_item(user_id, item_id, slot_id)
     
     -- 6. 检查等级限制
     if config.level_required then
-        local user_level = user_service.get_user_level(user_id)
-        if user_level < config.level_required then
-            return false, "level is not enough"
-        end
+        -- TODO
     end
     
     -- 7. 卸下当前装备
@@ -1425,7 +1421,7 @@ function M.unequip_item(user_id, slot_id)
             item_id = equip.item_id,
             count = 1
         }
-    })
+    }, enum.ChangeSource.SOURCE_UNEQUIP)
     if not ok then
         return false, err
     end
@@ -1534,7 +1530,7 @@ function M.enhance_equipment(user_id, equip_id, material_list, protect_item)
             error_code, error_msg, result_items = M.use_item(user_id, protect_item.item_id, 1)
             if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
                 -- 返还材料
-                M.add_items_to_slot(user_id, materials)
+                M.add_items_to_slot(user_id, materials, enum.ChangeSource.SOURCE_ENHANCE)
                 return false, err
             end
             result = enum.EnhanceResult.FAIL
@@ -1681,7 +1677,7 @@ function M.refine_equipment(user_id, equip_id, material_list, protect_item)
             error_code, error_msg, result_items = M.use_item(user_id, protect_item.item_id, 1)
             if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
                 -- 返还材料
-                M.add_items_to_slot(user_id, materials)
+                M.add_items_to_slot(user_id, materials, enum.ChangeSource.SOURCE_REFINE)
                 return false, err
             end
             result = enum.RefineResult.FAIL
@@ -2032,7 +2028,7 @@ function M.remove_gem(user_id, equip_id, slot_index, protect_item)
                 item_id = slot.gem_id,
                 count = 1
             }
-        })
+        }, enum.ChangeSource.SOURCE_REMOVE_GEM)
         if not ok then
             return false, err
         end
@@ -2277,6 +2273,40 @@ function M.process_decompose(items_to_decompose)
     end
     
     return true, nil, result_items
+end
+
+function M.get_special_item(user_id, item_id)
+    local items = M.get_user_items(user_id)
+    if not items then
+        logger.error("get_special_item failed, user_id: %d, item_id: %d", user_id, item_id)
+        return 0
+    end
+    local count = 0
+    for _, item in ipairs(items) do
+        if item.item_id == item_id then
+            count = count + item.count
+        end
+    end
+    return count
+end
+
+function M.add_special_item(user_id, item_id, count)
+    local items = M.get_user_items(user_id)
+    if not items then
+        logger.error("add_special_item failed, user_id: %d, item_id: %d", user_id, item_id)
+        return false
+    end
+    for _, item in ipairs(items) do
+        if item.item_id == item_id then
+            item.count = item.count + count
+        end
+    end
+    local ok = item_dao.update_user_items(user_id, items)
+    if not ok then
+        logger.error("add_special_item update_user_items failed, user_id: %d, item_id: %d", user_id, item_id)
+        return false
+    end
+    return true
 end
 
 return M 
