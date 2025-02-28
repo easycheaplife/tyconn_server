@@ -165,7 +165,7 @@ function M.get_all_nodes(service_type)
 end
 
 -- 广播到所有健康节点
-function M.broadcast(service_type, cmd, ...)
+function M.broadcast(service_type, caller_node, cmd, ...)
     if not initialized[service_type] then
         M.init(service_type)
     end
@@ -174,10 +174,10 @@ function M.broadcast(service_type, cmd, ...)
     local healthy_nodes = get_healthy_nodes(service_type)
     for _, node in ipairs(healthy_nodes) do
         -- 使用 @node 作为服务名，因为是跨节点调用
-        logger.info("broadcast %s to %s", service_type, node)
+        logger.info("broadcast from %s to %s", caller_node, node)
         local ok, result = pcall(cluster.call, node, "@"..node, cmd, ...)
         if not ok then
-            logger.error("Failed to call %s node %s: %s", service_type, node, result)
+            logger.error("Failed to call from %s to %s: %s", caller_node, node, result)
             -- 更新节点状态为不健康
             update_node_status(service_type, node, NODE_STATUS.UNHEALTHY)
         else

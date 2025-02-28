@@ -91,7 +91,7 @@ local function sync_status_to_login()
     end
     
     -- 广播到所有login节点
-    local results = service_balancer.broadcast("login", "update_gate_status", encoded)
+    local results = service_balancer.broadcast("login", skynet.getenv("node_name"), "update_gate_status", encoded)
     
     -- 检查结果
     for node, result in pairs(results) do
