@@ -65,30 +65,30 @@ export interface G2CUserInfoResponse {
   isNew: boolean;
 }
 
-/** 获取用户卡牌请求 {{Req:100}} */
+/** 获取用户卡牌请求 {{Req:101}} */
 export interface C2GUserCardsRequest {
   /** JWT令牌 */
   token: string;
 }
 
-/** 获取用户卡牌响应 {{Res:101}} */
+/** 获取用户卡牌响应 {{Res:102}} */
 export interface G2CUserCardsResponse {
   /** 卡牌列表 */
   cards: CardInfo[];
 }
 
-/** 获取背包信息请求 {{Req:200}} */
+/** 获取背包信息请求 {{Req:201}} */
 export interface C2GBagInfoRequest {
   token: string;
 }
 
-/** 背包信息响应 {{Res:201}} */
+/** 背包信息响应 {{Res:202}} */
 export interface G2CBagInfoResponse {
   /** 背包信息列表 */
   bags: BagInfo[];
 }
 
-/** 使用物品请求 {{Req:202}} */
+/** 使用物品请求 {{Req:203}} */
 export interface C2GUseItemRequest {
   /** 用户令牌 */
   token: string;
@@ -98,13 +98,13 @@ export interface C2GUseItemRequest {
   count: number;
 }
 
-/** 使用物品响应 {{Res:203}} */
+/** 使用物品响应 {{Res:204}} */
 export interface G2CUseItemResponse {
   /** 变化的物品列表 */
   items: ItemInfo[];
 }
 
-/** 扩展背包请求 {{Req:204}} */
+/** 扩展背包请求 {{Req:205}} */
 export interface C2GExpandBagRequest {
   token: string;
   /** 使用枚举类型 */
@@ -112,13 +112,13 @@ export interface C2GExpandBagRequest {
   addSize: number;
 }
 
-/** 扩展背包响应 {{Res:205}} */
+/** 扩展背包响应 {{Res:206}} */
 export interface G2CExpandBagResponse {
   /** 背包信息 */
   bag: BagInfo | undefined;
 }
 
-/** 整理背包请求 {{Req:206}} */
+/** 整理背包请求 {{Req:207}} */
 export interface C2GSortBagRequest {
   /** JWT令牌 */
   token: string;
@@ -128,13 +128,13 @@ export interface C2GSortBagRequest {
   sortRule: number;
 }
 
-/** 整理背包响应 {{Res:207}} */
+/** 整理背包响应 {{Res:208}} */
 export interface G2CSortBagResponse {
   /** 整理后的物品列表 */
   items: ItemInfo[];
 }
 
-/** 移动物品请求 {{Req:208}} */
+/** 移动物品请求 {{Req:209}} */
 export interface C2GMoveItemRequest {
   token: string;
   /** 源背包类型 */
@@ -149,13 +149,13 @@ export interface C2GMoveItemRequest {
   count: number;
 }
 
-/** 移动物品响应 {{Res:209}} */
+/** 移动物品响应 {{Res:210}} */
 export interface G2CMoveItemResponse {
   /** 所有变化的物品 */
   changedItems: ItemInfo[];
 }
 
-/** 物品合成请求 {{Req:210}} */
+/** 物品合成请求 {{Req:211}} */
 export interface C2GComposeItemRequest {
   /** JWT令牌 */
   token: string;
@@ -165,10 +165,8 @@ export interface C2GComposeItemRequest {
   materialSlots: number[];
 }
 
-/** 物品合成响应 {{Res:211}} */
+/** 物品合成响应 {{Res:212}} */
 export interface G2CComposeItemResponse {
-  /** 是否成功 */
-  success: boolean;
   /** 合成的新物品 */
   newItem:
     | ItemInfo
@@ -177,7 +175,7 @@ export interface G2CComposeItemResponse {
   remainItems: ItemInfo[];
 }
 
-/** 物品分解请求 {{Req:212}} */
+/** 物品分解请求 {{Req:213}} */
 export interface C2GDecomposeItemRequest {
   /** JWT令牌 */
   token: string;
@@ -185,13 +183,13 @@ export interface C2GDecomposeItemRequest {
   itemSlots: number[];
 }
 
-/** 物品分解响应 {{Res:213}} */
+/** 物品分解响应 {{Res:214}} */
 export interface G2CDecomposeItemResponse {
   /** 分解获得的物品 */
   resultItems: ItemInfo[];
 }
 
-/** GM指令请求 {{Req:300}} */
+/** GM指令请求 {{Req:301}} */
 export interface C2GGmCommandRequest {
   /** 令牌 */
   token: string;
@@ -201,12 +199,164 @@ export interface C2GGmCommandRequest {
   params: string[];
 }
 
-/** GM指令响应 {{Res:301}} */
+/** GM指令响应 {{Res:302}} */
 export interface G2CGmCommandResponse {
   /** 结果 */
   result: string;
   /** 消息 */
   message: string;
+}
+
+/** 获取装备信息请求 {{Req:401}} */
+export interface C2GEquipInfoRequest {
+  /** JWT令牌 */
+  token: string;
+}
+
+/** 获取装备信息响应 {{Res:402}} */
+export interface G2CEquipInfoResponse {
+  /** 已装备的物品列表 */
+  equippedItems: ItemInfo[];
+  /** 装备提供的战斗力 */
+  combatPower: number;
+}
+
+/** 装备物品请求 {{Req:403}} */
+export interface C2GEquipItemRequest {
+  /** JWT令牌 */
+  token: string;
+  /** 物品所在背包类型 */
+  bagType: number;
+  /** 物品所在格子索引 */
+  slotIndex: number;
+  /** 装备位置 */
+  equipSlot: number;
+}
+
+/** 装备物品响应 {{Res:404}} */
+export interface G2CEquipItemResponse {
+  /** 装备上的物品 */
+  equippedItem:
+    | ItemInfo
+    | undefined;
+  /** 卸下的物品(如果有) */
+  unequippedItem:
+    | ItemInfo
+    | undefined;
+  /** 战斗力变化 */
+  combatPowerChange: number;
+}
+
+/** 卸下装备请求 {{Req:405}} */
+export interface C2GUnequipItemRequest {
+  /** JWT令牌 */
+  token: string;
+  /** 装备位置 */
+  equipSlot: number;
+  /** 目标背包类型 */
+  bagType: number;
+  /** 目标格子索引(可选，0表示自动选择) */
+  slotIndex: number;
+}
+
+/** 卸下装备响应 {{Res:406}} */
+export interface G2CUnequipItemResponse {
+  /** 卸下的物品 */
+  unequippedItem:
+    | ItemInfo
+    | undefined;
+  /** 战斗力变化 */
+  combatPowerChange: number;
+}
+
+/** 随机获取装备请求 {{Req:407}} */
+export interface C2GEquipRandomRequest {
+  /** JWT令牌 */
+  token: string;
+  /** 部位(0表示随机) */
+  part: number;
+  /** 是否替换现有装备 */
+  isReplace: boolean;
+}
+
+/** 随机获取装备响应 {{Res:408}} */
+export interface G2CEquipRandomResponse {
+  /** 新获得的装备 */
+  newEquip:
+    | ItemInfo
+    | undefined;
+  /** 当前装备(如果有) */
+  currentEquip:
+    | ItemInfo
+    | undefined;
+  /** 战力差异 */
+  powerDiff: number;
+}
+
+/** 获取装备等级信息请求 {{Req:409}} */
+export interface C2GEquipLevelInfoRequest {
+  /** JWT令牌 */
+  token: string;
+}
+
+/** 获取装备等级信息响应 {{Res:410}} */
+export interface G2CEquipLevelInfoResponse {
+  /** 当前等级 */
+  currentLevel: number;
+  /** 最大等级 */
+  maxLevel: number;
+  /** 升级所需物品ID */
+  itemId: number;
+  /** 升级所需物品数量 */
+  itemCount: number;
+  /** 已拥有物品数量 */
+  ownedCount: number;
+  /** 升级所需时间(秒) */
+  upgradeTime: number;
+  /** 剩余时间(秒) */
+  remainingTime: number;
+  /** 是否正在升级 */
+  isUpgrading: boolean;
+  /** 当前等级品质概率 */
+  currentOdds: number[];
+  /** 下一等级品质概率 */
+  nextOdds: number[];
+}
+
+/** 升级装备等级请求 {{Req:411}} */
+export interface C2GEquipLevelUpgradeRequest {
+  /** JWT令牌 */
+  token: string;
+  /** 是否使用广告加速 */
+  useAd: boolean;
+  /** 是否使用道具加速 */
+  useItem: boolean;
+  /** 加速道具ID */
+  speedupItemId: number;
+}
+
+/** 升级装备等级响应 {{Res:412}} */
+export interface G2CEquipLevelUpgradeResponse {
+  /** 当前等级 */
+  currentLevel: number;
+  /** 剩余时间(秒) */
+  remainingTime: number;
+  /** 是否正在升级 */
+  isUpgrading: boolean;
+  /** 当前等级品质概率 */
+  currentOdds: number[];
+}
+
+/** 装备过期推送 {{Push:451}} */
+export interface G2CEquipmentExpiredPush {
+  /** 过期的装备列表 */
+  expiredItems: ItemInfo[];
+}
+
+/** 装备等级升级完成通知 {{Push:452}} */
+export interface G2CEquipmentLevelUpgradedPush {
+  /** 新等级 */
+  newLevel: number;
 }
 
 function createBaseC2LLoginRequest(): C2LLoginRequest {
@@ -1684,19 +1834,16 @@ export const C2GComposeItemRequest: MessageFns<C2GComposeItemRequest> = {
 };
 
 function createBaseG2CComposeItemResponse(): G2CComposeItemResponse {
-  return { success: false, newItem: undefined, remainItems: [] };
+  return { newItem: undefined, remainItems: [] };
 }
 
 export const G2CComposeItemResponse: MessageFns<G2CComposeItemResponse> = {
   encode(message: G2CComposeItemResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.success !== false) {
-      writer.uint32(8).bool(message.success);
-    }
     if (message.newItem !== undefined) {
-      ItemInfo.encode(message.newItem, writer.uint32(18).fork()).join();
+      ItemInfo.encode(message.newItem, writer.uint32(10).fork()).join();
     }
     for (const v of message.remainItems) {
-      ItemInfo.encode(v!, writer.uint32(26).fork()).join();
+      ItemInfo.encode(v!, writer.uint32(18).fork()).join();
     }
     return writer;
   },
@@ -1709,23 +1856,15 @@ export const G2CComposeItemResponse: MessageFns<G2CComposeItemResponse> = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1: {
-          if (tag !== 8) {
-            break;
-          }
-
-          message.success = reader.bool();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
+          if (tag !== 10) {
             break;
           }
 
           message.newItem = ItemInfo.decode(reader, reader.uint32());
           continue;
         }
-        case 3: {
-          if (tag !== 26) {
+        case 2: {
+          if (tag !== 18) {
             break;
           }
 
@@ -1743,7 +1882,6 @@ export const G2CComposeItemResponse: MessageFns<G2CComposeItemResponse> = {
 
   fromJSON(object: any): G2CComposeItemResponse {
     return {
-      success: isSet(object.success) ? globalThis.Boolean(object.success) : false,
       newItem: isSet(object.newItem) ? ItemInfo.fromJSON(object.newItem) : undefined,
       remainItems: globalThis.Array.isArray(object?.remainItems)
         ? object.remainItems.map((e: any) => ItemInfo.fromJSON(e))
@@ -1753,9 +1891,6 @@ export const G2CComposeItemResponse: MessageFns<G2CComposeItemResponse> = {
 
   toJSON(message: G2CComposeItemResponse): unknown {
     const obj: any = {};
-    if (message.success !== false) {
-      obj.success = message.success;
-    }
     if (message.newItem !== undefined) {
       obj.newItem = ItemInfo.toJSON(message.newItem);
     }
@@ -1770,7 +1905,6 @@ export const G2CComposeItemResponse: MessageFns<G2CComposeItemResponse> = {
   },
   fromPartial<I extends Exact<DeepPartial<G2CComposeItemResponse>, I>>(object: I): G2CComposeItemResponse {
     const message = createBaseG2CComposeItemResponse();
-    message.success = object.success ?? false;
     message.newItem = (object.newItem !== undefined && object.newItem !== null)
       ? ItemInfo.fromPartial(object.newItem)
       : undefined;
@@ -2095,6 +2229,1371 @@ export const G2CGmCommandResponse: MessageFns<G2CGmCommandResponse> = {
     const message = createBaseG2CGmCommandResponse();
     message.result = object.result ?? "";
     message.message = object.message ?? "";
+    return message;
+  },
+};
+
+function createBaseC2GEquipInfoRequest(): C2GEquipInfoRequest {
+  return { token: "" };
+}
+
+export const C2GEquipInfoRequest: MessageFns<C2GEquipInfoRequest> = {
+  encode(message: C2GEquipInfoRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): C2GEquipInfoRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseC2GEquipInfoRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): C2GEquipInfoRequest {
+    return { token: isSet(object.token) ? globalThis.String(object.token) : "" };
+  },
+
+  toJSON(message: C2GEquipInfoRequest): unknown {
+    const obj: any = {};
+    if (message.token !== "") {
+      obj.token = message.token;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<C2GEquipInfoRequest>, I>>(base?: I): C2GEquipInfoRequest {
+    return C2GEquipInfoRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<C2GEquipInfoRequest>, I>>(object: I): C2GEquipInfoRequest {
+    const message = createBaseC2GEquipInfoRequest();
+    message.token = object.token ?? "";
+    return message;
+  },
+};
+
+function createBaseG2CEquipInfoResponse(): G2CEquipInfoResponse {
+  return { equippedItems: [], combatPower: 0 };
+}
+
+export const G2CEquipInfoResponse: MessageFns<G2CEquipInfoResponse> = {
+  encode(message: G2CEquipInfoResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.equippedItems) {
+      ItemInfo.encode(v!, writer.uint32(10).fork()).join();
+    }
+    if (message.combatPower !== 0) {
+      writer.uint32(16).int32(message.combatPower);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CEquipInfoResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CEquipInfoResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.equippedItems.push(ItemInfo.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.combatPower = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CEquipInfoResponse {
+    return {
+      equippedItems: globalThis.Array.isArray(object?.equippedItems)
+        ? object.equippedItems.map((e: any) => ItemInfo.fromJSON(e))
+        : [],
+      combatPower: isSet(object.combatPower) ? globalThis.Number(object.combatPower) : 0,
+    };
+  },
+
+  toJSON(message: G2CEquipInfoResponse): unknown {
+    const obj: any = {};
+    if (message.equippedItems?.length) {
+      obj.equippedItems = message.equippedItems.map((e) => ItemInfo.toJSON(e));
+    }
+    if (message.combatPower !== 0) {
+      obj.combatPower = Math.round(message.combatPower);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CEquipInfoResponse>, I>>(base?: I): G2CEquipInfoResponse {
+    return G2CEquipInfoResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CEquipInfoResponse>, I>>(object: I): G2CEquipInfoResponse {
+    const message = createBaseG2CEquipInfoResponse();
+    message.equippedItems = object.equippedItems?.map((e) => ItemInfo.fromPartial(e)) || [];
+    message.combatPower = object.combatPower ?? 0;
+    return message;
+  },
+};
+
+function createBaseC2GEquipItemRequest(): C2GEquipItemRequest {
+  return { token: "", bagType: 0, slotIndex: 0, equipSlot: 0 };
+}
+
+export const C2GEquipItemRequest: MessageFns<C2GEquipItemRequest> = {
+  encode(message: C2GEquipItemRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    if (message.bagType !== 0) {
+      writer.uint32(16).int32(message.bagType);
+    }
+    if (message.slotIndex !== 0) {
+      writer.uint32(24).int32(message.slotIndex);
+    }
+    if (message.equipSlot !== 0) {
+      writer.uint32(32).int32(message.equipSlot);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): C2GEquipItemRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseC2GEquipItemRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.bagType = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.slotIndex = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.equipSlot = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): C2GEquipItemRequest {
+    return {
+      token: isSet(object.token) ? globalThis.String(object.token) : "",
+      bagType: isSet(object.bagType) ? globalThis.Number(object.bagType) : 0,
+      slotIndex: isSet(object.slotIndex) ? globalThis.Number(object.slotIndex) : 0,
+      equipSlot: isSet(object.equipSlot) ? globalThis.Number(object.equipSlot) : 0,
+    };
+  },
+
+  toJSON(message: C2GEquipItemRequest): unknown {
+    const obj: any = {};
+    if (message.token !== "") {
+      obj.token = message.token;
+    }
+    if (message.bagType !== 0) {
+      obj.bagType = Math.round(message.bagType);
+    }
+    if (message.slotIndex !== 0) {
+      obj.slotIndex = Math.round(message.slotIndex);
+    }
+    if (message.equipSlot !== 0) {
+      obj.equipSlot = Math.round(message.equipSlot);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<C2GEquipItemRequest>, I>>(base?: I): C2GEquipItemRequest {
+    return C2GEquipItemRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<C2GEquipItemRequest>, I>>(object: I): C2GEquipItemRequest {
+    const message = createBaseC2GEquipItemRequest();
+    message.token = object.token ?? "";
+    message.bagType = object.bagType ?? 0;
+    message.slotIndex = object.slotIndex ?? 0;
+    message.equipSlot = object.equipSlot ?? 0;
+    return message;
+  },
+};
+
+function createBaseG2CEquipItemResponse(): G2CEquipItemResponse {
+  return { equippedItem: undefined, unequippedItem: undefined, combatPowerChange: 0 };
+}
+
+export const G2CEquipItemResponse: MessageFns<G2CEquipItemResponse> = {
+  encode(message: G2CEquipItemResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.equippedItem !== undefined) {
+      ItemInfo.encode(message.equippedItem, writer.uint32(10).fork()).join();
+    }
+    if (message.unequippedItem !== undefined) {
+      ItemInfo.encode(message.unequippedItem, writer.uint32(18).fork()).join();
+    }
+    if (message.combatPowerChange !== 0) {
+      writer.uint32(24).int32(message.combatPowerChange);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CEquipItemResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CEquipItemResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.equippedItem = ItemInfo.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.unequippedItem = ItemInfo.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.combatPowerChange = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CEquipItemResponse {
+    return {
+      equippedItem: isSet(object.equippedItem) ? ItemInfo.fromJSON(object.equippedItem) : undefined,
+      unequippedItem: isSet(object.unequippedItem) ? ItemInfo.fromJSON(object.unequippedItem) : undefined,
+      combatPowerChange: isSet(object.combatPowerChange) ? globalThis.Number(object.combatPowerChange) : 0,
+    };
+  },
+
+  toJSON(message: G2CEquipItemResponse): unknown {
+    const obj: any = {};
+    if (message.equippedItem !== undefined) {
+      obj.equippedItem = ItemInfo.toJSON(message.equippedItem);
+    }
+    if (message.unequippedItem !== undefined) {
+      obj.unequippedItem = ItemInfo.toJSON(message.unequippedItem);
+    }
+    if (message.combatPowerChange !== 0) {
+      obj.combatPowerChange = Math.round(message.combatPowerChange);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CEquipItemResponse>, I>>(base?: I): G2CEquipItemResponse {
+    return G2CEquipItemResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CEquipItemResponse>, I>>(object: I): G2CEquipItemResponse {
+    const message = createBaseG2CEquipItemResponse();
+    message.equippedItem = (object.equippedItem !== undefined && object.equippedItem !== null)
+      ? ItemInfo.fromPartial(object.equippedItem)
+      : undefined;
+    message.unequippedItem = (object.unequippedItem !== undefined && object.unequippedItem !== null)
+      ? ItemInfo.fromPartial(object.unequippedItem)
+      : undefined;
+    message.combatPowerChange = object.combatPowerChange ?? 0;
+    return message;
+  },
+};
+
+function createBaseC2GUnequipItemRequest(): C2GUnequipItemRequest {
+  return { token: "", equipSlot: 0, bagType: 0, slotIndex: 0 };
+}
+
+export const C2GUnequipItemRequest: MessageFns<C2GUnequipItemRequest> = {
+  encode(message: C2GUnequipItemRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    if (message.equipSlot !== 0) {
+      writer.uint32(16).int32(message.equipSlot);
+    }
+    if (message.bagType !== 0) {
+      writer.uint32(24).int32(message.bagType);
+    }
+    if (message.slotIndex !== 0) {
+      writer.uint32(32).int32(message.slotIndex);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): C2GUnequipItemRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseC2GUnequipItemRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.equipSlot = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.bagType = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.slotIndex = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): C2GUnequipItemRequest {
+    return {
+      token: isSet(object.token) ? globalThis.String(object.token) : "",
+      equipSlot: isSet(object.equipSlot) ? globalThis.Number(object.equipSlot) : 0,
+      bagType: isSet(object.bagType) ? globalThis.Number(object.bagType) : 0,
+      slotIndex: isSet(object.slotIndex) ? globalThis.Number(object.slotIndex) : 0,
+    };
+  },
+
+  toJSON(message: C2GUnequipItemRequest): unknown {
+    const obj: any = {};
+    if (message.token !== "") {
+      obj.token = message.token;
+    }
+    if (message.equipSlot !== 0) {
+      obj.equipSlot = Math.round(message.equipSlot);
+    }
+    if (message.bagType !== 0) {
+      obj.bagType = Math.round(message.bagType);
+    }
+    if (message.slotIndex !== 0) {
+      obj.slotIndex = Math.round(message.slotIndex);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<C2GUnequipItemRequest>, I>>(base?: I): C2GUnequipItemRequest {
+    return C2GUnequipItemRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<C2GUnequipItemRequest>, I>>(object: I): C2GUnequipItemRequest {
+    const message = createBaseC2GUnequipItemRequest();
+    message.token = object.token ?? "";
+    message.equipSlot = object.equipSlot ?? 0;
+    message.bagType = object.bagType ?? 0;
+    message.slotIndex = object.slotIndex ?? 0;
+    return message;
+  },
+};
+
+function createBaseG2CUnequipItemResponse(): G2CUnequipItemResponse {
+  return { unequippedItem: undefined, combatPowerChange: 0 };
+}
+
+export const G2CUnequipItemResponse: MessageFns<G2CUnequipItemResponse> = {
+  encode(message: G2CUnequipItemResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.unequippedItem !== undefined) {
+      ItemInfo.encode(message.unequippedItem, writer.uint32(10).fork()).join();
+    }
+    if (message.combatPowerChange !== 0) {
+      writer.uint32(16).int32(message.combatPowerChange);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CUnequipItemResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CUnequipItemResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.unequippedItem = ItemInfo.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.combatPowerChange = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CUnequipItemResponse {
+    return {
+      unequippedItem: isSet(object.unequippedItem) ? ItemInfo.fromJSON(object.unequippedItem) : undefined,
+      combatPowerChange: isSet(object.combatPowerChange) ? globalThis.Number(object.combatPowerChange) : 0,
+    };
+  },
+
+  toJSON(message: G2CUnequipItemResponse): unknown {
+    const obj: any = {};
+    if (message.unequippedItem !== undefined) {
+      obj.unequippedItem = ItemInfo.toJSON(message.unequippedItem);
+    }
+    if (message.combatPowerChange !== 0) {
+      obj.combatPowerChange = Math.round(message.combatPowerChange);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CUnequipItemResponse>, I>>(base?: I): G2CUnequipItemResponse {
+    return G2CUnequipItemResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CUnequipItemResponse>, I>>(object: I): G2CUnequipItemResponse {
+    const message = createBaseG2CUnequipItemResponse();
+    message.unequippedItem = (object.unequippedItem !== undefined && object.unequippedItem !== null)
+      ? ItemInfo.fromPartial(object.unequippedItem)
+      : undefined;
+    message.combatPowerChange = object.combatPowerChange ?? 0;
+    return message;
+  },
+};
+
+function createBaseC2GEquipRandomRequest(): C2GEquipRandomRequest {
+  return { token: "", part: 0, isReplace: false };
+}
+
+export const C2GEquipRandomRequest: MessageFns<C2GEquipRandomRequest> = {
+  encode(message: C2GEquipRandomRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    if (message.part !== 0) {
+      writer.uint32(16).int32(message.part);
+    }
+    if (message.isReplace !== false) {
+      writer.uint32(24).bool(message.isReplace);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): C2GEquipRandomRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseC2GEquipRandomRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.part = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.isReplace = reader.bool();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): C2GEquipRandomRequest {
+    return {
+      token: isSet(object.token) ? globalThis.String(object.token) : "",
+      part: isSet(object.part) ? globalThis.Number(object.part) : 0,
+      isReplace: isSet(object.isReplace) ? globalThis.Boolean(object.isReplace) : false,
+    };
+  },
+
+  toJSON(message: C2GEquipRandomRequest): unknown {
+    const obj: any = {};
+    if (message.token !== "") {
+      obj.token = message.token;
+    }
+    if (message.part !== 0) {
+      obj.part = Math.round(message.part);
+    }
+    if (message.isReplace !== false) {
+      obj.isReplace = message.isReplace;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<C2GEquipRandomRequest>, I>>(base?: I): C2GEquipRandomRequest {
+    return C2GEquipRandomRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<C2GEquipRandomRequest>, I>>(object: I): C2GEquipRandomRequest {
+    const message = createBaseC2GEquipRandomRequest();
+    message.token = object.token ?? "";
+    message.part = object.part ?? 0;
+    message.isReplace = object.isReplace ?? false;
+    return message;
+  },
+};
+
+function createBaseG2CEquipRandomResponse(): G2CEquipRandomResponse {
+  return { newEquip: undefined, currentEquip: undefined, powerDiff: 0 };
+}
+
+export const G2CEquipRandomResponse: MessageFns<G2CEquipRandomResponse> = {
+  encode(message: G2CEquipRandomResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.newEquip !== undefined) {
+      ItemInfo.encode(message.newEquip, writer.uint32(10).fork()).join();
+    }
+    if (message.currentEquip !== undefined) {
+      ItemInfo.encode(message.currentEquip, writer.uint32(18).fork()).join();
+    }
+    if (message.powerDiff !== 0) {
+      writer.uint32(24).int32(message.powerDiff);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CEquipRandomResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CEquipRandomResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.newEquip = ItemInfo.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.currentEquip = ItemInfo.decode(reader, reader.uint32());
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.powerDiff = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CEquipRandomResponse {
+    return {
+      newEquip: isSet(object.newEquip) ? ItemInfo.fromJSON(object.newEquip) : undefined,
+      currentEquip: isSet(object.currentEquip) ? ItemInfo.fromJSON(object.currentEquip) : undefined,
+      powerDiff: isSet(object.powerDiff) ? globalThis.Number(object.powerDiff) : 0,
+    };
+  },
+
+  toJSON(message: G2CEquipRandomResponse): unknown {
+    const obj: any = {};
+    if (message.newEquip !== undefined) {
+      obj.newEquip = ItemInfo.toJSON(message.newEquip);
+    }
+    if (message.currentEquip !== undefined) {
+      obj.currentEquip = ItemInfo.toJSON(message.currentEquip);
+    }
+    if (message.powerDiff !== 0) {
+      obj.powerDiff = Math.round(message.powerDiff);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CEquipRandomResponse>, I>>(base?: I): G2CEquipRandomResponse {
+    return G2CEquipRandomResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CEquipRandomResponse>, I>>(object: I): G2CEquipRandomResponse {
+    const message = createBaseG2CEquipRandomResponse();
+    message.newEquip = (object.newEquip !== undefined && object.newEquip !== null)
+      ? ItemInfo.fromPartial(object.newEquip)
+      : undefined;
+    message.currentEquip = (object.currentEquip !== undefined && object.currentEquip !== null)
+      ? ItemInfo.fromPartial(object.currentEquip)
+      : undefined;
+    message.powerDiff = object.powerDiff ?? 0;
+    return message;
+  },
+};
+
+function createBaseC2GEquipLevelInfoRequest(): C2GEquipLevelInfoRequest {
+  return { token: "" };
+}
+
+export const C2GEquipLevelInfoRequest: MessageFns<C2GEquipLevelInfoRequest> = {
+  encode(message: C2GEquipLevelInfoRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): C2GEquipLevelInfoRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseC2GEquipLevelInfoRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): C2GEquipLevelInfoRequest {
+    return { token: isSet(object.token) ? globalThis.String(object.token) : "" };
+  },
+
+  toJSON(message: C2GEquipLevelInfoRequest): unknown {
+    const obj: any = {};
+    if (message.token !== "") {
+      obj.token = message.token;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<C2GEquipLevelInfoRequest>, I>>(base?: I): C2GEquipLevelInfoRequest {
+    return C2GEquipLevelInfoRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<C2GEquipLevelInfoRequest>, I>>(object: I): C2GEquipLevelInfoRequest {
+    const message = createBaseC2GEquipLevelInfoRequest();
+    message.token = object.token ?? "";
+    return message;
+  },
+};
+
+function createBaseG2CEquipLevelInfoResponse(): G2CEquipLevelInfoResponse {
+  return {
+    currentLevel: 0,
+    maxLevel: 0,
+    itemId: 0,
+    itemCount: 0,
+    ownedCount: 0,
+    upgradeTime: 0,
+    remainingTime: 0,
+    isUpgrading: false,
+    currentOdds: [],
+    nextOdds: [],
+  };
+}
+
+export const G2CEquipLevelInfoResponse: MessageFns<G2CEquipLevelInfoResponse> = {
+  encode(message: G2CEquipLevelInfoResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.currentLevel !== 0) {
+      writer.uint32(8).int32(message.currentLevel);
+    }
+    if (message.maxLevel !== 0) {
+      writer.uint32(16).int32(message.maxLevel);
+    }
+    if (message.itemId !== 0) {
+      writer.uint32(24).int32(message.itemId);
+    }
+    if (message.itemCount !== 0) {
+      writer.uint32(32).int32(message.itemCount);
+    }
+    if (message.ownedCount !== 0) {
+      writer.uint32(40).int32(message.ownedCount);
+    }
+    if (message.upgradeTime !== 0) {
+      writer.uint32(48).int32(message.upgradeTime);
+    }
+    if (message.remainingTime !== 0) {
+      writer.uint32(56).int32(message.remainingTime);
+    }
+    if (message.isUpgrading !== false) {
+      writer.uint32(64).bool(message.isUpgrading);
+    }
+    writer.uint32(74).fork();
+    for (const v of message.currentOdds) {
+      writer.double(v);
+    }
+    writer.join();
+    writer.uint32(82).fork();
+    for (const v of message.nextOdds) {
+      writer.double(v);
+    }
+    writer.join();
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CEquipLevelInfoResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CEquipLevelInfoResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.currentLevel = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.maxLevel = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.itemId = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.itemCount = reader.int32();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.ownedCount = reader.int32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.upgradeTime = reader.int32();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.remainingTime = reader.int32();
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.isUpgrading = reader.bool();
+          continue;
+        }
+        case 9: {
+          if (tag === 73) {
+            message.currentOdds.push(reader.double());
+
+            continue;
+          }
+
+          if (tag === 74) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.currentOdds.push(reader.double());
+            }
+
+            continue;
+          }
+
+          break;
+        }
+        case 10: {
+          if (tag === 81) {
+            message.nextOdds.push(reader.double());
+
+            continue;
+          }
+
+          if (tag === 82) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.nextOdds.push(reader.double());
+            }
+
+            continue;
+          }
+
+          break;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CEquipLevelInfoResponse {
+    return {
+      currentLevel: isSet(object.currentLevel) ? globalThis.Number(object.currentLevel) : 0,
+      maxLevel: isSet(object.maxLevel) ? globalThis.Number(object.maxLevel) : 0,
+      itemId: isSet(object.itemId) ? globalThis.Number(object.itemId) : 0,
+      itemCount: isSet(object.itemCount) ? globalThis.Number(object.itemCount) : 0,
+      ownedCount: isSet(object.ownedCount) ? globalThis.Number(object.ownedCount) : 0,
+      upgradeTime: isSet(object.upgradeTime) ? globalThis.Number(object.upgradeTime) : 0,
+      remainingTime: isSet(object.remainingTime) ? globalThis.Number(object.remainingTime) : 0,
+      isUpgrading: isSet(object.isUpgrading) ? globalThis.Boolean(object.isUpgrading) : false,
+      currentOdds: globalThis.Array.isArray(object?.currentOdds)
+        ? object.currentOdds.map((e: any) => globalThis.Number(e))
+        : [],
+      nextOdds: globalThis.Array.isArray(object?.nextOdds) ? object.nextOdds.map((e: any) => globalThis.Number(e)) : [],
+    };
+  },
+
+  toJSON(message: G2CEquipLevelInfoResponse): unknown {
+    const obj: any = {};
+    if (message.currentLevel !== 0) {
+      obj.currentLevel = Math.round(message.currentLevel);
+    }
+    if (message.maxLevel !== 0) {
+      obj.maxLevel = Math.round(message.maxLevel);
+    }
+    if (message.itemId !== 0) {
+      obj.itemId = Math.round(message.itemId);
+    }
+    if (message.itemCount !== 0) {
+      obj.itemCount = Math.round(message.itemCount);
+    }
+    if (message.ownedCount !== 0) {
+      obj.ownedCount = Math.round(message.ownedCount);
+    }
+    if (message.upgradeTime !== 0) {
+      obj.upgradeTime = Math.round(message.upgradeTime);
+    }
+    if (message.remainingTime !== 0) {
+      obj.remainingTime = Math.round(message.remainingTime);
+    }
+    if (message.isUpgrading !== false) {
+      obj.isUpgrading = message.isUpgrading;
+    }
+    if (message.currentOdds?.length) {
+      obj.currentOdds = message.currentOdds;
+    }
+    if (message.nextOdds?.length) {
+      obj.nextOdds = message.nextOdds;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CEquipLevelInfoResponse>, I>>(base?: I): G2CEquipLevelInfoResponse {
+    return G2CEquipLevelInfoResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CEquipLevelInfoResponse>, I>>(object: I): G2CEquipLevelInfoResponse {
+    const message = createBaseG2CEquipLevelInfoResponse();
+    message.currentLevel = object.currentLevel ?? 0;
+    message.maxLevel = object.maxLevel ?? 0;
+    message.itemId = object.itemId ?? 0;
+    message.itemCount = object.itemCount ?? 0;
+    message.ownedCount = object.ownedCount ?? 0;
+    message.upgradeTime = object.upgradeTime ?? 0;
+    message.remainingTime = object.remainingTime ?? 0;
+    message.isUpgrading = object.isUpgrading ?? false;
+    message.currentOdds = object.currentOdds?.map((e) => e) || [];
+    message.nextOdds = object.nextOdds?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseC2GEquipLevelUpgradeRequest(): C2GEquipLevelUpgradeRequest {
+  return { token: "", useAd: false, useItem: false, speedupItemId: 0 };
+}
+
+export const C2GEquipLevelUpgradeRequest: MessageFns<C2GEquipLevelUpgradeRequest> = {
+  encode(message: C2GEquipLevelUpgradeRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    if (message.useAd !== false) {
+      writer.uint32(16).bool(message.useAd);
+    }
+    if (message.useItem !== false) {
+      writer.uint32(24).bool(message.useItem);
+    }
+    if (message.speedupItemId !== 0) {
+      writer.uint32(32).int32(message.speedupItemId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): C2GEquipLevelUpgradeRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseC2GEquipLevelUpgradeRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.useAd = reader.bool();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.useItem = reader.bool();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.speedupItemId = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): C2GEquipLevelUpgradeRequest {
+    return {
+      token: isSet(object.token) ? globalThis.String(object.token) : "",
+      useAd: isSet(object.useAd) ? globalThis.Boolean(object.useAd) : false,
+      useItem: isSet(object.useItem) ? globalThis.Boolean(object.useItem) : false,
+      speedupItemId: isSet(object.speedupItemId) ? globalThis.Number(object.speedupItemId) : 0,
+    };
+  },
+
+  toJSON(message: C2GEquipLevelUpgradeRequest): unknown {
+    const obj: any = {};
+    if (message.token !== "") {
+      obj.token = message.token;
+    }
+    if (message.useAd !== false) {
+      obj.useAd = message.useAd;
+    }
+    if (message.useItem !== false) {
+      obj.useItem = message.useItem;
+    }
+    if (message.speedupItemId !== 0) {
+      obj.speedupItemId = Math.round(message.speedupItemId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<C2GEquipLevelUpgradeRequest>, I>>(base?: I): C2GEquipLevelUpgradeRequest {
+    return C2GEquipLevelUpgradeRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<C2GEquipLevelUpgradeRequest>, I>>(object: I): C2GEquipLevelUpgradeRequest {
+    const message = createBaseC2GEquipLevelUpgradeRequest();
+    message.token = object.token ?? "";
+    message.useAd = object.useAd ?? false;
+    message.useItem = object.useItem ?? false;
+    message.speedupItemId = object.speedupItemId ?? 0;
+    return message;
+  },
+};
+
+function createBaseG2CEquipLevelUpgradeResponse(): G2CEquipLevelUpgradeResponse {
+  return { currentLevel: 0, remainingTime: 0, isUpgrading: false, currentOdds: [] };
+}
+
+export const G2CEquipLevelUpgradeResponse: MessageFns<G2CEquipLevelUpgradeResponse> = {
+  encode(message: G2CEquipLevelUpgradeResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.currentLevel !== 0) {
+      writer.uint32(8).int32(message.currentLevel);
+    }
+    if (message.remainingTime !== 0) {
+      writer.uint32(16).int32(message.remainingTime);
+    }
+    if (message.isUpgrading !== false) {
+      writer.uint32(24).bool(message.isUpgrading);
+    }
+    writer.uint32(34).fork();
+    for (const v of message.currentOdds) {
+      writer.double(v);
+    }
+    writer.join();
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CEquipLevelUpgradeResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CEquipLevelUpgradeResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.currentLevel = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.remainingTime = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.isUpgrading = reader.bool();
+          continue;
+        }
+        case 4: {
+          if (tag === 33) {
+            message.currentOdds.push(reader.double());
+
+            continue;
+          }
+
+          if (tag === 34) {
+            const end2 = reader.uint32() + reader.pos;
+            while (reader.pos < end2) {
+              message.currentOdds.push(reader.double());
+            }
+
+            continue;
+          }
+
+          break;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CEquipLevelUpgradeResponse {
+    return {
+      currentLevel: isSet(object.currentLevel) ? globalThis.Number(object.currentLevel) : 0,
+      remainingTime: isSet(object.remainingTime) ? globalThis.Number(object.remainingTime) : 0,
+      isUpgrading: isSet(object.isUpgrading) ? globalThis.Boolean(object.isUpgrading) : false,
+      currentOdds: globalThis.Array.isArray(object?.currentOdds)
+        ? object.currentOdds.map((e: any) => globalThis.Number(e))
+        : [],
+    };
+  },
+
+  toJSON(message: G2CEquipLevelUpgradeResponse): unknown {
+    const obj: any = {};
+    if (message.currentLevel !== 0) {
+      obj.currentLevel = Math.round(message.currentLevel);
+    }
+    if (message.remainingTime !== 0) {
+      obj.remainingTime = Math.round(message.remainingTime);
+    }
+    if (message.isUpgrading !== false) {
+      obj.isUpgrading = message.isUpgrading;
+    }
+    if (message.currentOdds?.length) {
+      obj.currentOdds = message.currentOdds;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CEquipLevelUpgradeResponse>, I>>(base?: I): G2CEquipLevelUpgradeResponse {
+    return G2CEquipLevelUpgradeResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CEquipLevelUpgradeResponse>, I>>(object: I): G2CEquipLevelUpgradeResponse {
+    const message = createBaseG2CEquipLevelUpgradeResponse();
+    message.currentLevel = object.currentLevel ?? 0;
+    message.remainingTime = object.remainingTime ?? 0;
+    message.isUpgrading = object.isUpgrading ?? false;
+    message.currentOdds = object.currentOdds?.map((e) => e) || [];
+    return message;
+  },
+};
+
+function createBaseG2CEquipmentExpiredPush(): G2CEquipmentExpiredPush {
+  return { expiredItems: [] };
+}
+
+export const G2CEquipmentExpiredPush: MessageFns<G2CEquipmentExpiredPush> = {
+  encode(message: G2CEquipmentExpiredPush, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.expiredItems) {
+      ItemInfo.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CEquipmentExpiredPush {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CEquipmentExpiredPush();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.expiredItems.push(ItemInfo.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CEquipmentExpiredPush {
+    return {
+      expiredItems: globalThis.Array.isArray(object?.expiredItems)
+        ? object.expiredItems.map((e: any) => ItemInfo.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: G2CEquipmentExpiredPush): unknown {
+    const obj: any = {};
+    if (message.expiredItems?.length) {
+      obj.expiredItems = message.expiredItems.map((e) => ItemInfo.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CEquipmentExpiredPush>, I>>(base?: I): G2CEquipmentExpiredPush {
+    return G2CEquipmentExpiredPush.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CEquipmentExpiredPush>, I>>(object: I): G2CEquipmentExpiredPush {
+    const message = createBaseG2CEquipmentExpiredPush();
+    message.expiredItems = object.expiredItems?.map((e) => ItemInfo.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseG2CEquipmentLevelUpgradedPush(): G2CEquipmentLevelUpgradedPush {
+  return { newLevel: 0 };
+}
+
+export const G2CEquipmentLevelUpgradedPush: MessageFns<G2CEquipmentLevelUpgradedPush> = {
+  encode(message: G2CEquipmentLevelUpgradedPush, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.newLevel !== 0) {
+      writer.uint32(8).int32(message.newLevel);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CEquipmentLevelUpgradedPush {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CEquipmentLevelUpgradedPush();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.newLevel = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CEquipmentLevelUpgradedPush {
+    return { newLevel: isSet(object.newLevel) ? globalThis.Number(object.newLevel) : 0 };
+  },
+
+  toJSON(message: G2CEquipmentLevelUpgradedPush): unknown {
+    const obj: any = {};
+    if (message.newLevel !== 0) {
+      obj.newLevel = Math.round(message.newLevel);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CEquipmentLevelUpgradedPush>, I>>(base?: I): G2CEquipmentLevelUpgradedPush {
+    return G2CEquipmentLevelUpgradedPush.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CEquipmentLevelUpgradedPush>, I>>(
+    object: I,
+  ): G2CEquipmentLevelUpgradedPush {
+    const message = createBaseG2CEquipmentLevelUpgradedPush();
+    message.newLevel = object.newLevel ?? 0;
     return message;
   },
 };

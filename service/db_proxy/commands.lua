@@ -5,6 +5,7 @@ local card_model = require "db_proxy.models.card_model"
 local item_model = require "db_proxy.models.item_model"
 local bag_model = require "db_proxy.models.bag_model"
 local ping_handler = require "db_proxy.handlers.ping_handler"
+local equipment_model = require "db_proxy.models.equipment_model"
 
 local CMD = {}
 
@@ -124,6 +125,43 @@ end
 
 function CMD.get_user_bags(user_id)
     return wrap_call(bag_model.get_user_bags, user_id)
+end
+
+-- 装备相关命令
+function CMD.check_equip_slots_exist(user_id)
+    return wrap_call(equipment_model.check_equip_slots_exist, user_id)
+end
+
+function CMD.get_equip_slots(user_id)
+    return wrap_call(equipment_model.get_equip_slots, user_id)
+end
+
+function CMD.get_equip_level(user_id)
+    return wrap_call(equipment_model.get_equip_level, user_id)
+end
+
+function CMD.update_equip_slot(params)
+    return wrap_call(equipment_model.update_equip_slot, params)
+end
+
+function CMD.update_equip_level(params)
+    return wrap_call(equipment_model.update_equip_level, params)
+end
+
+function CMD.init_equip_slots(params)
+    return wrap_call(equipment_model.init_equip_slots, params)
+end
+
+function CMD.init_equip_level(params)
+    return wrap_call(equipment_model.init_equip_level, params)
+end
+
+function CMD.get_completed_equip_upgrades(current_time)
+    return wrap_call(equipment_model.get_completed_equip_upgrades, current_time)
+end
+
+function CMD.get_expired_equipment(params)
+    return wrap_call(equipment_model.get_expired_equipment, params)
 end
 
 return CMD

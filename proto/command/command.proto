@@ -42,63 +42,63 @@ message G2CUserInfoResponse {
     bool is_new = 2;       // 是否是新创建的用户
 }
 
-// 获取用户卡牌请求 {{Req:100}}
+// 获取用户卡牌请求 {{Req:101}}
 message C2GUserCardsRequest {
     string token = 1;       // JWT令牌
 }
 
-// 获取用户卡牌响应 {{Res:101}}
+// 获取用户卡牌响应 {{Res:102}}
 message G2CUserCardsResponse {
     repeated common.CardInfo cards = 1;  // 卡牌列表
 }
 
-// 获取背包信息请求 {{Req:200}}
+// 获取背包信息请求 {{Req:201}}
 message C2GBagInfoRequest {
     string token = 1;
 }
 
-// 背包信息响应 {{Res:201}}
+// 背包信息响应 {{Res:202}}
 message G2CBagInfoResponse {
     repeated common.BagInfo bags = 1;  // 背包信息列表
 }
 
-// 使用物品请求 {{Req:202}}
+// 使用物品请求 {{Req:203}}
 message C2GUseItemRequest {
     string token = 1;        // 用户令牌
     int32 item_id = 2;      // 物品ID
     int32 count = 3;        // 使用数量
 }
 
-// 使用物品响应 {{Res:203}}
+// 使用物品响应 {{Res:204}}
 message G2CUseItemResponse {
     repeated common.ItemInfo items = 1;  // 变化的物品列表
 }
 
-// 扩展背包请求 {{Req:204}}
+// 扩展背包请求 {{Req:205}}
 message C2GExpandBagRequest {
     string token = 1;
     common.BagType bag_type = 2;  // 使用枚举类型
     int32 add_size = 3;
 }
 
-// 扩展背包响应 {{Res:205}}
+// 扩展背包响应 {{Res:206}}
 message G2CExpandBagResponse {
     common.BagInfo bag = 1;  // 背包信息
 }
 
-// 整理背包请求 {{Req:206}}  
+// 整理背包请求 {{Req:207}}  
 message C2GSortBagRequest {
     string token = 1;       // JWT令牌
     common.BagType bag_type = 2;   // 背包类型
     int32 sort_rule = 3;    // 整理规则(1:类型 2:品质 3:等级)
 }
 
-// 整理背包响应 {{Res:207}}  
+// 整理背包响应 {{Res:208}}  
 message G2CSortBagResponse {
     repeated common.ItemInfo items = 1;     // 整理后的物品列表
 }
 
-// 移动物品请求 {{Req:208}}
+// 移动物品请求 {{Req:209}}
 message C2GMoveItemRequest {
     string token = 1;
     int32 src_bag_type = 2;     // 源背包类型
@@ -108,45 +108,143 @@ message C2GMoveItemRequest {
     int32 count = 6;   // 可选的移动数量
 }
 
-// 移动物品响应 {{Res:209}}
+// 移动物品响应 {{Res:210}}
 message G2CMoveItemResponse {
     repeated common.ItemInfo changed_items = 1;  // 所有变化的物品
 }
 
-// 物品合成请求 {{Req:210}}
+// 物品合成请求 {{Req:211}}
 message C2GComposeItemRequest {
     string token = 1;       // JWT令牌
     int32 target_id = 2;    // 目标物品ID
     repeated int32 material_slots = 3;  // 材料所在格子
 }
 
-// 物品合成响应 {{Res:211}}
+// 物品合成响应 {{Res:212}}
 message G2CComposeItemResponse {
-    bool success = 1;       // 是否成功
-    common.ItemInfo new_item = 2;  // 合成的新物品
-    repeated common.ItemInfo remain_items = 3;  // 剩余材料
+    common.ItemInfo new_item = 1;  // 合成的新物品
+    repeated common.ItemInfo remain_items = 2;  // 剩余材料
 }
 
-// 物品分解请求 {{Req:212}}
+// 物品分解请求 {{Req:213}}
 message C2GDecomposeItemRequest {
     string token = 1;       // JWT令牌
     repeated int32 item_slots = 2;   // 要分解的物品格子
 }
 
-// 物品分解响应 {{Res:213}}
+// 物品分解响应 {{Res:214}}
 message G2CDecomposeItemResponse {
     repeated common.ItemInfo result_items = 1;  // 分解获得的物品
 }
 
-// GM指令请求 {{Req:300}}
+// GM指令请求 {{Req:301}}
 message C2GGmCommandRequest {
     string token = 1;  // 令牌
     string command = 2;  // GM指令
     repeated string params = 3;  // 参数列表
 }
 
-// GM指令响应 {{Res:301}}
+// GM指令响应 {{Res:302}}
 message G2CGmCommandResponse {
     string result = 1;  // 结果
     string message = 2;  // 消息
+}
+
+// 获取装备信息请求 {{Req:401}}
+message C2GEquipInfoRequest {
+    string token = 1;       // JWT令牌
+}
+
+// 获取装备信息响应 {{Res:402}}
+message G2CEquipInfoResponse {
+    repeated common.ItemInfo equipped_items = 1;  // 已装备的物品列表
+    int32 combat_power = 2;            // 装备提供的战斗力
+}
+
+// 装备物品请求 {{Req:403}}
+message C2GEquipItemRequest {
+    string token = 1;        // JWT令牌
+    int32 bag_type = 2;      // 物品所在背包类型
+    int32 slot_index = 3;    // 物品所在格子索引
+    int32 equip_slot = 4;    // 装备位置
+}
+
+// 装备物品响应 {{Res:404}}
+message G2CEquipItemResponse {
+    common.ItemInfo equipped_item = 1; // 装备上的物品
+    common.ItemInfo unequipped_item = 2; // 卸下的物品(如果有)
+    int32 combat_power_change = 3;     // 战斗力变化
+}
+
+// 卸下装备请求 {{Req:405}}
+message C2GUnequipItemRequest {
+    string token = 1;        // JWT令牌
+    int32 equip_slot = 2;    // 装备位置
+    int32 bag_type = 3;      // 目标背包类型
+    int32 slot_index = 4;    // 目标格子索引(可选，0表示自动选择)
+}
+
+// 卸下装备响应 {{Res:406}}
+message G2CUnequipItemResponse {
+    common.ItemInfo unequipped_item = 1; // 卸下的物品
+    int32 combat_power_change = 2;     // 战斗力变化
+}
+
+// 随机获取装备请求 {{Req:407}}
+message C2GEquipRandomRequest {
+    string token = 1;     // JWT令牌
+    int32 part = 2;       // 部位(0表示随机)
+    bool is_replace = 3;  // 是否替换现有装备
+}
+
+// 随机获取装备响应 {{Res:408}}
+message G2CEquipRandomResponse {
+    common.ItemInfo new_equip = 1;      // 新获得的装备
+    common.ItemInfo current_equip = 2;  // 当前装备(如果有)
+    int32 power_diff = 3;               // 战力差异
+}
+
+// 获取装备等级信息请求 {{Req:409}}
+message C2GEquipLevelInfoRequest {
+    string token = 1;       // JWT令牌
+}
+
+// 获取装备等级信息响应 {{Res:410}}
+message G2CEquipLevelInfoResponse {
+    int32 current_level = 1;             // 当前等级
+    int32 max_level = 2;                 // 最大等级
+    int32 item_id = 3;                   // 升级所需物品ID
+    int32 item_count = 4;                // 升级所需物品数量
+    int32 owned_count = 5;               // 已拥有物品数量
+    int32 upgrade_time = 6;              // 升级所需时间(秒)
+    int32 remaining_time = 7;            // 剩余时间(秒)
+    bool is_upgrading = 8;               // 是否正在升级
+    repeated double current_odds = 9;    // 当前等级品质概率
+    repeated double next_odds = 10;      // 下一等级品质概率
+}
+
+// 升级装备等级请求 {{Req:411}}
+message C2GEquipLevelUpgradeRequest {
+    string token = 1;        // JWT令牌
+    bool use_ad = 2;         // 是否使用广告加速
+    bool use_item = 3;       // 是否使用道具加速
+    int32 speedup_item_id = 4;  // 加速道具ID
+}
+
+// 升级装备等级响应 {{Res:412}}
+message G2CEquipLevelUpgradeResponse {
+    int32 current_level = 1;           // 当前等级
+    int32 remaining_time = 2;          // 剩余时间(秒)
+    bool is_upgrading = 3;             // 是否正在升级
+    repeated double current_odds = 4;  // 当前等级品质概率
+}
+
+// 装备过期推送 {{Push:451}}
+message G2CEquipmentExpiredPush {
+    repeated common.ItemInfo expired_items = 1;  // 过期的装备列表
+}
+
+// 装备等级升级完成通知 {{Push:452}}
+message G2CEquipmentLevelUpgradedPush {
+    int32 new_level = 1;  // 新等级
 }

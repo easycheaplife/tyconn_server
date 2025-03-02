@@ -10,6 +10,12 @@ const getUserCards = require('./user/get_user_cards');
 const sendHeartbeat = require('./system/heartbeat');
 const gmCommand = require('./gm/gm_command');
 const decomposeItem = require('./item/decompose_item');
+const getEquipInfo = require('./equipment/get_equip_info');
+const equipItem = require('./equipment/equip_item');
+const unequipItem = require('./equipment/unequip_item');
+const getRandomEquip = require('./equipment/get_random_equip');
+const getEquipLevelInfo = require('./equipment/get_equip_level_info');
+const upgradeEquipLevel = require('./equipment/upgrade_equip_level');
 
 module.exports = {
     // 背包相关
@@ -34,4 +40,12 @@ module.exports = {
     
     // 新增分解物品处理器
     decomposeItem,
+    
+    // 装备相关处理器
+    getEquipInfo,
+    equipItem,
+    unequipItem,
+    getRandomEquip,
+    getEquipLevelInfo,
+    upgradeEquipLevel
 }; 

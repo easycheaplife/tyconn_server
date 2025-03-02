@@ -337,4 +337,83 @@ function M.clear_bag_cache(user_id)
     end
 end
 
+-- 获取用户装备槽
+function M.get_equip_slots(user_id)
+    local key = make_key(PREFIX.equip_slots, user_id)
+    local data = redis.get(key)
+    if data then
+        local ok, slots = pcall(cjson.decode, data)
+        if ok then
+            return slots
+        end
+        logger.error("Failed to decode equipment slots data: %s", data)
+    end
+    return nil
+end
+
+-- 设置用户装备槽
+function M.set_equip_slots(user_id, slots)
+    local key = make_key(PREFIX.equip_slots, user_id)
+    local ok, data = pcall(cjson.encode, slots)
+    if not ok then
+        logger.error("Failed to encode equipment slots data: %s", data)
+        return false
+    end
+    
+    ok = redis.set(key, data)
+    if ok then
+        redis.expire(key, EXPIRE.equip_slots)
+    end
+    return ok
+end
+
+-- 获取用户装备等级
+function M.get_equip_level(user_id)
+    local key = make_key(PREFIX.equip_level, user_id)
+    local data = redis.get(key)
+    if data then
+        local ok, level = pcall(cjson.decode, data)
+        if ok then
+            return level
+        end
+        logger.error("Failed to decode equipment level data: %s", data)
+    end
+    return nil
+end
+
+-- 设置用户装备等级
+function M.set_equip_level(user_id, level)
+    local key = make_key(PREFIX.equip_level, user_id)
+    local ok, data = pcall(cjson.encode, level)
+    if not ok then
+        logger.error("Failed to encode equipment level data: %s", data)
+        return false
+    end
+    
+    ok = redis.set(key, data)
+    if ok then
+        redis.expire(key, EXPIRE.equip_level)
+    end
+    return ok
+end
+
+-- 删除用户装备槽缓存
+function M.remove_equip_slots(user_id)
+    local key = make_key(PREFIX.equip_slots, user_id)
+    return redis.del(key) > 0
+end
+
+-- 删除用户装备等级缓存
+function M.remove_equip_level(user_id)
+    local key = make_key(PREFIX.equip_level, user_id)
+    return redis.del(key) > 0
+end
+
+-- 清除用户所有装备相关缓存
+function M.clear_equip_cache(user_id)
+    M.remove_equip_slots(user_id)
+    M.remove_equip_level(user_id)
+    return true
+end
+
 return M

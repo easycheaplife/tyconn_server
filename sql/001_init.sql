@@ -131,6 +131,32 @@ CREATE TABLE IF NOT EXISTS bag_slots (
     UNIQUE KEY (user_id, bag_type, slot_index)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 用户装备槽位表
+CREATE TABLE user_equipment_slots (
+    user_id BIGINT NOT NULL,               -- 用户ID
+    slot_id INT NOT NULL,                  -- 装备槽位ID (1:武器, 2:护甲, 3:头盔, 4:项链, 5:戒指, 6:靴子...)
+    item_id VARCHAR(36),                   -- 装备的物品UUID (NULL表示未装备)
+    expire_time BIGINT DEFAULT 0,          -- 装备过期时间 (冗余字段，方便检查过期)
+    equip_time BIGINT,                     -- 装备时间
+    update_time BIGINT,                    -- 更新时间
+    
+    PRIMARY KEY (user_id, slot_id),        -- 复合主键，确保一个槽位只有一件装备
+    INDEX idx_item_id (item_id),           -- 物品ID索引，用于查找该物品被装备在哪个槽位
+    INDEX idx_expire_time (expire_time)    -- 过期时间索引，用于批量检查过期装备
+);
+
+-- 用户装备概率等级表
+CREATE TABLE user_equipment_levels (
+    user_id BIGINT PRIMARY KEY,            -- 用户ID
+    level INT DEFAULT 1,                   -- 当前装备概率等级
+    is_upgrading TINYINT DEFAULT 0,        -- 是否正在升级中 (0:否, 1:是)
+    upgrade_start_time BIGINT DEFAULT 0,   -- 升级开始时间
+    upgrade_end_time BIGINT DEFAULT 0,     -- 升级预计完成时间
+    update_time BIGINT,                    -- 更新时间
+    
+    INDEX idx_upgrading (is_upgrading, upgrade_end_time)  -- 用于批量检查升级完成的记录
+);
+
 -- 装备属性表
 CREATE TABLE IF NOT EXISTS equip_properties (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,

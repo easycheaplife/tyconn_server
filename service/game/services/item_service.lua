@@ -2309,4 +2309,82 @@ function M.add_special_item(user_id, item_id, count)
     return true
 end
 
+-- 消耗物品 (扣除指定数量的物品)
+function M.consume_item(user_id, item_id, count)
+    if not user_id or not item_id or not count or count <= 0 then
+        return false, "invalid parameters"
+    end
+    
+    -- 获取用户物品
+    local items = item_dao.get_user_items(user_id)
+    if not items then
+        logger.error("Failed to get items for user %d", user_id)
+        return false, "failed to get items"
+    end
+    
+    -- 计算用户拥有的物品总数
+    local owned_count = 0
+    local target_items = {}
+    
+    for _, item in ipairs(items) do
+        if item.item_id == item_id then
+            owned_count = owned_count + item.count
+            table.insert(target_items, item)
+        end
+    end
+    
+    -- 检查数量是否足够
+    if owned_count < count then
+        logger.warn("User %d doesn't have enough items. Required: %d, Owned: %d",
+                   user_id, count, owned_count)
+        return false, "not enough items"
+    end
+    
+    -- 扣除物品
+    local remaining = count
+    
+    for _, item in ipairs(target_items) do
+        if remaining <= 0 then
+            break
+        end
+        
+        if item.count <= remaining then
+            -- 完全消耗这个堆叠物品
+            remaining = remaining - item.count
+            item.count = 0
+        else
+            -- 部分消耗
+            item.count = item.count - remaining
+            remaining = 0
+        end
+    end
+    
+    -- 清理count为0的物品
+    local updated_items = {}
+    for _, item in ipairs(items) do
+        if item.count > 0 then
+            table.insert(updated_items, item)
+        end
+    end
+    
+    -- 保存更新后的物品列表
+    local ok = item_dao.update_user_items(user_id, updated_items)
+    if not ok then
+        logger.error("Failed to update items after consuming for user %d", user_id)
+        return false, "failed to update items"
+    end
+    
+    -- 触发物品消耗事件
+    skynet.send(".event", "lua", "trigger_event", "on_item_consumed", {
+        user_id = user_id,
+        item_id = item_id,
+        count = count
+    })
+    
+    -- 清除缓存
+    cache.remove_user_items(user_id)
+    
+    return true
+end
+
 return M 

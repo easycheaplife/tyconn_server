@@ -41,4 +41,10 @@ enum ErrorCode {
     ERROR_CODE_CARD_ALREADY_EXISTS = 401; // 卡牌已存在
     ERROR_CODE_CARD_NOT_ENOUGH = 402;     // 卡牌数量不足
     
+    // 装备相关 (500-599)
+    ERROR_CODE_ITEM_NOT_EQUIPMENT = 500;      // 物品不是装备
+    ERROR_CODE_EQUIP_SLOT_NOT_MATCH = 501;    // 装备槽位不匹配
+    ERROR_CODE_LEVEL_NOT_ENOUGH = 502;        // 等级不足
+    ERROR_CODE_EQUIPMENT_NOT_FOUND = 503;     // 装备不存在
+    ERROR_CODE_TARGET_SLOT_OCCUPIED = 504;    // 目标格子已被占用
 } 

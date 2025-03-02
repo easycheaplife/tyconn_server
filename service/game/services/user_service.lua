@@ -331,6 +331,22 @@ function M.init_new_user(user_id)
         logger.error("Failed to initialize items for new user: %d", user_id)
         -- 继续处理，不影响流程
     end
+
+    -- 初始化用户装备槽和等级 调用equip_service
+    local equipment_service = require "services.equip_service"
+    local ok = equipment_service.init_user_equip_slots(user_id)
+    if not ok then
+        logger.error("Failed to initialize equipment slots for user %d", user_id)
+        -- 继续执行，不影响用户创建
+    end
+end
+
+function M.get_user_level(user_id)
+    local user = M.get_user_by_id(user_id)
+    if not user then
+        return 1
+    end
+    return user.level
 end
 
 return M 

@@ -19,6 +19,8 @@ M.redis = {
         user_bag = "bag:",
         user_bags = "bags:",
         bag_slots = "slots:",
+        equip_slots = "equip:slots:",
+        equip_level = "equip:level:",
     },
 
     -- 缓存过期时间(秒)
@@ -31,6 +33,8 @@ M.redis = {
         user_bag = 7200,    -- 2小时
         user_bags = 7200,   -- 2小时
         bag_slots = 7200,   -- 2小时
+        equip_slots = 3600,  -- 1小时
+        equip_level = 3600,  -- 1小时
     }
 }
 

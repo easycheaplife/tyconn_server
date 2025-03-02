@@ -14,6 +14,12 @@ const SortBagTest = require('./cases/sort_bag_test');
 const MoveItemTest = require('./cases/move_item_test');
 const ComposeItemTest = require('./cases/compose_item_test');
 const DecomposeItemTest = require('./cases/decompose_item_test');
+const EquipInfoTest = require('./cases/equip_info_test');
+const EquipItemTest = require('./cases/equip_item_test');
+const UnequipItemTest = require('./cases/unequip_item_test');
+const UpgradeEquipLevelTest = require('./cases/upgrade_equip_level_test');
+const EquipLevelInfoTest = require('./cases/equip_level_info_test');
+const EquipRandomTest = require('./cases/equip_random_test');
 
 // 所有测试用例
 const ALL_TESTS = {
@@ -29,7 +35,14 @@ const ALL_TESTS = {
     sort_bag: SortBagTest,
     move_item: MoveItemTest,
     compose_item: ComposeItemTest,
-    decompose_item: DecomposeItemTest
+    decompose_item: DecomposeItemTest,
+    equip_info: EquipInfoTest,
+    equip_item: EquipItemTest,
+    unequip_item: UnequipItemTest,
+    equip_random: EquipRandomTest,
+    equip_level_info: EquipLevelInfoTest,
+    upgrade_equip_level: UpgradeEquipLevelTest,
+    
 };
 
 async function runTests() {

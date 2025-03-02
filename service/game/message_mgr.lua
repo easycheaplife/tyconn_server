@@ -47,6 +47,18 @@ function M.init()
         require "game.handlers.compose_item_handler")
     M.register(pb.enum("common.MessageID", "C2G_DECOMPOSE_ITEM_REQUEST"),
         require "game.handlers.decompose_item_handler")
+    M.register(pb.enum("common.MessageID", "C2G_EQUIP_INFO_REQUEST"), 
+        require "game.handlers.equip_info_handler")
+    M.register(pb.enum("common.MessageID", "C2G_EQUIP_ITEM_REQUEST"), 
+        require "game.handlers.equip_item_handler")
+    M.register(pb.enum("common.MessageID", "C2G_UNEQUIP_ITEM_REQUEST"), 
+        require "game.handlers.unequip_item_handler")
+    M.register(pb.enum("common.MessageID", "C2G_EQUIP_RANDOM_REQUEST"), 
+        require "game.handlers.equip_random_handler")
+    M.register(pb.enum("common.MessageID", "C2G_EQUIP_LEVEL_INFO_REQUEST"), 
+        require "game.handlers.equip_level_info_handler")
+    M.register(pb.enum("common.MessageID", "C2G_EQUIP_LEVEL_UPGRADE_REQUEST"), 
+        require "game.handlers.equip_level_upgrade_handler")
 
     logger.info("Message handlers initialized")
     return true

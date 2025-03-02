@@ -215,4 +215,176 @@ function M.update_bag_size(user_id, bag_type, new_size)
     return result
 end
 
+-- 检查用户装备槽是否存在
+function M.check_equip_slots_exist(user_id)
+    if not user_id then
+        logger.error("check_equip_slots_exist: user_id is nil")
+        return nil
+    end
+    
+    local ok, result = pcall(call_db, "check_equip_slots_exist", user_id)
+    if not ok then
+        logger.error("Failed to check equip slots exist: %s", result)
+        return nil
+    end
+    
+    return result and result.count
+end
+
+-- 获取用户装备槽
+function M.get_equip_slots(user_id)
+    if not user_id then
+        logger.error("get_equip_slots: user_id is nil")
+        return nil
+    end
+    
+    local ok, result = pcall(call_db, "get_equip_slots", user_id)
+    if not ok then
+        logger.error("Failed to get equip slots: %s", result)
+        return nil
+    end
+    
+    return result
+end
+
+-- 获取用户装备等级
+function M.get_equip_level(user_id)
+    if not user_id then
+        logger.error("get_equip_level: user_id is nil")
+        return nil
+    end
+    
+    local ok, result = pcall(call_db, "get_equip_level", user_id)
+    if not ok then
+        logger.error("Failed to get equip level: %s", result)
+        return nil
+    end
+    
+    return result and result[1]
+end
+
+-- 更新装备槽位
+function M.update_equip_slot(user_id, slot_id, item_id, expire_time)
+    if not user_id or not slot_id then
+        logger.error("update_equip_slot: invalid params, user_id: %s, slot_id: %s", 
+            tostring(user_id), tostring(slot_id))
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "update_equip_slot", {
+        user_id = user_id,
+        slot_id = slot_id,
+        item_id = item_id,
+        expire_time = expire_time or 0,
+        equip_time = item_id and os.time() or 0,
+        update_time = os.time()
+    })
+    
+    if not ok then
+        logger.error("Failed to update equip slot: %s", result)
+        return false
+    end
+    
+    return result
+end
+
+-- 更新装备等级
+function M.update_equip_level(params)
+    if not params or not params.user_id then
+        logger.error("update_equip_level: missing user_id")
+        return false
+    end
+    
+    -- 确保有更新的内容
+    if not params.level and not params.is_upgrading and 
+       not params.upgrade_start_time and not params.upgrade_end_time then
+        logger.error("update_equip_level: no update fields")
+        return false
+    end
+    
+    params.update_time = os.time()
+    
+    local ok, result = pcall(call_db, "update_equip_level", params)
+    if not ok then
+        logger.error("Failed to update equip level: %s", result)
+        return false
+    end
+    
+    return result
+end
+
+-- 初始化装备槽
+function M.init_equip_slots(user_id, slots)
+    if not user_id or not slots or #slots == 0 then
+        logger.error("init_equip_slots: invalid params")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "init_equip_slots", {
+        user_id = user_id,
+        slots = slots
+    })
+    
+    if not ok then
+        logger.error("Failed to init equip slots: %s", result)
+        return false
+    end
+    
+    return result
+end
+
+-- 初始化装备等级
+function M.init_equip_level(user_id, level_data)
+    if not user_id or not level_data then
+        logger.error("init_equip_level: invalid params")
+        return false
+    end
+    
+    level_data.user_id = user_id
+    level_data.update_time = level_data.update_time or os.time()
+    
+    local ok, result = pcall(call_db, "init_equip_level", level_data)
+    if not ok then
+        logger.error("Failed to init equip level: %s", result)
+        return false
+    end
+    
+    return result
+end
+
+-- 获取已完成的升级
+function M.get_completed_equip_upgrades()
+    local current_time = os.time()
+    
+    local ok, result = pcall(call_db, "get_completed_equip_upgrades", current_time)
+    if not ok then
+        logger.error("Failed to get completed equip upgrades: %s", result)
+        return {}
+    end
+    
+    return result or {}
+end
+
+-- 获取过期装备
+function M.get_expired_equipment(user_id)
+    if not user_id then
+        logger.error("get_expired_equipment: user_id is nil")
+        return {}
+    end
+    
+    local current_time = os.time()
+    
+    local ok, result = pcall(call_db, "get_expired_equipment", {
+        user_id = user_id,
+        current_time = current_time
+    })
+    
+    if not ok then
+        logger.error("Failed to get expired equipment: %s", result)
+        return {}
+    end
+    
+    return result or {}
+end
+
 return M 

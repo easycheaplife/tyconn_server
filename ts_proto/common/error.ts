@@ -66,6 +66,16 @@ export enum ErrorCode {
   ERROR_CODE_CARD_ALREADY_EXISTS = 401,
   /** ERROR_CODE_CARD_NOT_ENOUGH - 卡牌数量不足 */
   ERROR_CODE_CARD_NOT_ENOUGH = 402,
+  /** ERROR_CODE_ITEM_NOT_EQUIPMENT - 装备相关 (500-599) */
+  ERROR_CODE_ITEM_NOT_EQUIPMENT = 500,
+  /** ERROR_CODE_EQUIP_SLOT_NOT_MATCH - 装备槽位不匹配 */
+  ERROR_CODE_EQUIP_SLOT_NOT_MATCH = 501,
+  /** ERROR_CODE_LEVEL_NOT_ENOUGH - 等级不足 */
+  ERROR_CODE_LEVEL_NOT_ENOUGH = 502,
+  /** ERROR_CODE_EQUIPMENT_NOT_FOUND - 装备不存在 */
+  ERROR_CODE_EQUIPMENT_NOT_FOUND = 503,
+  /** ERROR_CODE_TARGET_SLOT_OCCUPIED - 目标格子已被占用 */
+  ERROR_CODE_TARGET_SLOT_OCCUPIED = 504,
   UNRECOGNIZED = -1,
 }
 
@@ -155,6 +165,21 @@ export function errorCodeFromJSON(object: any): ErrorCode {
     case 402:
     case "ERROR_CODE_CARD_NOT_ENOUGH":
       return ErrorCode.ERROR_CODE_CARD_NOT_ENOUGH;
+    case 500:
+    case "ERROR_CODE_ITEM_NOT_EQUIPMENT":
+      return ErrorCode.ERROR_CODE_ITEM_NOT_EQUIPMENT;
+    case 501:
+    case "ERROR_CODE_EQUIP_SLOT_NOT_MATCH":
+      return ErrorCode.ERROR_CODE_EQUIP_SLOT_NOT_MATCH;
+    case 502:
+    case "ERROR_CODE_LEVEL_NOT_ENOUGH":
+      return ErrorCode.ERROR_CODE_LEVEL_NOT_ENOUGH;
+    case 503:
+    case "ERROR_CODE_EQUIPMENT_NOT_FOUND":
+      return ErrorCode.ERROR_CODE_EQUIPMENT_NOT_FOUND;
+    case 504:
+    case "ERROR_CODE_TARGET_SLOT_OCCUPIED":
+      return ErrorCode.ERROR_CODE_TARGET_SLOT_OCCUPIED;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -220,6 +245,16 @@ export function errorCodeToJSON(object: ErrorCode): string {
       return "ERROR_CODE_CARD_ALREADY_EXISTS";
     case ErrorCode.ERROR_CODE_CARD_NOT_ENOUGH:
       return "ERROR_CODE_CARD_NOT_ENOUGH";
+    case ErrorCode.ERROR_CODE_ITEM_NOT_EQUIPMENT:
+      return "ERROR_CODE_ITEM_NOT_EQUIPMENT";
+    case ErrorCode.ERROR_CODE_EQUIP_SLOT_NOT_MATCH:
+      return "ERROR_CODE_EQUIP_SLOT_NOT_MATCH";
+    case ErrorCode.ERROR_CODE_LEVEL_NOT_ENOUGH:
+      return "ERROR_CODE_LEVEL_NOT_ENOUGH";
+    case ErrorCode.ERROR_CODE_EQUIPMENT_NOT_FOUND:
+      return "ERROR_CODE_EQUIPMENT_NOT_FOUND";
+    case ErrorCode.ERROR_CODE_TARGET_SLOT_OCCUPIED:
+      return "ERROR_CODE_TARGET_SLOT_OCCUPIED";
     case ErrorCode.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";

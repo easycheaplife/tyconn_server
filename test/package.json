@@ -12,7 +12,13 @@
     "test:sort_bag": "node test/run_test.js -t sort_bag",
     "test:move_item": "node test/run_test.js -t move_item",
     "test:compose_item": "node test/run_test.js -t compose_item",
-    "test:decompose_item": "node test/run_test.js -t decompose_item"
+    "test:decompose_item": "node test/run_test.js -t decompose_item",
+    "test:equip_info": "node test/run_test.js -t equip_info",
+    "test:equip_item": "node test/run_test.js -t equip_item",
+    "test:unequip_item": "node test/run_test.js -t unequip_item",
+    "test:equip_random": "node test/run_test.js -t equip_random",
+    "test:equip_level_info": "node test/run_test.js -t equip_level_info",
+    "test:upgrade_equip_level": "node test/run_test.js -t upgrade_equip_level"
   },
   "dependencies": {
     "jsonwebtoken": "^9.0.2",
