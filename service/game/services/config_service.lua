@@ -292,27 +292,73 @@ function M.get_compose_config(target_id)
     }
 end
 
--- 获取物品分解配置
-function M.get_decompose_config(item_id)
-    -- 只使用已知存在的物品ID (1001-1005, 2012)
-    local decompose_configs = {
-        -- 分解高级草药(1004)
-        [1004] = {
-            results = {
-                {item_id = 1001, count = 1},  -- 分解为1个草药
-                {item_id = 2012, count = 1}   -- 分解为1个金币物品
-            }
-        },
-        -- 分解高级物品(1005)
-        [1005] = {
-            results = {
-                {item_id = 1002, count = 1},  -- 分解为1个水晶
-                {item_id = 1003, count = 1}   -- 分解为1个其他物品
+-- 获取分解配置
+function M.get_decompose_config(target_id)
+    logger.debug("Getting decompose config for target_id: %s", tostring(target_id))
+    
+    -- 1. 从 Dfw_item.json 获取目标物品配置
+    local item_config = M.get_item_config(target_id)
+    if not item_config then
+        logger.debug("Item config not found for target_id: %s", tostring(target_id))
+        return nil
+    end
+
+    -- 2. 验证物品类型是否为 PARTNER
+    if not item_config.type or item_config.type ~= enum.ItemType.ITEM_TYPE_PARTNER then
+        logger.debug("Item type is not PARTNER: %s", tostring(item_config.type))
+        return nil
+    end
+
+    -- 3. 从 Param 二维数组中获取 unit_id
+    -- Param 格式: [[4301]]
+    if not item_config.param or not item_config.param[1] then
+        logger.debug("Item param is nil or invalid")
+        return nil
+    end
+    
+    local unit_id = item_config.param[1][1]
+    if not unit_id then
+        logger.debug("Unit ID not found in param")
+        return nil
+    end
+
+    -- 记录关键信息
+    logger.debug("Found unit_id: %s from item param", tostring(unit_id))
+
+    -- 4. 从 Dfw_unit.json 获取对应单位配置
+    local unit_config = M.get_unit_config(unit_id)
+    if not unit_config then
+        logger.debug("Unit config not found for unit_id: %s", tostring(unit_id))
+        return nil
+    end
+
+    -- 5. 从 disassemble 数组中获取分解信息
+    -- disassemble 格式: [4301, 20]
+    if not unit_config.disassemble then
+        logger.debug("Unit disassemble data not found")
+        return nil
+    end
+
+    local result_id = unit_config.disassemble[1]
+    local result_count = unit_config.disassemble[2]
+    if not result_id or not result_count then
+        logger.debug("Result ID or count not found in unit disassemble config")
+        return nil
+    end
+
+    -- 记录找到的分解信息
+    logger.debug("Found result_id: %s, count: %s", tostring(result_id), tostring(result_count))
+
+    -- 6. 构造分解配置
+    return {
+        target_id = target_id,
+        result_items = {
+            {
+                item_id = result_id,     -- 分解获得的物品ID
+                count = result_count     -- 分解获得的物品数量
             }
         }
     }
-    
-    return decompose_configs[item_id]
 end
 
 -- 加载装备配置

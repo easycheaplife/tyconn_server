@@ -26,17 +26,21 @@ function M.handle(client_id, msg)
     end
 
     -- 验证参数
-    if not request.item_slots or #request.item_slots == 0 then
+    if not request.target_id then
         return message.create_error_response(
             base_request,
             pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAM"),
             "command.G2CDecomposeItemResponse",
-            "Invalid parameters: item_slots is required",
+            "Invalid parameters: target_id is required",
             pb.enum("common.MessageID", "G2C_DECOMPOSE_ITEM_RESPONSE"))
     end
     
-    -- 调用背包服务执行物品分解
-    local ok, err, result_items = bag_service.decompose_item(user.user_id, request.item_slots)
+    -- 调用背包服务进行物品分解
+    local ok, err, result_items = bag_service.decompose_item(
+        user.user_id, 
+        request.target_id
+    )
+    
     if not ok then
         logger.error("Failed to decompose item for user: %d, error: %s", user.user_id, err)
         return message.create_error_response(
@@ -64,7 +68,9 @@ function M.handle(client_id, msg)
     return message.create_success_response(
         base_request,
         "command.G2CDecomposeItemResponse",
-        { result_items = result_items_info },
+        { 
+            result_items = result_items_info
+        },
         pb.enum("common.MessageID", "G2C_DECOMPOSE_ITEM_RESPONSE"))
 end
 

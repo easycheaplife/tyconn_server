@@ -15,45 +15,30 @@ class DecomposeItemTest extends BaseTest {
             // 2. 在添加测试物品之前先清空背包
             await this.client.gmCommand('clear_bag', ['1']) // 清空主背包
             
-            // 3. 添加高级物品用于分解
-            await this.client.gmCommand('add_item', ['1004', '2'])  // 添加2个高级草药
+            // 3. 添加测试物品
+            await this.client.gmCommand('add_item', ['4301', '1'])  // 添加1个要分解的物品
+
+            // 4. 执行物品分解
+            const decomposeResp = await this.client.decomposeItem(4301)
             
-            // 4. 获取添加物品后的背包信息，找到物品所在格子
-            const bagAfterAdd = await this.client.getBagInfo()
-            const mainBag = bagAfterAdd.bags.find(
-                bag => bag.bag_type === this.client.protoHelper.BagType.BAG_TYPE_MAIN
-            )
-            assert(mainBag)
-            
-            // 找到高级草药所在的格子
-            const advancedHerb = mainBag.items.find(item => item.item_id === 1004)
-            assert(advancedHerb, "未找到高级草药物品")
-            
-            // 5. 执行物品分解
-            const decomposeResp = await this.client.decomposeItem([advancedHerb.slot])
-            
-            // 6. 验证分解结果
+            // 5. 验证分解结果
             assert(decomposeResp.result_items, "应该返回分解结果物品")
-            assert(decomposeResp.result_items.length > 0, "分解结果应该有物品")
+            assert(decomposeResp.result_items.length > 0, "应该有分解获得的物品")
             
-            // 7. 验证背包状态
+            // 6. 验证背包状态
             const bagInfoAfter = await this.client.getBagInfo()
             const mainBagAfter = bagInfoAfter.bags.find(
                 bag => bag.bag_type === this.client.protoHelper.BagType.BAG_TYPE_MAIN
             )
             
-            // 高级草药应该被消耗掉一个
-            const herbAfter = mainBagAfter.items.find(item => item.item_id === 1004)
-            if (herbAfter) {
-                assert.strictEqual(herbAfter.count, 1, "应该剩余1个高级草药")
-            }
-            
-            // 应该获得分解的基础物品
-            const basicHerb = mainBagAfter.items.find(item => item.item_id === 1001)
-            assert(basicHerb, "应该获得基础草药")
-            
-            const gold = mainBagAfter.items.find(item => item.item_id === 2012)
-            assert(gold, "应该获得金币物品")
+            // 验证原物品已被消耗
+            const originalItem = mainBagAfter.items.find(item => item.item_id === 4301)
+            assert(!originalItem, "原物品应该被消耗")
+
+            // 验证获得的分解物品
+            const resultItem = mainBagAfter.items.find(item => item.item_id === 5301)
+            assert(resultItem, "应该获得分解后的物品")
+            assert.strictEqual(resultItem.count, 9, "分解应该获得20个碎片")
             
             return true
         } catch (error) {

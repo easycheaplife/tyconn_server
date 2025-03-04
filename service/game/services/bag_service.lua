@@ -349,9 +349,9 @@ function M.compose_item(user_id, target_id)
 end
 
 -- 物品分解函数（对外API，调用item_service）
-function M.decompose_item(user_id, item_slots)
+function M.decompose_item(user_id, target_id)
     -- 1. 验证参数
-    if not user_id or not item_slots or #item_slots == 0 then
+    if not user_id or not target_id then
         return false, "invalid params"
     end
     
@@ -362,39 +362,34 @@ function M.decompose_item(user_id, item_slots)
     end
     
     -- 3. 找到要分解的物品
-    local decompose_items = {}
-    for _, slot in ipairs(item_slots) do
-        local found = false
-        for _, item in ipairs(items) do
-            if item.bag_type == enum.BagType.BAG_TYPE_MAIN and item.slot_index == slot then
-                table.insert(decompose_items, item)
-                found = true
-                break
-            end
-        end
-        if not found then
-            return false, "bag slot not found"
+    local decompose_item = nil
+    for _, item in ipairs(items) do
+        if item.item_id == target_id then
+            decompose_item = item
+            break
         end
     end
     
+    if not decompose_item then
+        return false, "item not found"
+    end
+    
     -- 4. 调用item_service处理分解逻辑
-    local ok, err, result_items_data = item_service.process_decompose(decompose_items)
+    local ok, err, result_items_data = item_service.process_decompose({decompose_item})
     if not ok then
         return false, err
     end
     
     -- 5. 从背包中移除要分解的物品
-    for _, decompose_item in ipairs(decompose_items) do
-        for i = #items, 1, -1 do
-            if items[i].id == decompose_item.id then
-                table.remove(items, i)
-                break
-            end
+    for i = #items, 1, -1 do
+        if items[i].id == decompose_item.id then
+            table.remove(items, i)
+            break
         end
     end
     
     -- 6. 为分解结果物品找空格子并添加到物品列表
-    local result_item_objects = {}
+    local result_items = {}
     for _, result_data in ipairs(result_items_data) do
         -- 寻找空格子
         local empty_slot = M.find_empty_slot(user_id, enum.BagType.BAG_TYPE_MAIN, items)
@@ -402,7 +397,7 @@ function M.decompose_item(user_id, item_slots)
             return false, "bag is full"
         end
         
-        -- 创建结果物品
+        -- 创建新物品
         local new_item = item_model.new({
             id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
             user_id = user_id,
@@ -412,18 +407,17 @@ function M.decompose_item(user_id, item_slots)
             slot_index = empty_slot
         })
         
-        -- 添加到物品列表
         table.insert(items, new_item)
-        table.insert(result_item_objects, new_item)
+        table.insert(result_items, new_item)
     end
     
     -- 7. 保存更新
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "save item failed"
+        return false, "save items failed"
     end
     
-    return true, nil, result_item_objects
+    return true, nil, result_items
 end
 
 -- 移动物品

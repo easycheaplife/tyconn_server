@@ -128,7 +128,7 @@ message G2CComposeItemResponse {
 // 物品分解请求 {{Req:213}}
 message C2GDecomposeItemRequest {
     string token = 1;       // JWT令牌
-    repeated int32 item_slots = 2;   // 要分解的物品格子
+    int32 target_id = 2;    // 目标物品ID
 }
 
 // 物品分解响应 {{Res:214}}

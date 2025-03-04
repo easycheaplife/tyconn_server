@@ -13,7 +13,15 @@ function M.init()
     local node_id = tonumber(skynet.getenv("node_id")) or 1
     snowflake.set_worker_id(node_id)
 
-    -- 2. 初始化配置
+    -- 2. 启动事件服务
+    local event = skynet.newservice("event_mgr")
+    if not event then
+        logger.error("Failed to start event service")
+        return false
+    end
+    logger.info("Event service started")
+
+    -- 3. 初始化配置
     local ok = config_service.init()
     if not ok then
         logger.error("Failed to init config service")

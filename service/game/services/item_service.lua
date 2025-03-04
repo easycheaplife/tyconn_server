@@ -720,6 +720,13 @@ function M.decompose_item(user_id, item_id, count)
         return false, "save item failed"
     end
     
+    -- 5. 触发分解事件
+    skynet.send(".event", "lua", "trigger_event", "on_item_decomposed", {
+        item_id = item.item_id,
+        count = item.count,
+        result_items = items
+    })
+    
     return true
 end
 
@@ -2290,48 +2297,63 @@ function M.process_compose(target_id, material_items)
             count = compose_config.result_count or 1
         }
     end
-    
+
+    -- 6. 触发合成事件
+    skynet.send(".event", "lua", "trigger_event", "on_item_composed", {
+        user_id = material_items[1].user_id,  -- 从材料中获取用户ID
+        target_id = target_id,
+        result = result,
+        new_item = new_item,
+        consumed_materials = material_items,
+        remain_materials = remain_items
+    })
+
     return true, result, new_item, remain_items
 end
 
 -- 【核心功能】处理物品分解逻辑（不涉及背包）
-function M.process_decompose(items_to_decompose)
-    if not items_to_decompose or #items_to_decompose == 0 then
+function M.process_decompose(decompose_items)
+    -- 1. 验证参数
+    if not decompose_items or #decompose_items == 0 then
         return false, "invalid params", nil
     end
-    
-    -- 1. 检查物品是否可分解并收集结果
-    local result_items = {}
-    for _, item in ipairs(items_to_decompose) do
-        -- 获取分解配方
-        local decompose_config = config_service.get_decompose_config(item.item_id)
-        if not decompose_config then
-            return false, "item is not decomposable", nil
-        end
-        
-        -- 收集分解结果
-        for _, result in ipairs(decompose_config.results) do
-            local found = false
-            -- 检查是否已有该物品，尝试堆叠
-            for _, res_item in ipairs(result_items) do
-                if res_item.item_id == result.item_id then
-                    res_item.count = res_item.count + result.count * item.count
-                    found = true
-                    break
-                end
-            end
-            
-            -- 如果没有找到，创建新的结果物品
-            if not found then
-                table.insert(result_items, {
-                    item_id = result.item_id,
-                    count = result.count * item.count
-                })
-            end
-        end
+
+    -- 2. 获取要分解的物品
+    local item = decompose_items[1]
+    if not item then
+        return false, "invalid decompose item", nil
     end
-    
-    return true, nil, result_items
+
+    -- 3. 获取分解配置
+    local decompose_config = config_service.get_decompose_config(item.item_id)
+    if not decompose_config then
+        return false, "item is not decomposable", nil
+    end
+
+    -- 4. 构造分解结果物品
+    local result_items = {}
+    for _, result_item in ipairs(decompose_config.result_items) do
+        -- 创建新的结果物品
+        local new_item = {
+            id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
+            user_id = item.user_id,
+            item_id = result_item.item_id,
+            count = result_item.count,
+            bag_type = enum.BagType.BAG_TYPE_MAIN,
+            slot_index = 0  -- 让背包服务分配格子
+        }
+        table.insert(result_items, new_item)
+    end
+
+    -- 5. 触发分解事件
+    skynet.send(".event", "lua", "trigger_event", "on_item_decomposed", {
+        item_id = item.item_id,
+        count = item.count,
+        result_items = result_items
+    })
+
+    -- 6. 返回结果
+    return true, enum.DecomposeResult.SUCCESS, result_items
 end
 
 function M.get_special_item(user_id, item_id)

@@ -1,12 +1,12 @@
 /**
  * 物品分解处理器
- * @param {Array<number>} itemSlots 要分解的物品格子位置数组
+ * @param {number} targetId 目标物品ID
  * @returns {Promise<Object>}
  */
-async function decomposeItem(itemSlots) {
+async function decomposeItem(targetId) {
     const request = {
         token: this.token,
-        item_slots: itemSlots.map(slot => Number(slot))
+        target_id: targetId
     };
     
     return await this.sendGameRequest(
