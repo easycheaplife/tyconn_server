@@ -27,29 +27,28 @@ function M.handle(client_id, msg)
     end
 
     -- 验证参数
-    if not request.target_id or not request.material_slots or #request.material_slots == 0 then
+    if not request.target_id then
         return message.create_error_response(
             base_request,
             pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAM"),
             "command.G2CComposeItemResponse",
-            "Invalid parameters: target_id and material_slots are required",
+            "Invalid parameters: target_id is required",
             pb.enum("common.MessageID", "G2C_COMPOSE_ITEM_RESPONSE"))
     end
     
     -- 调用背包服务进行物品合成
-    local ok, err, new_item, remain_items = bag_service.compose_item(
+    local ok, result, new_item, remain_items = bag_service.compose_item(
         user.user_id, 
-        request.target_id,
-        request.material_slots
+        request.target_id
     )
     
     if not ok then
-        logger.error("Failed to compose item for user: %d, error: %s", user.user_id, err)
+        logger.error("Failed to compose item for user: %d, error: %s", user.user_id, result)
         return message.create_error_response(
             base_request,
             pb.enum("common.ErrorCode", "ERROR_CODE_COMPOSE_ITEM_FAILED"),
             "command.G2CComposeItemResponse",
-            err,
+            result,
             pb.enum("common.MessageID", "G2C_COMPOSE_ITEM_RESPONSE"))
     end
 

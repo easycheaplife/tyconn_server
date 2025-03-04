@@ -75,7 +75,8 @@ function M.load_item_config()
                 description = item_data.L_des,
                 icon = item_data.Icon,
                 show = tonumber(item_data.Show) or 0,
-                order = tonumber(item_data.Order) or 0
+                order = tonumber(item_data.Order) or 0,
+                param = item_data.Param or {}
             }
         end
     end
@@ -159,7 +160,10 @@ function M.load_unit_config()
                 model_scale_dfw = tonumber(unit_data.Model_scale_dfw) or 10000,
                 battle_property = unit_data.Battle_property or {},
                 skill_battle = unit_data.Skill_battle or {},
-                skill_dfw = unit_data.skill_dfw or {}
+                skill_dfw = unit_data.skill_dfw or {},
+                shards = unit_data.Shards or {},
+                disassemble = unit_data.Disassemble or {}
+
             }
         end
     end
@@ -219,37 +223,73 @@ function M.get_property_config(property_id, level)
     return CONFIG_CACHE.properties[key]
 end
 
--- 获取物品合成配置
+-- 获取合成配置
 function M.get_compose_config(target_id)
-    -- 只使用已知存在的物品ID (1001-1005, 2012)
-    local compose_configs = {
-        -- 草药合成配方 (1001 -> 1004)
-        [1004] = {
-            materials = {
-                {item_id = 1001, count = 2},  -- 需要2个草药
-                {item_id = 2012, count = 1}   -- 需要1个金币物品
-            },
-            result_count = 1  -- 合成1个高级草药(1004)
-        },
-        -- 水晶合成配方 (1002 -> 1005)
-        [1005] = {
-            materials = {
-                {item_id = 1002, count = 2},  -- 需要2个水晶
-                {item_id = 1003, count = 1}   -- 需要1个其他物品
-            },
-            result_count = 1  -- 合成1个高级物品(1005)
-        },
-        -- 高级合成 (1003 + 1004 -> 1005)
-        [1005] = {
-            materials = {
-                {item_id = 1003, count = 3},  -- 需要3个物品1003
-                {item_id = 1004, count = 2}   -- 需要2个物品1004
-            },
-            result_count = 1  -- 合成1个高级物品(1005)
+    logger.debug("Getting compose config for target_id: %s", tostring(target_id))
+    
+    -- 1. 从 Dfw_item.json 获取目标物品配置
+    local item_config = M.get_item_config(target_id)
+    if not item_config then
+        logger.debug("Item config not found for target_id: %s", tostring(target_id))
+        return nil
+    end
+
+    -- 2. 验证物品类型是否为 PARTNER
+    if not item_config.type or item_config.type ~= enum.ItemType.ITEM_TYPE_PARTNER then
+        logger.debug("Item type is not PARTNER: %s", tostring(item_config.type))
+        return nil
+    end
+
+    -- 3. 从 Param 二维数组中获取 unit_id
+    -- Param 格式: [[4301]]
+    if not item_config.param or not item_config.param[1] then
+        logger.debug("Item param is nil or invalid")
+        return nil
+    end
+    
+    local unit_id = item_config.param[1][1]
+    if not unit_id then
+        logger.debug("Unit ID not found in param")
+        return nil
+    end
+
+    -- 记录关键信息
+    logger.debug("Found unit_id: %s from item param", tostring(unit_id))
+
+    -- 4. 从 Dfw_unit.json 获取对应单位配置
+    local unit_config = M.get_unit_config(unit_id)
+    if not unit_config then
+        logger.debug("Unit config not found for unit_id: %s", tostring(unit_id))
+        return nil
+    end
+
+    -- 5. 从 Shards 数组中获取所需碎片数量
+    -- Shards 格式: [4301, 20]
+    if not unit_config.shards then
+        logger.debug("Unit Shards data not found")
+        return nil
+    end
+    
+    local shard_id = unit_config.shards[1]
+    local shard_count = unit_config.shards[2]
+    if not shard_id or not shard_count then
+        logger.debug("Shard ID or count not found in unit config")
+        return nil
+    end
+
+    -- 记录找到的碎片信息
+    logger.debug("Found shard_id: %s, count: %s", tostring(shard_id), tostring(shard_count))
+
+    -- 6. 构造合成配置
+    return {
+        target_id = target_id,
+        materials = {
+            {
+                item_id = shard_id,  -- 使用碎片ID
+                count = shard_count  -- 所需碎片数量
+            }
         }
     }
-    
-    return compose_configs[target_id]
 end
 
 -- 获取物品分解配置

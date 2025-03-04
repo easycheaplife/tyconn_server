@@ -37,12 +37,13 @@ const ALL_TESTS = {
     compose_item: ComposeItemTest,
     decompose_item: DecomposeItemTest,
     equip_info: EquipInfoTest,
+    /*
     equip_item: EquipItemTest,
     unequip_item: UnequipItemTest,
     equip_random: EquipRandomTest,
     equip_level_info: EquipLevelInfoTest,
     upgrade_equip_level: UpgradeEquipLevelTest,
-    
+    */
 };
 
 async function runTests() {

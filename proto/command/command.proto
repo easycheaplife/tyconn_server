@@ -117,7 +117,6 @@ message G2CMoveItemResponse {
 message C2GComposeItemRequest {
     string token = 1;       // JWT令牌
     int32 target_id = 2;    // 目标物品ID
-    repeated int32 material_slots = 3;  // 材料所在格子
 }
 
 // 物品合成响应 {{Res:212}}

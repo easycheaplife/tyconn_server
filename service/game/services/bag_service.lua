@@ -207,42 +207,63 @@ function M.add_item_to_bag(user_id, item_data, bag_type, slot_index)
 end
 
 -- 物品合成函数（对外API，调用item_service）
-function M.compose_item(user_id, target_id, material_slots)
+function M.compose_item(user_id, target_id)
     -- 1. 验证参数
-    if not user_id or not target_id or not material_slots then
+    if not user_id or not target_id then
+        logger.error("Invalid params for compose_item: user_id=%s, target_id=%s", 
+            tostring(user_id), tostring(target_id))
         return false, "invalid params"
     end
     
     -- 2. 获取物品
+    logger.debug("Fetching items for user: %s", tostring(user_id))
     local items = item_dao.get_user_items(user_id)
     if not items then
         return false, "get items failed"
     end
     
-    -- 3. 找到材料物品
+    -- 3. 获取合成配置
+    logger.debug("Getting compose config for target_id: %s", tostring(target_id))
+    local compose_config = config_service.get_compose_config(target_id)
+    if not compose_config then
+        logger.error("Compose config not found for target_id: %s", tostring(target_id))
+        return false, "compose config not found"
+    end
+    
+    -- 记录配置信息
+    logger.debug("Compose config: target_id=%s, material_id=%s, material_count=%s",
+        tostring(target_id),
+        tostring(compose_config.materials[1].item_id),
+        tostring(compose_config.materials[1].count))
+    
+    -- 4. 自动查找所需材料
     local material_items = {}
-    for _, slot in ipairs(material_slots) do
-        local found = false
-        for _, item in ipairs(items) do
-            if item.bag_type == enum.BagType.BAG_TYPE_MAIN and item.slot_index == slot then
-                table.insert(material_items, item)
-                found = true
-                break
-            end
-        end
-        
-        if not found then
-            return false, "bag slot not found"
+    -- 查找指定碎片ID的物品
+    local found_item = nil
+    for _, item in ipairs(items) do
+        if item.item_id == compose_config.materials[1].item_id and 
+           item.count >= compose_config.materials[1].count then
+            found_item = item
+            break
         end
     end
     
-    -- 4. 调用item_service处理合成逻辑
+    if not found_item then
+        logger.error("Not enough shards for item_id: %s, required: %s", 
+            tostring(compose_config.materials[1].item_id),
+            tostring(compose_config.materials[1].count))
+        return false, "not enough shards"
+    end
+    
+    table.insert(material_items, found_item)
+    
+    -- 5. 调用item_service处理合成逻辑
     local ok, result, new_item_data, remain_items = item_service.process_compose(target_id, material_items)
     if not ok then
         return false, result
     end
     
-    -- 5. 从背包中移除被消耗的材料物品
+    -- 6. 从背包中移除被消耗的材料物品
     for i = #items, 1, -1 do
         local item = items[i]
         -- 检查该物品是否是材料之一
@@ -255,7 +276,7 @@ function M.compose_item(user_id, target_id, material_slots)
         end
     end
     
-    -- 6. 添加剩余材料回背包
+    -- 7. 添加剩余材料回背包
     for _, remain_item in ipairs(remain_items or {}) do
         -- 创建新物品
         local new_remain_item = item_model.new({
@@ -269,7 +290,7 @@ function M.compose_item(user_id, target_id, material_slots)
         table.insert(items, new_remain_item)
     end
     
-    -- 7. 如果合成成功，添加新物品到背包
+    -- 8. 如果合成成功，添加新物品到背包
     local created_item = nil
     if result == enum.ComposeResult.SUCCESS and new_item_data then
         -- 找一个空格子
@@ -292,14 +313,39 @@ function M.compose_item(user_id, target_id, material_slots)
         table.insert(items, created_item)
     end
     
-    -- 8. 保存更新
+    -- 9. 保存更新
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
         return false, "save item failed"
     end
     
     -- 修改：返回新创建的物品对象作为第三个返回值
-    return true, result, created_item
+    if created_item then
+        -- 确保返回的物品信息格式符合 proto 定义
+        local new_item_info = {
+            item_id = created_item.item_id,
+            count = created_item.count,
+            slot = created_item.slot_index,
+            bag_type = created_item.bag_type
+        }
+        
+        -- 构造剩余材料信息
+        local remain_items_info = {}
+        for _, item in ipairs(items) do
+            if item.item_id == compose_config.materials[1].item_id then
+                table.insert(remain_items_info, {
+                    item_id = item.item_id,
+                    count = item.count,
+                    slot = item.slot_index,
+                    bag_type = item.bag_type
+                })
+            end
+        end
+        
+        return true, enum.ComposeResult.SUCCESS, new_item_info, remain_items_info
+    end
+    
+    return false, "compose failed"
 end
 
 -- 物品分解函数（对外API，调用item_service）
