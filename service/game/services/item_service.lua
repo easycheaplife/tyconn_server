@@ -2351,6 +2351,7 @@ function M.process_decompose(decompose_items)
     -- 5. 触发分解事件
     local event = init.get_service("event")
     skynet.send(event, "lua", "trigger_event", "on_item_decomposed", {
+        user_id = item.user_id,  -- 添加 user_id
         item_id = item.item_id,
         count = item.count,
         result_items = result_items
