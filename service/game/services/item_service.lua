@@ -153,6 +153,18 @@ local function apply_item_effect(user_id, item_id, count)
         end
     end
     
+    -- 触发物品使用事件
+    local event = init.get_service("event")
+    skynet.send(event, "lua", "trigger_event", "on_item_used", {
+        user_id = user_id,
+        item_id = item_id,
+        count = count,
+        effect_result = {
+            total_effect = total_effect,
+            effect_type = config.effect_type
+        }
+    })
+    
     return true
 end
 
@@ -537,197 +549,6 @@ local function check_compose_materials(items, materials)
             return false
         end
     end
-    
-    return true
-end
-
--- 合成物品
-function M.compose_item(user_id, target_id)
-    -- 1. 获取合成配置
-    local compose_config = get_compose_config(target_id)
-    if not compose_config then
-        return false, "item is not composeable"
-    end
-    
-    -- 2. 获取用户物品
-    local items = M.get_user_items(user_id)
-    if not items then
-        return false, "get item failed"
-    end
-    
-    -- 3. 检查材料是否足够
-    if not check_compose_materials(items, compose_config.materials) then
-        return false, "materials are not enough"
-    end
-    
-    -- 4. 扣除材料
-    for item_id, need_count in pairs(compose_config.materials) do
-        local remain_count = need_count
-        for i = #items, 1, -1 do
-            if items[i].item_id == item_id then
-                local use_count = math.min(remain_count, items[i].count)
-                items[i].count = items[i].count - use_count
-                remain_count = remain_count - use_count
-                
-                -- 记录物品变化
-                item_dao.log_change(user_id, item_id, use_count,
-                    enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_COMPOSE,
-                    items[i].count + use_count, items[i].count)
-                
-                if items[i].count <= 0 then
-                    table.remove(items, i)
-                end
-                
-                if remain_count <= 0 then
-                    break
-                end
-            end
-        end
-    end
-    
-    -- 5. 随机判定是否成功
-    local result = enum.ComposeResult.SUCCESS
-    if compose_config.success_rate then
-        if math.random() > compose_config.success_rate then
-            result = compose_config.fail_keep_material and 
-                enum.ComposeResult.FAIL or 
-                enum.ComposeResult.FAIL_CONSUME
-        end
-    end
-    
-    -- 6. 处理结果
-    if result == enum.ComposeResult.SUCCESS then
-        -- 添加合成物品
-        local new_item = item_model.new({
-            id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
-            user_id = user_id,
-            item_id = target_id,
-            count = compose_config.output_count or 1
-        })
-        table.insert(items, new_item)
-        
-        -- 记录物品变化
-        item_dao.log_change(user_id, target_id, new_item.count,
-            enum.ChangeType.CHANGE_TYPE_ADD, enum.ChangeSource.SOURCE_COMPOSE,
-            0, new_item.count)
-    elseif result == enum.ComposeResult.FAIL then
-        -- 返还材料
-        for item_id, count in pairs(compose_config.materials) do
-            local new_item = item_model.new({
-                id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
-                user_id = user_id,
-                item_id = item_id,
-                count = count
-            })
-            table.insert(items, new_item)
-        end
-    end
-    
-    -- 7. 保存更新
-    local ok = item_dao.update_user_items(user_id, items)
-    if not ok then
-        return false, "save item failed"
-    end
-    
-    return true, result
-end
-
--- 获取物品分解配置
-local function get_decompose_config(item_id)
-    local config = require("config.decompose_config")[item_id]
-    if not config then
-        return nil
-    end
-    return config
-end
-
--- 分解物品
-function M.decompose_item(user_id, item_id, count)
-    -- 1. 获取分解配置
-    local decompose_config = get_decompose_config(item_id)
-    if not decompose_config then
-        return false, "item is not decomposeable"
-    end
-    
-    -- 2. 获取用户物品
-    local items = M.get_user_items(user_id)
-    if not items then
-        return false, "get item failed"
-    end
-    
-    -- 3. 查找要分解的物品
-    local found = false
-    for i, item in ipairs(items) do
-        if item.item_id == item_id then
-            -- 检查数量是否足够
-            if item.count < count then
-                return false, "item count is not enough"
-            end
-            
-            -- 记录变更前数量
-            local before_count = item.count
-            
-            -- 扣除物品
-            item.count = item.count - count
-            item.update_time = os.time()
-            
-            -- 记录物品变化
-            item_dao.log_change(user_id, item_id, count,
-                enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_DECOMPOSE,
-                before_count, item.count)
-            
-            -- 如果数量为0则移除
-            if item.count <= 0 then
-                table.remove(items, i)
-            end
-            
-            found = true
-            break
-        end
-    end
-    
-    if not found then
-        return false, "item is not exist"
-    end
-    
-    -- 4. 添加分解产物
-    for output_id, output_info in pairs(decompose_config.outputs) do
-        -- 计算产出数量
-        local output_count = output_info.count * count
-        
-        -- 随机额外产出
-        if output_info.extra_rate and math.random() <= output_info.extra_rate then
-            output_count = output_count + (output_info.extra_count or 1)
-        end
-        
-        -- 创建新物品
-        local new_item = item_model.new({
-            id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
-            user_id = user_id,
-            item_id = output_id,
-            count = output_count
-        })
-        table.insert(items, new_item)
-        
-        -- 记录物品变化
-        item_dao.log_change(user_id, output_id, output_count,
-            enum.ChangeType.CHANGE_TYPE_ADD, enum.ChangeSource.SOURCE_DECOMPOSE,
-            0, output_count)
-    end
-    
-    -- 5. 保存更新
-    local ok = item_dao.update_user_items(user_id, items)
-    if not ok then
-        return false, "save item failed"
-    end
-    
-    -- 5. 触发分解事件
-    local event = init.get_service("event")
-    skynet.send(event, "lua", "trigger_event", "on_item_decomposed", {
-        item_id = item.item_id,
-        count = item.count,
-        result_items = items
-    })
     
     return true
 end
@@ -2392,6 +2213,13 @@ function M.add_special_item(user_id, item_id, count)
         logger.error("add_special_item update_user_items failed, user_id: %d, item_id: %d", user_id, item_id)
         return false
     end
+    -- 触发物品添加事件
+    local event = init.get_service("event")
+    skynet.send(event, "lua", "trigger_event", "on_item_added", {
+        user_id = user_id,
+        item_id = item_id,
+        count = count
+    })
     return true
 end
 
@@ -2461,10 +2289,12 @@ function M.consume_item(user_id, item_id, count)
     end
     
     -- 触发物品消耗事件
-    skynet.send(".event", "lua", "trigger_event", "on_item_consumed", {
+    local event = init.get_service("event")
+    skynet.send(event, "lua", "trigger_event", "on_item_consumed", {
         user_id = user_id,
         item_id = item_id,
-        count = count
+        count = count,
+        remain_count = owned_count - count
     })
     
     -- 清除缓存

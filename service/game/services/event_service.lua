@@ -22,6 +22,36 @@ local event_handlers = {
             event_data.count,
             #event_data.result_items,
             event_data.user_id)
+    end,
+    
+    on_item_used = function(event_data)
+        logger.info("Item used - user_id: %d, item_id: %d, count: %d", 
+            event_data.user_id,
+            event_data.item_id,
+            event_data.count)
+    end,
+    
+    on_item_consumed = function(event_data)
+        logger.info("Item consumed - user_id: %d, item_id: %d, count: %d, remain: %d", 
+            event_data.user_id,
+            event_data.item_id,
+            event_data.count,
+            event_data.remain_count)
+    end,
+    
+    on_item_added = function(event_data)
+        logger.info("Item added - user_id: %d, item_id: %d, count: %d", 
+            event_data.user_id,
+            event_data.item_id,
+            event_data.count)
+    end,
+    
+    on_item_expired = function(event_data)
+        logger.info("Item expired - user_id: %d, item_id: %d, count: %d, expire_time: %d", 
+            event_data.user_id,
+            event_data.item_id,
+            event_data.count,
+            event_data.expire_time)
     end
 }
 
