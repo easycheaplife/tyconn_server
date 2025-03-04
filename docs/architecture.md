@@ -55,7 +55,7 @@
 
 ### 3. 服务负载均衡
 
-#### Service Balancer 原理
+#### Balancer Service原理
 ```
                           ┌→ [Node 1] ←→ [Health Check]
 [Client] → [Balancer] →   ├→ [Node 2] ←→ [Health Check]
@@ -87,14 +87,14 @@
 ```
 
 - 服务节点定期向其他节点广播状态
-- 使用 service_balancer.broadcast 实现可靠广播
+- 使用 balancer_service.broadcast 实现可靠广播
 - 支持自定义状态数据格式
 - 广播失败自动标记目标节点不健康
 
 示例:
 ```lua
 -- 广播状态
-service_balancer.broadcast("login",    -- 目标服务类型
+balancer_service.broadcast("login",    -- 目标服务类型
     skynet.getenv("node_name"),       -- 调用方节点名
     "update_status",                  -- 更新命令
     {                                 -- 状态数据
@@ -117,7 +117,7 @@ service_balancer.broadcast("login",    -- 目标服务类型
 6. 调用示例
 ```lua
 -- 获取健康节点
-local node = service_balancer.get_node("db_proxy", caller_node)
+local node = balancer_service.get_node("db_proxy", caller_node)
 if node then
     -- 调用节点服务
     local ok, result = pcall(cluster.call, node, "@"..node, "some_method")

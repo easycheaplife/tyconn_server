@@ -6,7 +6,7 @@ local node_selector = require "node_selector"
 local pb = require "pb"
 local protoloader = require "protoloader"
 local cluster = require "skynet.cluster"
-local service_balancer = require "service_balancer"
+local balancer_service = require "balancer_service"
 
 local connections = {}  -- client_id -> agent
 local game_nodes    -- 游戏节点列表
@@ -91,7 +91,7 @@ local function sync_status_to_login()
     end
     
     -- 广播到所有login节点
-    local results = service_balancer.broadcast("login", skynet.getenv("node_name"), "update_gate_status", encoded)
+    local results = balancer_service.broadcast("login", skynet.getenv("node_name"), "update_gate_status", encoded)
     
     -- 检查结果
     for node, result in pairs(results) do
@@ -131,7 +131,7 @@ function CMD.start(conf)
         port, selector_type)
     
     -- 初始化service_balancer
-    if not service_balancer.init("login", skynet.getenv("node_name")) then
+    if not balancer_service.init("login", skynet.getenv("node_name")) then
         logger.error("Failed to initialize login balancer")
         skynet.exit()
         return

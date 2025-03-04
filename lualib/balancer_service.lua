@@ -23,7 +23,6 @@ local NODE_STATUS = {
 local function check_node_health(node, caller_node)
     -- 对于 db_proxy 服务，调用其 ping 接口
     if string.find(node, "db_proxy") then
-        logger.debug("Trying to ping node: %s from %s", node, caller_node)
         -- 使用 pcall 包装 cluster.call 以处理可能的错误
         local ok, result = pcall(cluster.call, node, "@"..node, "ping", caller_node)
         if not ok then
@@ -113,7 +112,6 @@ function M.init(service_type, caller_node)
                 local is_healthy = check_node_health(node, caller_node)
                 update_node_status(service_type, node,
                     is_healthy and NODE_STATUS.HEALTHY or NODE_STATUS.UNHEALTHY)
-                logger.info("check_node_health: %s, %s", node, is_healthy)
             end
             skynet.sleep(check_interval * 100)
         end

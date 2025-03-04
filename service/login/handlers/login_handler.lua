@@ -4,14 +4,14 @@ local pb = require "pb"
 local login_mgr = require "login.login_mgr"
 local gate_mgr = require "login.gate_mgr"
 local cluster = require "skynet.cluster"
-local service_balancer = require "service_balancer"
+local balancer_service = require "balancer_service"
 
 local M = {}
 
 -- 保存token到数据库
 local function save_token_to_db(account, token, device_id, platform)
     -- 从balancer获取db_proxy节点
-    local node = service_balancer.get_node("db_proxy", skynet.getenv("node_name"))
+    local node = balancer_service.get_node("db_proxy", skynet.getenv("node_name"))
     
     -- 调用db_proxy保存token
     local ok, err = pcall(cluster.call, node, "@"..node, "sync_jwt", {

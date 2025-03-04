@@ -4,7 +4,7 @@ local message = require "message"  -- 更新引用路径
 local message_mgr = require "game.message_mgr"
 local cmd_mgr = require "game.cmd_mgr"
 local init = require "game.init"
-local service_balancer = require "service_balancer"
+local balancer_service = require "balancer_service"
 
 -- 心跳相关配置
 local heartbeat_timeout = tonumber(skynet.getenv("heartbeat_timeout")) or 180  -- 默认180秒超时
@@ -50,7 +50,7 @@ local function initialize()
     logger.info("Message manager initialized")
     
     -- 初始化service_balancer
-    if not service_balancer.init("db_proxy", skynet.getenv("node_name")) then
+    if not balancer_service.init("db_proxy", skynet.getenv("node_name")) then
         logger.error("Failed to initialize db_proxy balancer")
         return false
     end

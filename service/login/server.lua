@@ -6,7 +6,7 @@ local protoloader = require "protoloader"
 local ws_server = require "login.network.ws_server"
 local login_mgr = require "login.login_mgr"
 local gate_mgr = require "login.gate_mgr"
-local service_balancer = require "service_balancer"
+local balancer_service = require "balancer_service"
 
 local CMD = {}
 
@@ -52,7 +52,7 @@ function CMD.start(conf)
     logger.info("Proto files loaded")
     
     -- 初始化service_balancer
-    if not service_balancer.init("db_proxy", skynet.getenv("node_name")) then
+    if not balancer_service.init("db_proxy", skynet.getenv("node_name")) then
         logger.error("Failed to initialize db_proxy balancer")
         return false
     end
