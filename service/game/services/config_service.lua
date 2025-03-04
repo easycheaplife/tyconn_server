@@ -223,25 +223,22 @@ function M.get_property_config(property_id, level)
     return CONFIG_CACHE.properties[key]
 end
 
--- 获取合成配置
-function M.get_compose_config(target_id)
-    logger.debug("Getting compose config for target_id: %s", tostring(target_id))
-    
-    -- 1. 从 Dfw_item.json 获取目标物品配置
+-- 抽取共用的物品和单位配置获取逻辑
+local function get_partner_unit_config(target_id)
+    -- 1. 获取物品配置
     local item_config = M.get_item_config(target_id)
     if not item_config then
         logger.debug("Item config not found for target_id: %s", tostring(target_id))
         return nil
     end
 
-    -- 2. 验证物品类型是否为 PARTNER
+    -- 2. 验证物品类型
     if not item_config.type or item_config.type ~= enum.ItemType.ITEM_TYPE_PARTNER then
         logger.debug("Item type is not PARTNER: %s", tostring(item_config.type))
         return nil
     end
 
-    -- 3. 从 Param 二维数组中获取 unit_id
-    -- Param 格式: [[4301]]
+    -- 3. 获取unit_id
     if not item_config.param or not item_config.param[1] then
         logger.debug("Item param is nil or invalid")
         return nil
@@ -253,18 +250,27 @@ function M.get_compose_config(target_id)
         return nil
     end
 
-    -- 记录关键信息
-    logger.debug("Found unit_id: %s from item param", tostring(unit_id))
-
-    -- 4. 从 Dfw_unit.json 获取对应单位配置
+    -- 4. 获取单位配置
     local unit_config = M.get_unit_config(unit_id)
     if not unit_config then
         logger.debug("Unit config not found for unit_id: %s", tostring(unit_id))
         return nil
     end
 
-    -- 5. 从 Shards 数组中获取所需碎片数量
-    -- Shards 格式: [4301, 20]
+    return unit_config
+end
+
+-- 获取合成配置
+function M.get_compose_config(target_id)
+    logger.debug("Getting compose config for target_id: %s", tostring(target_id))
+    
+    -- 获取单位配置
+    local unit_config = get_partner_unit_config(target_id)
+    if not unit_config then
+        return nil
+    end
+
+    -- 获取碎片信息
     if not unit_config.shards then
         logger.debug("Unit Shards data not found")
         return nil
@@ -277,16 +283,13 @@ function M.get_compose_config(target_id)
         return nil
     end
 
-    -- 记录找到的碎片信息
-    logger.debug("Found shard_id: %s, count: %s", tostring(shard_id), tostring(shard_count))
-
-    -- 6. 构造合成配置
+    -- 构造合成配置
     return {
         target_id = target_id,
         materials = {
             {
-                item_id = shard_id,  -- 使用碎片ID
-                count = shard_count  -- 所需碎片数量
+                item_id = shard_id,
+                count = shard_count
             }
         }
     }
@@ -296,44 +299,13 @@ end
 function M.get_decompose_config(target_id)
     logger.debug("Getting decompose config for target_id: %s", tostring(target_id))
     
-    -- 1. 从 Dfw_item.json 获取目标物品配置
-    local item_config = M.get_item_config(target_id)
-    if not item_config then
-        logger.debug("Item config not found for target_id: %s", tostring(target_id))
-        return nil
-    end
-
-    -- 2. 验证物品类型是否为 PARTNER
-    if not item_config.type or item_config.type ~= enum.ItemType.ITEM_TYPE_PARTNER then
-        logger.debug("Item type is not PARTNER: %s", tostring(item_config.type))
-        return nil
-    end
-
-    -- 3. 从 Param 二维数组中获取 unit_id
-    -- Param 格式: [[4301]]
-    if not item_config.param or not item_config.param[1] then
-        logger.debug("Item param is nil or invalid")
-        return nil
-    end
-    
-    local unit_id = item_config.param[1][1]
-    if not unit_id then
-        logger.debug("Unit ID not found in param")
-        return nil
-    end
-
-    -- 记录关键信息
-    logger.debug("Found unit_id: %s from item param", tostring(unit_id))
-
-    -- 4. 从 Dfw_unit.json 获取对应单位配置
-    local unit_config = M.get_unit_config(unit_id)
+    -- 获取单位配置
+    local unit_config = get_partner_unit_config(target_id)
     if not unit_config then
-        logger.debug("Unit config not found for unit_id: %s", tostring(unit_id))
         return nil
     end
 
-    -- 5. 从 disassemble 数组中获取分解信息
-    -- disassemble 格式: [4301, 20]
+    -- 获取分解信息
     if not unit_config.disassemble then
         logger.debug("Unit disassemble data not found")
         return nil
@@ -346,16 +318,13 @@ function M.get_decompose_config(target_id)
         return nil
     end
 
-    -- 记录找到的分解信息
-    logger.debug("Found result_id: %s, count: %s", tostring(result_id), tostring(result_count))
-
-    -- 6. 构造分解配置
+    -- 构造分解配置
     return {
         target_id = target_id,
         result_items = {
             {
-                item_id = result_id,     -- 分解获得的物品ID
-                count = result_count     -- 分解获得的物品数量
+                item_id = result_id,
+                count = result_count
             }
         }
     }
