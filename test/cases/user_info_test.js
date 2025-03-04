@@ -72,7 +72,7 @@ class UserInfoTest extends BaseTest {
 
                 // 验证初始物品
                 const hasExpPotion = mainBag.items.some(item => 
-                    item.item_id === 1001 && item.count === 100); // 经验药水
+                    item.item_id === 1001 && item.count === 1000); // 经验药水
 
                 assert(hasExpPotion, 'New user should have initial exp potions');
             }

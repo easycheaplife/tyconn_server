@@ -10,6 +10,7 @@ local bag_model = require "models.bag_model"
 local utils = require "utils"
 local config_service = require "services.config_service"
 local enum = require "game.define.enum"
+local init = require "game.init"  -- 添加引用
 
 local M = {}
 
@@ -721,7 +722,8 @@ function M.decompose_item(user_id, item_id, count)
     end
     
     -- 5. 触发分解事件
-    skynet.send(".event", "lua", "trigger_event", "on_item_decomposed", {
+    local event = init.get_service("event")
+    skynet.send(event, "lua", "trigger_event", "on_item_decomposed", {
         item_id = item.item_id,
         count = item.count,
         result_items = items
@@ -2299,8 +2301,9 @@ function M.process_compose(target_id, material_items)
     end
 
     -- 6. 触发合成事件
-    skynet.send(".event", "lua", "trigger_event", "on_item_composed", {
-        user_id = material_items[1].user_id,  -- 从材料中获取用户ID
+    local event = init.get_service("event")
+    skynet.send(event, "lua", "trigger_event", "on_item_composed", {
+        user_id = material_items[1].user_id,
         target_id = target_id,
         result = result,
         new_item = new_item,
@@ -2346,7 +2349,8 @@ function M.process_decompose(decompose_items)
     end
 
     -- 5. 触发分解事件
-    skynet.send(".event", "lua", "trigger_event", "on_item_decomposed", {
+    local event = init.get_service("event")
+    skynet.send(event, "lua", "trigger_event", "on_item_decomposed", {
         item_id = item.item_id,
         count = item.count,
         result_items = result_items

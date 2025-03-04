@@ -10,17 +10,19 @@ local M = {}
 local event_handlers = {
     on_item_composed = function(event_data)
         -- 1. 记录日志
-        logger.info("Item composed - target_id: %d, result: %s", 
+        logger.info("Item composed - target_id: %d, result: %s, user_id: %d", 
             event_data.target_id,
-            tostring(event_data.result))
+            tostring(event_data.result or "nil"),
+            event_data.user_id)
     end,
     
     on_item_decomposed = function(event_data)
         -- 1. 记录日志
-        logger.info("Item decomposed - item_id: %d, count: %d, result_items: %d", 
+        logger.info("Item decomposed - item_id: %d, count: %d, result_items: %d, user_id: %d", 
             event_data.item_id, 
             event_data.count,
-            #event_data.result_items)
+            #event_data.result_items,
+            event_data.user_id)
     end
 }
 

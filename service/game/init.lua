@@ -6,6 +6,8 @@ local timer_jobs = require "game.timer_jobs"
 
 local M = {}
 
+local services = {}  -- 保存服务地址
+
 function M.init()
     logger.info("Game server initializing...")
 
@@ -14,11 +16,7 @@ function M.init()
     snowflake.set_worker_id(node_id)
 
     -- 2. 启动事件服务
-    local event = skynet.newservice("event_mgr")
-    if not event then
-        logger.error("Failed to start event service")
-        return false
-    end
+    services.event = skynet.newservice("event_mgr")
     logger.info("Event service started")
 
     -- 3. 初始化配置
@@ -40,6 +38,11 @@ function M.init()
 
     logger.info("Game server initialized")
     return true
+end
+
+-- 获取服务地址
+function M.get_service(name)
+    return services[name]
 end
 
 return M 

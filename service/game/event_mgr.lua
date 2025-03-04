@@ -1,14 +1,13 @@
 local skynet = require "skynet"
 local event_service = require "services.event_service"
 local logger = require "logger"
+local utils = require "utils"   
 
 local CMD = {}
 
 function CMD.trigger_event(event_name, event_data)
-    logger.info("Event triggered: %s with data: %s", 
-        event_name, 
-        logger.dump(event_data)  -- 打印完整的事件数据
-    )
+    logger.debug("Event triggered: %s", event_name)
+    logger.debug("Event data: %s", utils.table_to_string(event_data))
     event_service.handle_event(event_name, event_data)
 end
 
