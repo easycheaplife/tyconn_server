@@ -20,6 +20,10 @@ const UnequipItemTest = require('./cases/unequip_item_test');
 const UpgradeEquipLevelTest = require('./cases/upgrade_equip_level_test');
 const EquipLevelInfoTest = require('./cases/equip_level_info_test');
 const EquipRandomTest = require('./cases/equip_random_test');
+const GetMailListTest = require('./cases/get_mail_list_test');
+const ReadMailTest = require('./cases/read_mail_test');
+const ClaimMailItemsTest = require('./cases/claim_mail_items_test');
+const DeleteMailTest = require('./cases/delete_mail_test');
 
 // 所有测试用例
 const ALL_TESTS = {
@@ -44,6 +48,10 @@ const ALL_TESTS = {
     equip_level_info: EquipLevelInfoTest,
     upgrade_equip_level: UpgradeEquipLevelTest,
     */
+    get_mail_list: GetMailListTest,
+    read_mail: ReadMailTest,
+    claim_mail_items: ClaimMailItemsTest,
+    delete_mail: DeleteMailTest,
 };
 
 async function runTests() {

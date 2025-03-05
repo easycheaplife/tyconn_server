@@ -39,6 +39,15 @@ function M.check_equipment_level_upgrades()
     skynet.timeout(60 * 100, M.check_equipment_level_upgrades)  -- 1分钟检查一次
 end
 
+-- 清理过期邮件
+function M.check_expired_mails()
+    local mail_service = require "services.mail_service"
+    mail_service.delete_expired_mails()
+    
+    -- 每小时检查一次
+    skynet.timeout(3600 * 100, M.check_expired_mails)
+end
+
 -- 注册所有定时任务
 function M.register_all_jobs()
     -- 已有的定时任务注册...
@@ -48,6 +57,9 @@ function M.register_all_jobs()
     
     -- 装备等级升级检查
     skynet.timeout(30 * 100, M.check_equipment_level_upgrades)
+    
+    -- 清理过期邮件
+    skynet.timeout(3600 * 100, M.check_expired_mails)
     
     logger.info("Timer jobs registered")
 end

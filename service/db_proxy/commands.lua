@@ -6,6 +6,7 @@ local item_model = require "db_proxy.models.item_model"
 local bag_model = require "db_proxy.models.bag_model"
 local ping_handler = require "db_proxy.handlers.ping_handler"
 local equipment_model = require "db_proxy.models.equipment_model"
+local mail_model = require "db_proxy.models.mail_model"
 
 local CMD = {}
 
@@ -21,7 +22,6 @@ end
 
 -- 添加 ping 命令
 function CMD.ping(node_name)
-    logger.debug("CMD.ping called with node_name: %s", node_name)
     return wrap_call(ping_handler.ping, node_name)
 end
 
@@ -162,6 +162,47 @@ end
 
 function CMD.get_expired_equipment(params)
     return wrap_call(equipment_model.get_expired_equipment, params)
+end
+
+-- 邮件相关命令
+function CMD.get_user_mails(user_id)
+    return wrap_call(mail_model.get_user_mails, user_id)
+end
+
+function CMD.get_mail(params)
+    return wrap_call(mail_model.get_mail, params)
+end
+
+function CMD.save_mail(mail)
+    return wrap_call(mail_model.save_mail, mail)
+end
+
+function CMD.save_mail_template(template)
+    return wrap_call(mail_model.save_mail_template, template)
+end
+
+function CMD.update_mail_status(params)
+    return wrap_call(mail_model.update_mail_status, params)
+end
+
+function CMD.batch_update_mail_status(params)
+    return wrap_call(mail_model.batch_update_mail_status, params)
+end
+
+function CMD.delete_mails(params)
+    return wrap_call(mail_model.delete_mails, params)
+end
+
+function CMD.delete_expired_mails(current_time)
+    return wrap_call(mail_model.delete_expired_mails, current_time)
+end
+
+function CMD.get_mail_template(template_id)
+    return wrap_call(mail_model.get_mail_template, template_id)
+end
+
+function CMD.get_valid_mail_templates(current_time)
+    return wrap_call(mail_model.get_valid_mail_templates, current_time)
 end
 
 return CMD

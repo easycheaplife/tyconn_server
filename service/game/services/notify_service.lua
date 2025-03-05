@@ -3,6 +3,7 @@ local logger = require "logger"
 local pb = require "pb"
 local message = require "message"
 local gate_client = require "gate_client"
+local session_service = require "services.session_service"
 
 local M = {}
 
@@ -54,6 +55,30 @@ function M.notify_equipment_level_upgraded(user_id, new_level)
     end
     
     return ok
+end
+
+-- 推送新邮件通知
+function M.push_new_mail(user_id, mail)
+    -- 获取用户网关
+    local gate = session_service.get_user_gate(user_id)
+    if not gate then
+        return
+    end
+    
+    -- 构造推送消息
+    local notify = {
+        type = "new_mail",
+        mail = {
+            id = mail.id,
+            title = mail.title,
+            mail_type = mail.mail_type,
+            status = mail.status,
+            has_items = #mail.items > 0
+        }
+    }
+    
+    -- 发送到网关
+    cluster.send(gate, ".gate", "push_message", user_id, "NOTIFY_NEW_MAIL", notify)
 end
 
 return M 

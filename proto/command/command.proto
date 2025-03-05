@@ -247,3 +247,54 @@ message G2CEquipmentExpiredPush {
 message G2CEquipmentLevelUpgradedPush {
     int32 new_level = 1;  // 新等级
 }
+
+// -------------------- 邮件系统 --------------------
+
+// 获取邮件列表请求 {{Req:501}}
+message C2GMailListRequest {
+    string token = 1;  // JWT令牌
+}
+
+// 获取邮件列表响应 {{Res:502}}
+message G2CMailListResponse {
+    repeated common.MailInfo mails = 1;  // 邮件列表
+}
+
+// 读取邮件请求 {{Req:503}}
+message C2GReadMailRequest {
+    string token = 1;  // JWT令牌
+    int64 mail_id = 2;  // 邮件ID
+}
+
+// 读取邮件响应 {{Res:504}}
+message G2CReadMailResponse {
+    int64 mail_id = 1;  // 邮件ID
+}
+
+// 领取邮件附件请求 {{Req:505}}
+message C2GClaimMailItemsRequest {
+    string token = 1;  // JWT令牌
+    int64 mail_id = 2;  // 邮件ID
+}
+
+// 领取邮件附件响应 {{Res:506}}
+message G2CClaimMailItemsResponse {
+    int64 mail_id = 1;  // 邮件ID
+    repeated common.ItemInfo items = 2;  // 获得的物品
+}
+
+// 删除邮件请求 {{Req:507}}
+message C2GDeleteMailRequest {
+    string token = 1;  // JWT令牌
+    int64 mail_id = 2;  // 邮件ID
+}
+
+// 删除邮件响应 {{Res:508}}
+message G2CDeleteMailResponse {
+    int64 mail_id = 2;  // 邮件ID
+}
+
+// 新邮件推送 {{Push:551}}
+message G2CNewMailPush {
+    common.MailInfo mail = 1;  // 新邮件信息
+}

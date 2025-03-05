@@ -416,4 +416,40 @@ function M.clear_equip_cache(user_id)
     return true
 end
 
+-- 获取用户邮件列表
+function M.get_user_mails(user_id)
+    local key = make_key(PREFIX.user_mails, user_id)
+    local data = redis.get(key)
+    if data then
+        local ok, mails = pcall(cjson.decode, data)
+        if ok then
+            return mails
+        end
+        logger.error("Failed to decode mails data: %s", data)
+    end
+    return nil
+end
+
+-- 设置用户邮件列表
+function M.set_user_mails(user_id, mails)
+    local key = make_key(PREFIX.user_mails, user_id)
+    local ok, data = pcall(cjson.encode, mails)
+    if not ok then
+        logger.error("Failed to encode mails data: %s", data)
+        return false
+    end
+    
+    ok = redis.set(key, data)
+    if ok then
+        redis.expire(key, EXPIRE.user_mails)
+    end
+    return ok
+end
+
+-- 删除用户邮件缓存
+function M.remove_user_mails(user_id)
+    local key = make_key(PREFIX.user_mails, user_id)
+    return redis.del(key) > 0
+end
+
 return M

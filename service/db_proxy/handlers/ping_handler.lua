@@ -5,7 +5,6 @@ local db_util = require "db_proxy.utils.db_util"
 local M = {}
 
 function M.ping(node_name)
-    logger.debug("Received ping request from node: %s", node_name)
     -- 使用简单的 SELECT 1 查询来测试连接
     local ok, err = db_util.query("SELECT 1")
     if not ok then
@@ -13,7 +12,6 @@ function M.ping(node_name)
         return false
     end
     
-    logger.info("ping success from %s", node_name or "unknown")
     return true
 end
 

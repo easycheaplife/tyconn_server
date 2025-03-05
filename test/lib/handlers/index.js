@@ -17,6 +17,12 @@ const getRandomEquip = require('./equipment/get_random_equip');
 const getEquipLevelInfo = require('./equipment/get_equip_level_info');
 const upgradeEquipLevel = require('./equipment/upgrade_equip_level');
 
+// 导入邮件处理器
+const getMailList = require('./mail/get_mail_list');
+const readMail = require('./mail/read_mail');
+const claimMailItems = require('./mail/claim_mail_items');
+const deleteMail = require('./mail/delete_mail');
+
 module.exports = {
     // 背包相关
     getBagInfo,
@@ -47,5 +53,11 @@ module.exports = {
     unequipItem,
     getRandomEquip,
     getEquipLevelInfo,
-    upgradeEquipLevel
+    upgradeEquipLevel,
+
+    // 邮件处理器
+    getMailList,
+    readMail,
+    claimMailItems,
+    deleteMail
 }; 

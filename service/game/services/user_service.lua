@@ -8,6 +8,7 @@ local enum = require "game.define.enum"
 local property_service = require "services.property_service"
 local item_service = require "services.item_service"
 local card_service = require "services.card_service"
+local mail_service = require "services.mail_service"
 
 local M = {}
 local default_unit_id = 10001
@@ -59,6 +60,9 @@ function M.create_user(username, password, nickname, avatar)
     M.cache_user_by_id(created_user)
     M.cache_user_by_account(created_user)
     
+    -- 发送欢迎邮件
+    mail_service.send_welcome_mail(created_user.user_id, username)
+    
     return created_user
 end
 
@@ -90,6 +94,8 @@ function M.get_or_create_user(account, username)
     M.cache_user_by_account(created_user)
 
     logger.info("New user created: %s (ID: %d)", account, created_user.user_id)
+    -- 发送欢迎邮件
+    mail_service.send_welcome_mail(created_user.user_id, username)
     return created_user, nil, true
 end
 

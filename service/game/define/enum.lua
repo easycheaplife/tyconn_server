@@ -1,5 +1,5 @@
 -- 从proto/common/enum.proto自动生成的枚举定义
--- 生成时间: 2025-02-28 04:00:41
+-- 生成时间: 2025-03-05 02:46:20
 
 local M = {}
 
@@ -303,6 +303,23 @@ M.AuctionState = {
     AUCTION_STATE_ONGOING = 1,    -- 拍卖中
     AUCTION_STATE_COMPLETED = 2,    -- 已成交
     AUCTION_STATE_CANCELLED = 3,    -- 已取消
+}
+
+-- 邮件类型
+M.MailType = {
+    MAIL_TYPE_NONE = 0,
+    MAIL_TYPE_SYSTEM = 1,    -- 系统邮件
+    MAIL_TYPE_PERSONAL = 2,    -- 个人邮件
+}
+
+-- 邮件状态
+M.MailStatus = {
+    MAIL_STATUS_NONE = 0,
+    MAIL_STATUS_UNREAD = 1,    -- 未读
+    MAIL_STATUS_READ = 2,    -- 已读
+    MAIL_STATUS_CLAIMED = 3,    -- 已领取
+    MAIL_STATUS_DELETED = 4,    -- 已删除
+    MAIL_STATUS_EXPIRED = 5,    -- 已过期
 }
 
 return M

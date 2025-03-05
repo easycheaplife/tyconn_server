@@ -387,4 +387,175 @@ function M.get_expired_equipment(user_id)
     return result or {}
 end
 
+-- 获取用户邮件列表
+function M.get_user_mails(user_id)
+    if not user_id then
+        logger.error("get_user_mails: user_id is nil")
+        return nil
+    end
+    
+    local ok, result = pcall(call_db, "get_user_mails", user_id)
+    if not ok then
+        logger.error("Failed to get user mails: %s", result)
+        return nil
+    end
+    return result
+end
+
+-- 获取单个邮件
+function M.get_mail(mail_id, user_id)
+    if not mail_id or not user_id then
+        logger.error("get_mail: invalid params")
+        return nil
+    end
+    
+    local ok, result = pcall(call_db, "get_mail", {
+        mail_id = mail_id,
+        user_id = user_id
+    })
+    
+    if not ok then
+        logger.error("Failed to get mail: %s", result)
+        return nil
+    end
+    
+    return result
+end
+
+-- 保存邮件
+function M.save_mail(mail)
+    if not mail or not mail.id or not mail.user_id then
+        logger.error("save_mail: invalid mail data")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "save_mail", mail)
+    if not ok then
+        logger.error("Failed to save mail: %s", result)
+        return false
+    end
+    
+    return result
+end
+
+-- 保存邮件模板
+function M.save_mail_template(template)
+    if not template or not template.id then
+        logger.error("save_mail_template: invalid template data")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "save_mail_template", template)
+    if not ok then
+        logger.error("Failed to save mail template: %s", result)
+        return false
+    end
+    
+    return result
+end
+
+-- 更新邮件状态
+function M.update_mail_status(mail_id, user_id, status, update_time)
+    if not mail_id or not user_id or not status then
+        logger.error("update_mail_status: invalid parameters")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "update_mail_status", {
+        mail_id = mail_id,
+        user_id = user_id,
+        status = status,
+        update_time = update_time or os.time()
+    })
+    
+    if not ok then
+        logger.error("Failed to update mail status: %s", result)
+        return false
+    end
+    
+    return result
+end
+
+-- 批量更新邮件状态
+function M.batch_update_mail_status(user_id, mail_ids, status)
+    if not user_id or not mail_ids or #mail_ids == 0 or not status then
+        logger.error("batch_update_mail_status: invalid parameters")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "batch_update_mail_status", {
+        user_id = user_id,
+        mail_ids = mail_ids,
+        status = status,
+        update_time = os.time()
+    })
+    
+    if not ok then
+        logger.error("Failed to batch update mail status: %s", result)
+        return false
+    end
+    
+    return result
+end
+
+-- 删除邮件
+function M.delete_mails(user_id, mail_ids)
+    if not user_id or not mail_ids or #mail_ids == 0 then
+        logger.error("delete_mails: invalid parameters")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "delete_mails", {
+        user_id = user_id,
+        mail_ids = mail_ids
+    })
+    
+    if not ok then
+        logger.error("Failed to delete mails: %s", result)
+        return false
+    end
+    
+    return result
+end
+
+-- 删除过期邮件
+function M.delete_expired_mails()
+    local ok, result = pcall(call_db, "delete_expired_mails", os.time())
+    if not ok then
+        logger.error("Failed to delete expired mails: %s", result)
+        return false
+    end
+    
+    return result
+end
+
+-- 获取邮件模板
+function M.get_mail_template(template_id)
+    if not template_id then
+        logger.error("get_mail_template: template_id is nil")
+        return nil
+    end
+    
+    local ok, result = pcall(call_db, "get_mail_template", template_id)
+    if not ok then
+        logger.error("Failed to get mail template: %s", result)
+        return nil
+    end
+    
+    return result
+end
+
+-- 获取有效的邮件模板列表
+function M.get_valid_mail_templates()
+    local current_time = os.time()
+    
+    local ok, result = pcall(call_db, "get_valid_mail_templates", current_time)
+    if not ok then
+        logger.error("Failed to get valid mail templates: %s", result)
+        return {}
+    end
+    
+    return result or {}
+end
+
 return M 

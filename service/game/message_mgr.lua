@@ -59,7 +59,14 @@ function M.init()
         require "game.handlers.equip_level_info_handler")
     M.register(pb.enum("common.MessageID", "C2G_EQUIP_LEVEL_UPGRADE_REQUEST"), 
         require "game.handlers.equip_level_upgrade_handler")
-
+    M.register(pb.enum("common.MessageID", "C2G_MAIL_LIST_REQUEST"), 
+        require "game.handlers.mail.get_mail_list_handler")
+    M.register(pb.enum("common.MessageID", "C2G_READ_MAIL_REQUEST"), 
+        require "game.handlers.mail.read_mail_handler")
+    M.register(pb.enum("common.MessageID", "C2G_CLAIM_MAIL_ITEMS_REQUEST"), 
+        require "game.handlers.mail.claim_mail_items_handler")
+    M.register(pb.enum("common.MessageID", "C2G_DELETE_MAIL_REQUEST"), 
+        require "game.handlers.mail.delete_mail_handler")
     logger.info("Message handlers initialized")
     return true
 end

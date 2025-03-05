@@ -18,7 +18,11 @@
     "test:unequip_item": "node test/run_test.js -t unequip_item",
     "test:equip_random": "node test/run_test.js -t equip_random",
     "test:equip_level_info": "node test/run_test.js -t equip_level_info",
-    "test:upgrade_equip_level": "node test/run_test.js -t upgrade_equip_level"
+    "test:upgrade_equip_level": "node test/run_test.js -t upgrade_equip_level",
+    "test:get_mail_list": "node test/run_test.js -t get_mail_list",
+    "test:read_mail": "node test/run_test.js -t read_mail",
+    "test:claim_mail_items": "node test/run_test.js -t claim_mail_items",
+    "test:delete_mail": "node test/run_test.js -t delete_mail"
   },
   "dependencies": {
     "jsonwebtoken": "^9.0.2",

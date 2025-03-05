@@ -181,4 +181,39 @@ CREATE TABLE IF NOT EXISTS equip_enhance_logs (
     time BIGINT NOT NULL,            -- 强化时间
     INDEX idx_equip (equip_id),
     INDEX idx_user_time (user_id, time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 邮件表
+CREATE TABLE IF NOT EXISTS mails (
+    id BIGINT PRIMARY KEY,           -- 邮件ID
+    user_id BIGINT NOT NULL,         -- 用户ID
+    title VARCHAR(128) NOT NULL,     -- 标题
+    content TEXT NOT NULL,           -- 内容
+    items TEXT,                      -- 附件物品(JSON)
+    mail_type INT NOT NULL,          -- 邮件类型
+    status INT NOT NULL,             -- 邮件状态
+    create_time BIGINT NOT NULL,     -- 创建时间
+    update_time BIGINT NOT NULL,     -- 更新时间
+    expire_time BIGINT NOT NULL,     -- 过期时间
+    template_id BIGINT,              -- 模板ID
+    sender_id BIGINT,                -- 发送者ID
+    sender_name VARCHAR(32),         -- 发送者名称
+    INDEX idx_user_id (user_id),     -- 用户ID索引
+    INDEX idx_expire_time (expire_time) -- 过期时间索引
+);
+
+-- 邮件模板表
+CREATE TABLE IF NOT EXISTS mail_templates (
+    id VARCHAR(36) PRIMARY KEY,           -- 模板ID
+    title VARCHAR(128) NOT NULL,          -- 邮件标题
+    content TEXT NOT NULL,                -- 邮件内容
+    items TEXT,                           -- 附件物品列表(JSON格式)
+    mail_type TINYINT NOT NULL,          -- 邮件类型
+    create_time BIGINT NOT NULL,         -- 创建时间
+    expire_time BIGINT NOT NULL,         -- 过期时间
+    condition_data TEXT,                  -- 发送条件(JSON格式)
+    sent_users TEXT,                     -- 已发送用户列表(JSON格式)
+    
+    INDEX idx_create_time (create_time),  -- 用于查询时间段内的模板
+    INDEX idx_expire (expire_time)        -- 用于清理过期模板
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4; 
