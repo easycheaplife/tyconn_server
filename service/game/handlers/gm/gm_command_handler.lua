@@ -4,8 +4,6 @@ local pb = require "pb"
 local gm_service = require "services.gm_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message = require "message"
-local utils = require "utils"
-local user_service = require "services.user_service"
 
 local M = {}
 

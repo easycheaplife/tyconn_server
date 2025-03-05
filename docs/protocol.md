@@ -687,6 +687,8 @@ message G2CDecomposeItemResponse {
 | del_item | item_id, count | 删除物品 | del_item 1001 50 |
 | set_level | level | 设置等级 | set_level 99 |
 | clear_bag | bag_type | 清空背包 | clear_bag 1 |
+| send_mail | type user_id title content [item_id count]... | 发送邮件 | send_mail 1 1001 "标题" "内容" 1001 100 2001 5 |
+| send_system_mail | title content [item_id count]... | 发送系统邮件 | send_system_mail "标题" "内容" 1001 100 |
 
 **错误码说明:**
 - ERROR_CODE_PERMISSION_DENIED: 无权限

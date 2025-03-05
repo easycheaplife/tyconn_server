@@ -2,6 +2,7 @@ local skynet = require "skynet"
 local logger = require "logger"
 local item_service = require "services.item_service"
 local user_service = require "services.user_service"
+local mail_service = require "services.mail_service"
 local utils = require "utils"
 local enum = require "game.define.enum"
 
@@ -129,6 +130,92 @@ local GM_HANDLERS = {
         end
         
         return user_service.ban_user(target_id, duration)
+    end,
+
+    -- 发送个人邮件
+    send_mail = function(user_id, params)
+        -- 参数检查: receive_user_id title content [item_id count]...
+        if #params < 3 then
+            return false, "Invalid parameters. Usage: send_mail receive_user_id title content [item_id count]..."
+        end
+        logger.info("send_mail - params: %s", utils.table_to_string(params))
+        local receive_user_id = tonumber(params[1])
+        local title = params[2]
+        local content = params[3]
+        
+        -- 解析附件物品
+        local items = {}
+        for i = 4, #params, 2 do
+            if i + 1 <= #params then
+                table.insert(items, {
+                    item_id = tonumber(params[i]),
+                    count = tonumber(params[i + 1])
+                })
+            end
+        end
+        
+        -- 获取发送者信息
+        local sender = user_service.get_user_by_id(user_id)
+        if not sender then
+            return false, "Failed to get sender info"
+        end
+        
+        -- 发送邮件
+        local ok = mail_service.send_mail(
+            receive_user_id,
+            title,
+            content,
+            items,
+            nil,  -- 使用默认过期时间
+            enum.MailType.MAIL_TYPE_PERSONAL,
+            nil,  -- template_id
+            user_id,  -- sender_id
+            sender.nickname  -- sender_name
+        )
+        
+        if not ok then
+            return false, "Failed to send mail"
+        end
+        
+        return true, string.format("Mail sent to user %d", receive_user_id)
+    end,
+
+    -- 发送系统邮件
+    send_system_mail = function(user_id, params)
+        -- 参数检查: title content [item_id count]...
+        if #params < 2 then
+            return false, "Invalid parameters. Usage: send_system_mail title content [item_id count]..."
+        end
+        
+        local title = params[1]
+        local content = params[2]
+        
+        -- 解析附件物品
+        local items = {}
+        for i = 3, #params, 2 do
+            if i + 1 <= #params then
+                table.insert(items, {
+                    item_id = tonumber(params[i]),
+                    count = tonumber(params[i + 1])
+                })
+            end
+        end
+        
+        -- 发送系统邮件
+        local ok = mail_service.send_system_mail(
+            title,
+            content,
+            items,
+            nil,  -- expire_time
+            0,    -- sender_id (0 表示系统)
+            "系统"  -- sender_name
+        )
+        
+        if not ok then
+            return false, "Failed to send system mail"
+        end
+        
+        return true, "System mail sent successfully"
     end
 }
 
