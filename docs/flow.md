@@ -427,3 +427,184 @@ sequenceDiagram
 10. 记录操作日志
 11. 游戏服务器返回执行结果
 12. 网关将响应发送给客户端
+
+## 7. 邮件系统流程
+
+### 7.1 获取邮件列表流程
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 获取邮件列表请求(token)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>GM: 5. 调用mail_service获取邮件列表
+    GM->>DB: 6. 查询用户邮件
+    DB-->>GM: 7. 返回邮件数据
+    GM->>GM: 8. 过滤已删除邮件
+    GM-->>G: 9. 返回邮件列表
+    G-->>C: 10. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送获取邮件列表请求
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器调用mail_service获取邮件列表
+6. 查询用户邮件数据（优先从缓存获取）
+7. DB代理返回邮件数据
+8. 过滤掉已标记为删除状态的邮件
+9. 游戏服务器处理并返回数据
+10. 网关将响应发送给客户端
+
+### 7.2 读取邮件流程
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 读取邮件请求(token, mail_id)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>GM: 5. 调用mail_service读取邮件
+    GM->>DB: 6. 更新邮件状态为已读
+    DB-->>GM: 7. 更新成功
+    GM->>GM: 8. 更新缓存
+    GM-->>G: 9. 返回读取结果
+    G-->>C: 10. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送读取邮件请求，包含邮件ID
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器调用mail_service读取邮件
+6. 更新邮件状态为已读(2)
+7. 数据库更新成功
+8. 更新邮件缓存
+9. 游戏服务器返回读取结果
+10. 网关将响应发送给客户端
+
+### 7.3 领取邮件附件流程
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 领取附件请求(token, mail_id)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>GM: 5. 调用mail_service领取邮件附件
+    GM->>DB: 6. 获取邮件信息
+    DB-->>GM: 7. 返回邮件数据
+    GM->>GM: 8. 验证邮件状态
+    GM->>GM: 9. 调用item_service添加物品到背包
+    GM->>DB: 10. 添加物品到用户背包
+    DB-->>GM: 11. 添加成功
+    GM->>DB: 12. 更新邮件状态为已领取
+    DB-->>GM: 13. 更新成功
+    GM->>GM: 14. 清除邮件缓存
+    GM-->>G: 15. 返回物品列表
+    G-->>C: 16. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送领取邮件附件请求，包含邮件ID
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器调用mail_service领取邮件附件
+6. 查询邮件信息
+7. DB代理返回邮件数据
+8. 验证邮件状态（确保附件未被领取）
+9. 调用item_service添加物品到用户背包
+10. 更新背包数据
+11. 物品添加成功
+12. 更新邮件状态为已领取(3)
+13. 邮件状态更新成功
+14. 清除邮件缓存以确保状态一致性
+15. 游戏服务器返回领取的物品列表
+16. 网关将响应发送给客户端
+
+### 7.4 删除邮件流程
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 删除邮件请求(token, mail_id)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>GM: 5. 调用mail_service删除邮件
+    GM->>DB: 6. 更新邮件状态为已删除
+    DB-->>GM: 7. 更新成功
+    GM->>GM: 8. 更新缓存
+    GM-->>G: 9. 返回删除结果
+    G-->>C: 10. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送删除邮件请求，包含邮件ID
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器调用mail_service删除邮件
+6. 更新邮件状态为已删除(4)，不实际删除数据
+7. 数据库更新成功
+8. 更新邮件缓存
+9. 游戏服务器返回删除结果
+10. 网关将响应发送给客户端
+
+### 7.5 系统邮件发送流程
+
+```mermaid
+sequenceDiagram
+    participant Admin as 管理员/系统
+    participant GM as Game Server
+    participant DB as DB Proxy
+    participant C as Client
+    
+    Admin->>GM: 1. 触发邮件发送
+    GM->>GM: 2. 调用mail_service发送系统邮件
+    GM->>GM: 3. 创建邮件模板
+    GM->>DB: 4. 保存邮件模板
+    DB-->>GM: 5. 保存成功
+    GM->>GM: 6. 获取目标用户列表
+    GM->>GM: 7. 为每个用户创建邮件实例
+    GM->>DB: 8. 批量保存邮件
+    DB-->>GM: 9. 保存成功
+    GM->>GM: 10. 推送新邮件通知给在线用户
+    GM-->>C: 11. 新邮件通知
+```
+
+**流程说明:**
+1. 管理员或系统触发邮件发送（活动开始、奖励发放等）
+2. 游戏服务器调用mail_service发送系统邮件
+3. 创建邮件模板（标题、内容、附件等）
+4. 保存邮件模板到数据库
+5. 模板保存成功
+6. 获取目标用户列表（全服或特定用户群）
+7. 为每个目标用户创建邮件实例
+8. 批量保存邮件数据到数据库
+9. 邮件保存成功
+10. 向在线用户推送新邮件通知
+11. 客户端收到新邮件通知

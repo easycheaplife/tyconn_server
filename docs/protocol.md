@@ -693,6 +693,108 @@ message G2CDecomposeItemResponse {
 - ERROR_CODE_GM_COMMAND_FAILED: GM指令执行失败
 - ERROR_CODE_INVALID_PARAM: 无效参数
 
+### 3.7 邮件系统接口    
+
+#### 3.7.1 获取用户邮件列表
+**连接类型:** `WebSocket`
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf
+message C2GGetMailListRequest {
+    string token = 1;       // JWT令牌
+}
+```
+
+**响应格式:**
+```protobuf
+message G2CGetMailListResponse {
+    repeated common.MailInfo mails = 1;  // 邮件列表
+}
+``` 
+
+**错误码说明:**
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+
+
+#### 3.7.2 领取邮件附件
+**连接类型:** `WebSocket`
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf 
+message C2GGetMailListRequest {
+    string token = 1;       // JWT令牌
+    int64 mail_id = 2;      // 邮件ID
+}
+``` 
+
+**响应格式:**
+```protobuf
+message G2CGetMailListResponse {
+    repeated common.MailInfo mails = 1;  // 邮件列表
+}
+``` 
+
+**错误码说明:**
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+- ERROR_CODE_MAIL_NOT_FOUND: 邮件不存在
+
+#### 3.7.3 删除邮件
+**连接类型:** `WebSocket`
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf 
+message C2GDeleteMailRequest {
+    string token = 1;       // JWT令牌
+    int64 mail_id = 2;      // 邮件ID
+}
+``` 
+
+**响应格式:**
+```protobuf
+message G2CDeleteMailResponse {
+    bool success = 1;       // 是否成功
+}
+``` 
+
+**错误码说明:**
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+- ERROR_CODE_MAIL_NOT_FOUND: 邮件不存在
+
+#### 3.7.4 读取邮件
+**连接类型:** `WebSocket`
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf 
+message C2GReadMailRequest {
+    string token = 1;       // JWT令牌
+    int64 mail_id = 2;      // 邮件ID
+}
+``` 
+
+**响应格式:**
+```protobuf
+message G2CReadMailResponse {
+    bool success = 1;       // 是否成功
+}
+``` 
+
+**错误码说明:**
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+- ERROR_CODE_MAIL_NOT_FOUND: 邮件不存在
+
+
 ## 4. 系统配置
 
 ### 4.1 服务端口
