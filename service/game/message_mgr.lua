@@ -15,6 +15,66 @@ function M.register(msg_id, handler)
     handlers[msg_id] = handler
 end
 
+function M.register_user_handler()
+    M.register(pb.enum("common.MessageID", "C2G_USER_INFO_REQUEST"), 
+        require "game.handlers.user.user_info_handler")
+    M.register(pb.enum("common.MessageID", "C2G_HEARTBEAT_REQUEST"), 
+        require "game.handlers.user.heartbeat_handler")
+end
+
+function M.register_user_cards_handler()
+    M.register(pb.enum("common.MessageID", "C2G_USER_CARDS_REQUEST"), 
+        require "game.handlers.card.user_cards_handler")
+end
+
+function M.register_gm_command_handler()
+    M.register(pb.enum("common.MessageID", "C2G_GM_COMMAND_REQUEST"),
+        require "game.handlers.gm.gm_command_handler")
+end
+
+function M.register_bag_handler()
+    M.register(pb.enum("common.MessageID", "C2G_BAG_INFO_REQUEST"),
+        require "game.handlers.bag.bag_info_handler")
+    M.register(pb.enum("common.MessageID", "C2G_USE_ITEM_REQUEST"),
+        require "game.handlers.bag.use_item_handler")
+    M.register(pb.enum("common.MessageID", "C2G_EXPAND_BAG_REQUEST"),
+        require "game.handlers.bag.expand_bag_handler")
+    M.register(pb.enum("common.MessageID", "C2G_SORT_BAG_REQUEST"),
+        require "game.handlers.bag.sort_bag_handler")
+    M.register(pb.enum("common.MessageID", "C2G_MOVE_ITEM_REQUEST"),
+        require "game.handlers.bag.move_item_handler")
+    M.register(pb.enum("common.MessageID", "C2G_COMPOSE_ITEM_REQUEST"), 
+        require "game.handlers.bag.compose_item_handler")
+    M.register(pb.enum("common.MessageID", "C2G_DECOMPOSE_ITEM_REQUEST"),
+        require "game.handlers.bag.decompose_item_handler")  
+end
+
+function M.register_mail_handler()
+    M.register(pb.enum("common.MessageID", "C2G_MAIL_LIST_REQUEST"), 
+        require "game.handlers.mail.get_mail_list_handler")
+    M.register(pb.enum("common.MessageID", "C2G_READ_MAIL_REQUEST"), 
+        require "game.handlers.mail.read_mail_handler")
+    M.register(pb.enum("common.MessageID", "C2G_CLAIM_MAIL_ITEMS_REQUEST"), 
+        require "game.handlers.mail.claim_mail_items_handler")
+    M.register(pb.enum("common.MessageID", "C2G_DELETE_MAIL_REQUEST"), 
+        require "game.handlers.mail.delete_mail_handler")
+end
+
+function M.register_equip_handler()
+    M.register(pb.enum("common.MessageID", "C2G_EQUIP_INFO_REQUEST"), 
+        require "game.handlers.equip.equip_info_handler")
+    M.register(pb.enum("common.MessageID", "C2G_EQUIP_ITEM_REQUEST"), 
+        require "game.handlers.equip.equip_item_handler")
+    M.register(pb.enum("common.MessageID", "C2G_UNEQUIP_ITEM_REQUEST"), 
+        require "game.handlers.equip.unequip_item_handler")
+    M.register(pb.enum("common.MessageID", "C2G_EQUIP_RANDOM_REQUEST"), 
+        require "game.handlers.equip.equip_random_handler")
+    M.register(pb.enum("common.MessageID", "C2G_EQUIP_LEVEL_INFO_REQUEST"), 
+        require "game.handlers.equip.equip_level_info_handler")
+    M.register(pb.enum("common.MessageID", "C2G_EQUIP_LEVEL_UPGRADE_REQUEST"), 
+        require "game.handlers.equip.equip_level_upgrade_handler")  
+end
+
 -- 初始化消息处理器
 function M.init()
     -- 先加载 proto 文件
@@ -25,48 +85,12 @@ function M.init()
     logger.info("Proto files loaded")
 
     -- 注册处理器
-    M.register(pb.enum("common.MessageID", "C2G_USER_INFO_REQUEST"), 
-        require "game.handlers.user_info_handler")
-    M.register(pb.enum("common.MessageID", "C2G_HEARTBEAT_REQUEST"), 
-        require "game.handlers.heartbeat_handler")
-    M.register(pb.enum("common.MessageID", "C2G_USER_CARDS_REQUEST"), 
-        require "game.handlers.user_cards_handler")
-    M.register(pb.enum("common.MessageID", "C2G_BAG_INFO_REQUEST"),
-        require "game.handlers.bag_info_handler")
-    M.register(pb.enum("common.MessageID", "C2G_USE_ITEM_REQUEST"),
-        require "game.handlers.use_item_handler")
-    M.register(pb.enum("common.MessageID", "C2G_EXPAND_BAG_REQUEST"),
-        require "game.handlers.expand_bag_handler")
-    M.register(pb.enum("common.MessageID", "C2G_SORT_BAG_REQUEST"),
-        require "game.handlers.sort_bag_handler")
-    M.register(pb.enum("common.MessageID", "C2G_GM_COMMAND_REQUEST"),
-        require "game.handlers.gm_command_handler")
-    M.register(pb.enum("common.MessageID", "C2G_MOVE_ITEM_REQUEST"),
-        require "game.handlers.move_item_handler")
-    M.register(pb.enum("common.MessageID", "C2G_COMPOSE_ITEM_REQUEST"), 
-        require "game.handlers.compose_item_handler")
-    M.register(pb.enum("common.MessageID", "C2G_DECOMPOSE_ITEM_REQUEST"),
-        require "game.handlers.decompose_item_handler")
-    M.register(pb.enum("common.MessageID", "C2G_EQUIP_INFO_REQUEST"), 
-        require "game.handlers.equip_info_handler")
-    M.register(pb.enum("common.MessageID", "C2G_EQUIP_ITEM_REQUEST"), 
-        require "game.handlers.equip_item_handler")
-    M.register(pb.enum("common.MessageID", "C2G_UNEQUIP_ITEM_REQUEST"), 
-        require "game.handlers.unequip_item_handler")
-    M.register(pb.enum("common.MessageID", "C2G_EQUIP_RANDOM_REQUEST"), 
-        require "game.handlers.equip_random_handler")
-    M.register(pb.enum("common.MessageID", "C2G_EQUIP_LEVEL_INFO_REQUEST"), 
-        require "game.handlers.equip_level_info_handler")
-    M.register(pb.enum("common.MessageID", "C2G_EQUIP_LEVEL_UPGRADE_REQUEST"), 
-        require "game.handlers.equip_level_upgrade_handler")
-    M.register(pb.enum("common.MessageID", "C2G_MAIL_LIST_REQUEST"), 
-        require "game.handlers.mail.get_mail_list_handler")
-    M.register(pb.enum("common.MessageID", "C2G_READ_MAIL_REQUEST"), 
-        require "game.handlers.mail.read_mail_handler")
-    M.register(pb.enum("common.MessageID", "C2G_CLAIM_MAIL_ITEMS_REQUEST"), 
-        require "game.handlers.mail.claim_mail_items_handler")
-    M.register(pb.enum("common.MessageID", "C2G_DELETE_MAIL_REQUEST"), 
-        require "game.handlers.mail.delete_mail_handler")
+    M.register_gm_command_handler()
+    M.register_user_handler()
+    M.register_user_cards_handler()
+    M.register_bag_handler()
+    M.register_mail_handler()
+    M.register_equip_handler()
     logger.info("Message handlers initialized")
     return true
 end
