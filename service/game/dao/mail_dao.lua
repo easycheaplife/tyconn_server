@@ -99,13 +99,42 @@ end
 
 -- 更新邮件状态
 function M.update_mail_status(mail_id, user_id, status)
-    local ok = db_client.update_mail_status(mail_id, user_id, status, os.time())
-    if not ok then
-        return false, "Failed to update mail status"
+    if not mail_id or not user_id or not status then
+        logger.error("update_mail_status: invalid params - mail_id: %s, user_id: %s, status: %s", 
+            tostring(mail_id), tostring(user_id), tostring(status))
+        return false
     end
-    -- 更新缓存
-    cache.remove_user_mails(user_id)
-    return ok
+    
+    -- 确保 mail_id 是字符串格式
+    local mail_id_str = tostring(mail_id)
+    logger.info("Updating mail status - mail_id: %s, user_id: %d, status: %d", 
+        mail_id_str, user_id, status)
+    
+    -- 1. 更新数据库
+    local ok = db_client.update_mail_status(mail_id_str, user_id, status)
+    if not ok then
+        logger.error("Failed to update mail status in database - mail_id: %s, user_id: %d", 
+            mail_id_str, user_id)
+        return false
+    end
+    
+    -- 2. 更新缓存
+    local mails = cache.get_user_mails(user_id)
+    if mails then
+        for _, mail in ipairs(mails) do
+            -- 确保都是字符串比较
+            if tostring(mail.id) == mail_id_str then
+                mail.status = status
+                logger.info("Updated mail status in cache - mail_id: %s, status: %d", mail_id_str, status)
+                break
+            end
+        end
+        -- 刷新缓存
+        cache.set_user_mails(user_id, mails)
+        logger.info("Cache updated for user: %d", user_id)
+    end
+    
+    return true
 end
 
 -- 批量更新邮件状态

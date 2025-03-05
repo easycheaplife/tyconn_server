@@ -433,6 +433,11 @@ end
 -- 设置用户邮件列表
 function M.set_user_mails(user_id, mails)
     local key = make_key(PREFIX.user_mails, user_id)
+    for _, mail in ipairs(mails) do
+        if mail.id then
+            mail.id = tostring(mail.id)
+        end
+    end
     local ok, data = pcall(cjson.encode, mails)
     if not ok then
         logger.error("Failed to encode mails data: %s", data)
