@@ -182,4 +182,12 @@ function M.delete_expired_mails()
     return true
 end
 
+-- 清除用户邮件缓存
+function M.clear_user_mails_cache(user_id)
+    if not user_id then
+        return false
+    end
+    return cache.remove_user_mails(user_id)
+end
+
 return M 

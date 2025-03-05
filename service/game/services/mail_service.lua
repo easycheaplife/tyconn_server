@@ -14,7 +14,17 @@ local mail_cache = {}
 
 -- 获取用户邮件列表
 function M.get_user_mails(user_id)
-    return mail_dao.get_user_mails(user_id)
+    local mails = mail_dao.get_user_mails(user_id)
+    
+    -- 过滤掉已删除的邮件
+    local filtered_mails = {}
+    for _, mail in ipairs(mails) do
+        if mail.status ~= enum.MailStatus.MAIL_STATUS_DELETED then
+            table.insert(filtered_mails, mail)
+        end
+    end
+    
+    return filtered_mails
 end
 
 -- 发送系统邮件
@@ -179,7 +189,7 @@ function M.claim_mail_items(user_id, mail_id)
         enum.MailStatus.MAIL_STATUS_CLAIMED
     )
     logger.info("claim_mail_items: update status result: %s", tostring(ok))
-    
+
     if not ok then
         logger.error("Failed to update mail status to claimed - user_id: %d, mail_id: %s",
             user_id, mail_id)
@@ -187,7 +197,10 @@ function M.claim_mail_items(user_id, mail_id)
         logger.warn("Failed to update mail status, but items were added successfully")
         return true, mail.items or {}
     end
-    
+
+    -- 强制清除缓存，确保下次获取时能获取到最新状态
+    mail_dao.clear_user_mails_cache(user_id)
+
     logger.info("claim_mail_items: mail.items: %s", utils.table_to_string(mail.items))
     
     -- 返回附件物品列表
