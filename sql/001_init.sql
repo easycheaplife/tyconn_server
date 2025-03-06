@@ -204,7 +204,7 @@ CREATE TABLE IF NOT EXISTS mails (
 
 -- 邮件模板表
 CREATE TABLE IF NOT EXISTS mail_templates (
-    id VARCHAR(36) PRIMARY KEY,           -- 模板ID
+    id BIGINT PRIMARY KEY,                -- 模板ID
     title VARCHAR(128) NOT NULL,          -- 邮件标题
     content TEXT NOT NULL,                -- 邮件内容
     items TEXT,                           -- 附件物品列表(JSON格式)

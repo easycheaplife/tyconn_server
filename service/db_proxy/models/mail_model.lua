@@ -93,9 +93,9 @@ function M.save_mail(mail)
         create_time = mail.create_time,
         update_time = mail.update_time or mail.create_time,
         expire_time = mail.expire_time,
-        template_id = mail.template_id and string.format("'%s'", mail.template_id) or "NULL",
-        sender_id = mail.sender_id and tostring(mail.sender_id) or "NULL",
-        sender_name = mail.sender_name and string.format("'%s'", mail.sender_name) or "NULL"
+        template_id = mail.template_id or 0,
+        sender_id = mail.sender_id or 0,
+        sender_name = mail.sender_name or ""
     })
     
     if not ok then

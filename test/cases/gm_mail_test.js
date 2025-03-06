@@ -1,7 +1,6 @@
 const BaseTest = require('../lib/base_test');
 const assert = require('assert');
 
-const send_mail_user_id = '1'
 const receive_mail_user_id = '2'
 class GmMailTest extends BaseTest {
     constructor() {
@@ -14,18 +13,18 @@ class GmMailTest extends BaseTest {
             console.log('\nTesting send personal mail...');
             const personalMailResponse = await this.client.gmCommand(
                 'send_mail',
-                [send_mail_user_id, receive_mail_user_id, '个人邮件测试', '这是一封测试邮件', '1001', '1000', '2001', '5']
+                [receive_mail_user_id, '个人邮件测试', '这是一封测试邮件', '1001', '1000', '2001', '5']
             );
             
             assert(personalMailResponse, "No response received for personal mail");
             assert(personalMailResponse.result === "success", 
                 `Failed to send personal mail: ${personalMailResponse.message}`);
-            return
+            return true
             // 2. 测试发送系统邮件
             console.log('\nTesting send system mail...');
             const systemMailResponse = await this.client.gmCommand(
                 'send_system_mail',
-                [send_mail_user_id, '系统邮件测试', '这是一封系统邮件', '1001', '2000', '2001', '10']
+                ['系统邮件测试', '这是一封系统邮件', '1001', '2000', '2001', '10']
             );
             
             assert(systemMailResponse, "No response received for system mail");
@@ -68,7 +67,7 @@ class GmMailTest extends BaseTest {
             // 测试个人邮件参数不足
             const invalidPersonalResponse = await this.client.gmCommand(
                 'send_mail',
-                [send_mail_user_id, receive_mail_user_id, '标题']  // 缺少内容参数
+                [receive_mail_user_id, '标题']  // 缺少内容参数
             );
             assert(invalidPersonalResponse.result !== "success", 
                 "Should fail with insufficient parameters for personal mail");
@@ -76,7 +75,7 @@ class GmMailTest extends BaseTest {
             // 测试系统邮件参数不足
             const invalidSystemResponse = await this.client.gmCommand(
                 'send_system_mail',
-                [send_mail_user_id, '标题']  // 缺少内容参数
+                [receive_mail_user_id, '标题']  // 缺少内容参数
             );
             assert(invalidSystemResponse.result !== "success", 
                 "Should fail with insufficient parameters for system mail");

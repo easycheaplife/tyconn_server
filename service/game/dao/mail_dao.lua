@@ -7,6 +7,24 @@ local mail_model = require "models.mail_model"
 
 local M = {}
 
+-- Helper function to serialize table to JSON-like string
+local function serialize_items(items)
+    if not items or #items == 0 then
+        return "[]"
+    end
+    
+    local parts = {}
+    for _, item in ipairs(items) do
+        table.insert(parts, string.format(
+            '{\"item_id\":%d,\"count\":%d}',
+            tonumber(item.item_id or 0),
+            tonumber(item.count or 0)
+        ))
+    end
+    
+    return string.format("[%s]", table.concat(parts, ","))
+end
+
 -- 从数据库获取用户邮件列表
 function M.get_user_mails(user_id)
     if not user_id then
@@ -70,13 +88,33 @@ function M.save_mail(params)
         return false, err
     end
     
-    -- 3. 写入数据库
-    ok = db_client.save_mail(mail)
+    -- 3. 格式化数据
+    local formatted_items = serialize_items(mail.items)
+    
+    -- 4. 准备数据
+    local data = {
+        id = mail.id,
+        user_id = tonumber(mail.user_id),
+        title = tostring(mail.title),
+        content = tostring(mail.content),
+        items = formatted_items,
+        mail_type = tonumber(mail.mail_type),
+        status = tonumber(mail.status),
+        create_time = tonumber(mail.create_time),
+        update_time = tonumber(mail.update_time),
+        expire_time = tonumber(mail.expire_time),
+        template_id = mail.template_id or 0,
+        sender_id = tonumber(mail.sender_id or 0),
+        sender_name = tostring(mail.sender_name or "")
+    }
+    logger.info("save_mail - data: %s", utils.table_to_string(data))
+    -- 5. 写入数据库
+    ok = db_client.save_mail(data)
     if not ok then
         return false, "Failed to save mail"
     end
     
-    -- 4. 清除缓存
+    -- 6. 清除缓存
     cache.remove_user_mails(mail.user_id)
     
     return true

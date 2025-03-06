@@ -6,6 +6,7 @@ local enum = require "game.define.enum"
 local mail_dao = require "dao.mail_dao"
 local mail_model = require "models.mail_model"
 local utils = require "utils"
+local table = require "table"
 
 local M = {}
 
@@ -28,7 +29,7 @@ function M.get_user_mails(user_id)
 end
 
 -- 发送系统邮件
-function M.send_system_mail(title, content, items, expire_time)
+function M.send_system_mail(params)
     -- 获取所有在线用户
     local online_service = require "services.online_service"
     local online_users = online_service.get_all_online_users()
@@ -36,12 +37,14 @@ function M.send_system_mail(title, content, items, expire_time)
     -- 创建系统邮件模板
     local mail_template = {
         id = snowflake.next_id(snowflake.ID_TYPE.MAIL),
-        title = title,
-        content = content,
-        items = items or {},
+        title = params.title,
+        content = params.content,
+        items = params.items or {},
         mail_type = enum.MailType.MAIL_TYPE_SYSTEM,
         create_time = os.time(),
-        expire_time = expire_time or (os.time() + 7 * 24 * 3600),
+        expire_time = params.expire_time or (os.time() + 7 * 24 * 3600),
+        sender_id = params.sender_id or 0,
+        sender_name = params.sender_name or "系统"
     }
     
     -- 保存邮件模板
@@ -53,7 +56,10 @@ function M.send_system_mail(title, content, items, expire_time)
     
     -- 给每个在线用户发送邮件
     for _, user_id in ipairs(online_users) do
-        M.send_mail(user_id, title, content, utils.deep_copy(items), expire_time, enum.MailType.MAIL_TYPE_SYSTEM, mail_template.id)
+        local mail_params = utils.deep_copy(mail_template)
+        mail_params.user_id = user_id
+        mail_params.template_id = mail_template.id
+        M.send_mail(mail_params)
     end
     
     return true
@@ -65,34 +71,31 @@ function M.send_personal_mail(user_id, title, content, items, expire_time)
 end
 
 -- 基础发送邮件函数
-function M.send_mail(user_id, title, content, items, expire_time, mail_type, template_id)
-    local mail = {
-        id = snowflake.next_id(snowflake.ID_TYPE.MAIL),
-        user_id = user_id,
-        title = title,
-        content = content,
-        items = items or {},
-        mail_type = mail_type or enum.MailType.MAIL_TYPE_PERSONAL,
-        create_time = os.time(),
-        expire_time = expire_time or (os.time() + 7 * 24 * 3600),  -- 默认7天过期
-        status = enum.MailStatus.MAIL_STATUS_UNREAD,
-        template_id = template_id,
-    }
+function M.send_mail(params)
+    -- Validate required parameters
+    if not params.user_id or not params.title or not params.content then
+        logger.error("send_mail: missing required parameters - params: %s", 
+            utils.table_to_string(params))
+        return false, "Missing required parameters"
+    end
+
+    -- Set default values if not provided
+    params.mail_type = params.mail_type or enum.MailType.MAIL_TYPE_SYSTEM
+    params.status = params.status or enum.MailStatus.MAIL_STATUS_UNREAD
+    params.create_time = params.create_time or os.time()
+    params.update_time = params.update_time or params.create_time
+    params.expire_time = params.expire_time or (params.create_time + 7 * 24 * 3600)  -- Default 7 days expiry
+    params.items = params.items or {}
     
-    -- 保存到数据库
-    local ok = db_client.insert("mails", mail)
+    -- Generate mail ID if not provided
+    params.id = params.id or snowflake.next_id(snowflake.ID_TYPE.MAIL)
+    
+    -- Save the mail
+    local ok, err = mail_dao.save_mail(params)
     if not ok then
-        logger.error("Failed to save mail for user %d", user_id)
-        return false
+        logger.error("Failed to send mail: %s", err)
+        return false, err
     end
-    
-    -- 更新缓存
-    if mail_cache[user_id] then
-        table.insert(mail_cache[user_id], mail)
-    end
-    
-    -- 推送新邮件通知
-    skynet.send(".notify", "lua", "push_new_mail", user_id, mail)
     
     return true
 end

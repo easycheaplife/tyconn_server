@@ -159,19 +159,18 @@ local GM_HANDLERS = {
         if not sender then
             return false, "Failed to get sender info"
         end
-        
         -- 发送邮件
-        local ok = mail_service.send_mail(
-            receive_user_id,
-            title,
-            content,
-            items,
-            nil,  -- 使用默认过期时间
-            enum.MailType.MAIL_TYPE_PERSONAL,
-            nil,  -- template_id
-            user_id,  -- sender_id
-            sender.nickname  -- sender_name
-        )
+        local ok = mail_service.send_mail({
+            user_id = receive_user_id,
+            title = title,
+            content = content,
+            items = items,
+            expire_time = nil,  -- 使用默认过期时间
+            mail_type = enum.MailType.MAIL_TYPE_PERSONAL,
+            template_id = nil,  -- template_id
+            sender_id = user_id,  -- sender_id
+            sender_name = sender.username  -- sender_name
+        })
         
         if not ok then
             return false, "Failed to send mail"
@@ -202,14 +201,14 @@ local GM_HANDLERS = {
         end
         
         -- 发送系统邮件
-        local ok = mail_service.send_system_mail(
-            title,
-            content,
-            items,
-            nil,  -- expire_time
-            0,    -- sender_id (0 表示系统)
-            "系统"  -- sender_name
-        )
+        local ok = mail_service.send_system_mail({
+            title = title,
+            content = content,
+            items = items,
+            expire_time = nil,  -- expire_time
+            sender_id = 0,    -- sender_id (0 表示系统)
+            sender_name = "系统"  -- sender_name
+        })
         
         if not ok then
             return false, "Failed to send system mail"

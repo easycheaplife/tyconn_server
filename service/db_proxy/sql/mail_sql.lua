@@ -33,7 +33,7 @@ M.SAVE_MAIL = {
             %s, %d, '%s', '%s',
             '%s', %d, %d,
             %d, %d,
-            %d, %s, %s, %s
+            %d, %d, %d, '%s'
         ) ON DUPLICATE KEY UPDATE
             title = VALUES(title),
             content = VALUES(content),
@@ -62,7 +62,7 @@ M.SAVE_MAIL_TEMPLATE = {
             mail_type, create_time, expire_time,
             condition_data, sent_users
         ) VALUES (
-            '%s', '%s', '%s', '%s',
+            %d, '%s', '%s', '%s',
             %d, %d, %d,
             '%s', '%s'
         )
@@ -119,7 +119,7 @@ M.GET_MAIL_TEMPLATE = {
     sql = [[
         SELECT *
         FROM mail_templates
-        WHERE id = '%s'
+        WHERE id = %d
     ]],
     params = {"template_id"}
 }
