@@ -65,11 +65,6 @@ function M.send_system_mail(params)
     return true
 end
 
--- 发送个人邮件
-function M.send_personal_mail(user_id, title, content, items, expire_time)
-    return M.send_mail(user_id, title, content, items, expire_time, enum.MailType.MAIL_TYPE_PERSONAL)
-end
-
 -- 基础发送邮件函数
 function M.send_mail(params)
     -- Validate required parameters
