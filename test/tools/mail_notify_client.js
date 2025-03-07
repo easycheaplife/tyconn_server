@@ -5,8 +5,11 @@ const ProtoHelper = require('../lib/proto_helper');
 
 class MailNotifyClient {
     constructor() {
+        this.user_id = null;
+        this.token = null;
+        this.protoHelper = null;
+        this.gameClient = null;
         this.loginClient = new LoginClient();
-        this.gameClient = new GameClient();
         this.protoHelper = ProtoHelper.getInstance();
         // 生成随机账号
         this.account = `test_${Math.floor(Math.random() * 10000)}`;
@@ -156,6 +159,58 @@ class MailNotifyClient {
         if (this.gameClient) {
             this.gameClient.close();
         }
+    }
+
+    // 初始化用户信息
+    async init() {
+        const userInfo = await this.getUserInfo();
+        if (userInfo && userInfo.user) {
+            this.user_id = userInfo.user.userId;
+            return true;
+        }
+        return false;
+    }
+
+    // 发送系统邮件
+    async sendSystemMail(title, content, items = []) {
+        const messageId = this.protoHelper.MessageID.C2G_SEND_SYSTEM_MAIL_REQUEST;
+        const response = await this.gameClient.sendGameRequest(
+            messageId,
+            {
+                title,
+                content,
+                items: items.map(item => ({
+                    itemId: item.item_id,
+                    count: item.count
+                }))
+            },
+            'command.G2CSendSystemMailResponse'
+        );
+        return response;
+    }
+
+    // 获取邮件列表
+    async getMailList() {
+        const messageId = this.protoHelper.MessageID.C2G_MAIL_LIST_REQUEST;
+        const response = await this.gameClient.sendGameRequest(
+            messageId,
+            {},
+            'command.G2CMailListResponse'
+        );
+        return response;
+    }
+
+    // 读取邮件
+    async readMail(mailId) {
+        const messageId = this.protoHelper.MessageID.C2G_READ_MAIL_REQUEST;
+        const response = await this.gameClient.sendGameRequest(
+            messageId,
+            {
+                mailId
+            },
+            'command.G2CReadMailResponse'
+        );
+        return response;
     }
 }
 

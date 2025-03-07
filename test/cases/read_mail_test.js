@@ -8,6 +8,17 @@ class ReadMailTest extends BaseTest {
 
     async test() {
         try {
+            let response = await this.client.getUserInfo();
+            // 发送个人邮件 
+            console.log('\nTesting send personal mail...');
+            const personalMailResponse = await this.client.gmCommand(
+                'send_mail',
+                [String(response.user.user_id), '个人邮件测试', '这是一封测试邮件', '1001', '1000', '2001', '5']
+            );
+            assert(personalMailResponse, "No response received for personal mail");
+            assert(personalMailResponse.result === "success", 
+                `Failed to send personal mail: ${personalMailResponse.message}`);   
+                        
             // 先获取邮件列表
             console.log('\nGetting mail list for read test...');
             const listResponse = await this.client.getMailList();
