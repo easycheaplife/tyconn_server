@@ -136,6 +136,7 @@ local GM_HANDLERS = {
     send_mail = function(user_id, params)
         -- 参数检查: receive_user_id title content [item_id count]...
         if #params < 3 then
+            logger.error("send_mail - params: %s", utils.table_to_string(params))
             return false, "Invalid parameters. Usage: send_mail receive_user_id title content [item_id count]..."
         end
         logger.info("send_mail - params: %s", utils.table_to_string(params))

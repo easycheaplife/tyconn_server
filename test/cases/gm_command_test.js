@@ -122,7 +122,7 @@ class GMCommandTest extends BaseTest {
             await this.client.gmCommand('invalid_command', []);
             assert.fail('Should throw error for invalid command');
         } catch (err) {
-            assert(err.errorCode === this.client.protoHelper.ErrorCode.ERROR_CODE_UNKNOWN_GM_COMMAND);
+            assert(err.errorCode === this.client.protoHelper.ErrorCode.ERROR_CODE_GM_COMMAND_FAILED);
         }
 
         // 测试无效参数
@@ -130,7 +130,7 @@ class GMCommandTest extends BaseTest {
             await this.client.gmCommand('add_item', ['invalid']);
             assert.fail('Should throw error for invalid params');
         } catch (err) {
-            assert(err.errorCode === this.client.protoHelper.ErrorCode.ERROR_CODE_INVALID_PARAMS);
+            assert(err.errorCode === this.client.protoHelper.ErrorCode.ERROR_CODE_GM_COMMAND_FAILED);
         }
     }
 

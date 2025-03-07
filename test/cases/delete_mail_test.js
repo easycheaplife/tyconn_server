@@ -24,16 +24,18 @@ class DeleteMailTest extends BaseTest {
             const listResponse = await this.client.getMailList();
             assert(listResponse.mails && listResponse.mails.length > 0, 'Should have mails to test');
 
-            // 找一封已读或已领取的邮件
-            const mailToDelete = listResponse.mails.find(mail => 
-                mail.status === 2 || // READ
-                mail.status === 3    // CLAIMED
-            );
+            // 找一封未读邮件
+            const mailToDelete = listResponse.mails[0];
+            assert(mailToDelete, 'Should have at least one mail to test');
 
-            if (!mailToDelete) {
-                console.log('No mail available for delete test');
-                return true;
-            }
+            // 先读取邮件
+            console.log('\nReading mail before deletion...');
+            const readResponse = await this.client.readMail(mailToDelete.id);
+            assert(readResponse, 'Read mail response should not be null');
+            assert.strictEqual(readResponse.mail_id.low, mailToDelete.id.low, 'Read mail ID should match');
+
+            // 等待一小段时间确保状态更新
+            await new Promise(resolve => setTimeout(resolve, 100));
 
             // 测试删除邮件
             console.log('\nTesting delete mail...');
@@ -42,6 +44,9 @@ class DeleteMailTest extends BaseTest {
             // 验证响应
             assert(deleteResponse, 'Delete mail response should not be null');
             assert.strictEqual(deleteResponse.mail_id.low, mailToDelete.id.low, 'Deleted mail ID should match');
+
+            // 等待一小段时间确保删除完成
+            await new Promise(resolve => setTimeout(resolve, 100));
 
             // 验证邮件是否已被删除
             const newListResponse = await this.client.getMailList();
