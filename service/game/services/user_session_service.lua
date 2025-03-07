@@ -13,7 +13,10 @@ local sessions = {
 
 -- 会话数据结构
 local function create_session(client_id, user_info, gate_node)
-    return {
+    logger.debug("Creating session - client_id: %s, account: %s, gate_node: %s", 
+        client_id, user_info.account, tostring(gate_node))
+    
+    local session = {
         client_id = client_id,
         user_id = user_info.user_id,
         account = user_info.account,
@@ -22,6 +25,41 @@ local function create_session(client_id, user_info, gate_node)
         user_info = user_info,
         gate_node = gate_node
     }
+    
+    -- 尝试预解析网关地址
+    if gate_node then
+        local ok, gate_addr = pcall(function()
+            -- 先尝试本地名称
+            local addr = skynet.localname("." .. gate_node)
+            if addr then
+                return addr
+            end
+            
+            -- 尝试集群查询
+            local ok, addr = pcall(function()
+                return skynet.call(".cluster", "lua", "query", gate_node, "gate")
+            end)
+            if ok and addr then
+                return addr
+            end
+            
+            -- 直接构造地址 (最后的尝试)
+            if string.match(gate_node, "^gate%d+$") then
+                return "@" .. gate_node
+            end
+            
+            return nil
+        end)
+        
+        if ok and gate_addr then
+            session.gate_addr = gate_addr
+            logger.debug("Pre-resolved gate address for node %s: %s", gate_node, tostring(gate_addr))
+        else
+            logger.warn("Failed to pre-resolve gate address for node %s", gate_node)
+        end
+    end
+    
+    return session
 end
 
 -- 添加用户会话
@@ -167,6 +205,15 @@ function M.init()
             if removed > 0 then
                 logger.info("Cleaned %d inactive users", removed)
             end
+        end
+    end)
+    
+    -- 定期打印在线人数
+    skynet.fork(function()
+        while true do
+            skynet.sleep(60 * 100)  -- 60秒检查一次
+            local stats = M.get_stats()
+            logger.info("Current online users: %d", stats.online_count)
         end
     end)
     

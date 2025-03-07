@@ -4,6 +4,7 @@ local pb = require "pb"
 local message = require "message"
 local gate_client = require "gate_client"
 local user_session_service = require "services.user_session_service"
+local utils = require "utils"
 
 local M = {}
 
@@ -59,26 +60,59 @@ end
 
 -- 推送新邮件通知
 function M.push_new_mail(user_id, mail)
-    -- 获取用户会话
-    local session = user_session_service.get_session_by_user_id(user_id)
-    if not session then
-        return
+    if not user_id or not mail then
+        logger.error("push_new_mail: missing required parameters - user_id: %s, mail: %s", 
+            tostring(user_id), tostring(mail))
+        return false
     end
     
-    -- 构造推送消息
-    local notify = {
-        type = "new_mail",
+    -- 获取用户会话信息
+    local session = user_session_service.get_session_by_user_id(user_id)
+    if not session then
+        logger.error("push_new_mail: user session not found - user_id: %d", user_id)
+        return false
+    end
+    
+    if not session.gate_node then
+        logger.error("push_new_mail: gate node not found for user %d", user_id)
+        return false
+    end
+    
+    -- 创建新邮件推送消息
+    local push_data = {
         mail = {
             id = mail.id,
             title = mail.title,
             mail_type = mail.mail_type,
             status = mail.status,
-            has_items = #mail.items > 0
+            has_items = mail.items and #mail.items > 0 or false
         }
     }
     
-    -- 发送到网关
-    cluster.send(session.gate_node, ".gate", "push_message", user_id, "NOTIFY_NEW_MAIL", notify)
+    -- 添加详细日志记录
+    logger.debug("push_new_mail: Creating push data for user %d", user_id)
+    logger.debug("push_new_mail: Mail ID: %s", tostring(mail.id))
+    logger.debug("push_new_mail: Mail Title: %s", tostring(mail.title))
+    logger.debug("push_new_mail: Message ID: %d", pb.enum("common.MessageID", "G2C_NEW_MAIL_PUSH"))
+    
+    -- 将消息推送给用户
+    local message_id = pb.enum("common.MessageID", "G2C_NEW_MAIL_PUSH")
+    local ok, err = pcall(function()
+        return gate_client.push_message(user_id, message_id, push_data)
+    end)
+    
+    if not ok then
+        logger.error("push_new_mail: failed to push message - user_id: %d, error: %s", user_id, tostring(err))
+        return false
+    end
+    
+    if ok then
+        logger.info("Notified user %d about new mail %d: %s", user_id, mail.id, mail.title)
+    else
+        logger.error("Failed to notify user %d about new mail %d", user_id, mail.id)
+    end
+    
+    return ok
 end
 
 return M 

@@ -8,6 +8,7 @@ local mail_model = require "models.mail_model"
 local utils = require "utils"
 local table = require "table"
 local user_session_service = require "services.user_session_service"
+local notify_service = require "services.notify_service"
 
 local M = {}
 
@@ -60,6 +61,7 @@ function M.send_system_mail(params)
         mail_params.user_id = user_id
         mail_params.template_id = mail_template.id
         M.send_mail(mail_params)
+        logger.info("send_system_mail: sent to user_id: %s", user_id)
     end
     
     return true
@@ -90,6 +92,31 @@ function M.send_mail(params)
     if not ok then
         logger.error("Failed to send mail: %s", err)
         return false, err
+    end
+
+    -- 如果用户在线，发送通知
+    if user_session_service.is_user_id_online(params.user_id) then
+        -- 准备通知数据
+        local notify_data = {
+            id = params.id,
+            title = params.title,
+            mail_type = params.mail_type,
+            status = params.status,
+            items = params.items
+        }
+        
+        -- 尝试发送通知
+        local notify_ok, notify_err = pcall(function()
+            return notify_service.push_new_mail(params.user_id, notify_data)
+        end)
+        
+        if notify_ok then
+            logger.info("Sent new mail notification to online user %d", params.user_id)
+        else
+            -- 通知失败但邮件已保存，记录错误但继续
+            logger.warn("Failed to send mail notification to user %d: %s, but mail was saved", 
+                params.user_id, tostring(notify_err))
+        end
     end
     
     return true

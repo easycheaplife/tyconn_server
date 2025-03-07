@@ -76,4 +76,19 @@ function M.timestamp_to_datetime(timestamp)
     return os.date("%Y-%m-%d %H:%M:%S", tonumber(timestamp))
 end
 
+-- 深度复制表
+function M.deep_copy(orig)
+    local copy
+    if type(orig) == "table" then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[M.deep_copy(orig_key)] = M.deep_copy(orig_value)
+        end
+        setmetatable(copy, M.deep_copy(getmetatable(orig)))
+    else
+        copy = orig
+    end
+    return copy
+end
+
 return M
