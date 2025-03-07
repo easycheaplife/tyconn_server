@@ -123,7 +123,7 @@ function M.handle_message(source, client_id, msg, gate_node)
     local handler = handlers[msg_id]
     if handler then
         logger.debug("Found handler for message %d", msg_id)
-        local response = handler.handle(client_id, msg)
+        local response = handler.handle(client_id, msg, gate_node)
         if response then
             logger.debug("Sending response back to gate")
             cluster.send(gate_node, source, "client_message", response)

@@ -7,6 +7,7 @@ local mail_dao = require "dao.mail_dao"
 local mail_model = require "models.mail_model"
 local utils = require "utils"
 local table = require "table"
+local user_session_service = require "services.user_session_service"
 
 local M = {}
 
@@ -31,8 +32,7 @@ end
 -- 发送系统邮件
 function M.send_system_mail(params)
     -- 获取所有在线用户
-    local online_service = require "services.online_service"
-    local online_users = online_service.get_all_online_users()
+    local online_users = user_session_service.get_all_online_user_ids()
     
     -- 创建系统邮件模板
     local mail_template = {

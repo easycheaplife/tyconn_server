@@ -1,6 +1,7 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local equip_service = require "services.equip_service"
+local user_session_service = require "services.user_session_service"
 
 local M = {}
 
@@ -11,8 +12,7 @@ function M.check_equipment_expire()
     logger.info("Starting equipment expiration check")
     
     -- 获取在线用户列表
-    local online_service = require "services.online_service"
-    local online_users = online_service.get_all_online_users()
+    local online_users = user_session_service.get_all_online_user_ids()
     
     -- 如果没有在线用户，直接返回
     if not online_users or #online_users == 0 then

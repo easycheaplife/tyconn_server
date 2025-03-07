@@ -1,6 +1,7 @@
 -- gate_client.lua - 网关客户端模块，用于向客户端推送消息
 local skynet = require "skynet"
 local logger = require "logger"
+local user_session_service = require "services.user_session_service"
 
 local M = {}
 
@@ -43,8 +44,7 @@ end
 
 -- 广播消息到所有在线用户
 function M.broadcast_message(message_id, message_data)
-    local online_service = require "services.online_service"
-    local online_users = online_service.get_all_online_users()
+    local online_users = user_session_service.get_all_online_user_ids()
     
     return M.push_message_to_users(online_users, message_id, message_data)
 end

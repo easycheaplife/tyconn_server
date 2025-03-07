@@ -6,10 +6,11 @@ local name_generator = require "game.utils.name_generator"
 local handler_helper = require "game.handlers.handler_helper"
 local utils = require "utils"
 local message = require "message"
+local user_session_service = require "services.user_session_service"
 
 local M = {}
 
-function M.handle(client_id, msg)
+function M.handle(client_id, msg, gate_node)
     logger.debug("Handling user info request from client %d", client_id)
     
     -- 验证请求
@@ -66,6 +67,10 @@ function M.handle(client_id, msg)
     if result.is_new then
         user_service.init_new_user(result.user.user_id)
     end
+
+    -- 添加用户会话
+    user_session_service.add_user(client_id, result.user, gate_node)
+    
     -- 打印最终的用户数据结构
     logger.debug("Final user data: %s", utils.table_to_string(result))
 

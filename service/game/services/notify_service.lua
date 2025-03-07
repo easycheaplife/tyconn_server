@@ -3,7 +3,7 @@ local logger = require "logger"
 local pb = require "pb"
 local message = require "message"
 local gate_client = require "gate_client"
-local session_service = require "services.session_service"
+local user_session_service = require "services.user_session_service"
 
 local M = {}
 
@@ -59,9 +59,9 @@ end
 
 -- 推送新邮件通知
 function M.push_new_mail(user_id, mail)
-    -- 获取用户网关
-    local gate = session_service.get_user_gate(user_id)
-    if not gate then
+    -- 获取用户会话
+    local session = user_session_service.get_session_by_user_id(user_id)
+    if not session then
         return
     end
     
@@ -78,7 +78,7 @@ function M.push_new_mail(user_id, mail)
     }
     
     -- 发送到网关
-    cluster.send(gate, ".gate", "push_message", user_id, "NOTIFY_NEW_MAIL", notify)
+    cluster.send(session.gate_node, ".gate", "push_message", user_id, "NOTIFY_NEW_MAIL", notify)
 end
 
 return M 
