@@ -30,46 +30,34 @@ class MailNotifyClient {
                 this.password
             );
 
+            // 保存token
+            this.token = loginResult.token;
+
             // 解析网关信息
             const serverInfo = {
                 protocol: 'ws',
                 host: loginResult.gateInfo.host,
                 port: loginResult.gateInfo.port
             };
-
-            // 先设置认证信息
-            this.gameClient.setAuth(loginResult.token, serverInfo);
             
-            // 然后连接
+            // 创建游戏客户端，直接传入认证信息
+            this.gameClient = new GameClient(loginResult.token, serverInfo);
+            
+            // 连接
             await this.gameClient.connect();
-
-            // 重新设置认证信息，确保使用最新的 token
-            this.gameClient.setAuth(loginResult.token, serverInfo);
             
             // 连接成功后设置消息处理器
             this.setupMessageHandler();
             
             console.log('Connected to game server, requesting user info...');
-
-            // 等待一下确保连接稳定
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // 获取用户信息
-            try {
-                const userInfo = await this.getUserInfo();
-                console.log('\nUser Info:');
-                console.log('User ID:', userInfo.user.userId);
-                console.log('Nickname:', userInfo.user.nickname);
-                console.log('Level:', userInfo.user.level);
-                console.log('----------------------------------------');
-            } catch (error) {
-                console.error('Failed to get user info:', error);
-            }
+            
+            // 初始化用户信息
+            await this.init();
+            
+            // 启动心跳
+            this.startHeartbeat();
             
             console.log('Waiting for mail notifications...');
-            
-            // 保持连接
-            this.startHeartbeat();
             
             // 监听 SIGINT 信号以优雅退出
             process.on('SIGINT', () => {
@@ -139,10 +127,15 @@ class MailNotifyClient {
     }
 
     async startHeartbeat() {
+        // 导入心跳包处理器
+        const sendHeartbeat = require('../lib/handlers/system/heartbeat');
+        
         // 每30秒发送一次心跳
         this.heartbeatInterval = setInterval(async () => {
             try {
-                await this.gameClient.sendHeartbeat();
+                // 使用绑定的sendHeartbeat方法
+                await sendHeartbeat.call(this.gameClient, this.token);
+                console.log('Heartbeat sent successfully.');
             } catch (error) {
                 console.error('Heartbeat failed:', error);
                 console.error('Error details:', error.stack);
@@ -164,11 +157,24 @@ class MailNotifyClient {
     // 初始化用户信息
     async init() {
         const userInfo = await this.getUserInfo();
+        console.log('\nUser Info:');
         if (userInfo && userInfo.user) {
-            this.user_id = userInfo.user.userId;
+            // 正确获取user_id，处理可能的格式差异
+            this.user_id = userInfo.user.user_id ? 
+                (userInfo.user.user_id.low || userInfo.user.user_id) : 
+                (userInfo.user.userId ? (userInfo.user.userId.low || userInfo.user.userId) : null);
+            
+            // 显示正确的用户信息
+            console.log(`User ID: ${this.user_id}`);
+            console.log(`Nickname: ${userInfo.user.username || 'N/A'}`);
+            console.log(`Level: ${userInfo.user.level || 0}`);
+            console.log('----------------------------------------');
             return true;
+        } else {
+            console.log('Failed to get user info');
+            console.log('----------------------------------------');
+            return false;
         }
-        return false;
     }
 
     // 发送系统邮件
