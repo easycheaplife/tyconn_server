@@ -35,6 +35,8 @@ enum MessageID {
     G2C_HEARTBEAT_RESPONSE = 4;     // 游戏服务器到客户端的心跳响应
     C2G_USER_INFO_REQUEST = 5;      // 获取用户信息请求
     G2C_USER_INFO_RESPONSE = 6;     // 获取用户信息响应
+    C2G_LOGIN_GAME_REQUEST = 7;     // 客户端到游戏服务器的登录请求
+    G2C_LOGIN_GAME_RESPONSE = 8;    // 游戏服务器到客户端的登录响应
 
     // 卡牌系统 (100-199)
     C2G_USER_CARDS_REQUEST = 100;   // 获取用户卡牌请求
@@ -59,6 +61,7 @@ enum MessageID {
     // GM系统 (300-399)
     C2G_GM_COMMAND_REQUEST = 300;   // GM命令请求
     G2C_GM_COMMAND_RESPONSE = 301;  // GM命令响应
+
 }
 ```
 ### 1.3 错误码
@@ -796,6 +799,59 @@ message G2CReadMailResponse {
 - ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
 - ERROR_CODE_MAIL_NOT_FOUND: 邮件不存在
 
+### 3.8 登录游戏接口
+
+**连接类型:** `WebSocket`
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf
+message C2GLoginGameRequest {
+    string token = 1;       // JWT令牌
+}
+```
+
+**响应格式:**
+```protobuf
+message G2CLoginGameResponse {
+    common.UserInfo user = 1;           // 用户信息
+    bool is_new_user = 2;               // 是否为新用户
+    repeated common.BagInfo bags = 3;    // 背包信息列表
+    repeated common.ResourceInfo resources = 4; // 资源信息列表
+    int64 server_time = 5;              // 服务器时间(毫秒)
+}
+
+// 用户信息
+message UserInfo {
+    int64 user_id = 1;         // 用户ID
+    string username = 2;       // 用户名
+    int32 level = 3;           // 等级
+    int64 create_time = 10;    // 创建时间
+    int64 login_time = 11;     // 登录时间，每次登录时更新
+    int32 hp = 12;             // 血量
+    int32 attack = 13;         // 攻击力
+    int32 defense = 14;        // 防御力
+    int32 vip_level = 15;      // VIP等级
+}
+
+// 资源信息
+message ResourceInfo {
+    int32 type = 1;            // 资源类型，参见ResourceType枚举
+    int32 amount = 2;          // 资源数量
+}
+```
+
+**错误码说明:**
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+- ERROR_CODE_SYSTEM_ERROR: 系统错误
+
+**特别说明:**
+1. `login_time` 字段会在每次用户登录时自动更新
+2. `resources` 字段返回用户拥有的所有资源类型和数量
+3. `is_new_user` 字段表示是否为首次登录的新用户
+4. 当为新用户时，系统会自动初始化用户数据（卡牌、背包等）
 
 ## 4. 系统配置
 
@@ -838,3 +894,16 @@ message G2CReadMailResponse {
 - 客户端确认接收
 - 支持批量通知
 - 保证通知送达
+
+// 资源信息
+message ResourceInfo {
+    int32 type = 1;           // 资源类型，见ResourceType枚举
+    int32 amount = 2;         // 资源数量
+}
+
+// 资源类型
+enum ResourceType {
+    RESOURCE_TYPE_NONE = 0;   // 无效类型
+    RESOURCE_TYPE_GOLD = 1;   // 金币
+    RESOURCE_TYPE_EXP = 2;    // 经验
+}
