@@ -84,8 +84,6 @@ function M.handle(client_id, msg, gate_node)
             user_id = result.user.user_id,
             username = result.user.username,
             level = result.user.level,
-            exp = result.user.exp or 0,
-            gold = result.user.gold or 0,
             vip_level = result.user.vip_level or 0,
             create_time = result.user.create_time,
             login_time = result.user.login_time,
