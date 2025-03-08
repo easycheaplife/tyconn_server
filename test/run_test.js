@@ -1,6 +1,7 @@
 const LoginClient = require('./lib/login_client');
 const config = require('./config/config');
 const { parseArgs } = require('./lib/cli');
+const LoginGameTest = require('./cases/login_game_test');
 const UserInfoTest = require('./cases/user_info_test');
 const HeartbeatTest = require('./cases/heartbeat_test');
 const UserCardsTest = require('./cases/user_cards_test');
@@ -28,6 +29,7 @@ const GmMailTest = require('./cases/gm_mail_test');
 
 // 所有测试用例
 const ALL_TESTS = {
+    login_game: LoginGameTest,
     user_info: UserInfoTest,
     heartbeat: HeartbeatTest,
     user_cards: UserCardsTest,

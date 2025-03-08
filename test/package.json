@@ -3,6 +3,7 @@
     "test": "node run_test.js",
     "benchmark": "node benchmark/cli.js",
     "test:login": "node test/run_test.js -t login",
+    "test:login_game": "node test/run_test.js -t login_game",
     "test:user": "node test/run_test.js -t user_info",
     "test:heartbeat": "node test/run_test.js -t heartbeat",
     "test:token": "node test/run_test.js -t token",

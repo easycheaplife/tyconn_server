@@ -558,4 +558,19 @@ function M.get_valid_mail_templates()
     return result or {}
 end
 
+-- 更新用户登录时间
+function M.update_user_login_time(user_id, login_time)
+    local ok, err = call_db("update_user_login_time", {
+        user_id = user_id,
+        login_time = login_time
+    })
+    
+    if not ok then
+        logger.error("DB client error when updating login time: %s", err or "unknown error")
+        return false, err
+    end
+    
+    return true
+end
+
 return M 

@@ -20,6 +20,8 @@ function M.register_user_handler()
         require "game.handlers.user.user_info_handler")
     M.register(pb.enum("common.MessageID", "C2G_HEARTBEAT_REQUEST"), 
         require "game.handlers.user.heartbeat_handler")
+    M.register(pb.enum("common.MessageID", "C2G_LOGIN_GAME_REQUEST"), 
+        require "game.handlers.user.login_game_handler")
 end
 
 function M.register_user_cards_handler()

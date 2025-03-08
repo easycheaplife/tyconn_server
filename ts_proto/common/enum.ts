@@ -1926,3 +1926,150 @@ export function auctionStateToJSON(object: AuctionState): string {
       return "UNRECOGNIZED";
   }
 }
+
+/** 邮件类型 */
+export enum MailType {
+  MAIL_TYPE_NONE = 0,
+  /** MAIL_TYPE_SYSTEM - 系统邮件 */
+  MAIL_TYPE_SYSTEM = 1,
+  /** MAIL_TYPE_PERSONAL - 个人邮件 */
+  MAIL_TYPE_PERSONAL = 2,
+  UNRECOGNIZED = -1,
+}
+
+export function mailTypeFromJSON(object: any): MailType {
+  switch (object) {
+    case 0:
+    case "MAIL_TYPE_NONE":
+      return MailType.MAIL_TYPE_NONE;
+    case 1:
+    case "MAIL_TYPE_SYSTEM":
+      return MailType.MAIL_TYPE_SYSTEM;
+    case 2:
+    case "MAIL_TYPE_PERSONAL":
+      return MailType.MAIL_TYPE_PERSONAL;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return MailType.UNRECOGNIZED;
+  }
+}
+
+export function mailTypeToJSON(object: MailType): string {
+  switch (object) {
+    case MailType.MAIL_TYPE_NONE:
+      return "MAIL_TYPE_NONE";
+    case MailType.MAIL_TYPE_SYSTEM:
+      return "MAIL_TYPE_SYSTEM";
+    case MailType.MAIL_TYPE_PERSONAL:
+      return "MAIL_TYPE_PERSONAL";
+    case MailType.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
+/** 邮件状态 */
+export enum MailStatus {
+  MAIL_STATUS_NONE = 0,
+  /** MAIL_STATUS_UNREAD - 未读 */
+  MAIL_STATUS_UNREAD = 1,
+  /** MAIL_STATUS_READ - 已读 */
+  MAIL_STATUS_READ = 2,
+  /** MAIL_STATUS_CLAIMED - 已领取 */
+  MAIL_STATUS_CLAIMED = 3,
+  /** MAIL_STATUS_DELETED - 已删除 */
+  MAIL_STATUS_DELETED = 4,
+  /** MAIL_STATUS_EXPIRED - 已过期 */
+  MAIL_STATUS_EXPIRED = 5,
+  UNRECOGNIZED = -1,
+}
+
+export function mailStatusFromJSON(object: any): MailStatus {
+  switch (object) {
+    case 0:
+    case "MAIL_STATUS_NONE":
+      return MailStatus.MAIL_STATUS_NONE;
+    case 1:
+    case "MAIL_STATUS_UNREAD":
+      return MailStatus.MAIL_STATUS_UNREAD;
+    case 2:
+    case "MAIL_STATUS_READ":
+      return MailStatus.MAIL_STATUS_READ;
+    case 3:
+    case "MAIL_STATUS_CLAIMED":
+      return MailStatus.MAIL_STATUS_CLAIMED;
+    case 4:
+    case "MAIL_STATUS_DELETED":
+      return MailStatus.MAIL_STATUS_DELETED;
+    case 5:
+    case "MAIL_STATUS_EXPIRED":
+      return MailStatus.MAIL_STATUS_EXPIRED;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return MailStatus.UNRECOGNIZED;
+  }
+}
+
+export function mailStatusToJSON(object: MailStatus): string {
+  switch (object) {
+    case MailStatus.MAIL_STATUS_NONE:
+      return "MAIL_STATUS_NONE";
+    case MailStatus.MAIL_STATUS_UNREAD:
+      return "MAIL_STATUS_UNREAD";
+    case MailStatus.MAIL_STATUS_READ:
+      return "MAIL_STATUS_READ";
+    case MailStatus.MAIL_STATUS_CLAIMED:
+      return "MAIL_STATUS_CLAIMED";
+    case MailStatus.MAIL_STATUS_DELETED:
+      return "MAIL_STATUS_DELETED";
+    case MailStatus.MAIL_STATUS_EXPIRED:
+      return "MAIL_STATUS_EXPIRED";
+    case MailStatus.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
+/** 资源类型 */
+export enum ResourceType {
+  RESOURCE_TYPE_NONE = 0,
+  /** RESOURCE_TYPE_GOLD - 金币 */
+  RESOURCE_TYPE_GOLD = 1,
+  /** RESOURCE_TYPE_EXP - 经验 */
+  RESOURCE_TYPE_EXP = 2,
+  UNRECOGNIZED = -1,
+}
+
+export function resourceTypeFromJSON(object: any): ResourceType {
+  switch (object) {
+    case 0:
+    case "RESOURCE_TYPE_NONE":
+      return ResourceType.RESOURCE_TYPE_NONE;
+    case 1:
+    case "RESOURCE_TYPE_GOLD":
+      return ResourceType.RESOURCE_TYPE_GOLD;
+    case 2:
+    case "RESOURCE_TYPE_EXP":
+      return ResourceType.RESOURCE_TYPE_EXP;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return ResourceType.UNRECOGNIZED;
+  }
+}
+
+export function resourceTypeToJSON(object: ResourceType): string {
+  switch (object) {
+    case ResourceType.RESOURCE_TYPE_NONE:
+      return "RESOURCE_TYPE_NONE";
+    case ResourceType.RESOURCE_TYPE_GOLD:
+      return "RESOURCE_TYPE_GOLD";
+    case ResourceType.RESOURCE_TYPE_EXP:
+      return "RESOURCE_TYPE_EXP";
+    case ResourceType.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}

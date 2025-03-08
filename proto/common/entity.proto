@@ -68,3 +68,9 @@ message MailTemplateInfo {
     int64 create_time = 6;     // 创建时间
     int64 expire_time = 7;     // 过期时间
 }
+
+// 用户资源信息
+message ResourceInfo {
+    int32 type = 1;           // 资源类型
+    int32 amount = 2;         // 资源数量
+}

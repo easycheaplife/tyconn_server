@@ -147,4 +147,26 @@ function M.get_online_users()
     return results[1] and results[1].count or 0
 end
 
+-- 更新用户登录时间
+function M.update_user_login_time(args)
+    local user_id = args.user_id
+    local login_time = args.login_time
+    
+    if not user_id or not login_time then
+        logger.error("Missing required parameters for update_user_login_time")
+        return false, "Missing required parameters"
+    end
+    
+    local query = string.format(sql.UPDATE_USER_LOGIN_TIME, login_time, user_id)
+    log_sql(query)
+    
+    local ok = db_util.query(query)
+    if not ok then
+        logger.error("Failed to update login time for user %d", user_id)
+        return false, "Database error"
+    end
+    
+    return true
+end
+
 return M 

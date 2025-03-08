@@ -12,6 +12,9 @@ enum MessageID {
     G2C_HEARTBEAT_RESPONSE = 4;     // 游戏服务器到客户端的心跳响应
     C2G_USER_INFO_REQUEST = 5;      // 获取用户信息请求
     G2C_USER_INFO_RESPONSE = 6;     // 获取用户信息响应
+    // 游戏登录请求/响应
+    C2G_LOGIN_GAME_REQUEST = 7;   // 客户端到游戏服务器的登录请求
+    G2C_LOGIN_GAME_RESPONSE = 8;  // 游戏服务器到客户端的登录响应
     
     // 卡牌系统 (101-200)
     C2G_USER_CARDS_REQUEST = 101;   // 获取用户卡牌请求

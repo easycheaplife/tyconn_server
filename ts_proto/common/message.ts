@@ -24,6 +24,10 @@ export enum MessageID {
   C2G_USER_INFO_REQUEST = 5,
   /** G2C_USER_INFO_RESPONSE - 获取用户信息响应 */
   G2C_USER_INFO_RESPONSE = 6,
+  /** C2G_LOGIN_GAME_REQUEST - 游戏登录请求/响应 */
+  C2G_LOGIN_GAME_REQUEST = 7,
+  /** G2C_LOGIN_GAME_RESPONSE - 游戏服务器到客户端的登录响应 */
+  G2C_LOGIN_GAME_RESPONSE = 8,
   /** C2G_USER_CARDS_REQUEST - 卡牌系统 (101-200) */
   C2G_USER_CARDS_REQUEST = 101,
   /** G2C_USER_CARDS_RESPONSE - 获取用户卡牌响应 */
@@ -88,6 +92,24 @@ export enum MessageID {
   G2C_EQUIPMENT_EXPIRED_PUSH = 451,
   /** G2C_EQUIPMENT_LEVEL_UPGRADED_PUSH - 装备等级升级完成推送 */
   G2C_EQUIPMENT_LEVEL_UPGRADED_PUSH = 452,
+  /** C2G_MAIL_LIST_REQUEST - 邮件系统 (501-600) */
+  C2G_MAIL_LIST_REQUEST = 501,
+  /** G2C_MAIL_LIST_RESPONSE - 获取邮件列表响应 */
+  G2C_MAIL_LIST_RESPONSE = 502,
+  /** C2G_READ_MAIL_REQUEST - 读取邮件请求 */
+  C2G_READ_MAIL_REQUEST = 503,
+  /** G2C_READ_MAIL_RESPONSE - 读取邮件响应 */
+  G2C_READ_MAIL_RESPONSE = 504,
+  /** C2G_CLAIM_MAIL_ITEMS_REQUEST - 领取邮件附件请求 */
+  C2G_CLAIM_MAIL_ITEMS_REQUEST = 505,
+  /** G2C_CLAIM_MAIL_ITEMS_RESPONSE - 领取邮件附件响应 */
+  G2C_CLAIM_MAIL_ITEMS_RESPONSE = 506,
+  /** C2G_DELETE_MAIL_REQUEST - 删除邮件请求 */
+  C2G_DELETE_MAIL_REQUEST = 507,
+  /** G2C_DELETE_MAIL_RESPONSE - 删除邮件响应 */
+  G2C_DELETE_MAIL_RESPONSE = 508,
+  /** G2C_NEW_MAIL_PUSH - 新邮件推送 */
+  G2C_NEW_MAIL_PUSH = 551,
   UNRECOGNIZED = -1,
 }
 
@@ -114,6 +136,12 @@ export function messageIDFromJSON(object: any): MessageID {
     case 6:
     case "G2C_USER_INFO_RESPONSE":
       return MessageID.G2C_USER_INFO_RESPONSE;
+    case 7:
+    case "C2G_LOGIN_GAME_REQUEST":
+      return MessageID.C2G_LOGIN_GAME_REQUEST;
+    case 8:
+    case "G2C_LOGIN_GAME_RESPONSE":
+      return MessageID.G2C_LOGIN_GAME_RESPONSE;
     case 101:
     case "C2G_USER_CARDS_REQUEST":
       return MessageID.C2G_USER_CARDS_REQUEST;
@@ -210,6 +238,33 @@ export function messageIDFromJSON(object: any): MessageID {
     case 452:
     case "G2C_EQUIPMENT_LEVEL_UPGRADED_PUSH":
       return MessageID.G2C_EQUIPMENT_LEVEL_UPGRADED_PUSH;
+    case 501:
+    case "C2G_MAIL_LIST_REQUEST":
+      return MessageID.C2G_MAIL_LIST_REQUEST;
+    case 502:
+    case "G2C_MAIL_LIST_RESPONSE":
+      return MessageID.G2C_MAIL_LIST_RESPONSE;
+    case 503:
+    case "C2G_READ_MAIL_REQUEST":
+      return MessageID.C2G_READ_MAIL_REQUEST;
+    case 504:
+    case "G2C_READ_MAIL_RESPONSE":
+      return MessageID.G2C_READ_MAIL_RESPONSE;
+    case 505:
+    case "C2G_CLAIM_MAIL_ITEMS_REQUEST":
+      return MessageID.C2G_CLAIM_MAIL_ITEMS_REQUEST;
+    case 506:
+    case "G2C_CLAIM_MAIL_ITEMS_RESPONSE":
+      return MessageID.G2C_CLAIM_MAIL_ITEMS_RESPONSE;
+    case 507:
+    case "C2G_DELETE_MAIL_REQUEST":
+      return MessageID.C2G_DELETE_MAIL_REQUEST;
+    case 508:
+    case "G2C_DELETE_MAIL_RESPONSE":
+      return MessageID.G2C_DELETE_MAIL_RESPONSE;
+    case 551:
+    case "G2C_NEW_MAIL_PUSH":
+      return MessageID.G2C_NEW_MAIL_PUSH;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -233,6 +288,10 @@ export function messageIDToJSON(object: MessageID): string {
       return "C2G_USER_INFO_REQUEST";
     case MessageID.G2C_USER_INFO_RESPONSE:
       return "G2C_USER_INFO_RESPONSE";
+    case MessageID.C2G_LOGIN_GAME_REQUEST:
+      return "C2G_LOGIN_GAME_REQUEST";
+    case MessageID.G2C_LOGIN_GAME_RESPONSE:
+      return "G2C_LOGIN_GAME_RESPONSE";
     case MessageID.C2G_USER_CARDS_REQUEST:
       return "C2G_USER_CARDS_REQUEST";
     case MessageID.G2C_USER_CARDS_RESPONSE:
@@ -297,6 +356,24 @@ export function messageIDToJSON(object: MessageID): string {
       return "G2C_EQUIPMENT_EXPIRED_PUSH";
     case MessageID.G2C_EQUIPMENT_LEVEL_UPGRADED_PUSH:
       return "G2C_EQUIPMENT_LEVEL_UPGRADED_PUSH";
+    case MessageID.C2G_MAIL_LIST_REQUEST:
+      return "C2G_MAIL_LIST_REQUEST";
+    case MessageID.G2C_MAIL_LIST_RESPONSE:
+      return "G2C_MAIL_LIST_RESPONSE";
+    case MessageID.C2G_READ_MAIL_REQUEST:
+      return "C2G_READ_MAIL_REQUEST";
+    case MessageID.G2C_READ_MAIL_RESPONSE:
+      return "G2C_READ_MAIL_RESPONSE";
+    case MessageID.C2G_CLAIM_MAIL_ITEMS_REQUEST:
+      return "C2G_CLAIM_MAIL_ITEMS_REQUEST";
+    case MessageID.G2C_CLAIM_MAIL_ITEMS_RESPONSE:
+      return "G2C_CLAIM_MAIL_ITEMS_RESPONSE";
+    case MessageID.C2G_DELETE_MAIL_REQUEST:
+      return "C2G_DELETE_MAIL_REQUEST";
+    case MessageID.G2C_DELETE_MAIL_RESPONSE:
+      return "G2C_DELETE_MAIL_RESPONSE";
+    case MessageID.G2C_NEW_MAIL_PUSH:
+      return "G2C_NEW_MAIL_PUSH";
     case MessageID.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";

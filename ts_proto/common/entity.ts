@@ -70,6 +70,58 @@ export interface BagInfo {
   items: ItemInfo[];
 }
 
+/** 邮件信息 */
+export interface MailInfo {
+  /** 邮件ID */
+  id: number;
+  /** 标题 */
+  title: string;
+  /** 内容 */
+  content: string;
+  /** 附件物品 */
+  items: ItemInfo[];
+  /** 邮件类型 */
+  mailType: number;
+  /** 邮件状态 */
+  status: number;
+  /** 创建时间 */
+  createTime: number;
+  /** 过期时间 */
+  expireTime: number;
+  /** 模板ID */
+  templateId: number;
+  /** 发送者ID */
+  senderId: number;
+  /** 发送者名称 */
+  senderName: string;
+}
+
+/** 邮件模板信息 */
+export interface MailTemplateInfo {
+  /** 模板ID */
+  id: number;
+  /** 标题 */
+  title: string;
+  /** 内容 */
+  content: string;
+  /** 附件物品 */
+  items: ItemInfo[];
+  /** 邮件类型 */
+  mailType: number;
+  /** 创建时间 */
+  createTime: number;
+  /** 过期时间 */
+  expireTime: number;
+}
+
+/** 用户资源信息 */
+export interface ResourceInfo {
+  /** 资源类型 */
+  type: number;
+  /** 资源数量 */
+  amount: number;
+}
+
 function createBaseUserInfo(): UserInfo {
   return {
     userId: 0,
@@ -670,6 +722,470 @@ export const BagInfo: MessageFns<BagInfo> = {
     message.bagType = object.bagType ?? 0;
     message.size = object.size ?? 0;
     message.items = object.items?.map((e) => ItemInfo.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseMailInfo(): MailInfo {
+  return {
+    id: 0,
+    title: "",
+    content: "",
+    items: [],
+    mailType: 0,
+    status: 0,
+    createTime: 0,
+    expireTime: 0,
+    templateId: 0,
+    senderId: 0,
+    senderName: "",
+  };
+}
+
+export const MailInfo: MessageFns<MailInfo> = {
+  encode(message: MailInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== 0) {
+      writer.uint32(8).int64(message.id);
+    }
+    if (message.title !== "") {
+      writer.uint32(18).string(message.title);
+    }
+    if (message.content !== "") {
+      writer.uint32(26).string(message.content);
+    }
+    for (const v of message.items) {
+      ItemInfo.encode(v!, writer.uint32(34).fork()).join();
+    }
+    if (message.mailType !== 0) {
+      writer.uint32(40).int32(message.mailType);
+    }
+    if (message.status !== 0) {
+      writer.uint32(48).int32(message.status);
+    }
+    if (message.createTime !== 0) {
+      writer.uint32(56).int64(message.createTime);
+    }
+    if (message.expireTime !== 0) {
+      writer.uint32(64).int64(message.expireTime);
+    }
+    if (message.templateId !== 0) {
+      writer.uint32(72).int64(message.templateId);
+    }
+    if (message.senderId !== 0) {
+      writer.uint32(80).int64(message.senderId);
+    }
+    if (message.senderName !== "") {
+      writer.uint32(90).string(message.senderName);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MailInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMailInfo();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.id = longToNumber(reader.int64());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.title = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.content = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.items.push(ItemInfo.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.mailType = reader.int32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.createTime = longToNumber(reader.int64());
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.expireTime = longToNumber(reader.int64());
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.templateId = longToNumber(reader.int64());
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.senderId = longToNumber(reader.int64());
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.senderName = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MailInfo {
+    return {
+      id: isSet(object.id) ? globalThis.Number(object.id) : 0,
+      title: isSet(object.title) ? globalThis.String(object.title) : "",
+      content: isSet(object.content) ? globalThis.String(object.content) : "",
+      items: globalThis.Array.isArray(object?.items) ? object.items.map((e: any) => ItemInfo.fromJSON(e)) : [],
+      mailType: isSet(object.mailType) ? globalThis.Number(object.mailType) : 0,
+      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+      createTime: isSet(object.createTime) ? globalThis.Number(object.createTime) : 0,
+      expireTime: isSet(object.expireTime) ? globalThis.Number(object.expireTime) : 0,
+      templateId: isSet(object.templateId) ? globalThis.Number(object.templateId) : 0,
+      senderId: isSet(object.senderId) ? globalThis.Number(object.senderId) : 0,
+      senderName: isSet(object.senderName) ? globalThis.String(object.senderName) : "",
+    };
+  },
+
+  toJSON(message: MailInfo): unknown {
+    const obj: any = {};
+    if (message.id !== 0) {
+      obj.id = Math.round(message.id);
+    }
+    if (message.title !== "") {
+      obj.title = message.title;
+    }
+    if (message.content !== "") {
+      obj.content = message.content;
+    }
+    if (message.items?.length) {
+      obj.items = message.items.map((e) => ItemInfo.toJSON(e));
+    }
+    if (message.mailType !== 0) {
+      obj.mailType = Math.round(message.mailType);
+    }
+    if (message.status !== 0) {
+      obj.status = Math.round(message.status);
+    }
+    if (message.createTime !== 0) {
+      obj.createTime = Math.round(message.createTime);
+    }
+    if (message.expireTime !== 0) {
+      obj.expireTime = Math.round(message.expireTime);
+    }
+    if (message.templateId !== 0) {
+      obj.templateId = Math.round(message.templateId);
+    }
+    if (message.senderId !== 0) {
+      obj.senderId = Math.round(message.senderId);
+    }
+    if (message.senderName !== "") {
+      obj.senderName = message.senderName;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MailInfo>, I>>(base?: I): MailInfo {
+    return MailInfo.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MailInfo>, I>>(object: I): MailInfo {
+    const message = createBaseMailInfo();
+    message.id = object.id ?? 0;
+    message.title = object.title ?? "";
+    message.content = object.content ?? "";
+    message.items = object.items?.map((e) => ItemInfo.fromPartial(e)) || [];
+    message.mailType = object.mailType ?? 0;
+    message.status = object.status ?? 0;
+    message.createTime = object.createTime ?? 0;
+    message.expireTime = object.expireTime ?? 0;
+    message.templateId = object.templateId ?? 0;
+    message.senderId = object.senderId ?? 0;
+    message.senderName = object.senderName ?? "";
+    return message;
+  },
+};
+
+function createBaseMailTemplateInfo(): MailTemplateInfo {
+  return { id: 0, title: "", content: "", items: [], mailType: 0, createTime: 0, expireTime: 0 };
+}
+
+export const MailTemplateInfo: MessageFns<MailTemplateInfo> = {
+  encode(message: MailTemplateInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== 0) {
+      writer.uint32(8).int64(message.id);
+    }
+    if (message.title !== "") {
+      writer.uint32(18).string(message.title);
+    }
+    if (message.content !== "") {
+      writer.uint32(26).string(message.content);
+    }
+    for (const v of message.items) {
+      ItemInfo.encode(v!, writer.uint32(34).fork()).join();
+    }
+    if (message.mailType !== 0) {
+      writer.uint32(40).int32(message.mailType);
+    }
+    if (message.createTime !== 0) {
+      writer.uint32(48).int64(message.createTime);
+    }
+    if (message.expireTime !== 0) {
+      writer.uint32(56).int64(message.expireTime);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MailTemplateInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMailTemplateInfo();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.id = longToNumber(reader.int64());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.title = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.content = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.items.push(ItemInfo.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.mailType = reader.int32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.createTime = longToNumber(reader.int64());
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.expireTime = longToNumber(reader.int64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MailTemplateInfo {
+    return {
+      id: isSet(object.id) ? globalThis.Number(object.id) : 0,
+      title: isSet(object.title) ? globalThis.String(object.title) : "",
+      content: isSet(object.content) ? globalThis.String(object.content) : "",
+      items: globalThis.Array.isArray(object?.items) ? object.items.map((e: any) => ItemInfo.fromJSON(e)) : [],
+      mailType: isSet(object.mailType) ? globalThis.Number(object.mailType) : 0,
+      createTime: isSet(object.createTime) ? globalThis.Number(object.createTime) : 0,
+      expireTime: isSet(object.expireTime) ? globalThis.Number(object.expireTime) : 0,
+    };
+  },
+
+  toJSON(message: MailTemplateInfo): unknown {
+    const obj: any = {};
+    if (message.id !== 0) {
+      obj.id = Math.round(message.id);
+    }
+    if (message.title !== "") {
+      obj.title = message.title;
+    }
+    if (message.content !== "") {
+      obj.content = message.content;
+    }
+    if (message.items?.length) {
+      obj.items = message.items.map((e) => ItemInfo.toJSON(e));
+    }
+    if (message.mailType !== 0) {
+      obj.mailType = Math.round(message.mailType);
+    }
+    if (message.createTime !== 0) {
+      obj.createTime = Math.round(message.createTime);
+    }
+    if (message.expireTime !== 0) {
+      obj.expireTime = Math.round(message.expireTime);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MailTemplateInfo>, I>>(base?: I): MailTemplateInfo {
+    return MailTemplateInfo.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MailTemplateInfo>, I>>(object: I): MailTemplateInfo {
+    const message = createBaseMailTemplateInfo();
+    message.id = object.id ?? 0;
+    message.title = object.title ?? "";
+    message.content = object.content ?? "";
+    message.items = object.items?.map((e) => ItemInfo.fromPartial(e)) || [];
+    message.mailType = object.mailType ?? 0;
+    message.createTime = object.createTime ?? 0;
+    message.expireTime = object.expireTime ?? 0;
+    return message;
+  },
+};
+
+function createBaseResourceInfo(): ResourceInfo {
+  return { type: 0, amount: 0 };
+}
+
+export const ResourceInfo: MessageFns<ResourceInfo> = {
+  encode(message: ResourceInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.type !== 0) {
+      writer.uint32(8).int32(message.type);
+    }
+    if (message.amount !== 0) {
+      writer.uint32(16).int32(message.amount);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ResourceInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseResourceInfo();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.type = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.amount = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ResourceInfo {
+    return {
+      type: isSet(object.type) ? globalThis.Number(object.type) : 0,
+      amount: isSet(object.amount) ? globalThis.Number(object.amount) : 0,
+    };
+  },
+
+  toJSON(message: ResourceInfo): unknown {
+    const obj: any = {};
+    if (message.type !== 0) {
+      obj.type = Math.round(message.type);
+    }
+    if (message.amount !== 0) {
+      obj.amount = Math.round(message.amount);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ResourceInfo>, I>>(base?: I): ResourceInfo {
+    return ResourceInfo.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ResourceInfo>, I>>(object: I): ResourceInfo {
+    const message = createBaseResourceInfo();
+    message.type = object.type ?? 0;
+    message.amount = object.amount ?? 0;
     return message;
   },
 };

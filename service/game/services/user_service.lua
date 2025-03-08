@@ -355,4 +355,35 @@ function M.get_user_level(user_id)
     return user.level
 end
 
+-- 获取用户资源
+function M.get_user_resources(user_id)
+    logger.debug("Getting resources for user %d", user_id)
+    local resources = {}
+    local exp_info = {
+        type = enum.ResourceType.RESOURCE_TYPE_EXP,
+        amount = item_service.get_special_item(user_id, enum.SpecialItemID.SPECIAL_ITEM_ID_EXP)
+    }
+    local gold_info = {
+        type = enum.ResourceType.RESOURCE_TYPE_GOLD,
+        amount = item_service.get_special_item(user_id, enum.SpecialItemID.SPECIAL_ITEM_ID_GOLD)
+    }
+    resources[1] = exp_info
+    resources[2] = gold_info
+    return resources
+end
+
+-- 添加更新用户登录时间的函数
+function M.update_user_login_time(user_id)
+    logger.debug("Updating login time for user %d", user_id)
+    
+    local now = os.time()
+    local ok, err = user_dao.update_login_time(user_id, now)
+    
+    if not ok then
+        logger.error("Failed to update login time: %s", err or "unknown error")
+        return false
+    end
+    return true
+end
+
 return M 

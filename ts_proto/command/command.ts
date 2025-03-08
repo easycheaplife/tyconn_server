@@ -6,7 +6,7 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { BagInfo, CardInfo, ItemInfo, UserInfo } from "../common/entity";
+import { BagInfo, CardInfo, ItemInfo, MailInfo, ResourceInfo, UserInfo } from "../common/entity";
 import { BagType, bagTypeFromJSON, bagTypeToJSON } from "../common/enum";
 
 export const protobufPackage = "command";
@@ -63,6 +63,28 @@ export interface G2CUserInfoResponse {
     | undefined;
   /** 是否是新创建的用户 */
   isNew: boolean;
+}
+
+/** 游戏登录请求 {{Req:7}} */
+export interface C2GLoginGameRequest {
+  /** JWT令牌 */
+  token: string;
+}
+
+/** 游戏登录响应 {{Res:8}} */
+export interface G2CLoginGameResponse {
+  /** 用户基本信息 */
+  user:
+    | UserInfo
+    | undefined;
+  /** 是否是新创建的用户 */
+  isNewUser: boolean;
+  /** 背包信息 */
+  bags: BagInfo[];
+  /** 资源信息 */
+  resources: ResourceInfo[];
+  /** 服务器时间（毫秒） */
+  serverTime: number;
 }
 
 /** 获取用户卡牌请求 {{Req:101}} */
@@ -161,8 +183,6 @@ export interface C2GComposeItemRequest {
   token: string;
   /** 目标物品ID */
   targetId: number;
-  /** 材料所在格子 */
-  materialSlots: number[];
 }
 
 /** 物品合成响应 {{Res:212}} */
@@ -179,8 +199,8 @@ export interface G2CComposeItemResponse {
 export interface C2GDecomposeItemRequest {
   /** JWT令牌 */
   token: string;
-  /** 要分解的物品格子 */
-  itemSlots: number[];
+  /** 目标物品ID */
+  targetId: number;
 }
 
 /** 物品分解响应 {{Res:214}} */
@@ -357,6 +377,68 @@ export interface G2CEquipmentExpiredPush {
 export interface G2CEquipmentLevelUpgradedPush {
   /** 新等级 */
   newLevel: number;
+}
+
+/** 获取邮件列表请求 {{Req:501}} */
+export interface C2GMailListRequest {
+  /** JWT令牌 */
+  token: string;
+}
+
+/** 获取邮件列表响应 {{Res:502}} */
+export interface G2CMailListResponse {
+  /** 邮件列表 */
+  mails: MailInfo[];
+}
+
+/** 读取邮件请求 {{Req:503}} */
+export interface C2GReadMailRequest {
+  /** JWT令牌 */
+  token: string;
+  /** 邮件ID */
+  mailId: number;
+}
+
+/** 读取邮件响应 {{Res:504}} */
+export interface G2CReadMailResponse {
+  /** 邮件ID */
+  mailId: number;
+}
+
+/** 领取邮件附件请求 {{Req:505}} */
+export interface C2GClaimMailItemsRequest {
+  /** JWT令牌 */
+  token: string;
+  /** 邮件ID */
+  mailId: number;
+}
+
+/** 领取邮件附件响应 {{Res:506}} */
+export interface G2CClaimMailItemsResponse {
+  /** 邮件ID */
+  mailId: number;
+  /** 获得的物品 */
+  items: ItemInfo[];
+}
+
+/** 删除邮件请求 {{Req:507}} */
+export interface C2GDeleteMailRequest {
+  /** JWT令牌 */
+  token: string;
+  /** 邮件ID */
+  mailId: number;
+}
+
+/** 删除邮件响应 {{Res:508}} */
+export interface G2CDeleteMailResponse {
+  /** 邮件ID */
+  mailId: number;
+}
+
+/** 新邮件推送 {{Push:551}} */
+export interface G2CNewMailPush {
+  /** 新邮件信息 */
+  mail: MailInfo | undefined;
 }
 
 function createBaseC2LLoginRequest(): C2LLoginRequest {
@@ -839,6 +921,190 @@ export const G2CUserInfoResponse: MessageFns<G2CUserInfoResponse> = {
     const message = createBaseG2CUserInfoResponse();
     message.user = (object.user !== undefined && object.user !== null) ? UserInfo.fromPartial(object.user) : undefined;
     message.isNew = object.isNew ?? false;
+    return message;
+  },
+};
+
+function createBaseC2GLoginGameRequest(): C2GLoginGameRequest {
+  return { token: "" };
+}
+
+export const C2GLoginGameRequest: MessageFns<C2GLoginGameRequest> = {
+  encode(message: C2GLoginGameRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): C2GLoginGameRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseC2GLoginGameRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): C2GLoginGameRequest {
+    return { token: isSet(object.token) ? globalThis.String(object.token) : "" };
+  },
+
+  toJSON(message: C2GLoginGameRequest): unknown {
+    const obj: any = {};
+    if (message.token !== "") {
+      obj.token = message.token;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<C2GLoginGameRequest>, I>>(base?: I): C2GLoginGameRequest {
+    return C2GLoginGameRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<C2GLoginGameRequest>, I>>(object: I): C2GLoginGameRequest {
+    const message = createBaseC2GLoginGameRequest();
+    message.token = object.token ?? "";
+    return message;
+  },
+};
+
+function createBaseG2CLoginGameResponse(): G2CLoginGameResponse {
+  return { user: undefined, isNewUser: false, bags: [], resources: [], serverTime: 0 };
+}
+
+export const G2CLoginGameResponse: MessageFns<G2CLoginGameResponse> = {
+  encode(message: G2CLoginGameResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.user !== undefined) {
+      UserInfo.encode(message.user, writer.uint32(10).fork()).join();
+    }
+    if (message.isNewUser !== false) {
+      writer.uint32(16).bool(message.isNewUser);
+    }
+    for (const v of message.bags) {
+      BagInfo.encode(v!, writer.uint32(26).fork()).join();
+    }
+    for (const v of message.resources) {
+      ResourceInfo.encode(v!, writer.uint32(34).fork()).join();
+    }
+    if (message.serverTime !== 0) {
+      writer.uint32(40).int64(message.serverTime);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CLoginGameResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CLoginGameResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.user = UserInfo.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.isNewUser = reader.bool();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.bags.push(BagInfo.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.resources.push(ResourceInfo.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.serverTime = longToNumber(reader.int64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CLoginGameResponse {
+    return {
+      user: isSet(object.user) ? UserInfo.fromJSON(object.user) : undefined,
+      isNewUser: isSet(object.isNewUser) ? globalThis.Boolean(object.isNewUser) : false,
+      bags: globalThis.Array.isArray(object?.bags) ? object.bags.map((e: any) => BagInfo.fromJSON(e)) : [],
+      resources: globalThis.Array.isArray(object?.resources)
+        ? object.resources.map((e: any) => ResourceInfo.fromJSON(e))
+        : [],
+      serverTime: isSet(object.serverTime) ? globalThis.Number(object.serverTime) : 0,
+    };
+  },
+
+  toJSON(message: G2CLoginGameResponse): unknown {
+    const obj: any = {};
+    if (message.user !== undefined) {
+      obj.user = UserInfo.toJSON(message.user);
+    }
+    if (message.isNewUser !== false) {
+      obj.isNewUser = message.isNewUser;
+    }
+    if (message.bags?.length) {
+      obj.bags = message.bags.map((e) => BagInfo.toJSON(e));
+    }
+    if (message.resources?.length) {
+      obj.resources = message.resources.map((e) => ResourceInfo.toJSON(e));
+    }
+    if (message.serverTime !== 0) {
+      obj.serverTime = Math.round(message.serverTime);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CLoginGameResponse>, I>>(base?: I): G2CLoginGameResponse {
+    return G2CLoginGameResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CLoginGameResponse>, I>>(object: I): G2CLoginGameResponse {
+    const message = createBaseG2CLoginGameResponse();
+    message.user = (object.user !== undefined && object.user !== null) ? UserInfo.fromPartial(object.user) : undefined;
+    message.isNewUser = object.isNewUser ?? false;
+    message.bags = object.bags?.map((e) => BagInfo.fromPartial(e)) || [];
+    message.resources = object.resources?.map((e) => ResourceInfo.fromPartial(e)) || [];
+    message.serverTime = object.serverTime ?? 0;
     return message;
   },
 };
@@ -1728,7 +1994,7 @@ export const G2CMoveItemResponse: MessageFns<G2CMoveItemResponse> = {
 };
 
 function createBaseC2GComposeItemRequest(): C2GComposeItemRequest {
-  return { token: "", targetId: 0, materialSlots: [] };
+  return { token: "", targetId: 0 };
 }
 
 export const C2GComposeItemRequest: MessageFns<C2GComposeItemRequest> = {
@@ -1739,11 +2005,6 @@ export const C2GComposeItemRequest: MessageFns<C2GComposeItemRequest> = {
     if (message.targetId !== 0) {
       writer.uint32(16).int32(message.targetId);
     }
-    writer.uint32(26).fork();
-    for (const v of message.materialSlots) {
-      writer.int32(v);
-    }
-    writer.join();
     return writer;
   },
 
@@ -1770,24 +2031,6 @@ export const C2GComposeItemRequest: MessageFns<C2GComposeItemRequest> = {
           message.targetId = reader.int32();
           continue;
         }
-        case 3: {
-          if (tag === 24) {
-            message.materialSlots.push(reader.int32());
-
-            continue;
-          }
-
-          if (tag === 26) {
-            const end2 = reader.uint32() + reader.pos;
-            while (reader.pos < end2) {
-              message.materialSlots.push(reader.int32());
-            }
-
-            continue;
-          }
-
-          break;
-        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -1801,9 +2044,6 @@ export const C2GComposeItemRequest: MessageFns<C2GComposeItemRequest> = {
     return {
       token: isSet(object.token) ? globalThis.String(object.token) : "",
       targetId: isSet(object.targetId) ? globalThis.Number(object.targetId) : 0,
-      materialSlots: globalThis.Array.isArray(object?.materialSlots)
-        ? object.materialSlots.map((e: any) => globalThis.Number(e))
-        : [],
     };
   },
 
@@ -1815,9 +2055,6 @@ export const C2GComposeItemRequest: MessageFns<C2GComposeItemRequest> = {
     if (message.targetId !== 0) {
       obj.targetId = Math.round(message.targetId);
     }
-    if (message.materialSlots?.length) {
-      obj.materialSlots = message.materialSlots.map((e) => Math.round(e));
-    }
     return obj;
   },
 
@@ -1828,7 +2065,6 @@ export const C2GComposeItemRequest: MessageFns<C2GComposeItemRequest> = {
     const message = createBaseC2GComposeItemRequest();
     message.token = object.token ?? "";
     message.targetId = object.targetId ?? 0;
-    message.materialSlots = object.materialSlots?.map((e) => e) || [];
     return message;
   },
 };
@@ -1914,7 +2150,7 @@ export const G2CComposeItemResponse: MessageFns<G2CComposeItemResponse> = {
 };
 
 function createBaseC2GDecomposeItemRequest(): C2GDecomposeItemRequest {
-  return { token: "", itemSlots: [] };
+  return { token: "", targetId: 0 };
 }
 
 export const C2GDecomposeItemRequest: MessageFns<C2GDecomposeItemRequest> = {
@@ -1922,11 +2158,9 @@ export const C2GDecomposeItemRequest: MessageFns<C2GDecomposeItemRequest> = {
     if (message.token !== "") {
       writer.uint32(10).string(message.token);
     }
-    writer.uint32(18).fork();
-    for (const v of message.itemSlots) {
-      writer.int32(v);
+    if (message.targetId !== 0) {
+      writer.uint32(16).int32(message.targetId);
     }
-    writer.join();
     return writer;
   },
 
@@ -1946,22 +2180,12 @@ export const C2GDecomposeItemRequest: MessageFns<C2GDecomposeItemRequest> = {
           continue;
         }
         case 2: {
-          if (tag === 16) {
-            message.itemSlots.push(reader.int32());
-
-            continue;
+          if (tag !== 16) {
+            break;
           }
 
-          if (tag === 18) {
-            const end2 = reader.uint32() + reader.pos;
-            while (reader.pos < end2) {
-              message.itemSlots.push(reader.int32());
-            }
-
-            continue;
-          }
-
-          break;
+          message.targetId = reader.int32();
+          continue;
         }
       }
       if ((tag & 7) === 4 || tag === 0) {
@@ -1975,9 +2199,7 @@ export const C2GDecomposeItemRequest: MessageFns<C2GDecomposeItemRequest> = {
   fromJSON(object: any): C2GDecomposeItemRequest {
     return {
       token: isSet(object.token) ? globalThis.String(object.token) : "",
-      itemSlots: globalThis.Array.isArray(object?.itemSlots)
-        ? object.itemSlots.map((e: any) => globalThis.Number(e))
-        : [],
+      targetId: isSet(object.targetId) ? globalThis.Number(object.targetId) : 0,
     };
   },
 
@@ -1986,8 +2208,8 @@ export const C2GDecomposeItemRequest: MessageFns<C2GDecomposeItemRequest> = {
     if (message.token !== "") {
       obj.token = message.token;
     }
-    if (message.itemSlots?.length) {
-      obj.itemSlots = message.itemSlots.map((e) => Math.round(e));
+    if (message.targetId !== 0) {
+      obj.targetId = Math.round(message.targetId);
     }
     return obj;
   },
@@ -1998,7 +2220,7 @@ export const C2GDecomposeItemRequest: MessageFns<C2GDecomposeItemRequest> = {
   fromPartial<I extends Exact<DeepPartial<C2GDecomposeItemRequest>, I>>(object: I): C2GDecomposeItemRequest {
     const message = createBaseC2GDecomposeItemRequest();
     message.token = object.token ?? "";
-    message.itemSlots = object.itemSlots?.map((e) => e) || [];
+    message.targetId = object.targetId ?? 0;
     return message;
   },
 };
@@ -3594,6 +3816,600 @@ export const G2CEquipmentLevelUpgradedPush: MessageFns<G2CEquipmentLevelUpgraded
   ): G2CEquipmentLevelUpgradedPush {
     const message = createBaseG2CEquipmentLevelUpgradedPush();
     message.newLevel = object.newLevel ?? 0;
+    return message;
+  },
+};
+
+function createBaseC2GMailListRequest(): C2GMailListRequest {
+  return { token: "" };
+}
+
+export const C2GMailListRequest: MessageFns<C2GMailListRequest> = {
+  encode(message: C2GMailListRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): C2GMailListRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseC2GMailListRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): C2GMailListRequest {
+    return { token: isSet(object.token) ? globalThis.String(object.token) : "" };
+  },
+
+  toJSON(message: C2GMailListRequest): unknown {
+    const obj: any = {};
+    if (message.token !== "") {
+      obj.token = message.token;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<C2GMailListRequest>, I>>(base?: I): C2GMailListRequest {
+    return C2GMailListRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<C2GMailListRequest>, I>>(object: I): C2GMailListRequest {
+    const message = createBaseC2GMailListRequest();
+    message.token = object.token ?? "";
+    return message;
+  },
+};
+
+function createBaseG2CMailListResponse(): G2CMailListResponse {
+  return { mails: [] };
+}
+
+export const G2CMailListResponse: MessageFns<G2CMailListResponse> = {
+  encode(message: G2CMailListResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.mails) {
+      MailInfo.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CMailListResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CMailListResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.mails.push(MailInfo.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CMailListResponse {
+    return { mails: globalThis.Array.isArray(object?.mails) ? object.mails.map((e: any) => MailInfo.fromJSON(e)) : [] };
+  },
+
+  toJSON(message: G2CMailListResponse): unknown {
+    const obj: any = {};
+    if (message.mails?.length) {
+      obj.mails = message.mails.map((e) => MailInfo.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CMailListResponse>, I>>(base?: I): G2CMailListResponse {
+    return G2CMailListResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CMailListResponse>, I>>(object: I): G2CMailListResponse {
+    const message = createBaseG2CMailListResponse();
+    message.mails = object.mails?.map((e) => MailInfo.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseC2GReadMailRequest(): C2GReadMailRequest {
+  return { token: "", mailId: 0 };
+}
+
+export const C2GReadMailRequest: MessageFns<C2GReadMailRequest> = {
+  encode(message: C2GReadMailRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    if (message.mailId !== 0) {
+      writer.uint32(16).int64(message.mailId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): C2GReadMailRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseC2GReadMailRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.mailId = longToNumber(reader.int64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): C2GReadMailRequest {
+    return {
+      token: isSet(object.token) ? globalThis.String(object.token) : "",
+      mailId: isSet(object.mailId) ? globalThis.Number(object.mailId) : 0,
+    };
+  },
+
+  toJSON(message: C2GReadMailRequest): unknown {
+    const obj: any = {};
+    if (message.token !== "") {
+      obj.token = message.token;
+    }
+    if (message.mailId !== 0) {
+      obj.mailId = Math.round(message.mailId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<C2GReadMailRequest>, I>>(base?: I): C2GReadMailRequest {
+    return C2GReadMailRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<C2GReadMailRequest>, I>>(object: I): C2GReadMailRequest {
+    const message = createBaseC2GReadMailRequest();
+    message.token = object.token ?? "";
+    message.mailId = object.mailId ?? 0;
+    return message;
+  },
+};
+
+function createBaseG2CReadMailResponse(): G2CReadMailResponse {
+  return { mailId: 0 };
+}
+
+export const G2CReadMailResponse: MessageFns<G2CReadMailResponse> = {
+  encode(message: G2CReadMailResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.mailId !== 0) {
+      writer.uint32(8).int64(message.mailId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CReadMailResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CReadMailResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.mailId = longToNumber(reader.int64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CReadMailResponse {
+    return { mailId: isSet(object.mailId) ? globalThis.Number(object.mailId) : 0 };
+  },
+
+  toJSON(message: G2CReadMailResponse): unknown {
+    const obj: any = {};
+    if (message.mailId !== 0) {
+      obj.mailId = Math.round(message.mailId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CReadMailResponse>, I>>(base?: I): G2CReadMailResponse {
+    return G2CReadMailResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CReadMailResponse>, I>>(object: I): G2CReadMailResponse {
+    const message = createBaseG2CReadMailResponse();
+    message.mailId = object.mailId ?? 0;
+    return message;
+  },
+};
+
+function createBaseC2GClaimMailItemsRequest(): C2GClaimMailItemsRequest {
+  return { token: "", mailId: 0 };
+}
+
+export const C2GClaimMailItemsRequest: MessageFns<C2GClaimMailItemsRequest> = {
+  encode(message: C2GClaimMailItemsRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    if (message.mailId !== 0) {
+      writer.uint32(16).int64(message.mailId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): C2GClaimMailItemsRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseC2GClaimMailItemsRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.mailId = longToNumber(reader.int64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): C2GClaimMailItemsRequest {
+    return {
+      token: isSet(object.token) ? globalThis.String(object.token) : "",
+      mailId: isSet(object.mailId) ? globalThis.Number(object.mailId) : 0,
+    };
+  },
+
+  toJSON(message: C2GClaimMailItemsRequest): unknown {
+    const obj: any = {};
+    if (message.token !== "") {
+      obj.token = message.token;
+    }
+    if (message.mailId !== 0) {
+      obj.mailId = Math.round(message.mailId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<C2GClaimMailItemsRequest>, I>>(base?: I): C2GClaimMailItemsRequest {
+    return C2GClaimMailItemsRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<C2GClaimMailItemsRequest>, I>>(object: I): C2GClaimMailItemsRequest {
+    const message = createBaseC2GClaimMailItemsRequest();
+    message.token = object.token ?? "";
+    message.mailId = object.mailId ?? 0;
+    return message;
+  },
+};
+
+function createBaseG2CClaimMailItemsResponse(): G2CClaimMailItemsResponse {
+  return { mailId: 0, items: [] };
+}
+
+export const G2CClaimMailItemsResponse: MessageFns<G2CClaimMailItemsResponse> = {
+  encode(message: G2CClaimMailItemsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.mailId !== 0) {
+      writer.uint32(8).int64(message.mailId);
+    }
+    for (const v of message.items) {
+      ItemInfo.encode(v!, writer.uint32(18).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CClaimMailItemsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CClaimMailItemsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.mailId = longToNumber(reader.int64());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.items.push(ItemInfo.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CClaimMailItemsResponse {
+    return {
+      mailId: isSet(object.mailId) ? globalThis.Number(object.mailId) : 0,
+      items: globalThis.Array.isArray(object?.items) ? object.items.map((e: any) => ItemInfo.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: G2CClaimMailItemsResponse): unknown {
+    const obj: any = {};
+    if (message.mailId !== 0) {
+      obj.mailId = Math.round(message.mailId);
+    }
+    if (message.items?.length) {
+      obj.items = message.items.map((e) => ItemInfo.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CClaimMailItemsResponse>, I>>(base?: I): G2CClaimMailItemsResponse {
+    return G2CClaimMailItemsResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CClaimMailItemsResponse>, I>>(object: I): G2CClaimMailItemsResponse {
+    const message = createBaseG2CClaimMailItemsResponse();
+    message.mailId = object.mailId ?? 0;
+    message.items = object.items?.map((e) => ItemInfo.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseC2GDeleteMailRequest(): C2GDeleteMailRequest {
+  return { token: "", mailId: 0 };
+}
+
+export const C2GDeleteMailRequest: MessageFns<C2GDeleteMailRequest> = {
+  encode(message: C2GDeleteMailRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    if (message.mailId !== 0) {
+      writer.uint32(16).int64(message.mailId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): C2GDeleteMailRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseC2GDeleteMailRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.mailId = longToNumber(reader.int64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): C2GDeleteMailRequest {
+    return {
+      token: isSet(object.token) ? globalThis.String(object.token) : "",
+      mailId: isSet(object.mailId) ? globalThis.Number(object.mailId) : 0,
+    };
+  },
+
+  toJSON(message: C2GDeleteMailRequest): unknown {
+    const obj: any = {};
+    if (message.token !== "") {
+      obj.token = message.token;
+    }
+    if (message.mailId !== 0) {
+      obj.mailId = Math.round(message.mailId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<C2GDeleteMailRequest>, I>>(base?: I): C2GDeleteMailRequest {
+    return C2GDeleteMailRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<C2GDeleteMailRequest>, I>>(object: I): C2GDeleteMailRequest {
+    const message = createBaseC2GDeleteMailRequest();
+    message.token = object.token ?? "";
+    message.mailId = object.mailId ?? 0;
+    return message;
+  },
+};
+
+function createBaseG2CDeleteMailResponse(): G2CDeleteMailResponse {
+  return { mailId: 0 };
+}
+
+export const G2CDeleteMailResponse: MessageFns<G2CDeleteMailResponse> = {
+  encode(message: G2CDeleteMailResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.mailId !== 0) {
+      writer.uint32(16).int64(message.mailId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CDeleteMailResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CDeleteMailResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.mailId = longToNumber(reader.int64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CDeleteMailResponse {
+    return { mailId: isSet(object.mailId) ? globalThis.Number(object.mailId) : 0 };
+  },
+
+  toJSON(message: G2CDeleteMailResponse): unknown {
+    const obj: any = {};
+    if (message.mailId !== 0) {
+      obj.mailId = Math.round(message.mailId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CDeleteMailResponse>, I>>(base?: I): G2CDeleteMailResponse {
+    return G2CDeleteMailResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CDeleteMailResponse>, I>>(object: I): G2CDeleteMailResponse {
+    const message = createBaseG2CDeleteMailResponse();
+    message.mailId = object.mailId ?? 0;
+    return message;
+  },
+};
+
+function createBaseG2CNewMailPush(): G2CNewMailPush {
+  return { mail: undefined };
+}
+
+export const G2CNewMailPush: MessageFns<G2CNewMailPush> = {
+  encode(message: G2CNewMailPush, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.mail !== undefined) {
+      MailInfo.encode(message.mail, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CNewMailPush {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CNewMailPush();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.mail = MailInfo.decode(reader, reader.uint32());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CNewMailPush {
+    return { mail: isSet(object.mail) ? MailInfo.fromJSON(object.mail) : undefined };
+  },
+
+  toJSON(message: G2CNewMailPush): unknown {
+    const obj: any = {};
+    if (message.mail !== undefined) {
+      obj.mail = MailInfo.toJSON(message.mail);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CNewMailPush>, I>>(base?: I): G2CNewMailPush {
+    return G2CNewMailPush.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CNewMailPush>, I>>(object: I): G2CNewMailPush {
+    const message = createBaseG2CNewMailPush();
+    message.mail = (object.mail !== undefined && object.mail !== null) ? MailInfo.fromPartial(object.mail) : undefined;
     return message;
   },
 };

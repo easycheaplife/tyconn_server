@@ -1,5 +1,5 @@
 -- 从proto/common/enum.proto自动生成的枚举定义
--- 生成时间: 2025-03-05 02:46:20
+-- 生成时间: 2025-03-08 19:51:32
 
 local M = {}
 
@@ -320,6 +320,13 @@ M.MailStatus = {
     MAIL_STATUS_CLAIMED = 3,    -- 已领取
     MAIL_STATUS_DELETED = 4,    -- 已删除
     MAIL_STATUS_EXPIRED = 5,    -- 已过期
+}
+
+-- 资源类型
+M.ResourceType = {
+    RESOURCE_TYPE_NONE = 0,
+    RESOURCE_TYPE_GOLD = 1,    -- 金币
+    RESOURCE_TYPE_EXP = 2,    -- 经验
 }
 
 return M

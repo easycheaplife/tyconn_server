@@ -140,4 +140,32 @@ function M.cache_user_by_account(user)
     return cache.set_account_mapping(user.account, user.user_id)
 end
 
+-- 更新用户登录时间
+function M.update_login_time(user_id, login_time)
+    if not user_id then
+        logger.error("Invalid user_id for update_login_time")
+        return false, "Invalid user_id"
+    end
+    
+    login_time = login_time or os.time()
+    
+    -- 调用数据库更新
+    local ok, err = db_client.update_user_login_time(user_id, login_time)
+    if not ok then
+        logger.error("Failed to update login time for user %d: %s", user_id, err or "unknown error")
+        return false, err
+    end
+    
+    -- 更新缓存
+    local user = cache.get_user_info(user_id)
+    if user then
+        user.login_time = login_time
+        user.last_login = login_time
+        cache.set_user_info(user_id, user)
+    end
+    
+    logger.debug("Updated login time for user %d to %d", user_id, login_time)
+    return true
+end
+
 return M 

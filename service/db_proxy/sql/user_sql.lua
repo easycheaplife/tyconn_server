@@ -90,4 +90,11 @@ M.GET_ONLINE_USERS = [[
 
 M.CHECK_NAME_EXISTS = nil
 
+-- 更新用户登录时间
+M.UPDATE_USER_LOGIN_TIME = [[
+    UPDATE users SET 
+        last_login_time = %d
+    WHERE user_id = %d
+]]
+
 return M 

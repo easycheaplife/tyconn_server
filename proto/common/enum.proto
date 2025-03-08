@@ -321,3 +321,10 @@ enum MailStatus {
     MAIL_STATUS_DELETED = 4;   // 已删除
     MAIL_STATUS_EXPIRED = 5;   // 已过期
 }
+
+// 资源类型
+enum ResourceType {
+    RESOURCE_TYPE_NONE = 0;
+    RESOURCE_TYPE_GOLD = 1;        // 金币
+    RESOURCE_TYPE_EXP = 2;         // 经验
+}

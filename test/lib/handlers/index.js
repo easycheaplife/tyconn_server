@@ -1,4 +1,5 @@
 // 导出所有处理器
+const loginGame = require('./user/login_game');
 const getBagInfo = require('./bag/get_bag_info');
 const expandBag = require('./bag/expand_bag');
 const sortBag = require('./bag/sort_bag');
@@ -16,6 +17,7 @@ const unequipItem = require('./equipment/unequip_item');
 const getRandomEquip = require('./equipment/get_random_equip');
 const getEquipLevelInfo = require('./equipment/get_equip_level_info');
 const upgradeEquipLevel = require('./equipment/upgrade_equip_level');
+
 
 // 导入邮件处理器
 const getMailList = require('./mail/get_mail_list');
@@ -35,6 +37,7 @@ module.exports = {
     composeItem,
     
     // 用户相关
+    loginGame,
     getUserInfo,
     getUserCards,
     

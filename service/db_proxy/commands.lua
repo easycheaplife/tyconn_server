@@ -42,6 +42,11 @@ function CMD.update_user(user)
     return wrap_call(user_model.update_user, user)
 end
 
+-- 添加更新用户登录时间的命令
+function CMD.update_user_login_time(args)
+    return wrap_call(user_model.update_user_login_time, args)
+end
+
 -- Token相关操作
 function CMD.sync_jwt(token_info)
     return wrap_call(token_model.sync_token, token_info)
