@@ -6,6 +6,7 @@ local bag_service = require "services.bag_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message = require "message"
 local utils = require "utils"
+local error = require "game.define.error"  
 
 local M = {}
 
@@ -15,7 +16,7 @@ function M.handle(client_id, msg)
     -- 验证请求并获取用户信息
     local base_request, request, error_code, error_message, user, claims = handler_helper.verify_request_with_user(
         client_id, msg, "command.C2GUseItemRequest")
-    if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+    if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", 
             client_id, error_code, error_message)
         return message.create_error_response(
@@ -31,14 +32,14 @@ function M.handle(client_id, msg)
         logger.error("Invalid item id: %s", tostring(request.item_id))
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAM"),
+            error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CUseItemResponse",
             "Invalid item id",
             pb.enum("common.MessageID", "G2C_USE_ITEM_RESPONSE"))
     end
 
     if not request.count or request.count <= 0 then
-        local error_code = pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAM")
+        local error_code = error.ErrorCode.ERROR_CODE_INVALID_PARAM
         logger.error("Invalid count: %s, error_code: %d", tostring(request.count), error_code)
         return message.create_error_response(
             base_request,
@@ -55,7 +56,7 @@ function M.handle(client_id, msg)
     if not ok then
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_USE_FAILED"),
+            error.ErrorCode.ERROR_CODE_ITEM_USE_FAILED,
             "command.G2CUseItemResponse",
             err,
             pb.enum("common.MessageID", "G2C_USE_ITEM_RESPONSE"))
@@ -66,7 +67,7 @@ function M.handle(client_id, msg)
     if not bags then
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_GET_BAG_FAILED"),
+            error.ErrorCode.ERROR_CODE_GET_BAG_FAILED,
             "command.G2CUseItemResponse",
             bags_err,
             pb.enum("common.MessageID", "G2C_USE_ITEM_RESPONSE"))

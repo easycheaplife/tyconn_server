@@ -4,6 +4,7 @@ local pb = require "pb"
 local gm_service = require "services.gm_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message = require "message"
+local error = require "game.define.error"  
 
 local M = {}
 
@@ -14,7 +15,7 @@ function M.handle(client_id, msg)
     -- 验证请求并获取用户信息
     local base_request, request, error_code, error_message, user, claims = handler_helper.verify_request_with_user(
         client_id, msg, "command.C2GGmCommandRequest")
-    if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+    if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", 
             client_id, error_code, error_message)
         return message.create_error_response(
@@ -30,7 +31,7 @@ function M.handle(client_id, msg)
         logger.warn("User has no GM permission - user_id: %d", user.user_id)
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_PERMISSION_DENIED"),
+            error.ErrorCode.ERROR_CODE_PERMISSION_DENIED,
             RESP_TYPE,
             "No GM permission",
             pb.enum("common.MessageID", "G2C_GM_COMMAND_RESPONSE"))
@@ -43,7 +44,7 @@ function M.handle(client_id, msg)
             user.user_id, request.command, msg)
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_GM_COMMAND_FAILED"),
+            error.ErrorCode.ERROR_CODE_GM_COMMAND_FAILED,
             RESP_TYPE,
             msg,
             pb.enum("common.MessageID", "G2C_GM_COMMAND_RESPONSE"))

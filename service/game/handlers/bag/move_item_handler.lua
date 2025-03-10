@@ -5,6 +5,7 @@ local bag_service = require "services.bag_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message = require "message"
 local utils = require "utils"
+local error = require "game.define.error"  
 
 local M = {}
 
@@ -14,7 +15,7 @@ function M.handle(client_id, msg)
     -- 验证请求并获取用户信息
     local base_request, request, error_code, error_message, user, claims = handler_helper.verify_request_with_user(
         client_id, msg, "command.C2GMoveItemRequest")
-    if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+    if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", 
             client_id, error_code, error_message)
         return message.create_error_response(
@@ -29,7 +30,7 @@ function M.handle(client_id, msg)
     if not request.src_bag_type or not request.src_slot or not request.dst_bag_type or not request.dst_slot then
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAM"),
+            error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CMoveItemResponse",
             "Invalid parameters: src_bag_type, src_slot, dst_bag_type, dst_slot are required",
             pb.enum("common.MessageID", "G2C_MOVE_ITEM_RESPONSE"))
@@ -49,7 +50,7 @@ function M.handle(client_id, msg)
     if not valid_bag_types[src_bag_type] or not valid_bag_types[dst_bag_type] then
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_BAG_TYPE"),
+            error.ErrorCode.ERROR_CODE_INVALID_BAG_TYPE,
             "command.G2CMoveItemResponse",
             "Invalid bag type",
             pb.enum("common.MessageID", "G2C_MOVE_ITEM_RESPONSE"))
@@ -72,7 +73,7 @@ function M.handle(client_id, msg)
         logger.error("Failed to move item for user: %d, error: %s", user.user_id, err)
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_MOVE_ITEM_FAILED"),
+            error.ErrorCode.ERROR_CODE_MOVE_ITEM_FAILED,
             "command.G2CMoveItemResponse",
             err,
             pb.enum("common.MessageID", "G2C_MOVE_ITEM_RESPONSE"))

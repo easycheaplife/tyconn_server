@@ -125,31 +125,91 @@ local function generate_enum_lua(enums)
     return table.concat(lines, "\n")
 end
 
+-- 生成错误码定义
+local function generate_error_lua(enums)
+    local lines = {
+        "-- 从proto/common/error.proto自动生成的错误码定义",
+        "-- 生成时间: " .. os.date("%Y-%m-%d %H:%M:%S"),
+        "",
+        "local M = {}"
+    }
+
+    for _, enum in ipairs(enums) do
+        if enum.name == "ErrorCode" then
+            table.insert(lines, "")
+            if enum.comment ~= "" then
+                table.insert(lines, "-- " .. enum.comment)
+            end
+            table.insert(lines, "M.ErrorCode = {")
+            
+            -- 添加错误码映射
+            for _, value in ipairs(enum.values) do
+                local line = string.format("    %s = %d,", value.name, value.value)
+                if value.comment ~= "" then
+                    line = line .. string.format("    -- %s", value.comment)
+                end
+                table.insert(lines, line)
+            end
+            
+            table.insert(lines, "}")
+            
+            -- 添加错误码描述映射
+            table.insert(lines, "")
+            table.insert(lines, "-- 错误码描述映射")
+            table.insert(lines, "M.ErrorMessage = {")
+            for _, value in ipairs(enum.values) do
+                local message = value.comment ~= "" and value.comment or value.name
+                local line = string.format("    [%d] = \"%s\",", value.value, message)
+                table.insert(lines, line)
+            end
+            table.insert(lines, "}")
+            
+            break
+        end
+    end
+    
+    table.insert(lines, "")
+    table.insert(lines, "return M")
+    
+    return table.concat(lines, "\n")
+end
+
 -- 主函数
 local function main()
-    -- 读取proto文件
-    local proto_content = read_file("proto/common/enum.proto")
-    if not proto_content then
+    -- 读取enum.proto文件
+    local enum_content = read_file("proto/common/enum.proto")
+    if not enum_content then
+        return false
+    end
+    
+    -- 读取error.proto文件
+    local error_content = read_file("proto/common/error.proto")
+    if not error_content then
         return false
     end
     
     -- 解析枚举定义
-    local enums = parse_enums(proto_content)
+    local enum_enums = parse_enums(enum_content)
+    local error_enums = parse_enums(error_content)
     
     -- 生成Lua代码
-    local lua_content = generate_enum_lua(enums)
+    local enum_lua = generate_enum_lua(enum_enums)
+    local error_lua = generate_error_lua(error_enums)
     
     -- 确保目录存在
     os.execute("mkdir -p service/game/define")
     
     -- 写入文件
-    return write_file("service/game/define/enum.lua", lua_content)
+    local ok1 = write_file("service/game/define/enum.lua", enum_lua)
+    local ok2 = write_file("service/game/define/error.lua", error_lua)
+    
+    return ok1 and ok2
 end
 
 -- 执行生成
 if main() then
-    print("Generated enum.lua successfully")
+    print("Generated enum.lua and error.lua successfully")
 else
-    print("Failed to generate enum.lua")
+    print("Failed to generate enum.lua and error.lua")
     os.exit(1)
 end 

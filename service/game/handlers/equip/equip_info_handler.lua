@@ -5,6 +5,7 @@ local equip_service = require "services.equip_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message = require "message"
 local utils = require "utils"
+local error = require "game.define.error"  
 
 local M = {}
 
@@ -15,7 +16,7 @@ function M.handle(client_id, msg)
     local base_request, request, error_code, error_message, user, claims = handler_helper.verify_request_with_user(
         client_id, msg, "command.C2GEquipInfoRequest")
     
-    if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+    if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         return message.create_error_response(
             base_request, 
             error_code, 

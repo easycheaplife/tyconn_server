@@ -6,6 +6,7 @@ local bag_service = require "services.bag_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message = require "message"
 local utils = require "utils"
+local error = require "game.define.error"  
 
 local M = {}
 
@@ -15,7 +16,7 @@ function M.handle(client_id, msg)
     -- 验证请求并获取用户信息
     local base_request, request, error_code, error_message, user, claims = handler_helper.verify_request_with_user(
         client_id, msg, "command.C2GExpandBagRequest")
-    if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+    if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", 
             client_id, error_code, error_message)
         return message.create_error_response(
@@ -30,7 +31,7 @@ function M.handle(client_id, msg)
     if not request.add_size or request.add_size <= 0 or not request.bag_type then
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAM"),
+            error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CExpandBagResponse",
             "Invalid parameters: add_size must be positive and bag_type is required",
             pb.enum("common.MessageID", "G2C_EXPAND_BAG_RESPONSE"))
@@ -60,7 +61,7 @@ function M.handle(client_id, msg)
     if not bag_type then
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_BAG_TYPE"),
+            error.ErrorCode.ERROR_CODE_INVALID_BAG_TYPE,
             "command.G2CExpandBagResponse",
             string.format("Invalid bag type: %s", tostring(request.bag_type)),
             pb.enum("common.MessageID", "G2C_EXPAND_BAG_RESPONSE"))
@@ -69,7 +70,7 @@ function M.handle(client_id, msg)
     if not valid_bag_types[bag_type] then
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_BAG_TYPE"),
+            error.ErrorCode.ERROR_CODE_INVALID_BAG_TYPE,
             "command.G2CExpandBagResponse",
             string.format("Invalid bag type: %s, valid types are: MAIN(1), STORAGE(2)", 
                 tostring(request.bag_type)),
@@ -82,7 +83,7 @@ function M.handle(client_id, msg)
         logger.error("Failed to get bag info for user: %d, bag_type: %d", user.user_id, bag_type)
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"),
+            error.ErrorCode.ERROR_CODE_DB_ERROR,
             "command.G2CExpandBagResponse",
             nil,
             pb.enum("common.MessageID", "G2C_EXPAND_BAG_RESPONSE"))
@@ -93,7 +94,7 @@ function M.handle(client_id, msg)
     if bag_info.size + request.add_size > max_size then
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_BAG_MAX_SIZE_LIMIT"),
+            error.ErrorCode.ERROR_CODE_BAG_MAX_SIZE_LIMIT,
             "command.G2CExpandBagResponse",
             nil,
             pb.enum("common.MessageID", "G2C_EXPAND_BAG_RESPONSE"))
@@ -105,7 +106,7 @@ function M.handle(client_id, msg)
         logger.error("Failed to expand bag for user: %d, error: %s", user.user_id, err)
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_BAG_EXPAND_FAILED"),
+            error.ErrorCode.ERROR_CODE_BAG_EXPAND_FAILED,
             "command.G2CExpandBagResponse",
             nil,
             pb.enum("common.MessageID", "G2C_EXPAND_BAG_RESPONSE"))

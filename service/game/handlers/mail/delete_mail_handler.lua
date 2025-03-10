@@ -4,6 +4,7 @@ local pb = require "pb"
 local mail_service = require "services.mail_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message = require "message"
+local error = require "game.define.error"  
 
 local M = {}
 
@@ -13,7 +14,7 @@ function M.handle(client_id, msg)
     -- 验证请求并获取用户信息
     local base_request, request, error_code, error_message, user, claims = handler_helper.verify_request_with_user(
         client_id, msg, "command.C2GDeleteMailRequest")
-    if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+    if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         logger.error("Failed to verify request for client: %d", client_id)
         return message.create_error_response(
             base_request, 
@@ -29,7 +30,7 @@ function M.handle(client_id, msg)
         logger.error("Failed to delete mail: %s for user: %d", request.mail_id, user.user_id)
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"), 
+            error.ErrorCode.ERROR_CODE_DB_ERROR, 
             "command.G2CDeleteMailResponse", 
             nil, 
             pb.enum("common.MessageID", "G2C_DELETE_MAIL_RESPONSE"))

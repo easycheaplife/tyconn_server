@@ -5,6 +5,7 @@ local bag_service = require "services.bag_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message = require "message"
 local utils = require "utils"
+local error = require "game.define.error"  
 
 local M = {}
 
@@ -14,7 +15,7 @@ function M.handle(client_id, msg)
     -- 验证请求并获取用户信息
     local base_request, request, error_code, error_message, user, claims = handler_helper.verify_request_with_user(
         client_id, msg, "command.C2GSortBagRequest")
-    if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+    if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", 
             client_id, error_code, error_message)
         return message.create_error_response(
@@ -29,7 +30,7 @@ function M.handle(client_id, msg)
     if not request.bag_type or not request.sort_rule then
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAM"),
+            error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CSortBagResponse",
             "Invalid parameters: bag_type and sort_rule are required",
             pb.enum("common.MessageID", "G2C_SORT_BAG_RESPONSE"))
@@ -51,7 +52,7 @@ function M.handle(client_id, msg)
     if not bag_type or not valid_bag_types[bag_type] then
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_BAG_TYPE"),
+            error.ErrorCode.ERROR_CODE_INVALID_BAG_TYPE,
             "command.G2CSortBagResponse",
             string.format("Invalid bag type: %s", tostring(request.bag_type)),
             pb.enum("common.MessageID", "G2C_SORT_BAG_RESPONSE"))
@@ -63,7 +64,7 @@ function M.handle(client_id, msg)
         logger.error("Failed to sort bag for user: %d, error: %s", user.user_id, err)
         return message.create_error_response(
             base_request,
-            pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"),
+            error.ErrorCode.ERROR_CODE_DB_ERROR,
             "command.G2CSortBagResponse",
             nil,
             pb.enum("common.MessageID", "G2C_SORT_BAG_RESPONSE"))
