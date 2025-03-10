@@ -83,7 +83,7 @@ message C2GUseItemRequest {
     int32 count = 3;        // 使用数量
 }
 
-// 使用物品响应 {{Res:204}}
+// 使用物品响应 {{Res:204=202}}
 message G2CUseItemResponse {
     repeated common.BagInfo bags = 1;  // 变化的物品列表
 }
