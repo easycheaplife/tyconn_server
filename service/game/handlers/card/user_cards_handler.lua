@@ -1,7 +1,7 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
-local message = require "message"
+local message_helper = require "message_helper" 
 local card_service = require "services.card_service"
 local handler_helper = require "game.handlers.handler_helper"
 local utils = require "utils"
@@ -17,7 +17,7 @@ function M.handle(client_id, msg)
         client_id, msg, "command.C2GUserCardsRequest")
     if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", client_id, error_code, error_message)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request, 
             error_code, 
             "command.G2CUserCardsResponse", 
@@ -29,7 +29,7 @@ function M.handle(client_id, msg)
     local cards = card_service.get_user_cards(user.user_id)
     if not cards then
         logger.error("Failed to get cards for user: %d", user.user_id)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request, 
             error.ErrorCode.ERROR_CODE_SYSTEM_ERROR, 
             "command.G2CUserCardsResponse", 
@@ -48,7 +48,7 @@ function M.handle(client_id, msg)
     logger.debug("Sending card bag response: %s", utils.table_to_string(response_data))
 
     -- 返回成功响应
-    return message.create_success_response(
+    return message_helper.create_success_response(
         base_request,
         "command.G2CUserCardsResponse",
         response_data,

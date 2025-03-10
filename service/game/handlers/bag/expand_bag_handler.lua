@@ -4,7 +4,7 @@ local pb = require "pb"
 local item_service = require "services.item_service"
 local bag_service = require "services.bag_service"
 local handler_helper = require "game.handlers.handler_helper"
-local message = require "message"
+local message_helper = require "message_helper" 
 local utils = require "utils"
 local error = require "error"  
 
@@ -19,7 +19,7 @@ function M.handle(client_id, msg)
     if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", 
             client_id, error_code, error_message)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request, 
             error_code, 
             "command.G2CExpandBagResponse", 
@@ -29,7 +29,7 @@ function M.handle(client_id, msg)
 
     -- 验证参数
     if not request.add_size or request.add_size <= 0 or not request.bag_type then
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request,
             error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CExpandBagResponse",
@@ -59,7 +59,7 @@ function M.handle(client_id, msg)
     end
 
     if not bag_type then
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request,
             error.ErrorCode.ERROR_CODE_INVALID_BAG_TYPE,
             "command.G2CExpandBagResponse",
@@ -68,7 +68,7 @@ function M.handle(client_id, msg)
     end
 
     if not valid_bag_types[bag_type] then
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request,
             error.ErrorCode.ERROR_CODE_INVALID_BAG_TYPE,
             "command.G2CExpandBagResponse",
@@ -81,7 +81,7 @@ function M.handle(client_id, msg)
     local bag_info = bag_service.get_bag_info(user.user_id, bag_type)
     if not bag_info then
         logger.error("Failed to get bag info for user: %d, bag_type: %d", user.user_id, bag_type)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request,
             error.ErrorCode.ERROR_CODE_DB_ERROR,
             "command.G2CExpandBagResponse",
@@ -92,7 +92,7 @@ function M.handle(client_id, msg)
     -- 检查是否超过最大容量
     local max_size = bag_service.get_max_bag_size(bag_type)
     if bag_info.size + request.add_size > max_size then
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request,
             error.ErrorCode.ERROR_CODE_BAG_MAX_SIZE_LIMIT,
             "command.G2CExpandBagResponse",
@@ -104,7 +104,7 @@ function M.handle(client_id, msg)
     local ok, new_size, err, items = bag_service.expand_bag(user.user_id, bag_type, request.add_size)
     if not ok then
         logger.error("Failed to expand bag for user: %d, error: %s", user.user_id, err)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request,
             error.ErrorCode.ERROR_CODE_BAG_EXPAND_FAILED,
             "command.G2CExpandBagResponse",
@@ -121,7 +121,7 @@ function M.handle(client_id, msg)
     }
 
     -- 返回成功响应
-    return message.create_success_response(
+    return message_helper.create_success_response(
         base_request,
         "command.G2CExpandBagResponse",
         response_data,

@@ -3,7 +3,7 @@ local logger = require "logger"
 local pb = require "pb"
 local equip_service = require "services.equip_service"
 local handler_helper = require "game.handlers.handler_helper"
-local message = require "message"
+local message_helper = require "message_helper" 
 local utils = require "utils"
 local error = require "error"   
 
@@ -18,7 +18,7 @@ function M.handle(client_id, msg)
     if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", 
             client_id, error_code, error_message)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request, 
             error_code, 
             "command.G2CUnequipItemResponse", 
@@ -38,7 +38,7 @@ function M.handle(client_id, msg)
     if not result then
         logger.error("Failed to unequip item for user: %d, error: %s", 
             user.user_id, error_msg)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request, 
             error.ErrorCode.ERROR_CODE_INVALID_OPERATION, 
             "command.G2CUnequipItemResponse", 
@@ -72,7 +72,7 @@ function M.handle(client_id, msg)
     }
     
     -- 返回成功响应
-    return message.create_success_response(
+    return message_helper.create_success_response(
         base_request,
         "command.G2CUnequipItemResponse",
         response_data,

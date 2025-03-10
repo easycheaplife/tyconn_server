@@ -3,7 +3,7 @@ local logger = require "logger"
 local pb = require "pb"
 local mail_service = require "services.mail_service"
 local handler_helper = require "game.handlers.handler_helper"
-local message = require "message"
+local message_helper = require "message_helper" 
 local error = require "error"    
 
 local M = {}
@@ -16,7 +16,7 @@ function M.handle(client_id, msg)
         client_id, msg, "command.C2GClaimMailItemsRequest")
     if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         logger.error("Failed to verify request for client: %d", client_id)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request, 
             error_code, 
             "command.G2CClaimMailItemsResponse", 
@@ -28,7 +28,7 @@ function M.handle(client_id, msg)
     local ok, items = mail_service.claim_mail_items(user.user_id, request.mail_id)
     if not ok then
         logger.error("Failed to claim mail items: %s for user: %d", request.mail_id, user.user_id)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request,
             error.ErrorCode.ERROR_CODE_DB_ERROR, 
             "command.G2CClaimMailItemsResponse", 
@@ -43,7 +43,7 @@ function M.handle(client_id, msg)
     }
     
     -- 返回成功响应
-    return message.create_success_response(
+    return message_helper.create_success_response(
         base_request,
         "command.G2CClaimMailItemsResponse",
         response_data,

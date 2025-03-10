@@ -1,7 +1,6 @@
 local skynet = require "skynet"
 local logger = require "logger"
-local pb = require "pb"
-local message = require "message"
+local pb = require "pb"  
 local gate_client = require "gate_client"
 local user_session_service = require "services.user_session_service"
 local utils = require "utils"

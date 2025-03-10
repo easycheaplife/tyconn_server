@@ -3,7 +3,7 @@ local logger = require "logger"
 local pb = require "pb"
 local equip_service = require "services.equip_service"
 local handler_helper = require "game.handlers.handler_helper"
-local message = require "message"
+local message_helper = require "message_helper" 
 local utils = require "utils"
 local error = require "error"  
 
@@ -17,7 +17,7 @@ function M.handle(client_id, msg)
         client_id, msg, "command.C2GEquipInfoRequest")
     
     if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request, 
             error_code, 
             "command.G2CEquipInfoResponse", 
@@ -58,7 +58,7 @@ function M.handle(client_id, msg)
         combat_power = combat_power
     }
     
-    return message.create_success_response(
+    return message_helper.create_success_response(
         base_request,
         "command.G2CEquipInfoResponse",
         response_data,

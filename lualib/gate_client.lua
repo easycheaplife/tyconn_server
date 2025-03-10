@@ -3,7 +3,7 @@ local skynet = require "skynet"
 local logger = require "logger"
 local user_session_service = require "services.user_session_service"
 local utils = require "utils"
-local message = require "message"
+local message_helper = require "message_helper" 
 local pb = require "pb"
 local cluster = require "skynet.cluster"
 
@@ -38,7 +38,7 @@ function M.push_message(user_id, message_id, message_data)
     logger.debug("Gate node for user %d: %s", user_id, node_name)
     
     -- 使用message模块创建会话信息
-    local session_info = message.create_session(message_id, 0, "1.0.0")
+    local session_info = message_helper.create_session(message_id, 0, "1.0.0")
     
     -- 编码消息负载
     local payload = ""
@@ -65,7 +65,7 @@ function M.push_message(user_id, message_id, message_data)
     end
     
     -- 创建基础响应
-    local response = message.create_base_response(
+    local response = message_helper.create_base_response(
         session_info,
         pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
         "",
@@ -73,7 +73,7 @@ function M.push_message(user_id, message_id, message_data)
     )
     
     -- 编码响应
-    local encoded_response = message.encode_response(response)
+    local encoded_response = message_helper.encode_response(response)
     
     -- 发送消息
     local ok, err

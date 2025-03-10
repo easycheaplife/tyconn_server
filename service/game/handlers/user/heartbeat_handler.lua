@@ -2,7 +2,7 @@ local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
 local handler_helper = require "game.handlers.handler_helper"
-local message = require "message"
+local message_helper = require "message_helper" 
 local error = require "error"
 
 local M = {}
@@ -12,7 +12,7 @@ function M.handle(client_id, msg)
     local base_request, request, error_code, error_message, claims = handler_helper.verify_request(
         client_id, msg, "command.C2GHeartbeatRequest")
     if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request, 
             error_code, 
             "command.G2CHeartbeatResponse", 
@@ -36,7 +36,7 @@ function M.handle(client_id, msg)
         timestamp = os.time()
     }
 
-    return message.create_success_response(
+    return message_helper.create_success_response(
         base_request,
         "command.G2CHeartbeatResponse",
         response,

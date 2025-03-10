@@ -4,7 +4,7 @@ local pb = require "pb"
 local item_service = require "services.item_service"
 local bag_service = require "services.bag_service"
 local handler_helper = require "game.handlers.handler_helper"
-local message = require "message"
+local message_helper = require "message_helper"
 local utils = require "utils"
 local error = require "error"  
 
@@ -19,7 +19,7 @@ function M.handle(client_id, msg)
     if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", 
             client_id, error_code, error_message)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request, 
             error_code, 
             "command.G2CUseItemResponse", 
@@ -30,7 +30,7 @@ function M.handle(client_id, msg)
     -- 参数验证
     if not request.item_id or request.item_id <= 0 then
         logger.error("Invalid item id: %s", tostring(request.item_id))
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request,
             error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CUseItemResponse",
@@ -41,7 +41,7 @@ function M.handle(client_id, msg)
     if not request.count or request.count <= 0 then
         local error_code = error.ErrorCode.ERROR_CODE_INVALID_PARAM
         logger.error("Invalid count: %s, error_code: %d", tostring(request.count), error_code)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request,
             error_code,
             "command.G2CUseItemResponse",
@@ -54,7 +54,7 @@ function M.handle(client_id, msg)
         user.user_id, request.item_id, request.count)
     local ok, err, result = item_service.use_item(user.user_id, request.item_id, request.count)
     if not ok then
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request,
             error.ErrorCode.ERROR_CODE_ITEM_USE_FAILED,
             "command.G2CUseItemResponse",
@@ -65,7 +65,7 @@ function M.handle(client_id, msg)
     -- 获取最新的背包信息
     local bags = bag_service.get_user_bags(user.user_id)
     if not bags then
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request,
             error.ErrorCode.ERROR_CODE_GET_BAG_FAILED,
             "command.G2CUseItemResponse",
@@ -100,7 +100,7 @@ function M.handle(client_id, msg)
     local response_data = {
         bags = bags
     }
-    return message.create_success_response(
+    return message_helper.create_success_response(
         base_request,
         "command.G2CUseItemResponse",
         response_data,

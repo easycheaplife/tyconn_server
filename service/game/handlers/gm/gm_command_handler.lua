@@ -3,7 +3,7 @@ local logger = require "logger"
 local pb = require "pb"
 local gm_service = require "services.gm_service"
 local handler_helper = require "game.handlers.handler_helper"
-local message = require "message"
+local message_helper = require "message_helper" 
 local error = require "error"    
 
 local M = {}
@@ -18,7 +18,7 @@ function M.handle(client_id, msg)
     if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", 
             client_id, error_code, error_message)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request, 
             error_code, 
             RESP_TYPE, 
@@ -29,7 +29,7 @@ function M.handle(client_id, msg)
     -- 检查GM权限
     if not user then
         logger.warn("User has no GM permission - user_id: %d", user.user_id)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request,
             error.ErrorCode.ERROR_CODE_PERMISSION_DENIED,
             RESP_TYPE,
@@ -42,7 +42,7 @@ function M.handle(client_id, msg)
     if not ok then
         logger.error("GM command failed - user_id: %d, command: %s, error: %s",
             user.user_id, request.command, msg)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request,
             error.ErrorCode.ERROR_CODE_GM_COMMAND_FAILED,
             RESP_TYPE,
@@ -59,7 +59,7 @@ function M.handle(client_id, msg)
     logger.info("GM command success - user_id: %d, command: %s, message: %s",
         user.user_id, request.command, msg)
 
-    return message.create_success_response(
+    return message_helper.create_success_response(
         base_request,
         RESP_TYPE,
         response_data,

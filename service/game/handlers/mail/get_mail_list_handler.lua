@@ -3,7 +3,7 @@ local logger = require "logger"
 local pb = require "pb"
 local mail_service = require "services.mail_service"
 local handler_helper = require "game.handlers.handler_helper"
-local message = require "message"
+local message_helper = require "message_helper" 
 local error = require "error"   
 
 local M = {}
@@ -16,7 +16,7 @@ function M.handle(client_id, msg)
         client_id, msg, "command.C2GMailListRequest")
     if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         logger.error("Failed to verify request for client: %d", client_id)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request, 
             error_code, 
             "command.G2CMailListResponse", 
@@ -28,7 +28,7 @@ function M.handle(client_id, msg)
     local mails = mail_service.get_user_mails(user.user_id)
     if not mails then
         logger.error("Failed to get mails for user: %d", user.user_id)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request,
             error.ErrorCode.ERROR_CODE_DB_ERROR, 
             "command.G2CMailListResponse", 
@@ -42,7 +42,7 @@ function M.handle(client_id, msg)
     }
     
     -- 返回成功响应
-    return message.create_success_response(
+    return message_helper.create_success_response(
         base_request,
         "command.G2CMailListResponse",
         response_data,

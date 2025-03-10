@@ -2,7 +2,7 @@ local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
 local utils = require "utils"
-local message = require "message"
+local message_helper = require "message_helper" 
 local error = require "error"
 local user_service = require "services.user_service"
 local bag_service = require "services.bag_service"
@@ -19,7 +19,7 @@ function M.handle(client_id, msg, gate_node)
     local base_request, request, error_code, error_message, claims = handler_helper.verify_request(
         client_id, msg, "command.C2GLoginGameRequest")
     if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request, 
             error_code, 
             "command.G2CLoginGameResponse", 
@@ -50,7 +50,7 @@ function M.handle(client_id, msg, gate_node)
         local user, err, is_new = user_service.get_or_create_user(claims.account, username)
         if not user then
             logger.error("Failed to create user: %s", err or "unknown error")
-            return message.create_error_response(
+            return message_helper.create_error_response(
                 base_request, 
                 error.ErrorCode.ERROR_CODE_DB_ERROR, 
                 "command.G2CLoginGameResponse", 
@@ -98,7 +98,7 @@ function M.handle(client_id, msg, gate_node)
         server_time = skynet.time() * 1000  -- 服务器时间（毫秒）
     }
 
-    return message.create_success_response(
+    return message_helper.create_success_response(
         base_request,
         "command.G2CLoginGameResponse",
         response_data,

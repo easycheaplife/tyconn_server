@@ -3,7 +3,7 @@ local logger = require "logger"
 local pb = require "pb"
 local bag_service = require "services.bag_service"
 local handler_helper = require "game.handlers.handler_helper"
-local message = require "message"
+local message_helper = require "message_helper"
 local utils = require "utils"
 local error = require "error"  
 
@@ -18,7 +18,7 @@ function M.handle(client_id, msg)
     if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", 
             client_id, error_code, error_message)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request, 
             error_code, 
             "command.G2CBagInfoResponse", 
@@ -30,7 +30,7 @@ function M.handle(client_id, msg)
     local bags = bag_service.get_user_bags(user.user_id)
     if not bags then
         logger.error("Failed to get bags for user: %d", user.user_id)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request, 
             error.ErrorCode.ERROR_CODE_DB_ERROR, 
             "command.G2CBagInfoResponse", 
@@ -44,7 +44,7 @@ function M.handle(client_id, msg)
     }
     logger.info("response_data: %s", utils.table_to_string(response_data))
     -- 返回成功响应
-    return message.create_success_response(
+    return message_helper.create_success_response(
         base_request,
         "command.G2CBagInfoResponse",
         response_data,

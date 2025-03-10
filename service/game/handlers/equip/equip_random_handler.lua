@@ -3,7 +3,7 @@ local logger = require "logger"
 local pb = require "pb"
 local equip_service = require "services.equip_service"
 local handler_helper = require "game.handlers.handler_helper"
-local message = require "message"
+local message_helper = require "message_helper" 
 local error = require "error"    
 
 local M = {}
@@ -17,7 +17,7 @@ function M.handle(client_id, msg)
     if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", 
             client_id, error_code, error_message)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request, 
             error_code, 
             "command.G2CEquipRandomResponse", 
@@ -35,7 +35,7 @@ function M.handle(client_id, msg)
     if not new_equip then
         logger.error("Failed to get random equipment for user: %d, error: %s", 
             user.user_id, error_msg)
-        return message.create_error_response(
+        return message_helper.create_error_response(
             base_request, 
             error.ErrorCode.ERROR_CODE_SYSTEM_ERROR, 
             "command.G2CEquipRandomResponse", 
@@ -104,7 +104,7 @@ function M.handle(client_id, msg)
     }
     
     -- 返回成功响应
-    return message.create_success_response(
+    return message_helper.create_success_response(
         base_request,
         "command.G2CEquipRandomResponse",
         response_data,
