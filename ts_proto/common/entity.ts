@@ -60,7 +60,6 @@ export interface ItemInfo {
   itemId: number;
   count: number;
   slot: number;
-  itemType: number;
 }
 
 /** 背包信息 */
@@ -527,7 +526,7 @@ export const CardInfo: MessageFns<CardInfo> = {
 };
 
 function createBaseItemInfo(): ItemInfo {
-  return { itemId: 0, count: 0, slot: 0, itemType: 0 };
+  return { itemId: 0, count: 0, slot: 0 };
 }
 
 export const ItemInfo: MessageFns<ItemInfo> = {
@@ -540,9 +539,6 @@ export const ItemInfo: MessageFns<ItemInfo> = {
     }
     if (message.slot !== 0) {
       writer.uint32(24).int32(message.slot);
-    }
-    if (message.itemType !== 0) {
-      writer.uint32(32).int32(message.itemType);
     }
     return writer;
   },
@@ -578,14 +574,6 @@ export const ItemInfo: MessageFns<ItemInfo> = {
           message.slot = reader.int32();
           continue;
         }
-        case 4: {
-          if (tag !== 32) {
-            break;
-          }
-
-          message.itemType = reader.int32();
-          continue;
-        }
       }
       if ((tag & 7) === 4 || tag === 0) {
         break;
@@ -600,7 +588,6 @@ export const ItemInfo: MessageFns<ItemInfo> = {
       itemId: isSet(object.itemId) ? globalThis.Number(object.itemId) : 0,
       count: isSet(object.count) ? globalThis.Number(object.count) : 0,
       slot: isSet(object.slot) ? globalThis.Number(object.slot) : 0,
-      itemType: isSet(object.itemType) ? globalThis.Number(object.itemType) : 0,
     };
   },
 
@@ -615,9 +602,6 @@ export const ItemInfo: MessageFns<ItemInfo> = {
     if (message.slot !== 0) {
       obj.slot = Math.round(message.slot);
     }
-    if (message.itemType !== 0) {
-      obj.itemType = Math.round(message.itemType);
-    }
     return obj;
   },
 
@@ -629,7 +613,6 @@ export const ItemInfo: MessageFns<ItemInfo> = {
     message.itemId = object.itemId ?? 0;
     message.count = object.count ?? 0;
     message.slot = object.slot ?? 0;
-    message.itemType = object.itemType ?? 0;
     return message;
   },
 };
