@@ -1,5 +1,5 @@
--- 从proto/common/error.proto自动生成的错误码定义
--- 生成时间: 2025-03-10 09:50:23
+-- using proto/common/error.proto to generate error.lua
+-- generate time: 2025-03-10 10:12:00
 
 local M = {}
 
@@ -40,7 +40,7 @@ M.ErrorCode = {
     ERROR_CODE_TARGET_SLOT_OCCUPIED = 504,    -- 目标格子已被占用
 }
 
--- 错误码描述映射
+-- error code description mapping
 M.ErrorMessage = {
     [0] = "成功",
     [1] = "系统错误",

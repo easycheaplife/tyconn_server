@@ -2,7 +2,7 @@ local pb = require "pb"
 local logger = require "logger"
 local message = require "message"
 local user_service = require "services.user_service"
-local error = require "game.define.error"  -- 添加错误码模块
+local error = require "error"  -- 从lualib根目录加载错误码模块
 
 local M = {}
 

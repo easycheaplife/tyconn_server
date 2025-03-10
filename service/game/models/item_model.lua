@@ -1,5 +1,5 @@
 local snowflake = require "utils.snowflake"
-local enum = require "game.define.enum"
+local enum = require "enum"
 
 -- 物品数据模型定义
 local M = {}

@@ -5,7 +5,7 @@ local message = require "message"
 local card_service = require "services.card_service"
 local handler_helper = require "game.handlers.handler_helper"
 local utils = require "utils"
-local error = require "game.define.error"  
+local error = require "error"   
 
 local M = {}
 

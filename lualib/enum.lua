@@ -1,5 +1,5 @@
--- 从proto/common/enum.proto自动生成的枚举定义
--- 生成时间: 2025-03-10 09:50:23
+-- using proto/common/enum.proto to generate enum.lua
+-- generate time: 2025-03-10 10:12:00
 
 local M = {}
 

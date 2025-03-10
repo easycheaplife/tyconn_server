@@ -6,7 +6,7 @@ local item_model = require "models.item_model"
 local bag_model = require "models.bag_model"
 local snowflake = require "utils.snowflake"
 local utils = require "utils"
-local enum = require "game.define.enum"
+local enum = require "enum"
 
 local M = {}
 

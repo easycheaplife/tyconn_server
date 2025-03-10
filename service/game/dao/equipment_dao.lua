@@ -4,7 +4,7 @@ local cache = require "game.cache"
 local db_client = require "game.db_client"
 local snowflake = require "utils.snowflake"
 local utils = require "utils"
-local enum = require "game.define.enum"
+local enum = require "enum"
 local cjson = require "cjson"
 
 local M = {}

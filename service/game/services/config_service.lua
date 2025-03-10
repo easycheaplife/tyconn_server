@@ -1,7 +1,7 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local config_loader = require "game.config_loader"
-local enum = require "game.define.enum"
+local enum = require "enum"
 
 local M = {}
 

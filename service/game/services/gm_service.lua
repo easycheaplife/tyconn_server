@@ -4,7 +4,7 @@ local item_service = require "services.item_service"
 local user_service = require "services.user_service"
 local mail_service = require "services.mail_service"
 local utils = require "utils"
-local enum = require "game.define.enum"
+local enum = require "enum"
 
 local M = {}
 

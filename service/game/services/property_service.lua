@@ -5,7 +5,7 @@ local item_dao = require "dao.item_dao"
 local bag_model = require "models.bag_model"
 local item_model = require "models.item_model"
 local config_service = require "services.config_service"
-local enum = require "game.define.enum"
+local enum = require "enum"
 
 local M = {}
 

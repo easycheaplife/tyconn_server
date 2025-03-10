@@ -95,8 +95,8 @@ end
 -- 生成Lua枚举定义
 local function generate_enum_lua(enums)
     local lines = {
-        "-- 从proto/common/enum.proto自动生成的枚举定义",
-        "-- 生成时间: " .. os.date("%Y-%m-%d %H:%M:%S"),
+        "-- using proto/common/enum.proto to generate enum.lua",
+        "-- generate time: " .. os.date("%Y-%m-%d %H:%M:%S"),
         "",
         "local M = {}"
     }
@@ -128,8 +128,8 @@ end
 -- 生成错误码定义
 local function generate_error_lua(enums)
     local lines = {
-        "-- 从proto/common/error.proto自动生成的错误码定义",
-        "-- 生成时间: " .. os.date("%Y-%m-%d %H:%M:%S"),
+        "-- using proto/common/error.proto to generate error.lua",
+        "-- generate time: " .. os.date("%Y-%m-%d %H:%M:%S"),
         "",
         "local M = {}"
     }
@@ -155,7 +155,7 @@ local function generate_error_lua(enums)
             
             -- 添加错误码描述映射
             table.insert(lines, "")
-            table.insert(lines, "-- 错误码描述映射")
+            table.insert(lines, "-- error code description mapping")
             table.insert(lines, "M.ErrorMessage = {")
             for _, value in ipairs(enum.values) do
                 local message = value.comment ~= "" and value.comment or value.name
@@ -197,11 +197,11 @@ local function main()
     local error_lua = generate_error_lua(error_enums)
     
     -- 确保目录存在
-    os.execute("mkdir -p service/game/define")
+    os.execute("mkdir -p lualib")
     
     -- 写入文件
-    local ok1 = write_file("service/game/define/enum.lua", enum_lua)
-    local ok2 = write_file("service/game/define/error.lua", error_lua)
+    local ok1 = write_file("lualib/enum.lua", enum_lua)
+    local ok2 = write_file("lualib/error.lua", error_lua)
     
     return ok1 and ok2
 end

@@ -9,7 +9,7 @@ local property_service = require "services.property_service"
 local bag_model = require "models.bag_model"
 local utils = require "utils"
 local config_service = require "services.config_service"
-local enum = require "game.define.enum"
+local enum = require "enum"
 local init = require "game.init"  -- 添加引用
 
 local M = {}

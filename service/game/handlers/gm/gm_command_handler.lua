@@ -4,7 +4,7 @@ local pb = require "pb"
 local gm_service = require "services.gm_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message = require "message"
-local error = require "game.define.error"  
+local error = require "error"    
 
 local M = {}
 
