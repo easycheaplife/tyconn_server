@@ -380,7 +380,7 @@ function M.use_item(user_id, item_id, count)
     
     -- 检查物品数量是否足够
     if target_item.count < count then
-        logger.error("物品数量不足 - user_id: %d, item_id: %d, count: %d, have: %d", 
+        logger.error("item not enough - user_id: %d, item_id: %d, count: %d, have: %d", 
             user_id, item_id, count, target_item.count)
         return false, 'item not enough', {}
     end

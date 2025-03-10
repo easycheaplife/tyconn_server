@@ -3,7 +3,7 @@ local skynet = require "skynet"
 local M = {}
 
 -- 时间戳位数
-local TIMESTAMP_BITS = 41  -- 可以使用到2039年
+local TIMESTAMP_BITS = 32  -- 减少时间戳位数，确保不会溢出
 
 -- 类型位数
 local TYPE_BITS = 5       -- 最多32种类型
@@ -12,10 +12,10 @@ local TYPE_BITS = 5       -- 最多32种类型
 local WORKER_BITS = 5     -- 最多32个节点
 
 -- 序列号位数
-local SEQUENCE_BITS = 12  -- 每微秒4096个序号
+local SEQUENCE_BITS = 10  -- 每毫秒1024个序号
 
 -- 起始时间戳 (2024-01-01 00:00:00)
-local EPOCH = 1704038400000000  -- 微秒级时间戳
+local EPOCH = 1704038400000  -- 使用毫秒级时间戳
 
 -- 最大值
 local MAX_SEQUENCE = (1 << SEQUENCE_BITS) - 1
@@ -46,13 +46,13 @@ local worker_id = 0  -- 默认worker id
 local sequence = 0
 local last_timestamp = -1
 
--- 获取当前时间戳(微秒)
+-- 获取当前时间戳(毫秒)
 local function get_current_time()
-    return math.floor(skynet.time() * 1000000)  -- 转换为微秒
+    return math.floor(skynet.time() * 1000)  -- 转换为毫秒
 end
 
--- 等待下一微秒
-local function wait_next_micros(last)
+-- 等待下一毫秒
+local function wait_next_millis(last)
     local timestamp = get_current_time()
     while timestamp <= last do
         timestamp = get_current_time()
@@ -75,19 +75,19 @@ function M.next_id(type_id)
     
     -- 检查时钟回拨
     if timestamp < last_timestamp then
-        error(string.format("Clock moved backwards. Refusing to generate id for %d microseconds",
+        error(string.format("Clock moved backwards. Refusing to generate id for %d milliseconds",
             last_timestamp - timestamp))
     end
     
-    -- 同一微秒内
+    -- 同一毫秒内
     if timestamp == last_timestamp then
         sequence = (sequence + 1) & MAX_SEQUENCE
-        -- 序列号用完，等待下一微秒
+        -- 序列号用完，等待下一毫秒
         if sequence == 0 then
-            timestamp = wait_next_micros(last_timestamp)
+            timestamp = wait_next_millis(last_timestamp)
         end
     else
-        -- 不同微秒，序列号重置
+        -- 不同毫秒，序列号重置
         sequence = 0
     end
     
@@ -99,8 +99,7 @@ function M.next_id(type_id)
                (worker_id << WORKER_SHIFT) |
                sequence
                
-    -- 转换为字符串，避免精度问题
-    return tostring(id)
+    return id
 end
 
 -- 从ID中解析类型
@@ -109,8 +108,7 @@ function M.get_type(id)
 end
 
 -- 可以添加一个解析ID的函数来验证
-function M.parse_id(id_str)
-    local id = tonumber(id_str)
+function M.parse_id(id)
     local sequence = id & MAX_SEQUENCE
     local worker = (id >> WORKER_SHIFT) & MAX_WORKER_ID
     local type_id = (id >> TYPE_SHIFT) & MAX_TYPE_ID
@@ -121,7 +119,7 @@ function M.parse_id(id_str)
         worker_id = worker,
         type_id = type_id,
         timestamp = timestamp,
-        original = id_str
+        original = id
     }
 end
 
