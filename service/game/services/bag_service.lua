@@ -9,6 +9,7 @@ local item_service = require "services.item_service"
 local snowflake = require "utils.snowflake"
 local user_service = require "services.user_service"
 local enum = require "game.define.enum"
+local utils = require "utils"
 
 local M = {}
 
@@ -1101,7 +1102,6 @@ function M.get_user_bags(user_id)
         
         table.insert(bag_info_list, bag_info)
     end
-
     return bag_info_list
 end
 

@@ -99,7 +99,6 @@ function M.handle(client_id, msg)
     local response_data = {
         bags = bags
     }
-
     return message.create_success_response(
         base_request,
         "command.G2CUseItemResponse",

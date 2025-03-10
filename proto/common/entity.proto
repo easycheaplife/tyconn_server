@@ -33,7 +33,6 @@ message ItemInfo {
     int32 item_id = 1;
     int32 count = 2;
     int32 slot = 3;  
-    int32 item_type = 4; 
 }
 
 // 背包信息

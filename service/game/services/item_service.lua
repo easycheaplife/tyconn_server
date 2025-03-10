@@ -88,7 +88,7 @@ local function get_item_weight(item, rule)
 end
 
 -- 应用物品效果
-local function apply_item_effect(user_id, item_id, count)
+local function apply_item_effect(user_id, item_id, count, source)
     logger.debug("Applying item effect - user_id: %d, item_id: %d, count: %d", 
         user_id, item_id, count)
     local config = config_service.get_item_config(item_id)
@@ -104,7 +104,7 @@ local function apply_item_effect(user_id, item_id, count)
     -- 根据效果类型处理
     if config.effect_type == enum.EffectType.EFFECT_TYPE_EXP then
         -- 增加经验
-        local ok, err = M.add_special_item(user_id, enum.SpecialItemID.SPECIAL_ITEM_ID_EXP, total_effect)
+        local ok, err = M.add_special_item(user_id, enum.SpecialItemID.SPECIAL_ITEM_ID_EXP, total_effect, source)
         if not ok then
             logger.error("Failed to add exp: %s", err)
             return false, err, nil
@@ -116,7 +116,7 @@ local function apply_item_effect(user_id, item_id, count)
         })
     elseif config.effect_type == enum.EffectType.EFFECT_TYPE_GOLD then
         -- 增加金币
-        local ok, err = M.add_special_item(user_id, enum.SpecialItemID.SPECIAL_ITEM_ID_GOLD, total_effect)
+        local ok, err = M.add_special_item(user_id, enum.SpecialItemID.SPECIAL_ITEM_ID_GOLD, total_effect, source)
         if not ok then
             logger.error("Failed to add gold: %s", err)
             return false, err, nil
@@ -148,7 +148,7 @@ end
 function M.add_items_to_slot(user_id, items, source, bag_type)
     -- 设置默认值
     bag_type = bag_type or enum.BagType.BAG_TYPE_MAIN
-    
+
     -- 支持单个物品对象或物品对象数组
     local items_array = {}
     if items.item_id then
@@ -421,7 +421,7 @@ function M.use_item(user_id, item_id, count)
     end
 
     -- 应用物品效果
-    local ok, err, effect_items = apply_item_effect(user_id, item_id, count)
+    local ok, err, effect_items = apply_item_effect(user_id, item_id, count, enum.ChangeSource.SOURCE_USE)
     if not ok then
         logger.error("Failed to apply item effect - user_id: %d, item_id: %d, error: %s",
             user_id, item_id, err)
@@ -2137,7 +2137,7 @@ function M.get_special_item(user_id, item_id)
     return count
 end
 
-function M.add_special_item(user_id, item_id, count)
+function M.add_special_item(user_id, item_id, count, source)
     -- Parameter validation with detailed logging
     if not user_id then
         logger.error("add_special_item failed - missing user_id")
@@ -2163,7 +2163,7 @@ function M.add_special_item(user_id, item_id, count)
     local ok, err = M.add_items_to_slot(user_id, {
         item_id = item_id,
         count = count
-    }, enum.ChangeSource.SOURCE_SPECIAL)
+    }, source)
 
     if not ok then
         logger.error("add_special_item failed - user_id: %d, item_id: %d, count: %d, error: %s",
