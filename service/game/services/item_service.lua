@@ -95,17 +95,16 @@ local function apply_item_effect(user_id, item_id, count)
     if not config then
         return false, "item config is not exist", nil
     end
-    
     -- 创建效果物品列表
     local effect_items = {}
     
     -- 3. 应用效果
-    local total_effect = config.effect_value * count
+    local total_effect = config.effect_value * count    
     
     -- 根据效果类型处理
     if config.effect_type == enum.EffectType.EFFECT_TYPE_EXP then
         -- 增加经验
-        local ok, err = M.add_special_item(user_id, enum.SpecialItemID.ITEM_ID_EXP, total_effect)
+        local ok, err = M.add_special_item(user_id, enum.SpecialItemID.SPECIAL_ITEM_ID_EXP, total_effect)
         if not ok then
             logger.error("Failed to add exp: %s", err)
             return false, err, nil
@@ -2139,28 +2138,47 @@ function M.get_special_item(user_id, item_id)
 end
 
 function M.add_special_item(user_id, item_id, count)
-    local items = M.get_user_items(user_id)
-    if not items then
-        logger.error("add_special_item failed, user_id: %d, item_id: %d", user_id, item_id)
+    -- Parameter validation with detailed logging
+    if not user_id then
+        logger.error("add_special_item failed - missing user_id")
         return false
     end
-    for _, item in ipairs(items) do
-        if item.item_id == item_id then
-            item.count = item.count + count
-        end
+    if not item_id then
+        logger.error("add_special_item failed - missing item_id")
+        return false
     end
-    local ok = item_dao.update_user_items(user_id, items)
+    if not count or type(count) ~= "number" then
+        logger.error("add_special_item failed - invalid count: %s", tostring(count))
+        return false
+    end
+    if count <= 0 then
+        logger.error("add_special_item failed - count must be positive: %d", count)
+        return false
+    end
+
+    logger.info("Adding special item - user_id: %d, item_id: %d, count: %d", 
+        user_id, item_id, count)
+
+    -- Use add_items_to_slot with proper parameter structure
+    local ok, err = M.add_items_to_slot(user_id, {
+        item_id = item_id,
+        count = count
+    }, enum.ChangeSource.SOURCE_SPECIAL)
+
     if not ok then
-        logger.error("add_special_item update_user_items failed, user_id: %d, item_id: %d", user_id, item_id)
+        logger.error("add_special_item failed - user_id: %d, item_id: %d, count: %d, error: %s",
+            user_id, item_id, count, err)
         return false
     end
-    -- 触发物品添加事件
+
+    -- Trigger item addition event
     local event = init.get_service("event")
     skynet.send(event, "lua", "trigger_event", "on_item_added", {
         user_id = user_id,
         item_id = item_id,
         count = count
     })
+
     return true
 end
 
