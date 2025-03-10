@@ -79,6 +79,7 @@ function M.handle(client_id, msg)
                 for _, bag_item in ipairs(bag.items) do
                     if item.item_id == bag_item.item_id then
                         item.count = bag_item.count
+                        item.slot_id = bag_item.slot_id
                     end
                 end
             end
@@ -87,6 +88,7 @@ function M.handle(client_id, msg)
                 for _, bag_item in ipairs(bag.items) do
                     if item.item_id == bag_item.item_id then
                         item.count = bag_item.count
+                        item.slot_id = bag_item.slot_id
                     end
                 end
             end

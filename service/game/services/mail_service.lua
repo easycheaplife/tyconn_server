@@ -234,27 +234,17 @@ end
 
 -- 删除过期邮件
 function M.delete_expired_mails()
-    local now = os.time()
-    local expired = db_client.find("mails", {expire_time = {["$lt"] = now}})
-    
-    for _, mail in ipairs(expired) do
-        -- 标记为过期
-        mail.status = enum.MailStatus.MAIL_STATUS_EXPIRED
-        db_client.update("mails", {id = mail.id}, {status = enum.MailStatus.MAIL_STATUS_EXPIRED})
-        
-        -- 从缓存中删除
-        if mail_cache[mail.user_id] then
-            for i, m in ipairs(mail_cache[mail.user_id]) do
-                if m.id == mail.id then
-                    table.remove(mail_cache[mail.user_id], i)
-                    break
-                end
-            end
-        end
+    -- 使用正确的db_client方法删除过期邮件
+    local ok = mail_dao.delete_expired_mails()
+    if not ok then
+        logger.error("Failed to delete expired mails")
+        return false
     end
     
-    -- 从数据库删除
-    db_client.delete("mails", {expire_time = {["$lt"] = now}})
+    -- 清除所有用户的邮件缓存，因为可能有过期邮件被删除
+    mail_cache = {}
+    
+    return true
 end
 
 -- 清理缓存
