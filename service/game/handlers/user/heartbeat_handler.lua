@@ -3,6 +3,7 @@ local logger = require "logger"
 local pb = require "pb"
 local handler_helper = require "game.handlers.handler_helper"
 local message = require "message"
+local error = require "error"
 
 local M = {}
 
@@ -10,7 +11,7 @@ function M.handle(client_id, msg)
     -- 验证请求
     local base_request, request, error_code, error_message, claims = handler_helper.verify_request(
         client_id, msg, "command.C2GHeartbeatRequest")
-    if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+    if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         return message.create_error_response(
             base_request, 
             error_code, 

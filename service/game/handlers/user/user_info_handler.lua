@@ -7,6 +7,7 @@ local handler_helper = require "game.handlers.handler_helper"
 local utils = require "utils"
 local message = require "message"
 local user_session_service = require "services.user_session_service"
+local error = require "error"
 
 local M = {}
 
@@ -16,7 +17,7 @@ function M.handle(client_id, msg, gate_node)
     -- 验证请求
     local base_request, request, error_code, error_message, claims = handler_helper.verify_request(
         client_id, msg, "command.C2GUserInfoRequest")
-    if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+    if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         return message.create_error_response(
             base_request, 
             error_code, 
@@ -51,7 +52,7 @@ function M.handle(client_id, msg, gate_node)
             logger.error("Failed to create user: %s", err or "unknown error")
             return message.create_error_response(
                 base_request, 
-                pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"), 
+                error.ErrorCode.ERROR_CODE_DB_ERROR, 
                 "command.G2CUserInfoResponse", 
                 nil, 
                 pb.enum("common.MessageID", "G2C_USER_INFO_RESPONSE"))
