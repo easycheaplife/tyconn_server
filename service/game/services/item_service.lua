@@ -95,6 +95,13 @@ local function apply_item_effect(user_id, item_id, count, source)
     if not config then
         return false, "item config is not exist", nil
     end
+    
+    -- 检查物品是否有效果值
+    if not config.effect_value then
+        logger.error("Item %d has no effect_value defined in configuration", item_id)
+        return false, "item has no effect value", nil
+    end
+    
     -- 创建效果物品列表
     local effect_items = {}
     
