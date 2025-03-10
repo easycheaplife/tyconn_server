@@ -85,7 +85,7 @@ message C2GUseItemRequest {
 
 // 使用物品响应 {{Res:204}}
 message G2CUseItemResponse {
-    repeated common.ItemInfo items = 1;  // 变化的物品列表
+    repeated common.BagInfo bags = 1;  // 变化的物品列表
 }
 
 // 扩展背包请求 {{Req:205}}

@@ -2,8 +2,10 @@ local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
 local item_service = require "services.item_service"
+local bag_service = require "services.bag_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message = require "message"
+local utils = require "utils"
 
 local M = {}
 
@@ -49,19 +51,51 @@ function M.handle(client_id, msg)
     -- 使用物品
     logger.info("Use item - user_id: %d, item_id: %d, count: %d", 
         user.user_id, request.item_id, request.count)
-    local error_code, error_msg, result = item_service.use_item(user.user_id, request.item_id, request.count)
-    if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+    local ok, err, result = item_service.use_item(user.user_id, request.item_id, request.count)
+    if not ok then
         return message.create_error_response(
             base_request,
-            error_code,
+            pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_USE_FAILED"),
             "command.G2CUseItemResponse",
-            error_msg,
+            err,
             pb.enum("common.MessageID", "G2C_USE_ITEM_RESPONSE"))
+    end
+
+    -- 获取最新的背包信息
+    local bags = bag_service.get_user_bags(user.user_id)
+    if not bags then
+        return message.create_error_response(
+            base_request,
+            pb.enum("common.ErrorCode", "ERROR_CODE_GET_BAG_FAILED"),
+            "command.G2CUseItemResponse",
+            bags_err,
+            pb.enum("common.MessageID", "G2C_USE_ITEM_RESPONSE"))
+    end
+    
+    -- 将变化的背包列表按repeated common.BagInfo bags 格式返回  
+    for _, bag in ipairs(bags) do
+        if bag.bag_type == pb.enum("common.BagType", "BAG_TYPE_ITEM") then
+            for _, item in ipairs(result.result_item) do
+                for _, bag_item in ipairs(bag.items) do
+                    if item.item_id == bag_item.item_id then
+                        item.count = bag_item.count
+                    end
+                end
+            end
+
+            for _, item in ipairs(result.effect_items) do
+                for _, bag_item in ipairs(bag.items) do
+                    if item.item_id == bag_item.item_id then
+                        item.count = bag_item.count
+                    end
+                end
+            end
+        end
     end
 
     -- 返回变化的物品列表
     local response_data = {
-        items = result
+        bags = bags
     }
 
     return message.create_success_response(

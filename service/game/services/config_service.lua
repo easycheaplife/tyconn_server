@@ -82,25 +82,9 @@ function M.load_item_config()
     end
 
     -- 添加测试物品配置
-    CONFIG_CACHE.items[1001] = CONFIG_CACHE.items[1001] or {}
-    CONFIG_CACHE.items[1001].effect_type = enum.EffectType.EFFECT_TYPE_EXP
-    CONFIG_CACHE.items[1001].effect_value = 100
-
-    CONFIG_CACHE.items[1002] = CONFIG_CACHE.items[1002] or {}
-    CONFIG_CACHE.items[1002].effect_type = enum.EffectType.EFFECT_TYPE_EXP
-    CONFIG_CACHE.items[1002].effect_value = 100
-
-    CONFIG_CACHE.items[1003] = CONFIG_CACHE.items[1003] or {}
-    CONFIG_CACHE.items[1003].effect_type = enum.EffectType.EFFECT_TYPE_EXP
-    CONFIG_CACHE.items[1003].effect_value = 100
-
-    CONFIG_CACHE.items[1004] = CONFIG_CACHE.items[1004] or {}
-    CONFIG_CACHE.items[1004].effect_type = enum.EffectType.EFFECT_TYPE_EXP
-    CONFIG_CACHE.items[1004].effect_value = 100
-
-    CONFIG_CACHE.items[1005] = CONFIG_CACHE.items[1005] or {}
-    CONFIG_CACHE.items[1005].effect_type = enum.EffectType.EFFECT_TYPE_EXP
-    CONFIG_CACHE.items[1005].effect_value = 100
+    CONFIG_CACHE.items[2011] = CONFIG_CACHE.items[2011] or {}
+    CONFIG_CACHE.items[2011].effect_type = enum.EffectType.EFFECT_TYPE_EXP
+    CONFIG_CACHE.items[2011].effect_value = 100
 
     CONFIG_CACHE.items[2012] = CONFIG_CACHE.items[2012] or {}
     CONFIG_CACHE.items[2012].effect_type = enum.EffectType.EFFECT_TYPE_GOLD

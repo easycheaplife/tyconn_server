@@ -93,45 +93,11 @@ local function apply_item_effect(user_id, item_id, count)
         user_id, item_id, count)
     local config = config_service.get_item_config(item_id)
     if not config then
-        return false, "item config is not exist"
+        return false, "item config is not exist", nil
     end
     
-    -- 2. 检查使用限制
-    if config.use_limit then
-        local limit_type = config.use_limit.type
-        local limit_count = config.use_limit.count
-        
-        -- 获取已使用次数
-        local used_count = item_dao.get_use_count(user_id, item_id)
-        if not used_count then
-            return false, "get use count failed"
-        end
-        
-        -- 检查是否超过限制
-        if limit_type == enum.UseLimitType.DAILY then
-            -- 检查是否跨天重置
-            local last_use_time = item_dao.get_last_use_time(user_id, item_id)
-            if last_use_time and not utils.is_same_day(last_use_time, os.time()) then
-                used_count = 0
-            end
-        elseif limit_type == enum.UseLimitType.WEEKLY then
-            -- 检查是否跨周重置
-            local last_use_time = item_dao.get_last_use_time(user_id, item_id)
-            if last_use_time and not utils.is_same_week(last_use_time, os.time()) then
-                used_count = 0
-            end
-        end
-        
-        if used_count + count > limit_count then
-            return false, "exceed use count limit"
-        end
-        
-        -- 更新使用次数
-        local ok = item_dao.update_use_count(user_id, item_id, used_count + count)
-        if not ok then
-            return false, "update use count failed"
-        end
-    end
+    -- 创建效果物品列表
+    local effect_items = {}
     
     -- 3. 应用效果
     local total_effect = config.effect_value * count
@@ -142,15 +108,25 @@ local function apply_item_effect(user_id, item_id, count)
         local ok, err = M.add_special_item(user_id, enum.SpecialItemID.ITEM_ID_EXP, total_effect)
         if not ok then
             logger.error("Failed to add exp: %s", err)
-            return false, err
+            return false, err, nil
         end
+        -- 添加到效果物品列表
+        table.insert(effect_items, {
+            item_id = enum.SpecialItemID.ITEM_ID_EXP,
+            count = total_effect
+        })
     elseif config.effect_type == enum.EffectType.EFFECT_TYPE_GOLD then
         -- 增加金币
         local ok, err = M.add_special_item(user_id, enum.SpecialItemID.SPECIAL_ITEM_ID_GOLD, total_effect)
         if not ok then
             logger.error("Failed to add gold: %s", err)
-            return false, err
+            return false, err, nil
         end
+        -- 添加到效果物品列表
+        table.insert(effect_items, {
+            item_id = enum.SpecialItemID.SPECIAL_ITEM_ID_GOLD,
+            count = total_effect
+        })
     end
     
     -- 触发物品使用事件
@@ -161,11 +137,12 @@ local function apply_item_effect(user_id, item_id, count)
         count = count,
         effect_result = {
             total_effect = total_effect,
-            effect_type = config.effect_type
+            effect_type = config.effect_type,
+            effect_items = effect_items
         }
     })
     
-    return true
+    return true, nil, effect_items
 end
 
 -- 添加物品到指定格子
@@ -369,13 +346,13 @@ end
 function M.use_item(user_id, item_id, count)
     -- 1. 检查参数
     if not user_id or not item_id or not count or count <= 0 then
-        return pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAMS"), 'invalid params' , {}            
+        return false, 'invalid params', {}            
     end
     
     -- 2. 获取物品列表
     local items = item_dao.get_user_items(user_id)
     if not items then
-        return pb.enum("common.ErrorCode", "ERROR_CODE_GET_ITEM_FAILED"), 'get item failed' , {}
+        return false, 'get item failed', {}
     end
     
     -- 3. 查找物品
@@ -390,7 +367,7 @@ function M.use_item(user_id, item_id, count)
     end
     
     if not target_item then
-        return pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_NOT_FOUND"), 'item not found' , {}
+        return false, 'item not found', {}
     end
     
     -- 4. 检查物品是否被锁定
@@ -398,14 +375,14 @@ function M.use_item(user_id, item_id, count)
         -- 添加详细的错误日志
         logger.error("Item is locked - user_id: %d, item_id: %d, count: %d, state: %s",
             user_id, item_id, count, target_item.state or "nil")
-        return pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_LOCKED"), 'item locked' , {}
+        return false, 'item locked', {}
     end
     
     -- 检查物品数量是否足够
     if target_item.count < count then
         logger.error("物品数量不足 - user_id: %d, item_id: %d, count: %d, have: %d", 
             user_id, item_id, count, target_item.count)
-        return pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_NOT_ENOUGH"), 'item not enough' , {}
+        return false, 'item not enough', {}
     end
     
     -- 记录变更前数量
@@ -419,6 +396,9 @@ function M.use_item(user_id, item_id, count)
     item_dao.log_change(user_id, item_id, count,
         enum.ChangeType.CHANGE_TYPE_USE, enum.ChangeSource.SOURCE_USE,
         before_count, target_item.count)
+
+    -- 备份target_item 并返回
+    local result_item = target_item
 
     -- 如果物品数量为0，从列表中删除并清空格子
     if target_item.count <= 0 then
@@ -438,23 +418,23 @@ function M.use_item(user_id, item_id, count)
     -- 更新数据库和缓存
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return pb.enum("common.ErrorCode", "ERROR_CODE_DB_ERROR"), 'db error' , {}
+        return false, 'db error', {}
     end
 
     -- 应用物品效果
-    local ok, err = apply_item_effect(user_id, item_id, count)
+    local ok, err, effect_items = apply_item_effect(user_id, item_id, count)
     if not ok then
         logger.error("Failed to apply item effect - user_id: %d, item_id: %d, error: %s",
             user_id, item_id, err)
-        return pb.enum("common.ErrorCode", "ERROR_CODE_ITEM_EFFECT_FAILED"), 'item effect failed' , {}
+        return false, 'item effect failed', {}
     end
 
     -- 记录操作日志
     logger.info("Used item - user_id: %d, item_id: %d, count: %d, remain: %d",
         user_id, item_id, count, target_item.count)
 
-    -- 返回变化的物品列表
-    return pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"), 'success' , {target_item}
+    -- 返回变化的物品列表和效果物品
+    return true, 'success', {result_item, effect_items = effect_items or {}}
 end
 
 -- 获取用户物品列表
@@ -1416,8 +1396,8 @@ function M.enhance_equipment(user_id, equip_id, material_list, protect_item)
         -- 失败处理
         if protect_item then
             -- 使用保护道具
-            error_code, error_msg, result_items = M.use_item(user_id, protect_item.item_id, 1)
-            if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+            local ok, err, result_items = M.use_item(user_id, protect_item.item_id, 1)
+            if not ok then
                 -- 返还材料
                 M.add_items_to_slot(user_id, materials, enum.ChangeSource.SOURCE_ENHANCE)
                 return false, err
@@ -1563,8 +1543,8 @@ function M.refine_equipment(user_id, equip_id, material_list, protect_item)
         -- 失败处理
         if protect_item then
             -- 使用保护道具
-            error_code, error_msg, result_items = M.use_item(user_id, protect_item.item_id, 1)
-            if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
+            local ok, err, result_items = M.use_item(user_id, protect_item.item_id, 1)
+            if not ok then
                 -- 返还材料
                 M.add_items_to_slot(user_id, materials, enum.ChangeSource.SOURCE_REFINE)
                 return false, err
@@ -1794,9 +1774,9 @@ function M.inlay_gem(user_id, equip_id, gem_id, slot_index, protect_item)
         -- 失败处理
         if protect_item then
             -- 使用保护道具
-            local error_code, error_msg, result_items = M.use_item(user_id, protect_item.item_id, 1)
-            if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
-                return false, error_msg
+            local ok, err, result_items = M.use_item(user_id, protect_item.item_id, 1)
+            if not ok then
+                return false, err
             end
             result = enum.GemResult.FAIL
         else
@@ -1899,9 +1879,9 @@ function M.remove_gem(user_id, equip_id, slot_index, protect_item)
     if random > 0.7 then  -- 30%概率失败
         if protect_item then
             -- 使用保护道具
-            local error_code, error_msg, result_items = M.use_item(user_id, protect_item.item_id, 1)
-            if error_code ~= pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS") then
-                return false, error_msg
+            local ok, err, result_items = M.use_item(user_id, protect_item.item_id, 1)
+            if not ok then
+                return false, err
             end
             result = enum.GemResult.FAIL
         else
@@ -1998,45 +1978,6 @@ function M.create_item(user_id, item_id, count)
         0, count)
     
     return item
-end
-
--- 应用物品效果
-function M.apply_item_effect(user_id, item_id, count)
-    -- 获取物品配置
-    local config = config_service.get_item_config(item_id)
-    if not config then
-        return nil
-    end
-    
-    local results = {}
-    
-    -- 应用效果
-    for _, effect in ipairs(config.effects) do
-        local effect_count = effect.value * count
-        
-        if effect.type == "HEAL" then
-            -- 治疗效果
-            local health_added = character_service.add_health(user_id, effect_count)
-            results.health_added = health_added
-            
-        elseif effect.type == "MANA" then
-            -- 魔法效果
-            local mana_added = character_service.add_mana(user_id, effect_count)
-            results.mana_added = mana_added
-            
-        elseif effect.type == "EXP" then
-            -- 经验效果
-            local exp_added = character_service.add_exp(user_id, effect_count)
-            results.exp_added = exp_added
-            
-        elseif effect.type == "GOLD" then
-            -- 金币效果
-            local gold_added = currency_service.add_gold(user_id, effect_count)
-            results.gold_added = gold_added
-        end
-    end
-    
-    return results
 end
 
 -- 【核心功能】处理物品合成逻辑（不涉及背包）
