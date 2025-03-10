@@ -1,5 +1,5 @@
--- using proto/common/enum.proto to generate enum.lua
--- generate time: 2025-03-10 10:12:00
+-- Generating enum.lua from proto/common/enum.proto
+-- Generate time: 2025-03-10 10:27:45
 
 local M = {}
 

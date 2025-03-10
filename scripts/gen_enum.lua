@@ -95,8 +95,8 @@ end
 -- 生成Lua枚举定义
 local function generate_enum_lua(enums)
     local lines = {
-        "-- using proto/common/enum.proto to generate enum.lua",
-        "-- generate time: " .. os.date("%Y-%m-%d %H:%M:%S"),
+        "-- Generating enum.lua from proto/common/enum.proto",
+        "-- Generate time: " .. os.date("%Y-%m-%d %H:%M:%S"),
         "",
         "local M = {}"
     }
@@ -128,8 +128,8 @@ end
 -- 生成错误码定义
 local function generate_error_lua(enums)
     local lines = {
-        "-- using proto/common/error.proto to generate error.lua",
-        "-- generate time: " .. os.date("%Y-%m-%d %H:%M:%S"),
+        "-- Generating error.lua from proto/common/error.proto",
+        "-- Generate time: " .. os.date("%Y-%m-%d %H:%M:%S"),
         "",
         "local M = {}"
     }
