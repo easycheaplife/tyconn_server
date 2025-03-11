@@ -19,26 +19,13 @@ apt-get install -y git gcc make autoconf libreadline-dev
 apt-get install -y libmysqlclient-dev mysql-server redis-server nginx
 ```
 
-### 3. Lua环境
-```bash
-# 安装LuaJIT
-git clone https://github.com/LuaJIT/LuaJIT.git
-cd LuaJIT
-make && make install
-
-# 设置环境变量
-echo "export LUAJIT_LIB=/usr/local/lib" >> ~/.bashrc
-echo "export LUAJIT_INC=/usr/local/include/luajit-2.1" >> ~/.bashrc
-source ~/.bashrc
-```
 
 ## 服务器部署
 
 ### 1. 获取代码
 ```bash
-git clone https://github.com/yourusername/tyconn.git
-cd tyconn
-git submodule update --init --recursive
+git clone git@github.com:easycheaplife/tyconn_server.git
+git clone https://github.com/cloudwu/skynet.git
 ```
 
 ### 2. 编译安装
@@ -46,26 +33,10 @@ git submodule update --init --recursive
 # 编译skynet
 cd skynet
 make linux
+cd .. && cd tyconn_server
+ln -s ../skynet skynet
 
-# 编译项目
-cd ..
-make
-```
-
-### 3. 配置数据库
-```bash
-# 创建数据库
-mysql -u root -p
-> CREATE DATABASE tyconn;
-> GRANT ALL PRIVILEGES ON tyconn.* TO 'tyconn'@'localhost' IDENTIFIED BY 'your_password';
-> FLUSH PRIVILEGES;
-> EXIT;
-
-# 导入数据库结构
-mysql -u tyconn -p tyconn < sql/schema.sql
-```
-
-### 4. 配置Nginx
+### 3. 配置Nginx
 ```bash
 # 复制Nginx配置
 sudo cp nginx/conf/game.conf /etc/nginx/conf.d/
@@ -78,19 +49,12 @@ sudo vim /etc/nginx/conf.d/game.conf
 sudo systemctl restart nginx
 ```
 
-### 5. 配置服务器
+### 4. 配置服务器
 ```bash
-# 复制配置文件
-cp etc/config.example.lua etc/config.lua
 
 # 修改配置
 vim etc/config.lua
 # 修改数据库连接信息和其他配置
-
-# 设置环境变量
-cp env.example .env
-vim .env
-source .env
 ```
 
 ### 6. 启动服务器
@@ -110,12 +74,14 @@ source .env
 ### 1. 修改集群配置
 ```lua
 -- etc/cluster.lua
-login = "192.168.1.10:1001"    -- 登录服务器
-game1 = "192.168.1.11:2001"    -- 游戏服务器1
-game2 = "192.168.1.12:2002"    -- 游戏服务器2
-gate1 = "192.168.1.13:3001"    -- 网关服务器1
-gate2 = "192.168.1.14:3002"    -- 网关服务器2
-db_proxy = "192.168.1.15:4001" -- 数据库代理
+db_proxy1 = "127.0.0.1:12001"
+db_proxy2 = "127.0.0.1:12002"
+login1 = "127.0.0.1:13001"
+login2 = "127.0.0.1:13002"
+game1 = "127.0.0.1:14001"
+game2 = "127.0.0.1:14002"
+gate1 = "127.0.0.1:15001"
+gate2 = "127.0.0.1:15002"
 ```
 
 ### 2. 配置负载均衡
@@ -145,27 +111,6 @@ upstream game_server {
 
 # 数据库代理
 ./scripts/server.sh start db_proxy
-```
-
-## 监控部署
-
-### 1. 配置监控
-```bash
-# 安装监控工具
-yum install -y prometheus grafana
-
-# 复制监控配置
-cp monitor/prometheus.yml /etc/prometheus/
-cp monitor/grafana.ini /etc/grafana/
-```
-
-### 2. 启动监控
-```bash
-# 启动Prometheus
-systemctl start prometheus
-
-# 启动Grafana
-systemctl start grafana-server
 ```
 
 ## 常见问题
