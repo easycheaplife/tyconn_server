@@ -3,6 +3,7 @@ local logger = require "logger"
 local utils = require "utils"
 local jwt = require "jwt"
 local skynet = require "skynet"
+local error = require "error"
 
 local M = {}
 
@@ -37,7 +38,7 @@ end
 function M.verify_token(token)
     if not token then
         return {
-            code = pb.enum("common.ErrorCode", "ERROR_CODE_TOKEN_INVALID"),
+            code = error.ErrorCode.ERROR_CODE_TOKEN_INVALID,
             message = "Missing token"
         }
     end
@@ -46,7 +47,7 @@ function M.verify_token(token)
     if not ok or not claims then
         logger.error("Failed to decode token")
         return {
-            code = pb.enum("common.ErrorCode", "ERROR_CODE_TOKEN_INVALID"),
+            code = error.ErrorCode.ERROR_CODE_TOKEN_INVALID,
             message = "Invalid token"
         }
     end
@@ -54,13 +55,13 @@ function M.verify_token(token)
     if not claims.account then
         logger.error("Missing account in token claims")
         return {
-            code = pb.enum("common.ErrorCode", "ERROR_CODE_TOKEN_INVALID"),
+            code = error.ErrorCode.ERROR_CODE_TOKEN_INVALID,
             message = "Invalid token format"
         }
     end
 
     return {
-        code = pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
+        code = error.ErrorCode.ERROR_CODE_SUCCESS,
         message = "success",
         claims = claims
     }
@@ -84,7 +85,7 @@ function M.create_base_response(session, errorCode, errorMsg, payload)
     
     return {
         session = new_session,
-        errorCode = errorCode or 0,
+        errorCode = errorCode or error.ErrorCode.ERROR_CODE_SUCCESS,
         errorMsg = errorMsg or "",
         payload = payload or ""
     }
@@ -119,7 +120,7 @@ function M.create_success_response(base_request, proto_name, data, message_id)
             timestamp = base_request.session.timestamp,
             version = base_request.session.version
         },
-        errorCode = pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
+        errorCode = error.ErrorCode.ERROR_CODE_SUCCESS,
         errorMsg = "Success",
         payload = pb.encode(proto_name, data)
     }
@@ -133,7 +134,7 @@ function M.create_error_response(base_request, error_code, response_type, error_
     -- 确保错误码是数字
     if type(error_code) ~= "number" then
         logger.error("Invalid error code type: %s, value: %s", type(error_code), tostring(error_code))
-        error_code = pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAM")
+        error_code = error.ErrorCode.ERROR_CODE_INVALID_PARAM
     end
 
     -- 打印所有参数
