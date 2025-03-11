@@ -25,7 +25,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CComposeItemResponse", 
             nil, 
-            message.G2C_COMPOSE_ITEM_RESPONSE)
+            message.MessageID.G2C_COMPOSE_ITEM_RESPONSE)
     end
 
     -- 验证参数
@@ -35,7 +35,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CComposeItemResponse",
             "Invalid parameters: target_id is required",
-            message.G2C_COMPOSE_ITEM_RESPONSE)
+            message.MessageID.G2C_COMPOSE_ITEM_RESPONSE)
     end
     
     -- 调用背包服务进行物品合成
@@ -51,7 +51,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_COMPOSE_ITEM_FAILED,
             "command.G2CComposeItemResponse",
             result,
-            message.G2C_COMPOSE_ITEM_RESPONSE)
+            message.MessageID.G2C_COMPOSE_ITEM_RESPONSE)
     end
 
     logger.info("Compose item success - user_id: %d, target_id: %d", 
@@ -84,7 +84,7 @@ function M.handle(client_id, msg)
             new_item = new_item_info,
             remain_items = remain_items_info
         },
-        message.G2C_COMPOSE_ITEM_RESPONSE)
+        message.MessageID.G2C_COMPOSE_ITEM_RESPONSE)
 end
 
 return M 

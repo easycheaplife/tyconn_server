@@ -24,7 +24,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CSortBagResponse", 
             nil, 
-            message.G2C_SORT_BAG_RESPONSE)
+            message.MessageID.G2C_SORT_BAG_RESPONSE)
     end
 
     -- 验证参数
@@ -34,7 +34,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CSortBagResponse",
             "Invalid parameters: bag_type and sort_rule are required",
-            message.G2C_SORT_BAG_RESPONSE)
+            message.MessageID.G2C_SORT_BAG_RESPONSE)
     end
 
     -- 验证背包类型
@@ -79,7 +79,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CSortBagResponse",
         { items = items },
-        message.G2C_SORT_BAG_RESPONSE)
+        message.MessageID.G2C_SORT_BAG_RESPONSE)
 end
 
 return M 

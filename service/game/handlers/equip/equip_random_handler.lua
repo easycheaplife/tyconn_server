@@ -23,7 +23,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CEquipRandomResponse", 
             nil, 
-            message.G2C_EQUIP_RANDOM_RESPONSE)
+            message.MessageID.G2C_EQUIP_RANDOM_RESPONSE)
     end
     
     -- 解析请求参数
@@ -41,7 +41,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_SYSTEM_ERROR, 
             "command.G2CEquipRandomResponse", 
             nil, 
-            message.G2C_EQUIP_RANDOM_RESPONSE)
+            message.MessageID.G2C_EQUIP_RANDOM_RESPONSE)
     end
     
     -- 获取当前部位的装备
@@ -109,7 +109,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CEquipRandomResponse",
         response_data,
-        message.G2C_EQUIP_RANDOM_RESPONSE)
+        message.MessageID.G2C_EQUIP_RANDOM_RESPONSE)
 end
 
 return M

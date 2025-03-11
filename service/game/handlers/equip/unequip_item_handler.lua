@@ -24,7 +24,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CUnequipItemResponse", 
             nil, 
-            message.G2C_UNEQUIP_ITEM_RESPONSE)
+            message.MessageID.G2C_UNEQUIP_ITEM_RESPONSE)
     end
 
     -- 解析请求参数
@@ -44,7 +44,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_INVALID_OPERATION, 
             "command.G2CUnequipItemResponse", 
             nil, 
-            message.G2C_UNEQUIP_ITEM_RESPONSE)
+            message.MessageID.G2C_UNEQUIP_ITEM_RESPONSE)
     end
     
     -- 转换卸下项
@@ -77,7 +77,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CUnequipItemResponse",
         response_data,
-        message.G2C_UNEQUIP_ITEM_RESPONSE)
+        message.MessageID.G2C_UNEQUIP_ITEM_RESPONSE)
 end
 
 return M 

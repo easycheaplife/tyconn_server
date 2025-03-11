@@ -1,5 +1,5 @@
 -- Generating enum.lua from proto/common/enum.proto
--- Generate time: 2025-03-10 10:27:45
+-- Generate time: 2025-03-11 02:26:48
 
 local M = {}
 
@@ -203,6 +203,8 @@ M.EquipSlotType = {
     EQUIP_SLOT_TYPE_HANDS = 4,    -- 手部槽
     EQUIP_SLOT_TYPE_FEET = 5,    -- 脚部槽
     EQUIP_SLOT_TYPE_NECK = 6,    -- 项链槽
+    EQUIP_SLOT_TYPE_FINGER1 = 7,    -- 戒指槽1
+    EQUIP_SLOT_TYPE_FINGER2 = 8,    -- 戒指槽2
     EQUIP_SLOT_TYPE_TRINKET = 9,    -- 饰品槽
 }
 

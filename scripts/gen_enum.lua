@@ -29,10 +29,13 @@ local function parse_enums(content)
     -- 移除package和import语句
     content = content:gsub("package%s+[%w%.]+;", "")
     content = content:gsub("import%s+[^;]+;", "")
+    content = content:gsub("syntax%s*=%s*\"proto3\"%s*;", "")
+    
+    print("Parsing content length:", #content)
     
     for line in content:gmatch("[^\r\n]+") do
         -- 跳过空行和语法标记行
-        if line:match("^%s*$") or line:match("^%s*syntax%s*=") then
+        if line:match("^%s*$") then
             goto continue
         end
         
@@ -40,12 +43,14 @@ local function parse_enums(content)
         local comment = line:match("^%s*//(.+)")
         if comment then
             last_comment = comment:match("^%s*(.-)%s*$")
+            print("Found comment:", last_comment)
             goto continue
         end
         
         -- 匹配枚举开始
         local enum_name = line:match("^%s*enum%s+(%w+)%s*{")
         if enum_name then
+            print("Found enum:", enum_name)
             current_enum = {
                 name = enum_name,
                 values = {},
@@ -58,12 +63,13 @@ local function parse_enums(content)
         
         -- 匹配枚举值
         if current_enum then
-            -- 修改正则表达式以更准确地匹配枚举值
-            local name, value, comment = line:match("^%s*(%u[%u_]*)%s*=%s*(%d+)%s*;?%s*(//?.*)$")
+            -- 修改正则表达式以匹配更多格式的枚举值
+            local name, value, comment = line:match("^%s*([%u%d][%u%d_]*)%s*=%s*(%d+)%s*;?%s*(//?.*)$")
             if not name then
-                name, value = line:match("^%s*(%u[%u_]*)%s*=%s*(%d+)%s*;?%s*$")
+                name, value = line:match("^%s*([%u%d][%u%d_]*)%s*=%s*(%d+)%s*;?%s*$")
             end
             if name and value then
+                print("Found enum value:", name, value)
                 -- 去掉注释中的 // 或 / 前缀
                 if comment then
                     comment = comment:match("^/?/?%s*(.-)%s*$") or ""
@@ -82,6 +88,9 @@ local function parse_enums(content)
         
         -- 匹配枚举结束
         if line:match("^%s*}") then
+            if current_enum then
+                print("End of enum:", current_enum.name, "#values:", #current_enum.values)
+            end
             current_enum = nil
             last_comment = nil
         end
@@ -89,6 +98,7 @@ local function parse_enums(content)
         ::continue::
     end
     
+    print("Total enums found:", #enums)
     return enums
 end
 

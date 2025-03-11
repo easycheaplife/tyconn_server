@@ -73,7 +73,7 @@ function M.handle(client_id, msg)
         { 
             result_items = result_items_info
         },
-        message.G2C_DECOMPOSE_ITEM_RESPONSE)
+        message.MessageID.G2C_DECOMPOSE_ITEM_RESPONSE)
 end
 
 return M 

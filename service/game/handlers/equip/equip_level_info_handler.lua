@@ -23,7 +23,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CEquipLevelInfoResponse", 
             nil, 
-            message.G2C_EQUIP_LEVEL_INFO_RESPONSE)
+            message.MessageID.G2C_EQUIP_LEVEL_INFO_RESPONSE)
     end
 
     -- 获取装备概率等级信息
@@ -35,7 +35,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_SYSTEM_ERROR,
             "command.G2CEquipLevelInfoResponse",
             nil,
-            message.G2C_EQUIP_LEVEL_INFO_RESPONSE
+            message.MessageID.G2C_EQUIP_LEVEL_INFO_RESPONSE
         )
     end
     
@@ -47,7 +47,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CEquipLevelInfoResponse",
         response_data,
-        message.G2C_EQUIP_LEVEL_INFO_RESPONSE
+        message.MessageID.G2C_EQUIP_LEVEL_INFO_RESPONSE
     )
 end
 

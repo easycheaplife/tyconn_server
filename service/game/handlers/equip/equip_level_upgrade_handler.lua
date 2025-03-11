@@ -23,7 +23,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CEquipLevelUpgradeResponse", 
             nil, 
-            message.G2C_EQUIP_LEVEL_UPGRADE_RESPONSE)
+            message.MessageID.G2C_EQUIP_LEVEL_UPGRADE_RESPONSE)
     end
     
     -- 解析请求参数
@@ -80,7 +80,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CEquipLevelUpgradeResponse",
         response_data,
-        message.G2C_EQUIP_LEVEL_UPGRADE_RESPONSE)
+        message.MessageID.G2C_EQUIP_LEVEL_UPGRADE_RESPONSE)
 end
 
 return M

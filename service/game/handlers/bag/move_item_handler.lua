@@ -24,7 +24,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CMoveItemResponse", 
             nil, 
-            message.G2C_MOVE_ITEM_RESPONSE)
+            message.MessageID.G2C_MOVE_ITEM_RESPONSE)
     end
 
     -- 验证参数
@@ -34,7 +34,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CMoveItemResponse",
             "Invalid parameters: src_bag_type, src_slot, dst_bag_type, dst_slot are required",
-            message.G2C_MOVE_ITEM_RESPONSE)
+            message.MessageID.G2C_MOVE_ITEM_RESPONSE)
     end
 
     -- 验证背包类型
@@ -54,7 +54,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_INVALID_BAG_TYPE,
             "command.G2CMoveItemResponse",
             "Invalid bag type",
-            message.G2C_MOVE_ITEM_RESPONSE)
+            message.MessageID.G2C_MOVE_ITEM_RESPONSE)
     end
 
     -- 移动数量，如果未指定则移动全部
@@ -77,7 +77,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_MOVE_ITEM_FAILED,
             "command.G2CMoveItemResponse",
             err,
-            message.G2C_MOVE_ITEM_RESPONSE)
+            message.MessageID.G2C_MOVE_ITEM_RESPONSE)
     end
 
     logger.info("Move item success - user_id: %d, from: %d,%d to: %d,%d", 
@@ -99,7 +99,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CMoveItemResponse",
         { changed_items = items_response },
-        message.G2C_MOVE_ITEM_RESPONSE)
+        message.MessageID.G2C_MOVE_ITEM_RESPONSE)
 end
 
 return M 

@@ -24,7 +24,7 @@ function M.handle(client_id, msg)
             error_code, 
             RESP_TYPE, 
             error_message, 
-            message.G2C_GM_COMMAND_RESPONSE)
+            message.MessageID.G2C_GM_COMMAND_RESPONSE)
     end
 
     -- 检查GM权限
@@ -35,7 +35,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_PERMISSION_DENIED,
             RESP_TYPE,
             "No GM permission",
-            message.G2C_GM_COMMAND_RESPONSE)
+            message.MessageID.G2C_GM_COMMAND_RESPONSE)
     end
 
     -- 执行GM指令
@@ -48,7 +48,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_GM_COMMAND_FAILED,
             RESP_TYPE,
             msg,
-            message.G2C_GM_COMMAND_RESPONSE)
+            message.MessageID.G2C_GM_COMMAND_RESPONSE)
     end
 
     -- 构造响应数据
@@ -64,7 +64,7 @@ function M.handle(client_id, msg)
         base_request,
         RESP_TYPE,
         response_data,
-        message.G2C_GM_COMMAND_RESPONSE)
+        message.MessageID.G2C_GM_COMMAND_RESPONSE)
 end
 
 return M 

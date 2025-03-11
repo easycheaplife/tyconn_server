@@ -24,7 +24,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CBagInfoResponse", 
             nil, 
-            message.G2C_BAG_INFO_RESPONSE)
+            message.MessageID.G2C_BAG_INFO_RESPONSE)
     end
 
     -- 获取用户背包信息
@@ -36,7 +36,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_DB_ERROR, 
             "command.G2CBagInfoResponse", 
             nil, 
-            message.G2C_BAG_INFO_RESPONSE)
+            message.MessageID.G2C_BAG_INFO_RESPONSE)
     end
 
     -- 构造响应数据
@@ -49,7 +49,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CBagInfoResponse",
         response_data,
-        message.G2C_BAG_INFO_RESPONSE)
+        message.MessageID.G2C_BAG_INFO_RESPONSE)
 end
 
 return M 

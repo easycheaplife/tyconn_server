@@ -23,7 +23,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CEquipInfoResponse", 
             nil, 
-            message.G2C_EQUIP_INFO_RESPONSE)
+            message.MessageID.G2C_EQUIP_INFO_RESPONSE)
     end
     
     -- 获取装备列表
@@ -63,7 +63,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CEquipInfoResponse",
         response_data,
-        message.G2C_EQUIP_INFO_RESPONSE)
+        message.MessageID.G2C_EQUIP_INFO_RESPONSE)
 end
 
 return M 

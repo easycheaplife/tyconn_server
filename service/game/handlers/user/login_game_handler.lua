@@ -25,7 +25,7 @@ function M.handle(client_id, msg, gate_node)
             error_code, 
             "command.G2CLoginGameResponse", 
             nil, 
-            message.G2C_LOGIN_GAME_RESPONSE)
+            message.MessageID.G2C_LOGIN_GAME_RESPONSE)
     end
 
     -- 获取用户信息
@@ -103,7 +103,7 @@ function M.handle(client_id, msg, gate_node)
         base_request,
         "command.G2CLoginGameResponse",
         response_data,
-        message.G2C_LOGIN_GAME_RESPONSE)
+        message.MessageID.G2C_LOGIN_GAME_RESPONSE)
 end
 
 return M 

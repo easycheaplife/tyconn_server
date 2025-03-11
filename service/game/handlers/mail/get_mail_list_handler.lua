@@ -22,7 +22,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CMailListResponse", 
             nil, 
-            message.G2C_MAIL_LIST_RESPONSE)
+            message.MessageID.G2C_MAIL_LIST_RESPONSE)
     end
 
     -- 获取用户邮件列表
@@ -34,7 +34,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_DB_ERROR, 
             "command.G2CMailListResponse", 
             nil, 
-            message.G2C_MAIL_LIST_RESPONSE)
+            message.MessageID.G2C_MAIL_LIST_RESPONSE)
     end
 
     -- 构造响应数据
@@ -47,7 +47,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CMailListResponse",
         response_data,
-        message.G2C_MAIL_LIST_RESPONSE)
+        message.MessageID.G2C_MAIL_LIST_RESPONSE)
 end
 
 return M 

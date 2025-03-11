@@ -22,7 +22,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CReadMailResponse", 
             nil, 
-            pb.enum("common.MessageID", "G2C_READ_MAIL_RESPONSE"))
+            message.MessageID.G2C_READ_MAIL_RESPONSE)
     end
 
     -- 更新邮件状态为已读
@@ -34,7 +34,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_DB_ERROR, 
             "command.G2CReadMailResponse", 
             nil, 
-            message.G2C_READ_MAIL_RESPONSE)
+            message.MessageID.G2C_READ_MAIL_RESPONSE)
     end
 
     -- 返回成功响应
@@ -42,7 +42,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CReadMailResponse",
         { mail_id = request.mail_id },
-        message.G2C_READ_MAIL_RESPONSE)
+        message.MessageID.G2C_READ_MAIL_RESPONSE)
 end
 
 return M 

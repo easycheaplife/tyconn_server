@@ -24,7 +24,7 @@ function M.handle(client_id, msg, gate_node)
             error_code, 
             "command.G2CUserInfoResponse", 
             nil, 
-            message.G2C_USER_INFO_RESPONSE)
+            message.MessageID.G2C_USER_INFO_RESPONSE)
     end
 
     -- 获取用户信息
@@ -98,7 +98,7 @@ function M.handle(client_id, msg, gate_node)
         base_request,
         "command.G2CUserInfoResponse",
         response_data,
-        message.G2C_USER_INFO_RESPONSE)
+        message.MessageID.G2C_USER_INFO_RESPONSE)
 end
 
 return M

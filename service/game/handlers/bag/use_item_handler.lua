@@ -25,7 +25,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CUseItemResponse", 
             nil, 
-            message.G2C_USE_ITEM_RESPONSE)
+            message.MessageID.G2C_USE_ITEM_RESPONSE)
     end
 
     -- 参数验证
@@ -36,7 +36,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CUseItemResponse",
             "Invalid item id",
-            message.G2C_USE_ITEM_RESPONSE)
+            message.MessageID.G2C_USE_ITEM_RESPONSE)
     end
 
     if not request.count or request.count <= 0 then
@@ -47,7 +47,7 @@ function M.handle(client_id, msg)
             error_code,
             "command.G2CUseItemResponse",
             "Invalid count",
-            message.G2C_USE_ITEM_RESPONSE)
+            message.MessageID.G2C_USE_ITEM_RESPONSE)
     end
 
     -- 使用物品
@@ -60,7 +60,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_ITEM_USE_FAILED,
             "command.G2CUseItemResponse",
             err,
-            message.G2C_USE_ITEM_RESPONSE)
+            message.MessageID.G2C_USE_ITEM_RESPONSE)
     end
 
     -- 获取最新的背包信息
@@ -71,7 +71,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_GET_BAG_FAILED,
             "command.G2CUseItemResponse",
             bags_err,
-            message.G2C_USE_ITEM_RESPONSE)
+            message.MessageID.G2C_USE_ITEM_RESPONSE)
     end
     
     -- 将变化的背包列表按repeated common.BagInfo bags 格式返回  
@@ -105,7 +105,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CUseItemResponse",
         response_data,
-        message.G2C_USE_ITEM_RESPONSE)
+        message.MessageID.G2C_USE_ITEM_RESPONSE)
 end
 
 return M 

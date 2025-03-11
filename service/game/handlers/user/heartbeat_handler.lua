@@ -18,7 +18,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CHeartbeatResponse", 
             nil, 
-            message.G2C_HEARTBEAT_RESPONSE)
+            message.MessageID.G2C_HEARTBEAT_RESPONSE)
     end
 
     -- 更新用户最后心跳时间
@@ -41,7 +41,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CHeartbeatResponse",
         response,
-        message.G2C_HEARTBEAT_RESPONSE)
+        message.MessageID.G2C_HEARTBEAT_RESPONSE)
 end
 
 return M 
