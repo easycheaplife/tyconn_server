@@ -19,9 +19,9 @@ function M.handle(client_id, msg)
         logger.error("Failed to verify request for client: %d", client_id)
         return message_helper.create_error_response(
             base_request, 
+            "command.G2CMailListResponse",
             error_code, 
-            "command.G2CMailListResponse", 
-            nil, 
+            error_message, 
             message.MessageID.G2C_MAIL_LIST_RESPONSE)
     end
 
@@ -31,8 +31,8 @@ function M.handle(client_id, msg)
         logger.error("Failed to get mails for user: %d", user.user_id)
         return message_helper.create_error_response(
             base_request,
+            "command.G2CMailListResponse",
             error.ErrorCode.ERROR_CODE_DB_ERROR, 
-            "command.G2CMailListResponse", 
             nil, 
             message.MessageID.G2C_MAIL_LIST_RESPONSE)
     end

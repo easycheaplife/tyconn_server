@@ -22,9 +22,9 @@ function M.handle(client_id, msg)
             client_id, error_code, error_message)
         return message_helper.create_error_response(
             base_request, 
+            "command.G2CUseItemResponse",
             error_code, 
-            "command.G2CUseItemResponse", 
-            nil, 
+            error_message, 
             message.MessageID.G2C_USE_ITEM_RESPONSE)
     end
 
@@ -33,8 +33,8 @@ function M.handle(client_id, msg)
         logger.error("Invalid item id: %s", tostring(request.item_id))
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CUseItemResponse",
+            error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "Invalid item id",
             message.MessageID.G2C_USE_ITEM_RESPONSE)
     end
@@ -44,8 +44,8 @@ function M.handle(client_id, msg)
         logger.error("Invalid count: %s, error_code: %d", tostring(request.count), error_code)
         return message_helper.create_error_response(
             base_request,
-            error_code,
             "command.G2CUseItemResponse",
+            error_code,
             "Invalid count",
             message.MessageID.G2C_USE_ITEM_RESPONSE)
     end
@@ -57,8 +57,8 @@ function M.handle(client_id, msg)
     if not ok then
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_ITEM_USE_FAILED,
             "command.G2CUseItemResponse",
+            error.ErrorCode.ERROR_CODE_ITEM_USE_FAILED,
             err,
             message.MessageID.G2C_USE_ITEM_RESPONSE)
     end
@@ -68,8 +68,8 @@ function M.handle(client_id, msg)
     if not bags then
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_GET_BAG_FAILED,
             "command.G2CUseItemResponse",
+            error.ErrorCode.ERROR_CODE_GET_BAG_FAILED,
             bags_err,
             message.MessageID.G2C_USE_ITEM_RESPONSE)
     end

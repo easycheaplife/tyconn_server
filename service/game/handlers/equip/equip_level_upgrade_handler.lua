@@ -20,9 +20,9 @@ function M.handle(client_id, msg)
             client_id, error_code, error_message)
         return message_helper.create_error_response(
             base_request, 
+            "command.G2CEquipLevelUpgradeResponse",
             error_code, 
-            "command.G2CEquipLevelUpgradeResponse", 
-            nil, 
+            error_message, 
             message.MessageID.G2C_EQUIP_LEVEL_UPGRADE_RESPONSE)
     end
     
@@ -49,10 +49,10 @@ function M.handle(client_id, msg)
             user.user_id, error_msg)
         return message_helper.create_error_response(
             base_request, 
+            "command.G2CEquipLevelUpgradeResponse",
             error.ErrorCode.ERROR_CODE_INVALID_OPERATION, 
-            "command.G2CEquipLevelUpgradeResponse", 
-            nil, 
-            message.G2C_EQUIP_LEVEL_UPGRADE_RESPONSE)
+            error_msg, 
+            message.MessageID.G2C_EQUIP_LEVEL_UPGRADE_RESPONSE)
     end
     
     -- 获取当前概率等级信息

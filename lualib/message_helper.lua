@@ -130,7 +130,7 @@ function M.create_success_response(base_request, proto_name, data, message_id)
 end
 
 -- 创建错误响应
-function M.create_error_response(base_request, error_code, response_type, error_message, message_id)
+function M.create_error_response(base_request, response_type, error_code, error_message, message_id)
     -- 确保错误码是数字
     if type(error_code) ~= "number" then
         logger.error("Invalid error code type: %s, value: %s", type(error_code), tostring(error_code))

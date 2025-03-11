@@ -21,9 +21,9 @@ function M.handle(client_id, msg)
             client_id, error_code, error_message)
         return message_helper.create_error_response(
             base_request, 
-            error_code, 
             "command.G2CBagInfoResponse", 
-            nil, 
+            error_code, 
+            error_message, 
             message.MessageID.G2C_BAG_INFO_RESPONSE)
     end
 
@@ -33,8 +33,8 @@ function M.handle(client_id, msg)
         logger.error("Failed to get bags for user: %d", user.user_id)
         return message_helper.create_error_response(
             base_request, 
-            error.ErrorCode.ERROR_CODE_DB_ERROR, 
             "command.G2CBagInfoResponse", 
+            error.ErrorCode.ERROR_CODE_DB_ERROR, 
             nil, 
             message.MessageID.G2C_BAG_INFO_RESPONSE)
     end

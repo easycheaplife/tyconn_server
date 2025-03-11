@@ -21,9 +21,9 @@ function M.handle(client_id, msg, gate_node)
     if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         return message_helper.create_error_response(
             base_request, 
+            "command.G2CUserInfoResponse",
             error_code, 
-            "command.G2CUserInfoResponse", 
-            nil, 
+            error_message, 
             message.MessageID.G2C_USER_INFO_RESPONSE)
     end
 
@@ -53,10 +53,10 @@ function M.handle(client_id, msg, gate_node)
             logger.error("Failed to create user: %s", err or "unknown error")
             return message_helper.create_error_response(
                 base_request, 
+                "command.G2CUserInfoResponse",
                 error.ErrorCode.ERROR_CODE_DB_ERROR, 
-                "command.G2CUserInfoResponse", 
-                nil, 
-                message.G2C_USER_INFO_RESPONSE)
+                err or "unknown error", 
+                message.MessageID.G2C_USER_INFO_RESPONSE)
         end
         
         result = {

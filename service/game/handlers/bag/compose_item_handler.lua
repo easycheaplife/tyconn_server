@@ -22,9 +22,9 @@ function M.handle(client_id, msg)
             client_id, error_code, error_message)
         return message_helper.create_error_response(
             base_request, 
-            error_code, 
             "command.G2CComposeItemResponse", 
-            nil, 
+            error_code, 
+            error_message, 
             message.MessageID.G2C_COMPOSE_ITEM_RESPONSE)
     end
 
@@ -32,8 +32,8 @@ function M.handle(client_id, msg)
     if not request.target_id then
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CComposeItemResponse",
+            error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "Invalid parameters: target_id is required",
             message.MessageID.G2C_COMPOSE_ITEM_RESPONSE)
     end
@@ -48,8 +48,8 @@ function M.handle(client_id, msg)
         logger.error("Failed to compose item for user: %d, error: %s", user.user_id, result)
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_COMPOSE_ITEM_FAILED,
             "command.G2CComposeItemResponse",
+            error.ErrorCode.ERROR_CODE_COMPOSE_ITEM_FAILED,
             result,
             message.MessageID.G2C_COMPOSE_ITEM_RESPONSE)
     end

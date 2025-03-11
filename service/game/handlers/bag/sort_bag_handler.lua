@@ -21,9 +21,9 @@ function M.handle(client_id, msg)
             client_id, error_code, error_message)
         return message_helper.create_error_response(
             base_request, 
-            error_code, 
             "command.G2CSortBagResponse", 
-            nil, 
+            error_code, 
+            error_message, 
             message.MessageID.G2C_SORT_BAG_RESPONSE)
     end
 
@@ -31,8 +31,8 @@ function M.handle(client_id, msg)
     if not request.bag_type or not request.sort_rule then
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CSortBagResponse",
+            error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "Invalid parameters: bag_type and sort_rule are required",
             message.MessageID.G2C_SORT_BAG_RESPONSE)
     end
@@ -53,10 +53,10 @@ function M.handle(client_id, msg)
     if not bag_type or not valid_bag_types[bag_type] then
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_INVALID_BAG_TYPE,
             "command.G2CSortBagResponse",
+            error.ErrorCode.ERROR_CODE_INVALID_BAG_TYPE,
             string.format("Invalid bag type: %s", tostring(request.bag_type)),
-            pb.enum("common.MessageID", "G2C_SORT_BAG_RESPONSE"))
+            message.MessageID.G2C_SORT_BAG_RESPONSE)
     end
 
     -- 调用背包服务进行排序
@@ -65,10 +65,10 @@ function M.handle(client_id, msg)
         logger.error("Failed to sort bag for user: %d, error: %s", user.user_id, err)
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_DB_ERROR,
             "command.G2CSortBagResponse",
-            nil,
-            message.G2C_SORT_BAG_RESPONSE)
+            error.ErrorCode.ERROR_CODE_DB_ERROR,
+            err,
+            message.MessageID.G2C_SORT_BAG_RESPONSE)
     end
 
     logger.info("Sort bag success - user_id: %d, bag_type: %d, sort_rule: %d", 

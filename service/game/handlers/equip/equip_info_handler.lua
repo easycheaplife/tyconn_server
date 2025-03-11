@@ -20,9 +20,9 @@ function M.handle(client_id, msg)
     if error_code ~= error.ErrorCode.ERROR_CODE_SUCCESS then
         return message_helper.create_error_response(
             base_request, 
+            "command.G2CEquipInfoResponse",
             error_code, 
-            "command.G2CEquipInfoResponse", 
-            nil, 
+            error_message, 
             message.MessageID.G2C_EQUIP_INFO_RESPONSE)
     end
     

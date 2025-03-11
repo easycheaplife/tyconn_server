@@ -21,8 +21,8 @@ function M.handle(client_id, msg)
             client_id, error_code, error_message)
         return message_helper.create_error_response(
             base_request, 
+            RESP_TYPE,
             error_code, 
-            RESP_TYPE, 
             error_message, 
             message.MessageID.G2C_GM_COMMAND_RESPONSE)
     end
@@ -32,8 +32,8 @@ function M.handle(client_id, msg)
         logger.warn("User has no GM permission - user_id: %d", user.user_id)
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_PERMISSION_DENIED,
             RESP_TYPE,
+            error.ErrorCode.ERROR_CODE_PERMISSION_DENIED,
             "No GM permission",
             message.MessageID.G2C_GM_COMMAND_RESPONSE)
     end
@@ -45,8 +45,8 @@ function M.handle(client_id, msg)
             user.user_id, request.command, msg)
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_GM_COMMAND_FAILED,
             RESP_TYPE,
+            error.ErrorCode.ERROR_CODE_GM_COMMAND_FAILED,
             msg,
             message.MessageID.G2C_GM_COMMAND_RESPONSE)
     end

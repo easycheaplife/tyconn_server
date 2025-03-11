@@ -19,9 +19,9 @@ function M.handle(client_id, msg)
         logger.error("Failed to verify request for client: %d", client_id)
         return message_helper.create_error_response(
             base_request, 
+            "command.G2CClaimMailItemsResponse",
             error_code, 
-            "command.G2CClaimMailItemsResponse", 
-            nil, 
+            error_message, 
             message.MessageID.G2C_CLAIM_MAIL_ITEMS_RESPONSE)
     end
 
@@ -31,8 +31,8 @@ function M.handle(client_id, msg)
         logger.error("Failed to claim mail items: %s for user: %d", request.mail_id, user.user_id)
         return message_helper.create_error_response(
             base_request,
+            "command.G2CClaimMailItemsResponse",
             error.ErrorCode.ERROR_CODE_DB_ERROR, 
-            "command.G2CClaimMailItemsResponse", 
             nil, 
             message.MessageID.G2C_CLAIM_MAIL_ITEMS_RESPONSE)
     end

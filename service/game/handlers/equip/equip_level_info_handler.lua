@@ -20,9 +20,9 @@ function M.handle(client_id, msg)
             client_id, error_code, error_message)
         return message_helper.create_error_response(
             base_request, 
+            "command.G2CEquipLevelInfoResponse",
             error_code, 
-            "command.G2CEquipLevelInfoResponse", 
-            nil, 
+            error_message, 
             message.MessageID.G2C_EQUIP_LEVEL_INFO_RESPONSE)
     end
 
@@ -32,8 +32,8 @@ function M.handle(client_id, msg)
         logger.error("Failed to get equipment level info for user: %d", user.user_id)
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_SYSTEM_ERROR,
             "command.G2CEquipLevelInfoResponse",
+            error.ErrorCode.ERROR_CODE_SYSTEM_ERROR,
             nil,
             message.MessageID.G2C_EQUIP_LEVEL_INFO_RESPONSE
         )

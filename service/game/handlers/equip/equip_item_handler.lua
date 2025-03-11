@@ -21,9 +21,9 @@ function M.handle(client_id, msg)
             client_id, error_code, error_message)
         return message_helper.create_error_response(
             base_request, 
+            "command.G2CEquipItemResponse",
             error_code, 
-            "command.G2CEquipItemResponse", 
-            nil, 
+            error_message, 
             message.MessageID.G2C_EQUIP_ITEM_RESPONSE)
     end
 
@@ -41,9 +41,9 @@ function M.handle(client_id, msg)
             user.user_id, error_msg)
         return message_helper.create_error_response(
             base_request, 
+            "command.G2CEquipItemResponse",
             error.ErrorCode.ERROR_CODE_INVALID_OPERATION, 
-            "command.G2CEquipItemResponse", 
-            nil, 
+            error_msg, 
             message.MessageID.G2C_EQUIP_ITEM_RESPONSE)
     end
     

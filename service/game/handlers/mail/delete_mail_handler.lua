@@ -19,9 +19,9 @@ function M.handle(client_id, msg)
         logger.error("Failed to verify request for client: %d", client_id)
         return message_helper.create_error_response(
             base_request, 
+            "command.G2CDeleteMailResponse",
             error_code, 
-            "command.G2CDeleteMailResponse", 
-            nil, 
+            error_message, 
             message.MessageID.G2C_DELETE_MAIL_RESPONSE)
     end
 
@@ -31,8 +31,8 @@ function M.handle(client_id, msg)
         logger.error("Failed to delete mail: %s for user: %d", request.mail_id, user.user_id)
         return message_helper.create_error_response(
             base_request,
+            "command.G2CDeleteMailResponse",
             error.ErrorCode.ERROR_CODE_DB_ERROR, 
-            "command.G2CDeleteMailResponse", 
             nil, 
             message.MessageID.G2C_DELETE_MAIL_RESPONSE)
     end

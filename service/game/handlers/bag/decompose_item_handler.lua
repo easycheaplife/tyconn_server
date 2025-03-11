@@ -21,20 +21,20 @@ function M.handle(client_id, msg)
             client_id, error_code, error_message)
         return message_helper.create_error_response(
             base_request, 
-            error_code, 
             "command.G2CDecomposeItemResponse", 
-            nil, 
-            message.G2C_DECOMPOSE_ITEM_RESPONSE)
+            error_code, 
+            error_message, 
+            message.MessageID.G2C_DECOMPOSE_ITEM_RESPONSE)
     end
 
     -- 验证参数
     if not request.target_id then
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CDecomposeItemResponse",
+            error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "Invalid parameters: target_id is required",
-            message.G2C_DECOMPOSE_ITEM_RESPONSE)
+            message.MessageID.G2C_DECOMPOSE_ITEM_RESPONSE)
     end
     
     -- 调用背包服务进行物品分解
@@ -47,10 +47,10 @@ function M.handle(client_id, msg)
         logger.error("Failed to decompose item for user: %d, error: %s", user.user_id, err)
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_DECOMPOSE_ITEM_FAILED,
             "command.G2CDecomposeItemResponse",
+            error.ErrorCode.ERROR_CODE_DECOMPOSE_ITEM_FAILED,
             err,
-            message.G2C_DECOMPOSE_ITEM_RESPONSE)
+            message.MessageID.G2C_DECOMPOSE_ITEM_RESPONSE)
     end
 
     logger.info("Decompose item success - user_id: %d", user.user_id)

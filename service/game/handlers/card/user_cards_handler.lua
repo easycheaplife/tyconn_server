@@ -20,9 +20,9 @@ function M.handle(client_id, msg)
         logger.error("Failed to verify request for client: %d, error_code: %s, error_message: %s", client_id, error_code, error_message)
         return message_helper.create_error_response(
             base_request, 
+            "command.G2CUserCardsResponse",
             error_code, 
-            "command.G2CUserCardsResponse", 
-            nil, 
+            error_message, 
             message.MessageID.G2C_USER_CARDS_RESPONSE)
     end
 
@@ -32,8 +32,8 @@ function M.handle(client_id, msg)
         logger.error("Failed to get cards for user: %d", user.user_id)
         return message_helper.create_error_response(
             base_request, 
+            "command.G2CUserCardsResponse",
             error.ErrorCode.ERROR_CODE_SYSTEM_ERROR, 
-            "command.G2CUserCardsResponse", 
             nil, 
             message.MessageID.G2C_USER_CARDS_RESPONSE)
     end

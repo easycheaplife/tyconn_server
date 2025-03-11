@@ -20,9 +20,9 @@ function M.handle(client_id, msg)
             client_id, error_code, error_message)
         return message_helper.create_error_response(
             base_request, 
+            "command.G2CEquipRandomResponse",
             error_code, 
-            "command.G2CEquipRandomResponse", 
-            nil, 
+            error_message, 
             message.MessageID.G2C_EQUIP_RANDOM_RESPONSE)
     end
     
@@ -38,9 +38,9 @@ function M.handle(client_id, msg)
             user.user_id, error_msg)
         return message_helper.create_error_response(
             base_request, 
+            "command.G2CEquipRandomResponse",
             error.ErrorCode.ERROR_CODE_SYSTEM_ERROR, 
-            "command.G2CEquipRandomResponse", 
-            nil, 
+            error_msg, 
             message.MessageID.G2C_EQUIP_RANDOM_RESPONSE)
     end
     

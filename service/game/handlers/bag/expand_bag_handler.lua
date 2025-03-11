@@ -22,9 +22,9 @@ function M.handle(client_id, msg)
             client_id, error_code, error_message)
         return message_helper.create_error_response(
             base_request, 
+            "command.G2CExpandBagResponse",
             error_code, 
-            "command.G2CExpandBagResponse", 
-            nil, 
+            error_message, 
             message.MessageID.G2C_EXPAND_BAG_RESPONSE)
     end
 
@@ -32,8 +32,8 @@ function M.handle(client_id, msg)
     if not request.add_size or request.add_size <= 0 or not request.bag_type then
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CExpandBagResponse",
+            error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "Invalid parameters: add_size must be positive and bag_type is required",
             message.MessageID.G2C_EXPAND_BAG_RESPONSE)
     end
@@ -62,17 +62,17 @@ function M.handle(client_id, msg)
     if not bag_type then
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_INVALID_BAG_TYPE,
             "command.G2CExpandBagResponse",
+            error.ErrorCode.ERROR_CODE_INVALID_BAG_TYPE,
             string.format("Invalid bag type: %s", tostring(request.bag_type)),
-            pb.enum("common.MessageID", "G2C_EXPAND_BAG_RESPONSE"))
+            message.MessageID.G2C_EXPAND_BAG_RESPONSE)
     end
 
     if not valid_bag_types[bag_type] then
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_INVALID_BAG_TYPE,
             "command.G2CExpandBagResponse",
+            error.ErrorCode.ERROR_CODE_INVALID_BAG_TYPE,
             string.format("Invalid bag type: %s, valid types are: MAIN(1), STORAGE(2)", 
                 tostring(request.bag_type)),
             pb.enum("common.MessageID", "G2C_EXPAND_BAG_RESPONSE"))
@@ -84,8 +84,8 @@ function M.handle(client_id, msg)
         logger.error("Failed to get bag info for user: %d, bag_type: %d", user.user_id, bag_type)
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_DB_ERROR,
             "command.G2CExpandBagResponse",
+            error.ErrorCode.ERROR_CODE_DB_ERROR,
             nil,
             message.MessageID.G2C_EXPAND_BAG_RESPONSE)
     end
@@ -95,8 +95,8 @@ function M.handle(client_id, msg)
     if bag_info.size + request.add_size > max_size then
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_BAG_MAX_SIZE_LIMIT,
             "command.G2CExpandBagResponse",
+            error.ErrorCode.ERROR_CODE_BAG_MAX_SIZE_LIMIT,
             nil,
             message.MessageID.G2C_EXPAND_BAG_RESPONSE)
     end
@@ -107,9 +107,9 @@ function M.handle(client_id, msg)
         logger.error("Failed to expand bag for user: %d, error: %s", user.user_id, err)
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_BAG_EXPAND_FAILED,
             "command.G2CExpandBagResponse",
-            nil,
+            error.ErrorCode.ERROR_CODE_BAG_EXPAND_FAILED,
+            err,
             message.MessageID.G2C_EXPAND_BAG_RESPONSE)
     end
     

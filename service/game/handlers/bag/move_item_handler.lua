@@ -21,9 +21,9 @@ function M.handle(client_id, msg)
             client_id, error_code, error_message)
         return message_helper.create_error_response(
             base_request, 
+            "command.G2CMoveItemResponse",
             error_code, 
-            "command.G2CMoveItemResponse", 
-            nil, 
+            error_message, 
             message.MessageID.G2C_MOVE_ITEM_RESPONSE)
     end
 
@@ -31,8 +31,8 @@ function M.handle(client_id, msg)
     if not request.src_bag_type or not request.src_slot or not request.dst_bag_type or not request.dst_slot then
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CMoveItemResponse",
+            error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "Invalid parameters: src_bag_type, src_slot, dst_bag_type, dst_slot are required",
             message.MessageID.G2C_MOVE_ITEM_RESPONSE)
     end
@@ -51,8 +51,8 @@ function M.handle(client_id, msg)
     if not valid_bag_types[src_bag_type] or not valid_bag_types[dst_bag_type] then
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_INVALID_BAG_TYPE,
             "command.G2CMoveItemResponse",
+            error.ErrorCode.ERROR_CODE_INVALID_BAG_TYPE,
             "Invalid bag type",
             message.MessageID.G2C_MOVE_ITEM_RESPONSE)
     end
@@ -74,8 +74,8 @@ function M.handle(client_id, msg)
         logger.error("Failed to move item for user: %d, error: %s", user.user_id, err)
         return message_helper.create_error_response(
             base_request,
-            error.ErrorCode.ERROR_CODE_MOVE_ITEM_FAILED,
             "command.G2CMoveItemResponse",
+            error.ErrorCode.ERROR_CODE_MOVE_ITEM_FAILED,
             err,
             message.MessageID.G2C_MOVE_ITEM_RESPONSE)
     end
