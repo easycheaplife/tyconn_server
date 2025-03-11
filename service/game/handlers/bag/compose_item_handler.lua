@@ -7,6 +7,7 @@ local message_helper = require "message_helper"
 local utils = require "utils"
 local config_service = require "services.config_service"
 local error = require "error"  
+local message = require "message"
 
 local M = {}
 
@@ -24,7 +25,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CComposeItemResponse", 
             nil, 
-            pb.enum("common.MessageID", "G2C_COMPOSE_ITEM_RESPONSE"))
+            message.G2C_COMPOSE_ITEM_RESPONSE)
     end
 
     -- 验证参数
@@ -34,7 +35,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CComposeItemResponse",
             "Invalid parameters: target_id is required",
-            pb.enum("common.MessageID", "G2C_COMPOSE_ITEM_RESPONSE"))
+            message.G2C_COMPOSE_ITEM_RESPONSE)
     end
     
     -- 调用背包服务进行物品合成
@@ -50,7 +51,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_COMPOSE_ITEM_FAILED,
             "command.G2CComposeItemResponse",
             result,
-            pb.enum("common.MessageID", "G2C_COMPOSE_ITEM_RESPONSE"))
+            message.G2C_COMPOSE_ITEM_RESPONSE)
     end
 
     logger.info("Compose item success - user_id: %d, target_id: %d", 
@@ -83,7 +84,7 @@ function M.handle(client_id, msg)
             new_item = new_item_info,
             remain_items = remain_items_info
         },
-        pb.enum("common.MessageID", "G2C_COMPOSE_ITEM_RESPONSE"))
+        message.G2C_COMPOSE_ITEM_RESPONSE)
 end
 
 return M 

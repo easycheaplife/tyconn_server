@@ -68,25 +68,3 @@ enum MessageID {
     G2C_DELETE_MAIL_RESPONSE = 508;    // 删除邮件响应
     G2C_NEW_MAIL_PUSH = 551;          // 新邮件推送
 }
-
-// 会话信息
-message Session {
-    int32 messageId = 1;    // 消息ID
-    int32 sequence = 2;     // 序列号
-    int64 timestamp = 3;    // 时间戳
-    string version = 4;     // 版本号
-}
-
-// 基础请求
-message BaseRequest {
-    Session session = 1;    // 会话信息
-    bytes payload = 2;      // 消息内容
-}
-
-// 基础响应
-message BaseResponse {
-    Session session = 1;    // 会话信息
-    int32 errorCode = 2;    // 错误码
-    string errorMsg = 3;    // 错误信息
-    bytes payload = 4;      // 消息负载
-} 

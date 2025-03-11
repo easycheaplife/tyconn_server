@@ -4,6 +4,7 @@ local pb = require "pb"
 local handler_helper = require "game.handlers.handler_helper"
 local message_helper = require "message_helper" 
 local error = require "error"
+local message = require "message"
 
 local M = {}
 
@@ -17,7 +18,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CHeartbeatResponse", 
             nil, 
-            pb.enum("common.MessageID", "G2C_HEARTBEAT_RESPONSE"))
+            message.G2C_HEARTBEAT_RESPONSE)
     end
 
     -- 更新用户最后心跳时间
@@ -40,7 +41,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CHeartbeatResponse",
         response,
-        pb.enum("common.MessageID", "G2C_HEARTBEAT_RESPONSE"))
+        message.G2C_HEARTBEAT_RESPONSE)
 end
 
 return M 

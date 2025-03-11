@@ -8,6 +8,7 @@ local utils = require "utils"
 local message_helper = require "message_helper" 
 local user_session_service = require "services.user_session_service"
 local error = require "error"
+local message = require "message"
 
 local M = {}
 
@@ -23,7 +24,7 @@ function M.handle(client_id, msg, gate_node)
             error_code, 
             "command.G2CUserInfoResponse", 
             nil, 
-            pb.enum("common.MessageID", "G2C_USER_INFO_RESPONSE"))
+            message.G2C_USER_INFO_RESPONSE)
     end
 
     -- 获取用户信息
@@ -55,7 +56,7 @@ function M.handle(client_id, msg, gate_node)
                 error.ErrorCode.ERROR_CODE_DB_ERROR, 
                 "command.G2CUserInfoResponse", 
                 nil, 
-                pb.enum("common.MessageID", "G2C_USER_INFO_RESPONSE"))
+                message.G2C_USER_INFO_RESPONSE)
         end
         
         result = {
@@ -97,7 +98,7 @@ function M.handle(client_id, msg, gate_node)
         base_request,
         "command.G2CUserInfoResponse",
         response_data,
-        pb.enum("common.MessageID", "G2C_USER_INFO_RESPONSE"))
+        message.G2C_USER_INFO_RESPONSE)
 end
 
 return M

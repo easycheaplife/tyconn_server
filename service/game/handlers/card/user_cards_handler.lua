@@ -6,6 +6,7 @@ local card_service = require "services.card_service"
 local handler_helper = require "game.handlers.handler_helper"
 local utils = require "utils"
 local error = require "error"   
+local message = require "message"
 
 local M = {}
 
@@ -22,7 +23,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CUserCardsResponse", 
             nil, 
-            pb.enum("common.MessageID", "G2C_USER_CARDS_RESPONSE"))
+            message.G2C_USER_CARDS_RESPONSE)
     end
 
     -- 获取用户卡牌背包
@@ -34,7 +35,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_SYSTEM_ERROR, 
             "command.G2CUserCardsResponse", 
             nil, 
-            pb.enum("common.MessageID", "G2C_USER_CARDS_RESPONSE"))
+            message.G2C_USER_CARDS_RESPONSE)
     end
 
     -- 打印调试信息
@@ -52,7 +53,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CUserCardsResponse",
         response_data,
-        pb.enum("common.MessageID", "G2C_USER_CARDS_RESPONSE"))
+        message.G2C_USER_CARDS_RESPONSE)
 end
 
 return M 

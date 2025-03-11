@@ -6,6 +6,8 @@ local handler_helper = require "game.handlers.handler_helper"
 local message_helper = require "message_helper" 
 local utils = require "utils"
 local error = require "error"  
+local message = require "message"
+
 local M = {}
 
 function M.handle(client_id, msg)
@@ -22,7 +24,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CDecomposeItemResponse", 
             nil, 
-            pb.enum("common.MessageID", "G2C_DECOMPOSE_ITEM_RESPONSE"))
+            message.G2C_DECOMPOSE_ITEM_RESPONSE)
     end
 
     -- 验证参数
@@ -32,7 +34,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CDecomposeItemResponse",
             "Invalid parameters: target_id is required",
-            pb.enum("common.MessageID", "G2C_DECOMPOSE_ITEM_RESPONSE"))
+            message.G2C_DECOMPOSE_ITEM_RESPONSE)
     end
     
     -- 调用背包服务进行物品分解
@@ -48,7 +50,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_DECOMPOSE_ITEM_FAILED,
             "command.G2CDecomposeItemResponse",
             err,
-            pb.enum("common.MessageID", "G2C_DECOMPOSE_ITEM_RESPONSE"))
+            message.G2C_DECOMPOSE_ITEM_RESPONSE)
     end
 
     logger.info("Decompose item success - user_id: %d", user.user_id)
@@ -71,7 +73,7 @@ function M.handle(client_id, msg)
         { 
             result_items = result_items_info
         },
-        pb.enum("common.MessageID", "G2C_DECOMPOSE_ITEM_RESPONSE"))
+        message.G2C_DECOMPOSE_ITEM_RESPONSE)
 end
 
 return M 

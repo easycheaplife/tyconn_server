@@ -4,7 +4,8 @@ local pb = require "pb"
 local equip_service = require "services.equip_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message_helper = require "message_helper" 
-local error = require "error"    
+local error = require "error" 
+local message = require "message"
 
 local M = {}
 
@@ -22,7 +23,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CEquipRandomResponse", 
             nil, 
-            pb.enum("common.MessageID", "G2C_EQUIP_RANDOM_RESPONSE"))
+            message.G2C_EQUIP_RANDOM_RESPONSE)
     end
     
     -- 解析请求参数
@@ -40,7 +41,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_SYSTEM_ERROR, 
             "command.G2CEquipRandomResponse", 
             nil, 
-            pb.enum("common.MessageID", "G2C_EQUIP_RANDOM_RESPONSE"))
+            message.G2C_EQUIP_RANDOM_RESPONSE)
     end
     
     -- 获取当前部位的装备
@@ -108,7 +109,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CEquipRandomResponse",
         response_data,
-        pb.enum("common.MessageID", "G2C_EQUIP_RANDOM_RESPONSE"))
+        message.G2C_EQUIP_RANDOM_RESPONSE)
 end
 
 return M

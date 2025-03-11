@@ -5,6 +5,7 @@ local gm_service = require "services.gm_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message_helper = require "message_helper" 
 local error = require "error"    
+local message = require "message"
 
 local M = {}
 
@@ -23,7 +24,7 @@ function M.handle(client_id, msg)
             error_code, 
             RESP_TYPE, 
             error_message, 
-            pb.enum("common.MessageID", "G2C_GM_COMMAND_RESPONSE"))
+            message.G2C_GM_COMMAND_RESPONSE)
     end
 
     -- 检查GM权限
@@ -34,7 +35,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_PERMISSION_DENIED,
             RESP_TYPE,
             "No GM permission",
-            pb.enum("common.MessageID", "G2C_GM_COMMAND_RESPONSE"))
+            message.G2C_GM_COMMAND_RESPONSE)
     end
 
     -- 执行GM指令
@@ -47,7 +48,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_GM_COMMAND_FAILED,
             RESP_TYPE,
             msg,
-            pb.enum("common.MessageID", "G2C_GM_COMMAND_RESPONSE"))
+            message.G2C_GM_COMMAND_RESPONSE)
     end
 
     -- 构造响应数据
@@ -63,7 +64,7 @@ function M.handle(client_id, msg)
         base_request,
         RESP_TYPE,
         response_data,
-        pb.enum("common.MessageID", "G2C_GM_COMMAND_RESPONSE"))
+        message.G2C_GM_COMMAND_RESPONSE)
 end
 
 return M 

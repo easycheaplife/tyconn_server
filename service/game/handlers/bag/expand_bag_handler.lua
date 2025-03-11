@@ -7,6 +7,7 @@ local handler_helper = require "game.handlers.handler_helper"
 local message_helper = require "message_helper" 
 local utils = require "utils"
 local error = require "error"  
+local message = require "message"
 
 local M = {}
 
@@ -24,7 +25,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CExpandBagResponse", 
             nil, 
-            pb.enum("common.MessageID", "G2C_EXPAND_BAG_RESPONSE"))
+            message.G2C_EXPAND_BAG_RESPONSE)
     end
 
     -- 验证参数
@@ -34,7 +35,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CExpandBagResponse",
             "Invalid parameters: add_size must be positive and bag_type is required",
-            pb.enum("common.MessageID", "G2C_EXPAND_BAG_RESPONSE"))
+            message.G2C_EXPAND_BAG_RESPONSE)
     end
 
     -- 验证背包类型
@@ -86,7 +87,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_DB_ERROR,
             "command.G2CExpandBagResponse",
             nil,
-            pb.enum("common.MessageID", "G2C_EXPAND_BAG_RESPONSE"))
+            message.G2C_EXPAND_BAG_RESPONSE)
     end
 
     -- 检查是否超过最大容量
@@ -97,7 +98,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_BAG_MAX_SIZE_LIMIT,
             "command.G2CExpandBagResponse",
             nil,
-            pb.enum("common.MessageID", "G2C_EXPAND_BAG_RESPONSE"))
+            message.G2C_EXPAND_BAG_RESPONSE)
     end
 
     -- 扩展背包
@@ -109,7 +110,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_BAG_EXPAND_FAILED,
             "command.G2CExpandBagResponse",
             nil,
-            pb.enum("common.MessageID", "G2C_EXPAND_BAG_RESPONSE"))
+            message.G2C_EXPAND_BAG_RESPONSE)
     end
     
     bag_info.size = new_size
@@ -125,7 +126,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CExpandBagResponse",
         response_data,
-        pb.enum("common.MessageID", "G2C_EXPAND_BAG_RESPONSE"))
+        message.G2C_EXPAND_BAG_RESPONSE)
 end
 
 return M 

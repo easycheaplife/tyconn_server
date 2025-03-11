@@ -5,6 +5,7 @@ local mail_service = require "services.mail_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message_helper = require "message_helper" 
 local error = require "error"  
+local message = require "message"
 
 local M = {}
 
@@ -33,7 +34,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_DB_ERROR, 
             "command.G2CReadMailResponse", 
             nil, 
-            pb.enum("common.MessageID", "G2C_READ_MAIL_RESPONSE"))
+            message.G2C_READ_MAIL_RESPONSE)
     end
 
     -- 返回成功响应
@@ -41,7 +42,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CReadMailResponse",
         { mail_id = request.mail_id },
-        pb.enum("common.MessageID", "G2C_READ_MAIL_RESPONSE"))
+        message.G2C_READ_MAIL_RESPONSE)
 end
 
 return M 

@@ -6,6 +6,7 @@ local handler_helper = require "game.handlers.handler_helper"
 local message_helper = require "message_helper" 
 local utils = require "utils"
 local error = require "error"  
+local message = require "message"
 
 local M = {}
 
@@ -22,7 +23,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CEquipInfoResponse", 
             nil, 
-            pb.enum("common.MessageID", "G2C_EQUIP_INFO_RESPONSE"))
+            message.G2C_EQUIP_INFO_RESPONSE)
     end
     
     -- 获取装备列表
@@ -62,7 +63,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CEquipInfoResponse",
         response_data,
-        pb.enum("common.MessageID", "G2C_EQUIP_INFO_RESPONSE"))
+        message.G2C_EQUIP_INFO_RESPONSE)
 end
 
 return M 

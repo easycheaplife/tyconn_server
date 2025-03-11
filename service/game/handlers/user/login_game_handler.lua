@@ -9,6 +9,7 @@ local bag_service = require "services.bag_service"
 local name_generator = require "game.utils.name_generator"
 local handler_helper = require "game.handlers.handler_helper"
 local user_session_service = require "services.user_session_service"
+local message = require "message"
 
 local M = {}
 
@@ -24,7 +25,7 @@ function M.handle(client_id, msg, gate_node)
             error_code, 
             "command.G2CLoginGameResponse", 
             nil, 
-            pb.enum("common.MessageID", "G2C_LOGIN_GAME_RESPONSE"))
+            message.G2C_LOGIN_GAME_RESPONSE)
     end
 
     -- 获取用户信息
@@ -55,7 +56,7 @@ function M.handle(client_id, msg, gate_node)
                 error.ErrorCode.ERROR_CODE_DB_ERROR, 
                 "command.G2CLoginGameResponse", 
                 nil, 
-                pb.enum("common.MessageID", "G2C_LOGIN_GAME_RESPONSE"))
+                message.G2C_LOGIN_GAME_RESPONSE)
         end
         
         result = {
@@ -95,14 +96,14 @@ function M.handle(client_id, msg, gate_node)
         is_new_user = is_new_user,
         bags = bags,
         resources = resources,
-        server_time = skynet.time() * 1000  -- 服务器时间（毫秒）
+        server_time = os.time()
     }
 
     return message_helper.create_success_response(
         base_request,
         "command.G2CLoginGameResponse",
         response_data,
-        pb.enum("common.MessageID", "G2C_LOGIN_GAME_RESPONSE"))
+        message.G2C_LOGIN_GAME_RESPONSE)
 end
 
 return M 

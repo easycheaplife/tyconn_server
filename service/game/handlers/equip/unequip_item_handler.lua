@@ -6,6 +6,7 @@ local handler_helper = require "game.handlers.handler_helper"
 local message_helper = require "message_helper" 
 local utils = require "utils"
 local error = require "error"   
+local message = require "message"
 
 local M = {}
 
@@ -23,7 +24,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CUnequipItemResponse", 
             nil, 
-            pb.enum("common.MessageID", "G2C_UNEQUIP_ITEM_RESPONSE"))
+            message.G2C_UNEQUIP_ITEM_RESPONSE)
     end
 
     -- 解析请求参数
@@ -43,7 +44,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_INVALID_OPERATION, 
             "command.G2CUnequipItemResponse", 
             nil, 
-            pb.enum("common.MessageID", "G2C_UNEQUIP_ITEM_RESPONSE"))
+            message.G2C_UNEQUIP_ITEM_RESPONSE)
     end
     
     -- 转换卸下项
@@ -76,7 +77,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CUnequipItemResponse",
         response_data,
-        pb.enum("common.MessageID", "G2C_UNEQUIP_ITEM_RESPONSE"))
+        message.G2C_UNEQUIP_ITEM_RESPONSE)
 end
 
 return M 

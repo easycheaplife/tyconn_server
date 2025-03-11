@@ -174,6 +174,44 @@ local function generate_error_lua(enums)
     return table.concat(lines, "\n")
 end
 
+-- 生成消息定义
+local function generate_message_lua(enums)
+    local lines = {
+        "-- Generating message.lua from proto/common/message.proto",
+        "-- Generate time: " .. os.date("%Y-%m-%d %H:%M:%S"),
+        "",
+        "local M = {}"
+    }
+
+    for _, enum in ipairs(enums) do
+        if enum.name == "MessageID" then
+            table.insert(lines, "")
+            if enum.comment ~= "" then
+                table.insert(lines, "-- " .. enum.comment)
+            end
+            table.insert(lines, "M.MessageID = {")
+            
+            -- 添加消息ID映射
+            for _, value in ipairs(enum.values) do
+                local line = string.format("    %s = %d,", value.name, value.value)
+                if value.comment ~= "" then
+                    line = line .. string.format("    -- %s", value.comment)
+                end
+                table.insert(lines, line)
+            end
+            
+            table.insert(lines, "}")
+            
+            break
+        end
+    end
+    
+    table.insert(lines, "")
+    table.insert(lines, "return M")
+    
+    return table.concat(lines, "\n")
+end
+
 -- 主函数
 local function main()
     -- 读取enum.proto文件
@@ -188,13 +226,21 @@ local function main()
         return false
     end
     
+    -- 读取message.proto文件
+    local message_content = read_file("proto/common/message.proto")
+    if not message_content then
+        return false
+    end
+    
     -- 解析枚举定义
     local enum_enums = parse_enums(enum_content)
     local error_enums = parse_enums(error_content)
+    local message_enums = parse_enums(message_content)
     
     -- 生成Lua代码
     local enum_lua = generate_enum_lua(enum_enums)
     local error_lua = generate_error_lua(error_enums)
+    local message_lua = generate_message_lua(message_enums)
     
     -- 确保目录存在
     os.execute("mkdir -p lualib")
@@ -202,14 +248,15 @@ local function main()
     -- 写入文件
     local ok1 = write_file("lualib/enum.lua", enum_lua)
     local ok2 = write_file("lualib/error.lua", error_lua)
+    local ok3 = write_file("lualib/message.lua", message_lua)
     
-    return ok1 and ok2
+    return ok1 and ok2 and ok3
 end
 
 -- 执行生成
 if main() then
-    print("Generated enum.lua and error.lua successfully")
+    print("Generated enum.lua, error.lua and message.lua successfully")
 else
-    print("Failed to generate enum.lua and error.lua")
+    print("Failed to generate lua files")
     os.exit(1)
 end 

@@ -6,6 +6,7 @@ local handler_helper = require "game.handlers.handler_helper"
 local message_helper = require "message_helper" 
 local utils = require "utils"
 local error = require "error"  
+local message = require "message"
 
 local M = {}
 
@@ -23,7 +24,7 @@ function M.handle(client_id, msg)
             error_code, 
             "command.G2CSortBagResponse", 
             nil, 
-            pb.enum("common.MessageID", "G2C_SORT_BAG_RESPONSE"))
+            message.G2C_SORT_BAG_RESPONSE)
     end
 
     -- 验证参数
@@ -33,7 +34,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_INVALID_PARAM,
             "command.G2CSortBagResponse",
             "Invalid parameters: bag_type and sort_rule are required",
-            pb.enum("common.MessageID", "G2C_SORT_BAG_RESPONSE"))
+            message.G2C_SORT_BAG_RESPONSE)
     end
 
     -- 验证背包类型
@@ -67,7 +68,7 @@ function M.handle(client_id, msg)
             error.ErrorCode.ERROR_CODE_DB_ERROR,
             "command.G2CSortBagResponse",
             nil,
-            pb.enum("common.MessageID", "G2C_SORT_BAG_RESPONSE"))
+            message.G2C_SORT_BAG_RESPONSE)
     end
 
     logger.info("Sort bag success - user_id: %d, bag_type: %d, sort_rule: %d", 
@@ -78,7 +79,7 @@ function M.handle(client_id, msg)
         base_request,
         "command.G2CSortBagResponse",
         { items = items },
-        pb.enum("common.MessageID", "G2C_SORT_BAG_RESPONSE"))
+        message.G2C_SORT_BAG_RESPONSE)
 end
 
 return M 
