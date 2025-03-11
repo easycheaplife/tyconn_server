@@ -36,36 +36,6 @@ function M.create_user_info(username, password, nickname)
     }
 end
 
--- 创建新用户
-function M.create_user(username, password, nickname, avatar)
-    -- 检查用户名是否已存在
-    local exists = user_dao.get_user_by_username(username)
-    if exists then
-        return nil, "username already exists"
-    end
-    
-    -- 创建用户信息
-    local user = M.create_user_info(username, password, nickname)
-    user.avatar = avatar or "default.png"
-    user.unit_id = default_unit_id
-    logger.debug("create_user: %s", utils.table_to_string(user))
-    
-    -- 使用 dao 创建用户
-    local ok, created_user = user_dao.create_user(user)
-    if not ok then
-        return nil, "create user failed"
-    end
-    
-    -- 写入缓存
-    M.cache_user_by_id(created_user)
-    M.cache_user_by_account(created_user)
-    
-    -- 发送欢迎邮件
-    mail_service.send_welcome_mail(created_user.user_id, username)
-    
-    return created_user
-end
-
 -- 获取或创建用户
 function M.get_or_create_user(account, username)
     -- 1. 尝试获取用户
