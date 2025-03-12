@@ -573,4 +573,125 @@ function M.update_user_login_time(user_id, login_time)
     return true
 end
 
+-- 伙伴相关数据库操作
+-- 获取用户伙伴列表
+function M.get_user_partners(user_id)
+    if not user_id then
+        logger.error("get_user_partners: user_id is nil")
+        return nil
+    end
+    
+    local ok, result = pcall(call_db, "get_user_partners", user_id)
+    if not ok then
+        logger.error("Failed to get user partners: %s", result)
+        return nil
+    end
+    
+    return result
+end
+
+-- 获取特定伙伴
+function M.get_partner(partner_id)
+    if not partner_id then
+        logger.error("get_partner: partner_id is nil")
+        return nil
+    end
+    
+    local ok, result = pcall(call_db, "get_partner", partner_id)
+    if not ok then
+        logger.error("Failed to get partner: %s", result)
+        return nil
+    end
+    
+    return result
+end
+
+-- 创建伙伴
+function M.create_partner(partner)
+    if not partner or not partner.user_id or not partner.unit_id then
+        logger.error("create_partner: invalid partner data")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "create_partner", partner)
+    if not ok then
+        logger.error("Failed to create partner: %s", result)
+        return false
+    end
+    
+    return result
+end
+
+-- 批量创建伙伴
+function M.batch_create_partners(partners)
+    if not partners or #partners == 0 then
+        logger.error("batch_create_partners: invalid partners data")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "batch_create_partners", partners)
+    if not ok then
+        logger.error("Failed to batch create partners: %s", result)
+        return false
+    end
+    
+    return true, result
+end
+
+-- 更新伙伴
+function M.update_partner(partner)
+    if not partner or not partner.id then
+        logger.error("update_partner: invalid partner data")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "update_partner", partner)
+    if not ok then
+        logger.error("Failed to update partner: %s", result)
+        return false
+    end
+    
+    return result
+end
+
+-- 删除伙伴
+function M.delete_partner(partner_id)
+    if not partner_id then
+        logger.error("delete_partner: partner_id is nil")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "delete_partner", partner_id)
+    if not ok then
+        logger.error("Failed to delete partner: %s", result)
+        return false
+    end
+    
+    return result
+end
+
+-- 记录伙伴变化
+function M.log_partner_change(user_id, partner_id, change_type, details)
+    if not user_id or not partner_id or not change_type then
+        logger.error("log_partner_change: missing required parameters")
+        return false
+    end
+    
+    local log_data = {
+        user_id = user_id,
+        partner_id = partner_id,
+        change_type = change_type,
+        details = details or "",
+        create_time = os.time()
+    }
+    
+    local ok, result = pcall(call_db, "log_partner_change", log_data)
+    if not ok then
+        logger.error("Failed to log partner change: %s", result)
+        return false
+    end
+    
+    return result
+end
+
 return M 

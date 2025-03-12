@@ -313,4 +313,57 @@ message G2CNewMailPush {
     common.MailInfo mail = 1;  // 新邮件信息
 }
 
+// 获取伙伴列表请求 {{Req:601}}
+message C2GPartnerListRequest {
+    string token = 1;       // JWT令牌
+}
 
+// 获取伙伴列表响应 {{Res:602}}
+message G2CPartnerListResponse {
+    repeated common.PartnerInfo partners = 1;  // 伙伴列表
+}
+
+// 伙伴升级请求 {{Req:603}}
+message C2GPartnerLevelUpRequest {
+    string token = 1;       // JWT令牌
+    string partner_id = 2;   // 伙伴ID
+}
+
+// 伙伴升级响应 {{Res:604}}
+message G2CPartnerLevelUpResponse {
+    common.PartnerInfo partner = 1;  // 更新后的伙伴信息
+    repeated common.PropertyChange property_gains = 2;  // 属性增益
+    repeated common.ItemInfo consumed_items = 3;  // 消耗的物品
+}
+
+// 伙伴升星请求 {{Req:605}}
+message C2GPartnerStarUpRequest {
+    string token = 1;       // JWT令牌
+    string partner_id = 2;   // 伙伴ID
+}
+
+// 伙伴升星响应 {{Res:606}}
+message G2CPartnerStarUpResponse {
+    common.PartnerInfo partner = 1;  // 更新后的伙伴信息
+    repeated common.PropertyChange property_gains = 2;  // 属性增益
+    repeated common.ItemInfo consumed_items = 3;  // 消耗的物品
+}
+
+// 伙伴解锁请求 {{Req:607}}
+message C2GPartnerUnlockRequest {
+    string token = 1;       // JWT令牌
+    int32 unit_id = 2;      // 单位ID
+}
+
+// 伙伴解锁响应 {{Res:608}}
+message G2CPartnerUnlockResponse {
+    common.PartnerInfo partner = 1;  // 新解锁的伙伴信息
+    int32 consumed_fragments = 2;    // 消耗的碎片数量
+}
+
+// 伙伴属性变化推送 {{Push:651}}
+message G2CPartnerPropertyChangedPush {
+    int64 partner_id = 1;            // 伙伴ID
+    repeated common.PropertyChange property_changes = 2;  // 属性变化
+    string reason = 3;               // 变化原因
+}

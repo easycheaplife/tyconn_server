@@ -11,6 +11,7 @@ local utils = require "utils"
 local config_service = require "services.config_service"
 local enum = require "enum"
 local init = require "game.init"  -- 添加引用
+local table_service = require "services.table_service"
 
 local M = {}
 
@@ -1958,34 +1959,6 @@ local function can_equip(item_id, slot_index)
     return config.equip_type == slot_index
 end
 
--- 创建新物品
-function M.create_item(user_id, item_id, count)
-    if not user_id or not item_id or not count or count <= 0 then
-        return nil, "invalid params"
-    end
-    
-    -- 检查物品配置是否存在
-    local config = config_service.get_item_config(item_id)
-    if not config then
-        return nil, "item is not exist"
-    end
-    
-    -- 创建物品对象
-    local item = item_model.new({
-        id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
-        user_id = user_id,
-        item_id = item_id,
-        count = count
-    })
-    
-    -- 记录物品变化
-    item_dao.log_change(user_id, item_id, count,
-        enum.ChangeType.CHANGE_TYPE_ADD, enum.ChangeSource.SOURCE_CREATE,
-        0, count)
-    
-    return item
-end
-
 -- 【核心功能】处理物品合成逻辑（不涉及背包）
 function M.process_compose(target_id, material_items)
     -- 1. 获取合成配置
@@ -2190,10 +2163,13 @@ function M.add_special_item(user_id, item_id, count, source)
 end
 
 -- 消耗物品 (扣除指定数量的物品)
-function M.consume_item(user_id, item_id, count)
+function M.consume_item(user_id, item_id, count, source)
     if not user_id or not item_id or not count or count <= 0 then
         return false, "invalid parameters"
     end
+    
+    -- 设置默认来源
+    source = source or enum.ChangeSource.SOURCE_CONSUME
     
     -- 获取用户物品
     local items = item_dao.get_user_items(user_id)
@@ -2254,19 +2230,56 @@ function M.consume_item(user_id, item_id, count)
         return false, "failed to update items"
     end
     
+    -- 记录物品变化
+    item_dao.log_change(user_id, item_id, count,
+        enum.ChangeType.CHANGE_TYPE_REDUCE, source,
+        owned_count, owned_count - count)
+    
     -- 触发物品消耗事件
     local event = init.get_service("event")
     skynet.send(event, "lua", "trigger_event", "on_item_consumed", {
         user_id = user_id,
         item_id = item_id,
         count = count,
-        remain_count = owned_count - count
+        remain_count = owned_count - count,
+        source = source
     })
     
-    -- 清除缓存
-    cache.remove_user_items(user_id)
-    
     return true
+end
+
+-- 按类型获取用户物品
+function M.get_user_items_by_type(user_id, item_type)
+    if not user_id then
+        return nil, "Invalid user id"
+    end
+    
+    if not item_type then
+        return nil, "Invalid item type"
+    end
+    
+    logger.debug("Getting items of type %d for user %d", item_type, user_id)
+    
+    -- 获取用户所有物品
+    local items = item_dao.get_user_items(user_id)
+    if not items then
+        logger.error("Failed to get items for user: %d", user_id)
+        return {}
+    end
+    
+    -- 筛选指定类型的物品
+    local result = {}
+    local configs = table_service.get_item_configs()
+    
+    for _, item in ipairs(items) do
+        local config = configs[item.item_id]
+        if config and config.type == item_type then
+            table.insert(result, item)
+        end
+    end
+    
+    logger.debug("Found %d items of type %d for user %d", #result, item_type, user_id)
+    return result
 end
 
 return M 

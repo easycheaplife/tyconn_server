@@ -1,4 +1,50 @@
+local cjson = require "cjson"
 local M = {}
+
+-- 自定义数字格式化
+local function number_formatter(n)
+    if type(n) ~= "number" then
+        return n
+    end
+    -- 对于大整数或普通整数，使用字符串格式
+    if n >= 1e10 or math.floor(n) == n then
+        return string.format("%.0f", n)
+    end
+    return n
+end
+
+-- 递归处理表中的数字，用于JSON编码
+function M.process_for_json(t)
+    if type(t) ~= "table" then
+        return number_formatter(t)
+    end
+    
+    local result = {}
+    for k, v in pairs(t) do
+        if type(v) == "table" then
+            result[k] = M.process_for_json(v)
+        else
+            result[k] = number_formatter(v)
+        end
+    end
+    return result
+end
+
+-- JSON编码（避免科学计数法）
+function M.encode_json(data)
+    -- 先处理所有数字
+    local processed = M.process_for_json(data)
+    -- 然后进行JSON编码
+    return cjson.encode(processed)
+end
+
+-- JSON解码
+function M.decode_json(str)
+    if not str then return nil end
+    local ok, result = pcall(cjson.decode, str)
+    if not ok then return nil end
+    return result
+end
 
 -- 将表转换为字符串
 function M.table_to_string(t, indent)
@@ -6,25 +52,17 @@ function M.table_to_string(t, indent)
     if type(t) ~= "table" then return tostring(t) end
     
     indent = indent or ""
+    local formatted = M.process_number_table(t)  -- 先处理数字格式
     local lines = {}
-    local order = {}
+    local subIndent = indent .. "  "
     
-    for k in pairs(t) do
-        table.insert(order, k)
-    end
-    table.sort(order)
-    
-    for _, k in ipairs(order) do
-        local v = t[k]
+    for k, v in pairs(formatted) do
         if type(v) == "table" then
-            table.insert(lines, string.format("%s%s = {", indent, k))
-            table.insert(lines, M.table_to_string(v, indent.."  "))
-            table.insert(lines, indent.."}")
+            table.insert(lines, string.format("%s%s = {", indent, tostring(k)))
+            table.insert(lines, M.table_to_string(v, subIndent))
+            table.insert(lines, string.format("%s}", indent))
         else
-            if type(v) == "string" then
-                v = string.format('"%s"', v)
-            end
-            table.insert(lines, string.format("%s%s = %s", indent, k, tostring(v)))
+            table.insert(lines, string.format("%s%s = %s", indent, tostring(k), tostring(v)))
         end
     end
     
@@ -89,6 +127,35 @@ function M.deep_copy(orig)
         copy = orig
     end
     return copy
+end
+
+-- 格式化数字，避免科学计数法
+function M.format_number(n)
+    if type(n) ~= "number" then
+        return n
+    end
+    -- 如果是整数或大数，使用字符串格式
+    if n >= 1e10 or math.floor(n) == n then
+        return string.format("%.0f", n)
+    end
+    return n
+end
+
+-- 递归处理表中的数字
+function M.process_number_table(t)
+    if type(t) ~= "table" then
+        return M.format_number(t)
+    end
+    
+    local result = {}
+    for k, v in pairs(t) do
+        if type(v) == "table" then
+            result[k] = M.process_number_table(v)
+        else
+            result[k] = M.format_number(v)
+        end
+    end
+    return result
 end
 
 return M

@@ -77,6 +77,17 @@ function M.register_equip_handler()
         require "game.handlers.equip.equip_level_upgrade_handler")  
 end
 
+function M.register_partner_handler()
+    M.register(pb.enum("common.MessageID", "C2G_PARTNER_LIST_REQUEST"), 
+        require "game.handlers.partner.partner_list_handler")
+    M.register(pb.enum("common.MessageID", "C2G_PARTNER_LEVEL_UP_REQUEST"), 
+        require "game.handlers.partner.partner_level_up_handler")
+    M.register(pb.enum("common.MessageID", "C2G_PARTNER_STAR_UP_REQUEST"), 
+        require "game.handlers.partner.partner_star_up_handler")
+    M.register(pb.enum("common.MessageID", "C2G_PARTNER_UNLOCK_REQUEST"), 
+        require "game.handlers.partner.partner_unlock_handler")
+end
+
 -- 初始化消息处理器
 function M.init()
     -- 先加载 proto 文件
@@ -93,6 +104,7 @@ function M.init()
     M.register_bag_handler()
     M.register_mail_handler()
     M.register_equip_handler()
+    M.register_partner_handler()
     logger.info("Message handlers initialized")
     return true
 end

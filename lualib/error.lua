@@ -1,5 +1,5 @@
 -- Generating error.lua from proto/common/error.proto
--- Generate time: 2025-03-11 02:26:48
+-- Generate time: 2025-03-12 07:41:07
 
 local M = {}
 
@@ -38,6 +38,15 @@ M.ErrorCode = {
     ERROR_CODE_LEVEL_NOT_ENOUGH = 502,    -- 等级不足
     ERROR_CODE_EQUIPMENT_NOT_FOUND = 503,    -- 装备不存在
     ERROR_CODE_TARGET_SLOT_OCCUPIED = 504,    -- 目标格子已被占用
+    ERROR_PARTNER_NOT_FOUND = 600,    -- 伙伴不存在
+    ERROR_PARTNER_NOT_OWNED = 601,    -- 伙伴不属于该用户
+    ERROR_PARTNER_LEVEL_MAX = 602,    -- 伙伴等级已达上限
+    ERROR_PARTNER_STAR_MAX = 603,    -- 伙伴星级已达上限
+    ERROR_PARTNER_FRAGMENT_NOT_ENOUGH = 604,    -- 伙伴碎片不足
+    ERROR_PARTNER_ALREADY_UNLOCKED = 605,    -- 伙伴已解锁
+    ERROR_PARTNER_LEVEL_UP_ITEM_NOT_ENOUGH = 606,    -- 升级物品不足
+    ERROR_PARTNER_STAR_UP_ITEM_NOT_ENOUGH = 607,    -- 升星物品不足
+    ERROR_PARTNER_LEVEL_EXCEED_USER = 608,    -- 伙伴等级不能超过用户等级
 }
 
 -- error code description mapping
@@ -75,6 +84,15 @@ M.ErrorMessage = {
     [502] = "等级不足",
     [503] = "装备不存在",
     [504] = "目标格子已被占用",
+    [600] = "伙伴不存在",
+    [601] = "伙伴不属于该用户",
+    [602] = "伙伴等级已达上限",
+    [603] = "伙伴星级已达上限",
+    [604] = "伙伴碎片不足",
+    [605] = "伙伴已解锁",
+    [606] = "升级物品不足",
+    [607] = "升星物品不足",
+    [608] = "伙伴等级不能超过用户等级",
 }
 
 return M

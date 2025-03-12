@@ -1,6 +1,8 @@
 syntax = "proto3";
 package common;
 
+import "common/enum.proto";
+
 // 会话信息
 message Session {
     int32 messageId = 1;    // 消息ID
@@ -94,4 +96,49 @@ message MailTemplateInfo {
 message ResourceInfo {
     int32 type = 1;           // 资源类型
     int32 amount = 2;         // 资源数量
+}
+
+// 伙伴基本信息
+message PartnerBaseInfo {
+  int64 partner_id = 1;       // 伙伴ID
+  int32 unit_id = 2;          // 单位ID
+  int32 level = 3;            // 等级
+  int32 exp = 4;              // 经验
+  int32 quality = 5;          // 品质
+  int32 star = 6;             // 星级
+  int64 create_time = 7;      // 创建时间
+  int32 race = 8;             // 种族
+  int32 forte = 9;            // 特长/职业
+  repeated PropertyInfo properties = 10; // 属性列表
+}
+
+// 伙伴完整信息
+message PartnerInfo {
+  PartnerBaseInfo base_info = 1;      // 基本信息
+  int32 state = 2;                    // 状态 (1:可解锁, 2:已解锁, 3:未解锁)
+  int32 fragment_count = 3;           // 拥有的碎片数量
+  int32 fragment_need = 4;            // 解锁所需的碎片数量
+  bool can_level_up = 5;              // 是否可以升级
+  bool can_star_up = 6;               // 是否可以升星
+  repeated ItemCost level_up_cost = 7; // 升级消耗
+  repeated ItemCost star_up_cost = 8;  // 升星消耗
+}
+
+// 属性信息
+message PropertyInfo {
+  PropType prop_id = 1;    // 属性ID
+  float value = 2;        // 基础值
+  float extra = 3;        // 额外值(装备、星级加成等)
+}
+
+// 属性变化
+message PropertyChange {
+  PropType prop_id = 1;    // 属性ID
+  float value = 2;         // 变化值
+}
+
+// 物品消耗
+message ItemCost {
+  int32 item_id = 1;    // 物品ID
+  int32 count = 2;      // 数量
 }

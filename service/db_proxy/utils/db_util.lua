@@ -89,4 +89,17 @@ function M.execute(template, params)
     return M.query(sql)
 end
 
+-- 转义 SQL 字符串
+function M.escape_string(str)
+    if not str then
+        return ""
+    end
+    
+    -- 基本的转义规则
+    local escaped = string.gsub(str, "'", "''")  -- 转义单引号
+    escaped = string.gsub(escaped, "\\", "\\\\") -- 转义反斜杠
+    
+    return escaped
+end
+
 return M 

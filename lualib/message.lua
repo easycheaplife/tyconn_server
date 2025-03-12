@@ -1,5 +1,5 @@
 -- Generating message.lua from proto/common/message.proto
--- Generate time: 2025-03-11 02:26:48
+-- Generate time: 2025-03-12 07:41:07
 
 local M = {}
 
@@ -55,6 +55,15 @@ M.MessageID = {
     C2G_DELETE_MAIL_REQUEST = 507,    -- 删除邮件请求
     G2C_DELETE_MAIL_RESPONSE = 508,    -- 删除邮件响应
     G2C_NEW_MAIL_PUSH = 551,    -- 新邮件推送
+    C2G_PARTNER_LIST_REQUEST = 601,    -- 获取伙伴列表请求
+    G2C_PARTNER_LIST_RESPONSE = 602,    -- 获取伙伴列表响应
+    C2G_PARTNER_LEVEL_UP_REQUEST = 603,    -- 伙伴升级请求
+    G2C_PARTNER_LEVEL_UP_RESPONSE = 604,    -- 伙伴升级响应
+    C2G_PARTNER_STAR_UP_REQUEST = 605,    -- 伙伴升星请求
+    G2C_PARTNER_STAR_UP_RESPONSE = 606,    -- 伙伴升星响应
+    C2G_PARTNER_UNLOCK_REQUEST = 607,    -- 伙伴解锁请求
+    G2C_PARTNER_UNLOCK_RESPONSE = 608,    -- 伙伴解锁响应
+    G2C_PARTNER_PROPERTY_CHANGED_PUSH = 651,    -- 伙伴属性变化推送
 }
 
 return M

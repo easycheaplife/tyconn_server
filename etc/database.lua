@@ -23,6 +23,8 @@ M.redis = {
         bag_slots = "slots:",
         equip_slots = "equip:slots:",
         equip_level = "equip:level:",
+        user_partners = "user_partners:",  -- 用户伙伴列表缓存前缀
+        partner = "partner:",  -- 伙伴信息缓存前缀
     },
 
     -- 缓存过期时间(秒)
@@ -39,6 +41,8 @@ M.redis = {
         bag_slots = 7200,   -- 2小时
         equip_slots = 3600,  -- 1小时
         equip_level = 3600,  -- 1小时
+        user_partners = 3600 * 12,  -- 用户伙伴列表 12小时
+        partner = 3600 * 6,  -- 伙伴信息 6小时
     }
 }
 

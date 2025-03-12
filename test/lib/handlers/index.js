@@ -25,6 +25,12 @@ const readMail = require('./mail/read_mail');
 const claimMailItems = require('./mail/claim_mail_items');
 const deleteMail = require('./mail/delete_mail');
 
+// 导入伙伴处理器
+const getPartnerList = require('./partner/get_partner_list');
+const levelUpPartner = require('./partner/level_up_partner');
+const starUpPartner = require('./partner/star_up_partner');
+const unlockPartner = require('./partner/unlock_partner');
+
 module.exports = {
     // 背包相关
     getBagInfo,
@@ -62,5 +68,11 @@ module.exports = {
     getMailList,
     readMail,
     claimMailItems,
-    deleteMail
+    deleteMail,
+    
+    // 伙伴相关处理器
+    getPartnerList,
+    levelUpPartner,
+    starUpPartner,
+    unlockPartner
 }; 

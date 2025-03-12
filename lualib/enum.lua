@@ -1,5 +1,5 @@
 -- Generating enum.lua from proto/common/enum.proto
--- Generate time: 2025-03-11 02:26:48
+-- Generate time: 2025-03-12 07:41:07
 
 local M = {}
 
@@ -121,15 +121,31 @@ M.UseLimit = {
     USE_LIMIT_WEEKLY = 6,    -- 每周限制
 }
 
--- 道具类型
+-- 通用属性类型 (用于玩家、伙伴等所有实体)
 M.PropType = {
-    PROP_TYPE_NONE = 0,
-    PROP_TYPE_HP = 1,    -- 生命值
-    PROP_TYPE_ATTACK = 2,    -- 攻击力
-    PROP_TYPE_DEFENSE = 3,    -- 防御力
-    PROP_TYPE_SPEED = 4,    -- 速度
-    PROP_TYPE_CRIT = 5,    -- 暴击
-    PROP_TYPE_CRIT_DMG = 6,    -- 暴击伤害
+    PROP_UNKNOWN = 0,
+    PROP_HP = 101,    -- 生命值
+    PROP_MP = 102,    -- 魔法值
+    PROP_ATTACK = 103,    -- 攻击力
+    PROP_DEFENSE = 104,    -- 防御力
+    PROP_SPEED = 105,    -- 速度
+    PROP_HIT = 201,    -- 命中率
+    PROP_DODGE = 202,    -- 闪避率
+    PROP_CRIT_RATE = 203,    -- 暴击率
+    PROP_CRIT_DMG = 204,    -- 暴击伤害
+    PROP_BLOCK = 205,    -- 格挡率
+    PROP_PENETRATION = 206,    -- 穿透力
+    PROP_HEAL_BOOST = 301,    -- 治疗加成
+    PROP_DMG_BOOST = 302,    -- 伤害加成
+    PROP_DMG_REDUCTION = 303,    -- 伤害减免
+    PROP_EXP_BOOST = 304,    -- 经验加成
+    PROP_FIRE_RES = 401,    -- 火焰抗性
+    PROP_ICE_RES = 402,    -- 冰霜抗性
+    PROP_LIGHTNING_RES = 403,    -- 雷电抗性
+    PROP_POISON_RES = 404,    -- 毒素抗性
+    PROP_GOLD_BOOST = 501,    -- 金币获取加成
+    PROP_ITEM_FIND = 502,    -- 物品发现率
+    PROP_MOVEMENT_SPEED = 503,    -- 移动速度
 }
 
 -- 装备位置
@@ -329,6 +345,41 @@ M.ResourceType = {
     RESOURCE_TYPE_NONE = 0,
     RESOURCE_TYPE_GOLD = 1,    -- 金币
     RESOURCE_TYPE_EXP = 2,    -- 经验
+}
+
+-- 伙伴状态
+M.PartnerState = {
+    PARTNER_STATE_UNKNOWN = 0,
+    PARTNER_STATE_AVAILABLE = 1,    -- 可解锁
+    PARTNER_STATE_UNLOCKED = 2,    -- 已解锁
+    PARTNER_STATE_LOCKED = 3,    -- 未解锁
+}
+
+-- 伙伴种族
+M.PartnerRace = {
+    PARTNER_RACE_UNKNOWN = 0,
+    PARTNER_RACE_HUMAN = 1,    -- 人类
+    PARTNER_RACE_ELF = 2,    -- 精灵
+    PARTNER_RACE_DWARF = 3,    -- 矮人
+    PARTNER_RACE_ORC = 4,    -- 兽人
+    PARTNER_RACE_UNDEAD = 5,    -- 亡灵
+    PARTNER_RACE_TAUREN = 6,    -- 牛头人
+    PARTNER_RACE_GNOME = 7,    -- 侏儒
+    PARTNER_RACE_TROLL = 8,    -- 巨魔
+}
+
+-- 伙伴特长/职业
+M.PartnerForte = {
+    PARTNER_FORTE_UNKNOWN = 0,
+    PARTNER_FORTE_WARRIOR = 1,    -- 战士
+    PARTNER_FORTE_MAGE = 2,    -- 法师
+    PARTNER_FORTE_PRIEST = 3,    -- 牧师
+    PARTNER_FORTE_ROGUE = 4,    -- 盗贼
+    PARTNER_FORTE_HUNTER = 5,    -- 猎人
+    PARTNER_FORTE_PALADIN = 6,    -- 圣骑士
+    PARTNER_FORTE_SHAMAN = 7,    -- 萨满
+    PARTNER_FORTE_DRUID = 8,    -- 德鲁伊
+    PARTNER_FORTE_WARLOCK = 9,    -- 术士
 }
 
 return M

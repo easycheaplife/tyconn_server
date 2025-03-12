@@ -47,4 +47,15 @@ enum ErrorCode {
     ERROR_CODE_LEVEL_NOT_ENOUGH = 502;        // 等级不足
     ERROR_CODE_EQUIPMENT_NOT_FOUND = 503;     // 装备不存在
     ERROR_CODE_TARGET_SLOT_OCCUPIED = 504;    // 目标格子已被占用
+
+    // 伙伴系统错误 (600-699)
+    ERROR_PARTNER_NOT_FOUND = 600;           // 伙伴不存在
+    ERROR_PARTNER_NOT_OWNED = 601;           // 伙伴不属于该用户
+    ERROR_PARTNER_LEVEL_MAX = 602;           // 伙伴等级已达上限
+    ERROR_PARTNER_STAR_MAX = 603;            // 伙伴星级已达上限
+    ERROR_PARTNER_FRAGMENT_NOT_ENOUGH = 604; // 伙伴碎片不足
+    ERROR_PARTNER_ALREADY_UNLOCKED = 605;    // 伙伴已解锁
+    ERROR_PARTNER_LEVEL_UP_ITEM_NOT_ENOUGH = 606; // 升级物品不足
+    ERROR_PARTNER_STAR_UP_ITEM_NOT_ENOUGH = 607;  // 升星物品不足
+    ERROR_PARTNER_LEVEL_EXCEED_USER = 608;   // 伙伴等级不能超过用户等级
 } 

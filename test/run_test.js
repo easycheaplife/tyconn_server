@@ -26,6 +26,11 @@ const ReadMailTest = require('./cases/read_mail_test');
 const ClaimMailItemsTest = require('./cases/claim_mail_items_test');
 const DeleteMailTest = require('./cases/delete_mail_test');
 const GmMailTest = require('./cases/gm_mail_test');
+const GetPartnerListTest = require('./cases/get_partner_list_test');
+const LevelUpPartnerTest = require('./cases/level_up_partner_test');
+const StarUpPartnerTest = require('./cases/star_up_partner_test');
+const UnlockPartnerTest = require('./cases/unlock_partner_test');
+
 
 // 所有测试用例
 const ALL_TESTS = {
@@ -56,6 +61,11 @@ const ALL_TESTS = {
     claim_mail_items: ClaimMailItemsTest,
     delete_mail: DeleteMailTest,
     gm_mail: GmMailTest,
+    
+    get_partner_list: GetPartnerListTest,
+    level_up_partner: LevelUpPartnerTest,
+    star_up_partner: StarUpPartnerTest,
+    unlock_partner: UnlockPartnerTest,
 };
 
 async function runTests() {

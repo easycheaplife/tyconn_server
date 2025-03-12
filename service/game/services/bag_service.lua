@@ -165,48 +165,6 @@ function M.find_empty_slot(user_id, bag_type, items)
     return nil, "bag is full"
 end
 
--- 向背包中添加物品
-function M.add_item_to_bag(user_id, item_data, bag_type, slot_index)
-    -- 1. 获取当前物品列表
-    local items = item_dao.get_user_items(user_id)
-    if not items then
-        return false, "get items failed"
-    end
-    
-    -- 2. 处理背包类型和格子位置
-    local target_bag_type = bag_type or enum.BagType.BAG_TYPE_MAIN
-    local target_slot = slot_index
-    
-    -- 如果未指定格子位置，找一个空格子
-    if not target_slot then
-        target_slot = M.find_empty_slot(user_id, target_bag_type, items)
-        if not target_slot then
-            return false, "bag is full"
-        end
-    end
-    
-    -- 3. 创建新物品
-    local new_item = item_service.create_item(user_id, item_data.item_id, item_data.count)
-    if not new_item then
-        return false, "create item failed"
-    end
-    
-    -- 设置背包和格子信息
-    new_item.bag_type = target_bag_type
-    new_item.slot_index = target_slot
-    
-    -- 4. 添加到物品列表
-    table.insert(items, new_item)
-    
-    -- 5. 保存更新
-    local ok = item_dao.update_user_items(user_id, items)
-    if not ok then
-        return false, "save item failed"
-    end
-    
-    return true, new_item
-end
-
 -- 物品合成函数（对外API，调用item_service）
 function M.compose_item(user_id, target_id)
     -- 1. 验证参数

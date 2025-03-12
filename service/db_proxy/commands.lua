@@ -7,6 +7,7 @@ local bag_model = require "db_proxy.models.bag_model"
 local ping_handler = require "db_proxy.handlers.ping_handler"
 local equipment_model = require "db_proxy.models.equipment_model"
 local mail_model = require "db_proxy.models.mail_model"
+local partner_model = require "db_proxy.models.partner_model"
 
 local CMD = {}
 
@@ -208,6 +209,39 @@ end
 
 function CMD.get_valid_mail_templates(current_time)
     return wrap_call(mail_model.get_valid_mail_templates, current_time)
+end
+
+-- 伙伴相关命令
+function CMD.create_partner(partner)
+    return wrap_call(partner_model.create_partner, partner)
+end
+
+function CMD.batch_create_partners(partners)
+    return wrap_call(partner_model.batch_create_partners, partners)
+end
+
+function CMD.get_user_partners(user_id)
+    return wrap_call(partner_model.get_user_partners, user_id)
+end
+
+function CMD.get_partner(partner_id)
+    return wrap_call(partner_model.get_partner, partner_id)
+end
+
+function CMD.update_partner(partner)
+    return wrap_call(partner_model.update_partner, partner)
+end
+
+function CMD.delete_partner(params)
+    return wrap_call(partner_model.delete_partner, params.partner_id, params.user_id)
+end
+
+function CMD.check_partner_exists(params)
+    return wrap_call(partner_model.check_partner_exists, params.user_id, params.unit_id)
+end
+
+function CMD.log_partner_change(log)
+    return wrap_call(partner_model.log_partner_change, log)
 end
 
 return CMD

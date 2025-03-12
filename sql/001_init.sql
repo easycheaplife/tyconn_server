@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS db_version (
     version INT PRIMARY KEY,
     applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 初始版本
 INSERT INTO db_version (version) VALUES (1);
@@ -143,7 +143,7 @@ CREATE TABLE user_equipment_slots (
     PRIMARY KEY (user_id, slot_id),        -- 复合主键，确保一个槽位只有一件装备
     INDEX idx_item_id (item_id),           -- 物品ID索引，用于查找该物品被装备在哪个槽位
     INDEX idx_expire_time (expire_time)    -- 过期时间索引，用于批量检查过期装备
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 用户装备概率等级表
 CREATE TABLE user_equipment_levels (
@@ -155,7 +155,7 @@ CREATE TABLE user_equipment_levels (
     update_time BIGINT,                    -- 更新时间
     
     INDEX idx_upgrading (is_upgrading, upgrade_end_time)  -- 用于批量检查升级完成的记录
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 装备属性表
 CREATE TABLE IF NOT EXISTS equip_properties (
@@ -200,7 +200,7 @@ CREATE TABLE IF NOT EXISTS mails (
     sender_name VARCHAR(32),         -- 发送者名称
     INDEX idx_user_id (user_id),     -- 用户ID索引
     INDEX idx_expire_time (expire_time) -- 过期时间索引
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 邮件模板表
 CREATE TABLE IF NOT EXISTS mail_templates (
@@ -216,4 +216,63 @@ CREATE TABLE IF NOT EXISTS mail_templates (
     
     INDEX idx_create_time (create_time),  -- 用于查询时间段内的模板
     INDEX idx_expire (expire_time)        -- 用于清理过期模板
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 用户伙伴表
+CREATE TABLE IF NOT EXISTS user_partners (
+    id BIGINT PRIMARY KEY,               -- 伙伴唯一ID
+    user_id BIGINT NOT NULL,             -- 所属用户ID
+    unit_id INT NOT NULL,                -- 单位/伙伴配置ID
+    level INT NOT NULL DEFAULT 1,        -- 伙伴等级
+    exp INT NOT NULL DEFAULT 0,          -- 伙伴经验
+    star INT NOT NULL DEFAULT 0,         -- 伙伴星级
+    power INT NOT NULL DEFAULT 0,        -- 伙伴战力（通过属性计算）
+    create_time BIGINT NOT NULL,         -- 创建时间
+    update_time BIGINT NOT NULL,    -- 最后更新时间
+    
+    INDEX idx_user_id (user_id),         -- 用户ID索引，用于查询用户所有伙伴
+    INDEX idx_unit_id (unit_id)          -- 单位ID索引，用于查询特定类型伙伴
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 伙伴升级日志表
+CREATE TABLE IF NOT EXISTS partner_level_logs (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    partner_id BIGINT NOT NULL,          -- 伙伴ID
+    user_id BIGINT NOT NULL,             -- 用户ID
+    old_level INT NOT NULL,              -- 旧等级
+    new_level INT NOT NULL,              -- 新等级
+    old_exp INT NOT NULL,                -- 旧经验
+    new_exp INT NOT NULL,                -- 新经验
+    consume_items TEXT,                  -- 消耗道具JSON
+    operation_time BIGINT NOT NULL,      -- 操作时间
+    
+    INDEX idx_partner_id (partner_id),   -- 伙伴ID索引
+    INDEX idx_user_id (user_id)          -- 用户ID索引
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 伙伴升星日志表
+CREATE TABLE IF NOT EXISTS partner_star_logs (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    partner_id BIGINT NOT NULL,          -- 伙伴ID
+    user_id BIGINT NOT NULL,             -- 用户ID
+    old_star INT NOT NULL,               -- 旧星级
+    new_star INT NOT NULL,               -- 新星级
+    consume_items TEXT,                  -- 消耗道具JSON
+    operation_time BIGINT NOT NULL,      -- 操作时间
+    
+    INDEX idx_partner_id (partner_id),   -- 伙伴ID索引
+    INDEX idx_user_id (user_id)          -- 用户ID索引
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 伙伴解锁日志表
+CREATE TABLE IF NOT EXISTS partner_unlock_logs (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    partner_id BIGINT NOT NULL,          -- 伙伴ID
+    user_id BIGINT NOT NULL,             -- 用户ID
+    unit_id INT NOT NULL,                -- 单位ID
+    fragment_count INT NOT NULL,         -- 消耗的碎片数量
+    operation_time BIGINT NOT NULL,      -- 操作时间
+    
+    INDEX idx_partner_id (partner_id),   -- 伙伴ID索引
+    INDEX idx_user_id (user_id)          -- 用户ID索引
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4; 

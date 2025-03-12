@@ -47,8 +47,8 @@ function M.get_user_info(user_id)
     local cache_key = make_key(PREFIX.user_info, user_id)
     local data = redis.get(cache_key)
     if data then
-        local ok, user = pcall(cjson.decode, data)
-        if ok then
+        local user = utils.decode_json(data)
+        if user then
             logger.debug("Got user from cache: %s", utils.table_to_string(user))
             return user
         end
@@ -59,7 +59,7 @@ end
 
 function M.set_user_info(user_id, user)
     local key = make_key(PREFIX.user_info, user_id)
-    local data = cjson.encode(user)
+    local data = utils.encode_json(user)
     local ok = redis.set(key, data)
     if ok then
         redis.expire(key, EXPIRE.user)
@@ -108,7 +108,7 @@ function M.get_user_cards(user_id)
     local data = redis.get(key)
     if data then
         logger.debug("Got cards from cache: %s", data)
-        return cjson.decode(data)
+        return utils.decode_json(data)
     end
     return nil
 end
@@ -116,7 +116,7 @@ end
 function M.set_user_cards(user_id, cards)
     logger.debug("Setting user cards for user %d: %s", user_id, utils.table_to_string(cards))
     local key = make_key(PREFIX.user_cards, user_id)
-    local data = cjson.encode(cards)
+    local data = utils.encode_json(cards)
     local ok = redis.set(key, data)
     if ok then
         redis.expire(key, EXPIRE.user_cards)
@@ -144,8 +144,8 @@ function M.get_user_items(user_id)
     local key = get_user_items_key(user_id)
     local data = redis.get(key)
     if data then
-        local ok, items = pcall(cjson.decode, data)
-        if ok then
+        local items = utils.decode_json(data)
+        if items then
             return items
         end
         logger.error("Failed to decode items data: %s", data)
@@ -169,14 +169,14 @@ function M.set_user_items(user_id, items)
     end
     
     -- 序列化数据
-    local ok, data = pcall(cjson.encode, items)
-    if not ok then
-        logger.error("Failed to encode items for user %s: %s", user_id, data)
+    local data = utils.encode_json(items)
+    if not data then
+        logger.error("Failed to encode items for user %s", user_id)
         return false
     end
     
     -- 设置缓存
-    ok = redis.set(key, data)
+    local ok = redis.set(key, data)
     if not ok then
         logger.error("Failed to set items cache for user %s", user_id)
         return false
@@ -213,8 +213,8 @@ function M.get_user_bag(user_id, bag_type)
     local key = string.format("user_bag:%d:%d", user_id, bag_type)
     local data = redis.get(key)
     if data then
-        local ok, bag = pcall(cjson.decode, data)
-        if ok then
+        local bag = utils.decode_json(data)
+        if bag then
             return bag
         end
         logger.error("Failed to decode bag data: %s", data)
@@ -225,13 +225,13 @@ end
 -- 设置单个背包
 function M.set_user_bag(user_id, bag_type, bag_data)
     local key = make_key(PREFIX.user_bag, string.format("%d:%d", user_id, bag_type))
-    local ok, data = pcall(cjson.encode, bag_data)
-    if not ok then
-        logger.error("Failed to encode bag data: %s", data)
+    local data = utils.encode_json(bag_data)
+    if not data then
+        logger.error("Failed to encode bag data")
         return false
     end
     
-    ok = redis.set(key, data)
+    local ok = redis.set(key, data)
     if ok then
         redis.expire(key, EXPIRE.user_bag)
     end
@@ -243,8 +243,8 @@ function M.get_user_bags(user_id)
     local key = make_key(PREFIX.user_bags, user_id)
     local data = redis.get(key)
     if data then
-        local ok, bags = pcall(cjson.decode, data)
-        if ok then
+        local bags = utils.decode_json(data)
+        if bags then
             return bags
         end
         logger.error("Failed to decode bags data: %s", data)
@@ -255,13 +255,13 @@ end
 -- 设置用户所有背包
 function M.set_user_bags(user_id, bags)
     local key = make_key(PREFIX.user_bags, user_id)
-    local ok, data = pcall(cjson.encode, bags)
-    if not ok then
-        logger.error("Failed to encode bags data: %s", data)
+    local data = utils.encode_json(bags)
+    if not data then
+        logger.error("Failed to encode bags data")
         return false
     end
     
-    ok = redis.set(key, data)
+    local ok = redis.set(key, data)
     if ok then
         redis.expire(key, EXPIRE.user_bags)
     end
@@ -283,8 +283,8 @@ function M.get_bag_slots(user_id, bag_type)
     local key = make_key(PREFIX.bag_slots, string.format("%d:%d", user_id, bag_type))
     local data = redis.get(key)
     if data then
-        local ok, slots = pcall(cjson.decode, data)
-        if ok then
+        local slots = utils.decode_json(data)
+        if slots then
             return slots
         end
         logger.error("Failed to decode slots data: %s", data)
@@ -295,13 +295,13 @@ end
 -- 设置背包格子状态
 function M.set_bag_slots(user_id, bag_type, slots)
     local key = make_key(PREFIX.bag_slots, string.format("%d:%d", user_id, bag_type))
-    local ok, data = pcall(cjson.encode, slots)
-    if not ok then
-        logger.error("Failed to encode slots data: %s", data)
+    local data = utils.encode_json(slots)
+    if not data then
+        logger.error("Failed to encode slots data")
         return false
     end
     
-    ok = redis.set(key, data)
+    local ok = redis.set(key, data)
     if ok then
         redis.expire(key, EXPIRE.bag_slots)
     end
@@ -342,8 +342,8 @@ function M.get_equip_slots(user_id)
     local key = make_key(PREFIX.equip_slots, user_id)
     local data = redis.get(key)
     if data then
-        local ok, slots = pcall(cjson.decode, data)
-        if ok then
+        local slots = utils.decode_json(data)
+        if slots then
             return slots
         end
         logger.error("Failed to decode equipment slots data: %s", data)
@@ -354,13 +354,13 @@ end
 -- 设置用户装备槽
 function M.set_equip_slots(user_id, slots)
     local key = make_key(PREFIX.equip_slots, user_id)
-    local ok, data = pcall(cjson.encode, slots)
-    if not ok then
-        logger.error("Failed to encode equipment slots data: %s", data)
+    local data = utils.encode_json(slots)
+    if not data then
+        logger.error("Failed to encode equipment slots data")
         return false
     end
     
-    ok = redis.set(key, data)
+    local ok = redis.set(key, data)
     if ok then
         redis.expire(key, EXPIRE.equip_slots)
     end
@@ -372,8 +372,8 @@ function M.get_equip_level(user_id)
     local key = make_key(PREFIX.equip_level, user_id)
     local data = redis.get(key)
     if data then
-        local ok, level = pcall(cjson.decode, data)
-        if ok then
+        local level = utils.decode_json(data)
+        if level then
             return level
         end
         logger.error("Failed to decode equipment level data: %s", data)
@@ -384,13 +384,13 @@ end
 -- 设置用户装备等级
 function M.set_equip_level(user_id, level)
     local key = make_key(PREFIX.equip_level, user_id)
-    local ok, data = pcall(cjson.encode, level)
-    if not ok then
-        logger.error("Failed to encode equipment level data: %s", data)
+    local data = utils.encode_json(level)
+    if not data then
+        logger.error("Failed to encode equipment level data")
         return false
     end
     
-    ok = redis.set(key, data)
+    local ok = redis.set(key, data)
     if ok then
         redis.expire(key, EXPIRE.equip_level)
     end
@@ -421,8 +421,8 @@ function M.get_user_mails(user_id)
     local key = make_key(PREFIX.user_mails, user_id)
     local data = redis.get(key)
     if data then
-        local ok, mails = pcall(cjson.decode, data)
-        if ok then
+        local mails = utils.decode_json(data)
+        if mails then
             return mails
         end
         logger.error("Failed to decode mails data: %s", data)
@@ -433,18 +433,19 @@ end
 -- 设置用户邮件列表
 function M.set_user_mails(user_id, mails)
     local key = make_key(PREFIX.user_mails, user_id)
+    -- 确保邮件ID是字符串格式
     for _, mail in ipairs(mails) do
         if mail.id then
             mail.id = tostring(mail.id)
         end
     end
-    local ok, data = pcall(cjson.encode, mails)
-    if not ok then
-        logger.error("Failed to encode mails data: %s", data)
+    local data = utils.encode_json(mails)
+    if not data then
+        logger.error("Failed to encode mails data")
         return false
     end
     
-    ok = redis.set(key, data)
+    local ok = redis.set(key, data)
     if ok then
         redis.expire(key, EXPIRE.user_mails)
     end
@@ -454,6 +455,68 @@ end
 -- 删除用户邮件缓存
 function M.remove_user_mails(user_id)
     local key = make_key(PREFIX.user_mails, user_id)
+    return redis.del(key) > 0
+end
+
+-- 伙伴相关缓存操作
+-- 获取用户伙伴列表
+function M.get_user_partners(user_id)
+    logger.debug("Getting user partners for user %d", user_id)
+    local key = make_key(PREFIX.user_partners, user_id)
+    logger.debug("Cache key: %s", key)
+    local data = redis.get(key)
+    if data then
+        logger.debug("Got partners from cache: %s", data)
+        return utils.decode_json(data)
+    end
+    return nil
+end
+
+-- 设置用户伙伴列表
+function M.set_user_partners(user_id, partners)
+    logger.debug("Setting user partners for user %d: %s", user_id, utils.table_to_string(partners))
+    local key = make_key(PREFIX.user_partners, user_id)
+    local data = utils.encode_json(partners)
+    local ok = redis.set(key, data)
+    if ok then
+        redis.expire(key, EXPIRE.user_partners)
+    end
+    return ok
+end
+
+-- 删除用户伙伴列表缓存
+function M.remove_user_partners(user_id)
+    local key = make_key(PREFIX.user_partners, user_id)
+    return redis.del(key) > 0
+end
+
+-- 获取特定伙伴信息
+function M.get_partner(partner_id)
+    logger.debug("Getting partner info for partner_id %d", partner_id)
+    local key = make_key(PREFIX.partner, partner_id)
+    local data = redis.get(key)
+    if data then
+        logger.debug("Got partner from cache: %s", data)
+        return utils.decode_json(data)
+    end
+    return nil
+end
+
+-- 设置特定伙伴信息
+function M.set_partner(partner_id, partner)
+    logger.debug("Setting partner for partner_id %d: %s", partner_id, utils.table_to_string(partner))
+    local key = make_key(PREFIX.partner, partner_id)
+    local data = utils.encode_json(partner)
+    local ok = redis.set(key, data)
+    if ok then
+        redis.expire(key, EXPIRE.partner)
+    end
+    return ok
+end
+
+-- 删除特定伙伴信息缓存
+function M.remove_partner(partner_id)
+    local key = make_key(PREFIX.partner, partner_id)
     return redis.del(key) > 0
 end
 

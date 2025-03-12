@@ -39,6 +39,7 @@ M.ID_TYPE = {
     GUILD = 8,      -- 公会
     TRADE = 9,      -- 交易
     CHAT = 10,      -- 聊天
+    PARTNER = 11,   -- 伙伴
 }
 
 -- 当前值
