@@ -506,7 +506,7 @@ function M.star_up_partner(user_id, partner_id)
     end
     
     -- 获取单位配置
-    local unit_config = table_service.get_unit_config(partner.unit_id)
+    local unit_config = table_service.get_unit_config(tonumber(partner.unit_id))
     if not unit_config then
         logger.error("Failed to get unit config for unit_id: %d", partner.unit_id)
         return false

@@ -2282,4 +2282,113 @@ function M.get_user_items_by_type(user_id, item_type)
     return result
 end
 
+-- 检查物品是否足够
+function M.check_items_enough(user_id, items)
+    if not user_id or not items then
+        return false, "invalid params"
+    end
+    
+    -- 获取用户物品列表
+    local user_items = M.get_user_items(user_id)
+    if not user_items then
+        return false, "get items failed"
+    end
+    
+    -- 统计用户物品数量
+    local item_counts = {}
+    for _, item in ipairs(user_items) do
+        item_counts[item.item_id] = (item_counts[item.item_id] or 0) + item.count
+    end
+    
+    -- 检查每个物品是否足够
+    local items_info = {}
+    for _, need_item in ipairs(items) do
+        local item_id = need_item.item_id
+        local need_count = need_item.count or 1
+        local have_count = item_counts[item_id] or 0
+        
+        items_info[item_id] = {
+            current_count = have_count,
+            need_count = need_count
+        }
+        
+        if have_count < need_count then
+            logger.error("Not enough item: user_id=%d, item_id=%d, current=%d, need=%d",
+                user_id, item_id, have_count, need_count)
+            return false, items_info
+        end
+    end
+    
+    return true, items_info
+end
+
+-- 消耗物品
+function M.consume_items(user_id, items)
+    if not user_id or not items then
+        return false, "invalid params"
+    end
+    
+    -- 获取用户物品列表
+    local user_items = M.get_user_items(user_id)
+    if not user_items then
+        return false, "get items failed"
+    end
+    
+    -- 检查物品是否足够
+    local has_enough, items_info = M.check_items_enough(user_id, items)
+    if not has_enough then
+        return false, "not enough items"
+    end
+    
+    -- 记录消耗的物品
+    local consumed_items = {}
+    
+    -- 消耗物品
+    for _, need_item in ipairs(items) do
+        local item_id = need_item.item_id
+        local need_count = need_item.count or 1
+        local remain_count = need_count
+        
+        -- 遍历用户物品列表，扣除物品
+        for i = #user_items, 1, -1 do
+            local item = user_items[i]
+            if item.item_id == item_id and remain_count > 0 then
+                local before_count = item.count
+                local consume_count = math.min(remain_count, item.count)
+                
+                item.count = item.count - consume_count
+                remain_count = remain_count - consume_count
+                
+                -- 记录物品变化
+                item_dao.log_change(user_id, item_id, consume_count,
+                    enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_CONSUME,
+                    before_count, item.count)
+                
+                -- 记录消耗的物品
+                table.insert(consumed_items, {
+                    item_id = item_id,
+                    count = consume_count
+                })
+                
+                -- 如果物品数量为0，从列表中移除
+                if item.count <= 0 then
+                    table.remove(user_items, i)
+                end
+                
+                if remain_count <= 0 then
+                    break
+                end
+            end
+        end
+    end
+    
+    -- 保存更新后的物品列表
+    local ok = item_dao.update_user_items(user_id, user_items)
+    if not ok then
+        return false, "save items failed"
+    end
+    
+    return true, consumed_items
+end
+
 return M 

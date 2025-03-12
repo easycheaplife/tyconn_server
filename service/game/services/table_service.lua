@@ -21,7 +21,7 @@ function M.get_unit_config(unit_id)
     if not configs then
         return nil
     end
-    return configs[(unit_id)]
+    return configs[unit_id]
 end
 
 -- 获取伙伴星级配置
@@ -132,7 +132,7 @@ function M.get_partner_star_up_cost(unit_id, star)
         return {}
     end
     
-    local unit_config = M.get_unit_config(unit_id)
+    local unit_config = M.get_unit_config(tonumber(unit_id))
     if not unit_config then
         logger.error("Failed to get unit config for unit_id: %d", unit_id)
         return {}
