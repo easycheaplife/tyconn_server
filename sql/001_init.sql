@@ -59,11 +59,6 @@ CREATE TABLE IF NOT EXISTS user_items (
     slot_index INT,                 -- 所在格子索引
     bind_type TINYINT DEFAULT 0,     -- 绑定类型
     expire_time BIGINT DEFAULT 0,    -- 过期时间
-    enhance_level INT DEFAULT 0,     -- 强化等级
-    refine_level INT DEFAULT 0,      -- 精炼等级
-    gem_slots TEXT,                  -- 宝石槽位(JSON)
-    props TEXT,                      -- 属性(JSON)
-    extra_data TEXT,                 -- 扩展数据(JSON)
     create_time BIGINT NOT NULL,     -- 创建时间
     update_time BIGINT NOT NULL,     -- 更新时间
     INDEX idx_user (user_id),
