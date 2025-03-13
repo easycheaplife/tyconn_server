@@ -8,6 +8,7 @@ local snowflake = require "utils.snowflake"
 local equipment_dao = require "dao.equipment_dao"
 local property_service = require "services.property_service"
 local config_service = require "services.config_service"
+local table_service = require "services.table_service"
 
 local M = {}
 
@@ -512,7 +513,7 @@ function M.random_equipment(user_id, part)
     end
     
     -- 获取装备配置
-    local base_config = config_service.get_equip_base_config()
+    local base_config = table_service.get_equip_base_config()
     if not base_config then
         logger.error("Failed to get equip base config")
         return nil, "config error"
@@ -526,7 +527,7 @@ function M.random_equipment(user_id, part)
     end
     
     -- 获取装备模板
-    local template = config_service.get_random_equip_template(target_part)
+    local template = table_service.get_random_equip_template(target_part)
     if not template then
         logger.error("Failed to get equip template for part %d", target_part)
         return nil, "template error"
