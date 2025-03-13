@@ -1027,20 +1027,18 @@ function M.get_user_bags(user_id)
     if not bags then
         return nil, "get bags failed"
     end
-
     -- 获取用户所有物品
     local items = item_dao.get_user_items(user_id)
     if not items then
         items = {}
     end
-
     -- 构造返回的背包信息列表
     local bag_info_list = {}
     for _, bag in ipairs(bags) do
         -- 获取该背包中的物品
         local bag_items = {}
         for _, item in ipairs(items) do
-            if item.bag_type == bag.bag_type then
+            if tonumber(item.bag_type) == tonumber(bag.bag_type) then
                 -- 确保所有字段都是数值类型
                 local item_info = {
                     item_id = tonumber(item.item_id),
