@@ -205,19 +205,11 @@ function M.get_user_partners(user_id)
     -- 记录已解锁的伙伴ID和信息
     local unlocked_map = {}
     for _, partner in ipairs(unlocked_partners) do
-        -- 如果伙伴的properties为空，重新计算属性
-        if not partner.properties or #partner.properties == 0 then
-            local unit_config = table_service.get_unit_config(partner.unit_id)
-            if unit_config then
-                partner.properties = get_partner_properties(partner.unit_id, partner.level, partner.star, unit_config.quality or enum.Quality.QUALITY_WHITE)
-                -- 更新数据库中的属性
-                partner_dao.update_partner(partner)
-            end
-        end
-        unlocked_map[tostring(partner.unit_id)] = partner
+        unlocked_map[partner.unit_id] = partner
         logger.info("Added unlocked partner to map: unit_id=%d", partner.unit_id)
     end
     
+    logger.info("unlocked_map: %s", utils.table_to_string(unlocked_map))
     -- 3. 处理所有伙伴（包括已解锁和未解锁的）
     for unit_id in pairs(all_partner_unit_ids) do
         local unit_config = table_service.get_unit_config(unit_id)
@@ -234,8 +226,7 @@ function M.get_user_partners(user_id)
         else
             fragment_need = unit_config.unlock_fragments or table_service.get_default_unlock_fragments()
         end
-        
-        local partner = unlocked_map[tostring(unit_id)]
+        local partner = unlocked_map[unit_id]
         logger.info("Checking partner: unit_id=%d, is_unlocked=%s", unit_id, partner ~= nil)
         
         local partner_info
@@ -245,13 +236,16 @@ function M.get_user_partners(user_id)
             logger.info("Processing unlocked partner: unit_id=%d", unit_id)
             local max_level = table_service.get_max_partner_level()
             local max_star = table_service.get_max_partner_star(unit_config.star_id)
+            logger.info("max_star for unit_id=%d, star_id=%d: %d", unit_id, unit_config.star_id, max_star)
             
             -- 确保 level 和 star 是数字类型
             local partner_level = tonumber(partner.level) or 1
             local partner_star = tonumber(partner.star) or 1
+            logger.info("partner_star=%d, max_star=%d for unit_id=%d", partner_star, max_star, unit_id)
             
             local can_level_up = partner_level < max_level
             local can_star_up = partner_star < max_star
+            logger.info("can_star_up=%s for unit_id=%d", tostring(can_star_up), unit_id)
             
             -- 获取升级和升星消耗
             local level_up_cost = {}
@@ -279,8 +273,7 @@ function M.get_user_partners(user_id)
                     star = partner_star,
                     create_time = partner.create_time,
                     race = unit_config.race or 0,
-                    forte = unit_config.forte or 0,
-                    properties = partner.properties or get_partner_properties(partner.unit_id, partner_level, partner_star, unit_config.quality or enum.Quality.QUALITY_WHITE)
+                    forte = unit_config.forte or 0
                 },
                 state = state,
                 fragment_count = fragment_map[unit_id] or 0,
@@ -290,7 +283,8 @@ function M.get_user_partners(user_id)
                 level_up_cost = level_up_cost,
                 star_up_cost = star_up_cost
             }
-            logger.info("Created partner_info with state: unit_id=%d, state=%d", unit_id, partner_info.state)
+            logger.info("Created partner_info: unit_id=%d, state=%d, can_star_up=%s", 
+                unit_id, partner_info.state, tostring(partner_info.can_star_up))
         else
             -- 未解锁的伙伴
             logger.info("Processing locked partner: unit_id=%d", unit_id)
@@ -315,8 +309,7 @@ function M.get_user_partners(user_id)
                     star = 1,
                     create_time = 0,
                     race = unit_config.race or 0,
-                    forte = unit_config.forte or 0,
-                    properties = get_partner_properties(unit_id, 1, 1, unit_config.quality or enum.Quality.QUALITY_WHITE)
+                    forte = unit_config.forte or 0
                 },
                 state = state,
                 fragment_count = fragment_count,
@@ -338,13 +331,6 @@ function M.get_user_partners(user_id)
     table.sort(partners, function(a, b)
         if a.state ~= b.state then
             return a.state < b.state -- 状态数字越小优先级越高
-        end
-        
-        local power_a = calculate_power({properties = a.base_info.properties, level = a.base_info.level, star = a.base_info.star, quality = a.base_info.quality})
-        local power_b = calculate_power({properties = b.base_info.properties, level = b.base_info.level, star = b.base_info.star, quality = b.base_info.quality})
-        
-        if power_a ~= power_b then
-            return power_a > power_b -- 战力高的排前面
         end
         
         if a.base_info.quality ~= b.base_info.quality then
@@ -544,10 +530,6 @@ function M.star_up_partner(user_id, partner_id)
     local old_star = partner.star
     partner.star = partner.star + 1
     
-    -- 更新属性
-    local old_properties = utils.deep_copy(partner.properties)
-    partner.properties = get_partner_properties(partner.unit_id, partner.level, partner.star, partner.quality)
-    
     -- 重新计算战力
     partner.power = calculate_power(partner)
     
@@ -561,26 +543,7 @@ function M.star_up_partner(user_id, partner_id)
     -- 记录伙伴变化
     db_client.log_partner_change(user_id, partner_id, "STAR_UP", 
         string.format("Star: %d -> %d", old_star, partner.star))
-    
-    -- 计算属性变化
-    local property_changes = {}
-    for _, new_prop in ipairs(partner.properties) do
-        local old_value = 0
-        for _, old_prop in ipairs(old_properties) do
-            if old_prop.prop_id == new_prop.prop_id then
-                old_value = old_prop.value
-                break
-            end
-        end
         
-        local change = new_prop.value - old_value
-        if change ~= 0 then
-            table.insert(property_changes, {
-                prop_id = new_prop.prop_id,
-                value = change
-            })
-        end
-    end
     
     -- 构造返回的伙伴信息
     local updated_partner = {

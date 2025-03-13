@@ -8,6 +8,7 @@ class StarUpPartnerTest extends BaseTest {
 
     async test() {
         try {
+            // 先添加升星所需的道
             // 先获取伙伴列表
             console.log('\nGetting partner list for star up test...');
             const response = await this.client.getPartnerList();
@@ -24,7 +25,8 @@ class StarUpPartnerTest extends BaseTest {
             
             // 找出一个已解锁且可升星的伙伴
             const unlockedPartner = response.partners.find(p => p.state === 2 && p.can_star_up);
-            
+            console.log("response.partners: %s", JSON.stringify(response.partners))
+            console.log("unlockedPartner: %s", unlockedPartner)
             if (!unlockedPartner) {
                 console.log('No star-upgradable partners found, skipping star up test');
                 return true;
@@ -73,10 +75,36 @@ class StarUpPartnerTest extends BaseTest {
             
             // 确认升星后的伙伴数据已更新
             const updatedResponse = await this.client.getPartnerList();
-            const updatedPartner = updatedResponse.partners.find(p => 
-                (typeof p.base_info.partner_id.low === 'number' ? 
-                    p.base_info.partner_id.low : p.base_info.partner_id) === partnerId
-            );
+            console.log("Updated partner list:", JSON.stringify(updatedResponse.partners));
+            console.log("Looking for partner_id:", partnerId.toString());
+            
+            // 打印所有伙伴的ID和类型信息
+            updatedResponse.partners.forEach((p, index) => {
+                console.log(`Partner ${index}:`, {
+                    id: p.base_info.partner_id,
+                    type: typeof p.base_info.partner_id,
+                    unit_id: p.base_info.unit_id,
+                    star: p.base_info.star
+                });
+            });
+            
+            const updatedPartner = updatedResponse.partners.find(p => {
+                const currentPartnerId = p.base_info.partner_id;
+                const targetId = partnerId.toString();
+                console.log(`Comparing partner_id: "${currentPartnerId}" (${typeof currentPartnerId}) with "${targetId}" (${typeof targetId})`);
+                // 确保两边都是字符串并且去除可能的空格
+                return String(currentPartnerId).trim() === String(targetId).trim();
+            });
+            
+            if (!updatedPartner) {
+                console.error("Failed to find partner. All partners:", 
+                    updatedResponse.partners.map(p => ({
+                        id: p.base_info.partner_id,
+                        unit_id: p.base_info.unit_id,
+                        star: p.base_info.star
+                    }))
+                );
+            }
             
             assert(updatedPartner, 'Should be able to find updated partner in list');
             assert(updatedPartner.base_info.star === newStar, 

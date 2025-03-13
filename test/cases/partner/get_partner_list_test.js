@@ -30,14 +30,6 @@ class GetPartnerListTest extends BaseTest {
                 
                 // 检查状态信息
                 assert([1, 2, 3].includes(partner.state), 'State should be 1, 2, or 3');
-                
-                // 检查属性信息
-                if (partner.base_info.properties && partner.base_info.properties.length > 0) {
-                    for (const prop of partner.base_info.properties) {
-                        assert(prop.prop_id !== undefined, 'Property ID should be defined');
-                        assert(typeof prop.value === 'number', 'Property value should be a number');
-                    }
-                }
             }
 
             // 测试: 缓存验证

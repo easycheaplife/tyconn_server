@@ -87,25 +87,24 @@ function M.get_max_partner_star(star_id)
         return 5 -- 默认最大星级
     end
     
-    local max_star = 1
-    for key, _ in pairs(configs) do
-        local parts = string.split(key, "_")
-        if #parts == 2 and tonumber(parts[1]) == star_id and tonumber(parts[2]) > max_star then
-            max_star = tonumber(parts[2])
+    local max_level = 0
+    for key, config in pairs(configs) do
+        if config.star_id == star_id and config.level > max_level then
+            max_level = config.level
         end
     end
     
-    return max_star
+    return max_level
 end
 
 -- 获取伙伴升级消耗
 function M.get_partner_level_up_cost(unit_id, level)
-    local configs = config_service.get_config("partner_level_up")
+    local configs = config_service.get_config("companion_star")
     if not configs then
-        logger.error("Failed to get partner level up configs")
+        logger.error("Failed to get companion star configs")
         return {}
     end
-    
+    logger.debug("configs: %s", configs)
     local key = string.format("%d_%d", unit_id, level)
     local cost_config = configs[key] or configs[string.format("0_%d", level)]
     
@@ -126,7 +125,7 @@ end
 
 -- 获取伙伴升星消耗
 function M.get_partner_star_up_cost(unit_id, star)
-    local configs = config_service.get_config("partner_star_up")
+    local configs = config_service.get_config("companion_stars")
     if not configs then
         logger.error("Failed to get partner star up configs")
         return {}
@@ -141,25 +140,21 @@ function M.get_partner_star_up_cost(unit_id, star)
     local star_id = unit_config.star_id or 1
     local key = string.format("%d_%d", star_id, star)
     local cost_config = configs[key]
-    
     if not cost_config then
         return {}
     end
     
-    local result = {}
-    for item_id, count in pairs(cost_config.items or {}) do
-        table.insert(result, {
-            item_id = tonumber(item_id),
-            count = count
-        })
-    end
+    logger.info("cost_config: %s", utils.table_to_string(cost_config))
     
-    -- 添加本体碎片消耗
-    if cost_config.self_fragments and cost_config.self_fragments > 0 then
-        table.insert(result, {
-            item_id = unit_id,
-            count = cost_config.self_fragments
-        })
+    local result = {}
+    -- consume 是一个数组，每个元素是 {item_id, count} 格式
+    if cost_config.consume then
+        for _, consume_item in ipairs(cost_config.consume) do
+            table.insert(result, {
+                item_id = tonumber(consume_item[1]),
+                count = tonumber(consume_item[2])
+            })
+        end
     end
     
     return result

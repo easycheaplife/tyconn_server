@@ -2,6 +2,7 @@ local skynet = require "skynet"
 local logger = require "logger"
 local config_loader = require "game.config_loader"
 local enum = require "enum"
+local utils = require "utils"
 
 local M = {}
 
@@ -146,8 +147,8 @@ function M.load_unit_config()
                 skill_battle = unit_data.Skill_battle or {},
                 skill_dfw = unit_data.skill_dfw or {},
                 shards = unit_data.Shards or {},
-                disassemble = unit_data.Disassemble or {}
-
+                disassemble = unit_data.Disassemble or {},
+                star_id = tonumber(unit_data.Star_id) or 0
             }
         end
     end
@@ -530,15 +531,18 @@ function M.load_companion_star_configs()
     end
 
     local stars = {}
-    for _, config in ipairs(data) do
-        local star = tonumber(config.Star)
-        if star then
-            stars[star] = {
-                star = star,
-                attrs = config.Attrs or {},
-                materials = config.Materials or {},
-                coins = tonumber(config.Coins) or 0,
-                -- 添加其他需要的字段
+    for id, config in pairs(data) do
+        local star_id = tonumber(config.Star_id) or 0
+        local level = tonumber(config.Level) or 0
+        if star_id > 0 and level >= 0 then
+            -- 使用 star_id_level 作为键
+            local key = string.format("%d_%d", star_id, level)
+            stars[key] = {
+                id = tonumber(config.Id) or 0,
+                star_id = star_id,
+                level = level,
+                attrs = config.Attr or {},
+                consume = config.Consume or {}
             }
         end
     end
@@ -549,11 +553,12 @@ function M.load_companion_star_configs()
 end
 
 -- 获取伙伴星级配置
-function M.get_companion_star_config(star)
+function M.get_companion_star_config(star_id, level)
     if not CONFIG_CACHE.companion_stars then
         M.load_companion_star_configs()
     end
-    return CONFIG_CACHE.companion_stars and CONFIG_CACHE.companion_stars[star]
+    local key = string.format("%d_%d", star_id, level)
+    return CONFIG_CACHE.companion_stars and CONFIG_CACHE.companion_stars[key]
 end
 
 -- 获取所有伙伴星级配置
@@ -665,10 +670,10 @@ end
 -- 添加通用的get_config方法，用于提供给table_service调用
 function M.get_config(config_name)
     if not config_name then
-        logger.error("Config name is nil")
+        logger.error("Config name is nil, config_name: %s", config_name)
         return nil
     end
-    
+    logger.info("get_config, config_name: %s", config_name)
     -- 首先查找CONFIG_CACHE中是否已有对应配置
     if config_name == "units" and next(CONFIG_CACHE.units) then
         return CONFIG_CACHE.units
@@ -688,116 +693,7 @@ function M.get_config(config_name)
         return CONFIG_CACHE.companion_stars
     end
     
-    -- 如果CACHE中没有，尝试直接从JSON文件加载
-    local data = config_loader.get_config("Dfw_" .. config_name)
-    if data then
-        logger.debug("Loaded config '%s' directly from file", config_name)
-        return data
-    end
-    
-    -- 对于特殊的配置，提供默认值
-    if config_name == "partner_level_up" then
-        local default_config = {}
-        for level = 1, 100 do
-            local key = string.format("0_%d", level)
-            default_config[key] = {
-                items = {
-                    [1001] = level * 100,  -- 金币消耗
-                    [1005] = level * 10    -- 经验物品消耗
-                }
-            }
-        end
-        return default_config
-    elseif config_name == "partner_star_up" then
-        local default_config = {}
-        for star_id = 1, 5 do
-            for star = 1, 5 do
-                local key = string.format("%d_%d", star_id, star)
-                default_config[key] = {
-                    items = {
-                        [1001] = star * 1000  -- 金币消耗
-                    },
-                    self_fragments = star * 10  -- 本体碎片消耗
-                }
-            end
-        end
-        return default_config
-    elseif config_name == "property_growth" then
-        local default_config = {}
-        for unit_id = 1, 100 do
-            default_config[unit_id] = {
-                [enum.PropType.PROP_HP] = 1.0,
-                [enum.PropType.PROP_MP] = 0.8,
-                [enum.PropType.PROP_ATTACK] = 1.2,
-                [enum.PropType.PROP_DEFENSE] = 1.0,
-                [enum.PropType.PROP_SPEED] = 0.5
-            }
-        end
-        return default_config
-    elseif config_name == "power_calculation" then
-        return {
-            prop_multipliers = {
-                [enum.PropType.PROP_HP] = 0.1,  -- 生命值
-                [enum.PropType.PROP_MP] = 0.05, -- 魔法值
-                [enum.PropType.PROP_ATTACK] = 2.0,  -- 攻击力
-                [enum.PropType.PROP_DEFENSE] = 1.5,  -- 防御力
-                [enum.PropType.PROP_SPEED] = 1.0,  -- 速度
-                [enum.PropType.PROP_CRIT_RATE] = 3.0   -- 暴击率
-            },
-            level_multiplier = 10,
-            star_multiplier = 100,
-            quality_multiplier = 200
-        }
-    elseif config_name == "default_properties" then
-        return {
-            base_hp = 100,
-            base_mp = 50,
-            base_attack = 10,
-            base_defense = 5,
-            base_speed = 100,
-            hit_rate = 5,
-            dodge_rate = 3,
-            crit_rate = 5,
-            crit_dmg = 150
-        }
-    elseif config_name == "growth_formula" then
-        return {
-            star_bonus_rate = 0.1,
-            quality_bonus_rate = 0.2,
-            level_growth_rate = 0.1,
-            combat_quality_bonus_rate = 0.5
-        }
-    elseif config_name == "game_constants" then
-        return {
-            default_unlock_fragments = 30
-        }
-    elseif config_name == "partner_shards" then
-        local default_config = {}
-        for quality = 1, 6 do
-            default_config[quality] = {
-                gold = quality * 100,
-                items = {
-                    [2001] = quality * 2  -- 某种材料
-                }
-            }
-        end
-        return default_config
-    elseif config_name == "partner_disassemble" then
-        local default_config = {}
-        for quality = 1, 6 do
-            default_config[quality] = {
-                gold = quality * 500,
-                items = {
-                    [2001] = quality * 5  -- 某种材料
-                },
-                fragments = quality * 10  -- 返还的碎片数量
-            }
-        end
-        return default_config
-    else
-        logger.error("Unknown config name: %s", config_name)
-        return nil
-    end
+    return nil
 end
 
 return M
