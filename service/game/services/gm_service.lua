@@ -103,7 +103,7 @@ local GM_HANDLERS = {
             return false, "user not found"
         end
 
-        if user.level >= level then
+        if tonumber(user.level) >= tonumber(level) then
             return true, "level already reached"
         end
         -- 设置经验值会自动更新等级

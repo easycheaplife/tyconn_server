@@ -73,6 +73,8 @@ async function runTests() {
     console.log('\nStarting tests...');
     let passed = 0;
     let failed = 0;
+    // Track failed test cases
+    const failedTests = [];
 
     try {
         // 获取token和服务器信息
@@ -114,11 +116,14 @@ async function runTests() {
 
         // 运行测试用例
         for (const testCase of testsToRun) {
+            console.log(`\nRunning test: ${testCase.name}`);
             const result = await testCase.run(token, gateInfo);
             if (result) {
                 passed++;
             } else {
                 failed++;
+                // Add the failing test name to our list
+                failedTests.push(testCase.name);
             }
         }
 
@@ -127,6 +132,14 @@ async function runTests() {
         console.log(`Total: ${testsToRun.length}`);
         console.log(`Passed: ${passed}`);
         console.log(`Failed: ${failed}`);
+        
+        // 打印失败的测试案例名称
+        if (failedTests.length > 0) {
+            console.log('\nFailed tests:');
+            failedTests.forEach((testName, index) => {
+                console.log(`${index + 1}. ${testName}`);
+            });
+        }
 
         // 如果有失败的测试，退出码设为1
         if (failed > 0) {

@@ -6,8 +6,8 @@ local function number_formatter(n)
     if type(n) ~= "number" then
         return n
     end
-    -- 对于大整数或普通整数，使用字符串格式
-    if n >= 1e10 or math.floor(n) == n then
+    -- 只对大整数使用字符串格式，普通整数保持数字类型
+    if n >= 1e10 then
         return string.format("%.0f", n)
     end
     return n
