@@ -406,13 +406,6 @@ function M.level_up_partner(user_id, partner_id)
     partner.level = partner.level + 1
     partner.exp = 0
     
-    -- 更新属性
-    local old_properties = utils.deep_copy(partner.properties)
-    partner.properties = get_partner_properties(partner.unit_id, partner.level, partner.star, partner.quality)
-    
-    -- 重新计算战力
-    partner.power = calculate_power(partner)
-    
     -- 更新伙伴信息
     local update_result = partner_dao.update_partner(partner)
     if not update_result then
@@ -543,7 +536,7 @@ function M.star_up_partner(user_id, partner_id)
     -- 记录伙伴变化
     db_client.log_partner_change(user_id, partner_id, "STAR_UP", 
         string.format("Star: %d -> %d", old_star, partner.star))
-        
+
     
     -- 构造返回的伙伴信息
     local updated_partner = {

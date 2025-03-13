@@ -1,6 +1,7 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local utils = require "utils"
+local enum = require "enum"
 local config_service = require "services.config_service"
 
 local M = {}
@@ -99,28 +100,41 @@ end
 
 -- 获取伙伴升级消耗
 function M.get_partner_level_up_cost(unit_id, level)
-    local configs = config_service.get_config("companion_star")
+    local unit_config = M.get_unit_config(tonumber(unit_id))
+    if not unit_config then
+        logger.error("Failed to get unit config for unit_id: %d", unit_id)
+        return nil
+    end
+
+    local configs = config_service.get_config("experience")
     if not configs then
-        logger.error("Failed to get companion star configs")
-        return {}
+        logger.error("Failed to get exp configs")
+        return nil
     end
-    logger.debug("configs: %s", configs)
-    local key = string.format("%d_%d", unit_id, level)
-    local cost_config = configs[key] or configs[string.format("0_%d", level)]
-    
-    if not cost_config then
-        return {}
+
+    local exp_config = configs[level]
+    if not exp_config then
+        logger.error("Failed to get exp config for level: %d", level)
+        return nil
     end
-    
-    local result = {}
-    for item_id, count in pairs(cost_config.items or {}) do
-        table.insert(result, {
-            item_id = tonumber(item_id),
-            count = count
-        })
+
+    -- 根据单位类型返回对应的消耗值
+    local exp_count = 0
+    if unit_config.type == enum.UnitType.UNIT_TYPE_HERO then  -- UNIT_TYPE_HERO
+        exp_count = exp_config.hero_id
+    elseif unit_config.type == enum.UnitType.UNIT_TYPE_PARTNER then  -- UNIT_TYPE_PARTNER
+        exp_count = exp_config.partner_id
+    else
+        logger.error("Invalid unit type: %d for unit_id: %d", unit_config.type, unit_id)
+        return nil
     end
-    
-    return result
+
+    return {
+        {
+            item_id = enum.SpecialItemID.SPECIAL_ITEM_ID_EXP,
+            count = exp_count
+        }
+    }
 end
 
 -- 获取伙伴升星消耗

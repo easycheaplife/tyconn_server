@@ -1,6 +1,13 @@
 syntax = "proto3";
 package common;
 
+enum UnitType {
+    UNIT_TYPE_HERO = 0;
+    UNIT_TYPE_NPC = 1;
+    UNIT_TYPE_MONSTER= 2;
+    UNIT_TYPE_PARTNER = 4;
+}
+
 // 背包类型
 enum BagType {
     BAG_TYPE_NONE = 0;

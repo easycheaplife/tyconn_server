@@ -73,10 +73,36 @@ class LevelUpPartnerTest extends BaseTest {
             
             // 确认升级后的伙伴数据已更新
             const updatedResponse = await this.client.getPartnerList();
-            const updatedPartner = updatedResponse.partners.find(p => 
-                (typeof p.base_info.partner_id.low === 'number' ? 
-                    p.base_info.partner_id.low : p.base_info.partner_id) === partnerId
-            );
+            console.log("Updated partner list:", JSON.stringify(updatedResponse.partners));
+            console.log("Looking for partner_id:", partnerId.toString());
+            
+            // 打印所有伙伴的ID和类型信息
+            updatedResponse.partners.forEach((p, index) => {
+                console.log(`Partner ${index}:`, {
+                    id: p.base_info.partner_id,
+                    type: typeof p.base_info.partner_id,
+                    unit_id: p.base_info.unit_id,
+                    level: p.base_info.level
+                });
+            });
+            
+            const updatedPartner = updatedResponse.partners.find(p => {
+                const currentPartnerId = p.base_info.partner_id;
+                const targetId = partnerId.toString();
+                console.log(`Comparing partner_id: "${currentPartnerId}" (${typeof currentPartnerId}) with "${targetId}" (${typeof targetId})`);
+                // 确保两边都是字符串并且去除可能的空格
+                return String(currentPartnerId).trim() === String(targetId).trim();
+            });
+            
+            if (!updatedPartner) {
+                console.error("Failed to find partner. All partners:", 
+                    updatedResponse.partners.map(p => ({
+                        id: p.base_info.partner_id,
+                        unit_id: p.base_info.unit_id,
+                        level: p.base_info.level
+                    }))
+                );
+            }
             
             assert(updatedPartner, 'Should be able to find updated partner in list');
             assert(updatedPartner.base_info.level === newLevel, 

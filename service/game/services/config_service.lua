@@ -490,21 +490,22 @@ function M.load_exp_configs()
     end
 
     local exps = {}
-    for _, config in ipairs(data) do
-        local level = tonumber(config.Level)
-        if level then
+    for id, config in pairs(data) do
+        local level = tonumber(config.Id) or 0
+        if level > 0 then
             exps[level] = {
-                level = level,
-                exp = tonumber(config.Exp) or 0,
-                total_exp = tonumber(config.Total_exp) or 0,
-                -- 添加其他需要的字段
+                id = level,
+                hero_id = tonumber(config.Hero_id) or 0,
+                partner_id = tonumber(config.Partner_id) or 0,
+                partner_num = tonumber(config.Partner_num) or 0,
+                cultivation_level = config.L_cultivation_level
             }
         end
     end
 
     CONFIG_CACHE.exps = exps
     logger.info("Loaded %d exp configs", count_pairs(exps))
-    return exps
+    return true
 end
 
 -- 获取经验配置

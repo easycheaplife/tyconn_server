@@ -1,7 +1,14 @@
 -- Generating enum.lua from proto/common/enum.proto
--- Generate time: 2025-03-12 07:41:07
+-- Generate time: 2025-03-13 10:07:38
 
 local M = {}
+
+M.UnitType = {
+    UNIT_TYPE_HERO = 0,
+    UNIT_TYPE_NPC = 1,
+    UNIT_TYPE_MONSTER = 2,
+    UNIT_TYPE_PARTNER = 4,
+}
 
 -- 背包类型
 M.BagType = {
