@@ -183,11 +183,13 @@ function M.add_items_to_slot(user_id, items, source, bag_type)
     -- 2. 获取物品列表
     local existing_items = item_dao.get_user_items(user_id) or {}
     
-    -- 3. 找到已使用的槽位
+    -- 3. 找到已使用的槽位和已存在的物品
     local used_slots = {}
+    local slot_item_map = {} -- 用于存储slot_index对应的物品
     for _, item in ipairs(existing_items) do
         if item.bag_type == bag_type then
             used_slots[item.slot_index] = true
+            slot_item_map[item.slot_index] = item
         end
     end
     
@@ -198,6 +200,7 @@ function M.add_items_to_slot(user_id, items, source, bag_type)
     for _, item_data in ipairs(items_array) do
         local item_id = item_data.item_id
         local count = item_data.count or 1
+        local slot_index = item_data.slot_index -- 如果指定了格子
         
         logger.info("Processing item_id: %d, count: %d", item_id, count)
         
@@ -228,11 +231,18 @@ function M.add_items_to_slot(user_id, items, source, bag_type)
             if remaining_count > 0 then
                 -- 找一个空槽位
                 local empty_slot = nil
-                for i = 0, bag.size - 1 do
-                    if not used_slots[i] then
-                        empty_slot = i
-                        used_slots[i] = true  -- 标记为已使用
-                        break
+                if slot_index and not used_slots[slot_index] then
+                    -- 如果指定了槽位并且该槽位为空
+                    empty_slot = slot_index
+                    used_slots[slot_index] = true
+                else
+                    -- 没有指定槽位，自动查找空槽位
+                    for i = 0, bag.size - 1 do
+                        if not used_slots[i] then
+                            empty_slot = i
+                            used_slots[i] = true  -- 标记为已使用
+                            break
+                        end
                     end
                 end
                 
@@ -243,9 +253,28 @@ function M.add_items_to_slot(user_id, items, source, bag_type)
                     break
                 end
                 
+                -- 检查指定槽位是否已有物品(但可能是不同ID的同类物品)
+                local existing_item = slot_item_map[empty_slot]
+                local item_id_to_use = nil
+                
+                if existing_item and existing_item.item_id == item_id then
+                    -- 如果槽位已存在相同类型的物品，使用现有ID
+                    item_id_to_use = existing_item.id
+                    -- 从现有物品列表中移除，后面会用新的替换
+                    for i, item in ipairs(existing_items) do
+                        if item.id == item_id_to_use then
+                            table.remove(existing_items, i)
+                            break
+                        end
+                    end
+                else
+                    -- 如果是新格子或不同物品，生成新ID
+                    item_id_to_use = snowflake.next_id(snowflake.ID_TYPE.ITEM)
+                end
+                
                 -- 创建新物品
                 local new_item = item_model.new({
-                    id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
+                    id = item_id_to_use,
                     user_id = user_id,
                     item_id = item_id,
                     count = remaining_count,
@@ -277,11 +306,18 @@ function M.add_items_to_slot(user_id, items, source, bag_type)
             while remaining_count > 0 do
                 -- 找一个空槽位
                 local empty_slot = nil
-                for i = 0, bag.size - 1 do
-                    if not used_slots[i] then
-                        empty_slot = i
-                        used_slots[i] = true  -- 标记为已使用
-                        break
+                if slot_index and not used_slots[slot_index] then
+                    -- 如果指定了槽位并且该槽位为空
+                    empty_slot = slot_index
+                    used_slots[slot_index] = true
+                else
+                    -- 没有指定槽位，自动查找空槽位
+                    for i = 0, bag.size - 1 do
+                        if not used_slots[i] then
+                            empty_slot = i
+                            used_slots[i] = true  -- 标记为已使用
+                            break
+                        end
                     end
                 end
                 
@@ -295,9 +331,28 @@ function M.add_items_to_slot(user_id, items, source, bag_type)
                 -- 每个格子放最大数量
                 local slot_count = math.min(remaining_count, max_per_slot)
                 
+                -- 检查指定槽位是否已有物品(但可能是不同ID的同类物品)
+                local existing_item = slot_item_map[empty_slot]
+                local item_id_to_use = nil
+                
+                if existing_item and existing_item.item_id == item_id then
+                    -- 如果槽位已存在相同类型的物品，使用现有ID
+                    item_id_to_use = existing_item.id
+                    -- 从现有物品列表中移除，后面会用新的替换
+                    for i, item in ipairs(existing_items) do
+                        if item.id == item_id_to_use then
+                            table.remove(existing_items, i)
+                            break
+                        end
+                    end
+                else
+                    -- 如果是新格子或不同物品，生成新ID
+                    item_id_to_use = snowflake.next_id(snowflake.ID_TYPE.ITEM)
+                end
+                
                 -- 创建新物品
                 local new_item = item_model.new({
-                    id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
+                    id = item_id_to_use,
                     user_id = user_id,
                     item_id = item_id,
                     count = slot_count,

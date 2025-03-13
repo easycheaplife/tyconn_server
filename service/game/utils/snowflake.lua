@@ -1,4 +1,5 @@
 local skynet = require "skynet"
+local logger = require "logger"
 
 local M = {}
 
@@ -49,7 +50,8 @@ local last_timestamp = -1
 
 -- 获取当前时间戳(毫秒)
 local function get_current_time()
-    return math.floor(skynet.time() * 1000)  -- 转换为毫秒
+    local time = math.floor(skynet.time() * 1000)
+    return time
 end
 
 -- 等待下一毫秒
@@ -99,7 +101,7 @@ function M.next_id(type_id)
                (type_id << TYPE_SHIFT) |
                (worker_id << WORKER_SHIFT) |
                sequence
-               
+    logger.info("snowflake: type_id: %d, next_id: %d", type_id, id)
     return id
 end
 
