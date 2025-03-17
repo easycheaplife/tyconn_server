@@ -5,13 +5,13 @@
 // source: common/entity.proto
 
 /* eslint-disable */
-import { PropType } from "./enum";
+import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { PropType, propTypeFromJSON, propTypeToJSON } from "./enum";
 
 export const protobufPackage = "common";
 
 /** 会话信息 */
 export interface Session {
-  $type: "common.Session";
   /** 消息ID */
   messageId: number;
   /** 序列号 */
@@ -24,9 +24,8 @@ export interface Session {
 
 /** 基础请求 */
 export interface BaseRequest {
-  $type: "common.BaseRequest";
   /** 会话信息 */
-  session?:
+  session:
     | Session
     | undefined;
   /** 消息内容 */
@@ -35,9 +34,8 @@ export interface BaseRequest {
 
 /** 基础响应 */
 export interface BaseResponse {
-  $type: "common.BaseResponse";
   /** 会话信息 */
-  session?:
+  session:
     | Session
     | undefined;
   /** 错误码 */
@@ -50,7 +48,6 @@ export interface BaseResponse {
 
 /** 用户信息 */
 export interface UserInfo {
-  $type: "common.UserInfo";
   /** 用户ID */
   userId: bigint;
   /** 用户名 */
@@ -77,7 +74,6 @@ export interface UserInfo {
 
 /** 卡牌信息 */
 export interface CardInfo {
-  $type: "common.CardInfo";
   /** 卡牌ID */
   cardId: bigint;
   /** 卡牌类型 */
@@ -98,7 +94,6 @@ export interface CardInfo {
 
 /** 物品信息 */
 export interface ItemInfo {
-  $type: "common.ItemInfo";
   itemId: number;
   count: number;
   slot: number;
@@ -106,7 +101,6 @@ export interface ItemInfo {
 
 /** 背包信息 */
 export interface BagInfo {
-  $type: "common.BagInfo";
   bagType: number;
   size: number;
   items: ItemInfo[];
@@ -114,7 +108,6 @@ export interface BagInfo {
 
 /** 邮件信息 */
 export interface MailInfo {
-  $type: "common.MailInfo";
   /** 邮件ID */
   id: bigint;
   /** 标题 */
@@ -141,7 +134,6 @@ export interface MailInfo {
 
 /** 邮件模板信息 */
 export interface MailTemplateInfo {
-  $type: "common.MailTemplateInfo";
   /** 模板ID */
   id: bigint;
   /** 标题 */
@@ -160,7 +152,6 @@ export interface MailTemplateInfo {
 
 /** 用户资源信息 */
 export interface ResourceInfo {
-  $type: "common.ResourceInfo";
   /** 资源类型 */
   type: number;
   /** 资源数量 */
@@ -169,7 +160,6 @@ export interface ResourceInfo {
 
 /** 伙伴基本信息 */
 export interface PartnerBaseInfo {
-  $type: "common.PartnerBaseInfo";
   /** 伙伴ID */
   partnerId: bigint;
   /** 单位ID */
@@ -194,9 +184,8 @@ export interface PartnerBaseInfo {
 
 /** 伙伴完整信息 */
 export interface PartnerInfo {
-  $type: "common.PartnerInfo";
   /** 基本信息 */
-  baseInfo?:
+  baseInfo:
     | PartnerBaseInfo
     | undefined;
   /** 状态 (1:可解锁, 2:已解锁, 3:未解锁) */
@@ -217,7 +206,6 @@ export interface PartnerInfo {
 
 /** 属性信息 */
 export interface PropertyInfo {
-  $type: "common.PropertyInfo";
   /** 属性ID */
   propId: PropType;
   /** 基础值 */
@@ -228,7 +216,6 @@ export interface PropertyInfo {
 
 /** 属性变化 */
 export interface PropertyChange {
-  $type: "common.PropertyChange";
   /** 属性ID */
   propId: PropType;
   /** 变化值 */
@@ -237,49 +224,2111 @@ export interface PropertyChange {
 
 /** 物品消耗 */
 export interface ItemCost {
-  $type: "common.ItemCost";
   /** 物品ID */
   itemId: number;
   /** 数量 */
   count: number;
 }
 
-export const Session: MessageFns<Session, "common.Session"> = { $type: "common.Session" as const };
+function createBaseSession(): Session {
+  return { messageId: 0, sequence: 0, timestamp: 0n, version: "" };
+}
 
-export const BaseRequest: MessageFns<BaseRequest, "common.BaseRequest"> = { $type: "common.BaseRequest" as const };
+export const Session: MessageFns<Session> = {
+  encode(message: Session, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.messageId !== 0) {
+      writer.uint32(8).int32(message.messageId);
+    }
+    if (message.sequence !== 0) {
+      writer.uint32(16).int32(message.sequence);
+    }
+    if (message.timestamp !== 0n) {
+      if (BigInt.asIntN(64, message.timestamp) !== message.timestamp) {
+        throw new globalThis.Error("value provided for field message.timestamp of type int64 too large");
+      }
+      writer.uint32(24).int64(message.timestamp);
+    }
+    if (message.version !== "") {
+      writer.uint32(34).string(message.version);
+    }
+    return writer;
+  },
 
-export const BaseResponse: MessageFns<BaseResponse, "common.BaseResponse"> = { $type: "common.BaseResponse" as const };
+  decode(input: BinaryReader | Uint8Array, length?: number): Session {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSession();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
 
-export const UserInfo: MessageFns<UserInfo, "common.UserInfo"> = { $type: "common.UserInfo" as const };
+          message.messageId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
 
-export const CardInfo: MessageFns<CardInfo, "common.CardInfo"> = { $type: "common.CardInfo" as const };
+          message.sequence = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
 
-export const ItemInfo: MessageFns<ItemInfo, "common.ItemInfo"> = { $type: "common.ItemInfo" as const };
+          message.timestamp = reader.int64() as bigint;
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
 
-export const BagInfo: MessageFns<BagInfo, "common.BagInfo"> = { $type: "common.BagInfo" as const };
+          message.version = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
 
-export const MailInfo: MessageFns<MailInfo, "common.MailInfo"> = { $type: "common.MailInfo" as const };
+  fromJSON(object: any): Session {
+    return {
+      messageId: isSet(object.messageId) ? globalThis.Number(object.messageId) : 0,
+      sequence: isSet(object.sequence) ? globalThis.Number(object.sequence) : 0,
+      timestamp: isSet(object.timestamp) ? BigInt(object.timestamp) : 0n,
+      version: isSet(object.version) ? globalThis.String(object.version) : "",
+    };
+  },
 
-export const MailTemplateInfo: MessageFns<MailTemplateInfo, "common.MailTemplateInfo"> = {
-  $type: "common.MailTemplateInfo" as const,
+  toJSON(message: Session): unknown {
+    const obj: any = {};
+    if (message.messageId !== 0) {
+      obj.messageId = Math.round(message.messageId);
+    }
+    if (message.sequence !== 0) {
+      obj.sequence = Math.round(message.sequence);
+    }
+    if (message.timestamp !== 0n) {
+      obj.timestamp = message.timestamp.toString();
+    }
+    if (message.version !== "") {
+      obj.version = message.version;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<Session>, I>>(base?: I): Session {
+    return Session.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<Session>, I>>(object: I): Session {
+    const message = createBaseSession();
+    message.messageId = object.messageId ?? 0;
+    message.sequence = object.sequence ?? 0;
+    message.timestamp = object.timestamp ?? 0n;
+    message.version = object.version ?? "";
+    return message;
+  },
 };
 
-export const ResourceInfo: MessageFns<ResourceInfo, "common.ResourceInfo"> = { $type: "common.ResourceInfo" as const };
+function createBaseBaseRequest(): BaseRequest {
+  return { session: undefined, payload: new Uint8Array(0) };
+}
 
-export const PartnerBaseInfo: MessageFns<PartnerBaseInfo, "common.PartnerBaseInfo"> = {
-  $type: "common.PartnerBaseInfo" as const,
+export const BaseRequest: MessageFns<BaseRequest> = {
+  encode(message: BaseRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.session !== undefined) {
+      Session.encode(message.session, writer.uint32(10).fork()).join();
+    }
+    if (message.payload.length !== 0) {
+      writer.uint32(18).bytes(message.payload);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BaseRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBaseRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.session = Session.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.payload = reader.bytes();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BaseRequest {
+    return {
+      session: isSet(object.session) ? Session.fromJSON(object.session) : undefined,
+      payload: isSet(object.payload) ? bytesFromBase64(object.payload) : new Uint8Array(0),
+    };
+  },
+
+  toJSON(message: BaseRequest): unknown {
+    const obj: any = {};
+    if (message.session !== undefined) {
+      obj.session = Session.toJSON(message.session);
+    }
+    if (message.payload.length !== 0) {
+      obj.payload = base64FromBytes(message.payload);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<BaseRequest>, I>>(base?: I): BaseRequest {
+    return BaseRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<BaseRequest>, I>>(object: I): BaseRequest {
+    const message = createBaseBaseRequest();
+    message.session = (object.session !== undefined && object.session !== null)
+      ? Session.fromPartial(object.session)
+      : undefined;
+    message.payload = object.payload ?? new Uint8Array(0);
+    return message;
+  },
 };
 
-export const PartnerInfo: MessageFns<PartnerInfo, "common.PartnerInfo"> = { $type: "common.PartnerInfo" as const };
+function createBaseBaseResponse(): BaseResponse {
+  return { session: undefined, errorCode: 0, errorMsg: "", payload: new Uint8Array(0) };
+}
 
-export const PropertyInfo: MessageFns<PropertyInfo, "common.PropertyInfo"> = { $type: "common.PropertyInfo" as const };
+export const BaseResponse: MessageFns<BaseResponse> = {
+  encode(message: BaseResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.session !== undefined) {
+      Session.encode(message.session, writer.uint32(10).fork()).join();
+    }
+    if (message.errorCode !== 0) {
+      writer.uint32(16).int32(message.errorCode);
+    }
+    if (message.errorMsg !== "") {
+      writer.uint32(26).string(message.errorMsg);
+    }
+    if (message.payload.length !== 0) {
+      writer.uint32(34).bytes(message.payload);
+    }
+    return writer;
+  },
 
-export const PropertyChange: MessageFns<PropertyChange, "common.PropertyChange"> = {
-  $type: "common.PropertyChange" as const,
+  decode(input: BinaryReader | Uint8Array, length?: number): BaseResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBaseResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.session = Session.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.errorCode = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.errorMsg = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.payload = reader.bytes();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BaseResponse {
+    return {
+      session: isSet(object.session) ? Session.fromJSON(object.session) : undefined,
+      errorCode: isSet(object.errorCode) ? globalThis.Number(object.errorCode) : 0,
+      errorMsg: isSet(object.errorMsg) ? globalThis.String(object.errorMsg) : "",
+      payload: isSet(object.payload) ? bytesFromBase64(object.payload) : new Uint8Array(0),
+    };
+  },
+
+  toJSON(message: BaseResponse): unknown {
+    const obj: any = {};
+    if (message.session !== undefined) {
+      obj.session = Session.toJSON(message.session);
+    }
+    if (message.errorCode !== 0) {
+      obj.errorCode = Math.round(message.errorCode);
+    }
+    if (message.errorMsg !== "") {
+      obj.errorMsg = message.errorMsg;
+    }
+    if (message.payload.length !== 0) {
+      obj.payload = base64FromBytes(message.payload);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<BaseResponse>, I>>(base?: I): BaseResponse {
+    return BaseResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<BaseResponse>, I>>(object: I): BaseResponse {
+    const message = createBaseBaseResponse();
+    message.session = (object.session !== undefined && object.session !== null)
+      ? Session.fromPartial(object.session)
+      : undefined;
+    message.errorCode = object.errorCode ?? 0;
+    message.errorMsg = object.errorMsg ?? "";
+    message.payload = object.payload ?? new Uint8Array(0);
+    return message;
+  },
 };
 
-export const ItemCost: MessageFns<ItemCost, "common.ItemCost"> = { $type: "common.ItemCost" as const };
+function createBaseUserInfo(): UserInfo {
+  return {
+    userId: 0n,
+    username: "",
+    level: 0,
+    exp: 0n,
+    gold: 0n,
+    vipLevel: 0,
+    hp: 0,
+    attack: 0,
+    defense: 0,
+    createTime: 0n,
+    loginTime: 0n,
+  };
+}
 
-export interface MessageFns<T, V extends string> {
-  readonly $type: V;
+export const UserInfo: MessageFns<UserInfo> = {
+  encode(message: UserInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.userId !== 0n) {
+      if (BigInt.asIntN(64, message.userId) !== message.userId) {
+        throw new globalThis.Error("value provided for field message.userId of type int64 too large");
+      }
+      writer.uint32(8).int64(message.userId);
+    }
+    if (message.username !== "") {
+      writer.uint32(18).string(message.username);
+    }
+    if (message.level !== 0) {
+      writer.uint32(24).int32(message.level);
+    }
+    if (message.exp !== 0n) {
+      if (BigInt.asIntN(64, message.exp) !== message.exp) {
+        throw new globalThis.Error("value provided for field message.exp of type int64 too large");
+      }
+      writer.uint32(32).int64(message.exp);
+    }
+    if (message.gold !== 0n) {
+      if (BigInt.asIntN(64, message.gold) !== message.gold) {
+        throw new globalThis.Error("value provided for field message.gold of type int64 too large");
+      }
+      writer.uint32(40).int64(message.gold);
+    }
+    if (message.vipLevel !== 0) {
+      writer.uint32(48).int32(message.vipLevel);
+    }
+    if (message.hp !== 0) {
+      writer.uint32(56).int32(message.hp);
+    }
+    if (message.attack !== 0) {
+      writer.uint32(64).int32(message.attack);
+    }
+    if (message.defense !== 0) {
+      writer.uint32(72).int32(message.defense);
+    }
+    if (message.createTime !== 0n) {
+      if (BigInt.asIntN(64, message.createTime) !== message.createTime) {
+        throw new globalThis.Error("value provided for field message.createTime of type int64 too large");
+      }
+      writer.uint32(80).int64(message.createTime);
+    }
+    if (message.loginTime !== 0n) {
+      if (BigInt.asIntN(64, message.loginTime) !== message.loginTime) {
+        throw new globalThis.Error("value provided for field message.loginTime of type int64 too large");
+      }
+      writer.uint32(88).int64(message.loginTime);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): UserInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseUserInfo();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.userId = reader.int64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.username = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.level = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.exp = reader.int64() as bigint;
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.gold = reader.int64() as bigint;
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.vipLevel = reader.int32();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.hp = reader.int32();
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.attack = reader.int32();
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.defense = reader.int32();
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.createTime = reader.int64() as bigint;
+          continue;
+        }
+        case 11: {
+          if (tag !== 88) {
+            break;
+          }
+
+          message.loginTime = reader.int64() as bigint;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): UserInfo {
+    return {
+      userId: isSet(object.userId) ? BigInt(object.userId) : 0n,
+      username: isSet(object.username) ? globalThis.String(object.username) : "",
+      level: isSet(object.level) ? globalThis.Number(object.level) : 0,
+      exp: isSet(object.exp) ? BigInt(object.exp) : 0n,
+      gold: isSet(object.gold) ? BigInt(object.gold) : 0n,
+      vipLevel: isSet(object.vipLevel) ? globalThis.Number(object.vipLevel) : 0,
+      hp: isSet(object.hp) ? globalThis.Number(object.hp) : 0,
+      attack: isSet(object.attack) ? globalThis.Number(object.attack) : 0,
+      defense: isSet(object.defense) ? globalThis.Number(object.defense) : 0,
+      createTime: isSet(object.createTime) ? BigInt(object.createTime) : 0n,
+      loginTime: isSet(object.loginTime) ? BigInt(object.loginTime) : 0n,
+    };
+  },
+
+  toJSON(message: UserInfo): unknown {
+    const obj: any = {};
+    if (message.userId !== 0n) {
+      obj.userId = message.userId.toString();
+    }
+    if (message.username !== "") {
+      obj.username = message.username;
+    }
+    if (message.level !== 0) {
+      obj.level = Math.round(message.level);
+    }
+    if (message.exp !== 0n) {
+      obj.exp = message.exp.toString();
+    }
+    if (message.gold !== 0n) {
+      obj.gold = message.gold.toString();
+    }
+    if (message.vipLevel !== 0) {
+      obj.vipLevel = Math.round(message.vipLevel);
+    }
+    if (message.hp !== 0) {
+      obj.hp = Math.round(message.hp);
+    }
+    if (message.attack !== 0) {
+      obj.attack = Math.round(message.attack);
+    }
+    if (message.defense !== 0) {
+      obj.defense = Math.round(message.defense);
+    }
+    if (message.createTime !== 0n) {
+      obj.createTime = message.createTime.toString();
+    }
+    if (message.loginTime !== 0n) {
+      obj.loginTime = message.loginTime.toString();
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<UserInfo>, I>>(base?: I): UserInfo {
+    return UserInfo.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<UserInfo>, I>>(object: I): UserInfo {
+    const message = createBaseUserInfo();
+    message.userId = object.userId ?? 0n;
+    message.username = object.username ?? "";
+    message.level = object.level ?? 0;
+    message.exp = object.exp ?? 0n;
+    message.gold = object.gold ?? 0n;
+    message.vipLevel = object.vipLevel ?? 0;
+    message.hp = object.hp ?? 0;
+    message.attack = object.attack ?? 0;
+    message.defense = object.defense ?? 0;
+    message.createTime = object.createTime ?? 0n;
+    message.loginTime = object.loginTime ?? 0n;
+    return message;
+  },
+};
+
+function createBaseCardInfo(): CardInfo {
+  return { cardId: 0n, cardType: 0, level: 0, exp: 0n, quality: 0, star: 0, createTime: 0n, power: 0 };
+}
+
+export const CardInfo: MessageFns<CardInfo> = {
+  encode(message: CardInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.cardId !== 0n) {
+      if (BigInt.asIntN(64, message.cardId) !== message.cardId) {
+        throw new globalThis.Error("value provided for field message.cardId of type int64 too large");
+      }
+      writer.uint32(8).int64(message.cardId);
+    }
+    if (message.cardType !== 0) {
+      writer.uint32(16).int32(message.cardType);
+    }
+    if (message.level !== 0) {
+      writer.uint32(24).int32(message.level);
+    }
+    if (message.exp !== 0n) {
+      if (BigInt.asIntN(64, message.exp) !== message.exp) {
+        throw new globalThis.Error("value provided for field message.exp of type int64 too large");
+      }
+      writer.uint32(32).int64(message.exp);
+    }
+    if (message.quality !== 0) {
+      writer.uint32(40).int32(message.quality);
+    }
+    if (message.star !== 0) {
+      writer.uint32(48).int32(message.star);
+    }
+    if (message.createTime !== 0n) {
+      if (BigInt.asIntN(64, message.createTime) !== message.createTime) {
+        throw new globalThis.Error("value provided for field message.createTime of type int64 too large");
+      }
+      writer.uint32(56).int64(message.createTime);
+    }
+    if (message.power !== 0) {
+      writer.uint32(64).int32(message.power);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): CardInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseCardInfo();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.cardId = reader.int64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.cardType = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.level = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.exp = reader.int64() as bigint;
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.quality = reader.int32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.star = reader.int32();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.createTime = reader.int64() as bigint;
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.power = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): CardInfo {
+    return {
+      cardId: isSet(object.cardId) ? BigInt(object.cardId) : 0n,
+      cardType: isSet(object.cardType) ? globalThis.Number(object.cardType) : 0,
+      level: isSet(object.level) ? globalThis.Number(object.level) : 0,
+      exp: isSet(object.exp) ? BigInt(object.exp) : 0n,
+      quality: isSet(object.quality) ? globalThis.Number(object.quality) : 0,
+      star: isSet(object.star) ? globalThis.Number(object.star) : 0,
+      createTime: isSet(object.createTime) ? BigInt(object.createTime) : 0n,
+      power: isSet(object.power) ? globalThis.Number(object.power) : 0,
+    };
+  },
+
+  toJSON(message: CardInfo): unknown {
+    const obj: any = {};
+    if (message.cardId !== 0n) {
+      obj.cardId = message.cardId.toString();
+    }
+    if (message.cardType !== 0) {
+      obj.cardType = Math.round(message.cardType);
+    }
+    if (message.level !== 0) {
+      obj.level = Math.round(message.level);
+    }
+    if (message.exp !== 0n) {
+      obj.exp = message.exp.toString();
+    }
+    if (message.quality !== 0) {
+      obj.quality = Math.round(message.quality);
+    }
+    if (message.star !== 0) {
+      obj.star = Math.round(message.star);
+    }
+    if (message.createTime !== 0n) {
+      obj.createTime = message.createTime.toString();
+    }
+    if (message.power !== 0) {
+      obj.power = Math.round(message.power);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<CardInfo>, I>>(base?: I): CardInfo {
+    return CardInfo.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<CardInfo>, I>>(object: I): CardInfo {
+    const message = createBaseCardInfo();
+    message.cardId = object.cardId ?? 0n;
+    message.cardType = object.cardType ?? 0;
+    message.level = object.level ?? 0;
+    message.exp = object.exp ?? 0n;
+    message.quality = object.quality ?? 0;
+    message.star = object.star ?? 0;
+    message.createTime = object.createTime ?? 0n;
+    message.power = object.power ?? 0;
+    return message;
+  },
+};
+
+function createBaseItemInfo(): ItemInfo {
+  return { itemId: 0, count: 0, slot: 0 };
+}
+
+export const ItemInfo: MessageFns<ItemInfo> = {
+  encode(message: ItemInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.itemId !== 0) {
+      writer.uint32(8).int32(message.itemId);
+    }
+    if (message.count !== 0) {
+      writer.uint32(16).int32(message.count);
+    }
+    if (message.slot !== 0) {
+      writer.uint32(24).int32(message.slot);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ItemInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseItemInfo();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.itemId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.count = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.slot = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ItemInfo {
+    return {
+      itemId: isSet(object.itemId) ? globalThis.Number(object.itemId) : 0,
+      count: isSet(object.count) ? globalThis.Number(object.count) : 0,
+      slot: isSet(object.slot) ? globalThis.Number(object.slot) : 0,
+    };
+  },
+
+  toJSON(message: ItemInfo): unknown {
+    const obj: any = {};
+    if (message.itemId !== 0) {
+      obj.itemId = Math.round(message.itemId);
+    }
+    if (message.count !== 0) {
+      obj.count = Math.round(message.count);
+    }
+    if (message.slot !== 0) {
+      obj.slot = Math.round(message.slot);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ItemInfo>, I>>(base?: I): ItemInfo {
+    return ItemInfo.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ItemInfo>, I>>(object: I): ItemInfo {
+    const message = createBaseItemInfo();
+    message.itemId = object.itemId ?? 0;
+    message.count = object.count ?? 0;
+    message.slot = object.slot ?? 0;
+    return message;
+  },
+};
+
+function createBaseBagInfo(): BagInfo {
+  return { bagType: 0, size: 0, items: [] };
+}
+
+export const BagInfo: MessageFns<BagInfo> = {
+  encode(message: BagInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.bagType !== 0) {
+      writer.uint32(8).int32(message.bagType);
+    }
+    if (message.size !== 0) {
+      writer.uint32(16).int32(message.size);
+    }
+    for (const v of message.items) {
+      ItemInfo.encode(v!, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BagInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBagInfo();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.bagType = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.size = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.items.push(ItemInfo.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BagInfo {
+    return {
+      bagType: isSet(object.bagType) ? globalThis.Number(object.bagType) : 0,
+      size: isSet(object.size) ? globalThis.Number(object.size) : 0,
+      items: globalThis.Array.isArray(object?.items) ? object.items.map((e: any) => ItemInfo.fromJSON(e)) : [],
+    };
+  },
+
+  toJSON(message: BagInfo): unknown {
+    const obj: any = {};
+    if (message.bagType !== 0) {
+      obj.bagType = Math.round(message.bagType);
+    }
+    if (message.size !== 0) {
+      obj.size = Math.round(message.size);
+    }
+    if (message.items?.length) {
+      obj.items = message.items.map((e) => ItemInfo.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<BagInfo>, I>>(base?: I): BagInfo {
+    return BagInfo.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<BagInfo>, I>>(object: I): BagInfo {
+    const message = createBaseBagInfo();
+    message.bagType = object.bagType ?? 0;
+    message.size = object.size ?? 0;
+    message.items = object.items?.map((e) => ItemInfo.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseMailInfo(): MailInfo {
+  return {
+    id: 0n,
+    title: "",
+    content: "",
+    items: [],
+    mailType: 0,
+    status: 0,
+    createTime: 0n,
+    expireTime: 0n,
+    templateId: 0n,
+    senderId: 0n,
+    senderName: "",
+  };
+}
+
+export const MailInfo: MessageFns<MailInfo> = {
+  encode(message: MailInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== 0n) {
+      if (BigInt.asIntN(64, message.id) !== message.id) {
+        throw new globalThis.Error("value provided for field message.id of type int64 too large");
+      }
+      writer.uint32(8).int64(message.id);
+    }
+    if (message.title !== "") {
+      writer.uint32(18).string(message.title);
+    }
+    if (message.content !== "") {
+      writer.uint32(26).string(message.content);
+    }
+    for (const v of message.items) {
+      ItemInfo.encode(v!, writer.uint32(34).fork()).join();
+    }
+    if (message.mailType !== 0) {
+      writer.uint32(40).int32(message.mailType);
+    }
+    if (message.status !== 0) {
+      writer.uint32(48).int32(message.status);
+    }
+    if (message.createTime !== 0n) {
+      if (BigInt.asIntN(64, message.createTime) !== message.createTime) {
+        throw new globalThis.Error("value provided for field message.createTime of type int64 too large");
+      }
+      writer.uint32(56).int64(message.createTime);
+    }
+    if (message.expireTime !== 0n) {
+      if (BigInt.asIntN(64, message.expireTime) !== message.expireTime) {
+        throw new globalThis.Error("value provided for field message.expireTime of type int64 too large");
+      }
+      writer.uint32(64).int64(message.expireTime);
+    }
+    if (message.templateId !== 0n) {
+      if (BigInt.asIntN(64, message.templateId) !== message.templateId) {
+        throw new globalThis.Error("value provided for field message.templateId of type int64 too large");
+      }
+      writer.uint32(72).int64(message.templateId);
+    }
+    if (message.senderId !== 0n) {
+      if (BigInt.asIntN(64, message.senderId) !== message.senderId) {
+        throw new globalThis.Error("value provided for field message.senderId of type int64 too large");
+      }
+      writer.uint32(80).int64(message.senderId);
+    }
+    if (message.senderName !== "") {
+      writer.uint32(90).string(message.senderName);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MailInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMailInfo();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.id = reader.int64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.title = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.content = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.items.push(ItemInfo.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.mailType = reader.int32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.status = reader.int32();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.createTime = reader.int64() as bigint;
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.expireTime = reader.int64() as bigint;
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.templateId = reader.int64() as bigint;
+          continue;
+        }
+        case 10: {
+          if (tag !== 80) {
+            break;
+          }
+
+          message.senderId = reader.int64() as bigint;
+          continue;
+        }
+        case 11: {
+          if (tag !== 90) {
+            break;
+          }
+
+          message.senderName = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MailInfo {
+    return {
+      id: isSet(object.id) ? BigInt(object.id) : 0n,
+      title: isSet(object.title) ? globalThis.String(object.title) : "",
+      content: isSet(object.content) ? globalThis.String(object.content) : "",
+      items: globalThis.Array.isArray(object?.items) ? object.items.map((e: any) => ItemInfo.fromJSON(e)) : [],
+      mailType: isSet(object.mailType) ? globalThis.Number(object.mailType) : 0,
+      status: isSet(object.status) ? globalThis.Number(object.status) : 0,
+      createTime: isSet(object.createTime) ? BigInt(object.createTime) : 0n,
+      expireTime: isSet(object.expireTime) ? BigInt(object.expireTime) : 0n,
+      templateId: isSet(object.templateId) ? BigInt(object.templateId) : 0n,
+      senderId: isSet(object.senderId) ? BigInt(object.senderId) : 0n,
+      senderName: isSet(object.senderName) ? globalThis.String(object.senderName) : "",
+    };
+  },
+
+  toJSON(message: MailInfo): unknown {
+    const obj: any = {};
+    if (message.id !== 0n) {
+      obj.id = message.id.toString();
+    }
+    if (message.title !== "") {
+      obj.title = message.title;
+    }
+    if (message.content !== "") {
+      obj.content = message.content;
+    }
+    if (message.items?.length) {
+      obj.items = message.items.map((e) => ItemInfo.toJSON(e));
+    }
+    if (message.mailType !== 0) {
+      obj.mailType = Math.round(message.mailType);
+    }
+    if (message.status !== 0) {
+      obj.status = Math.round(message.status);
+    }
+    if (message.createTime !== 0n) {
+      obj.createTime = message.createTime.toString();
+    }
+    if (message.expireTime !== 0n) {
+      obj.expireTime = message.expireTime.toString();
+    }
+    if (message.templateId !== 0n) {
+      obj.templateId = message.templateId.toString();
+    }
+    if (message.senderId !== 0n) {
+      obj.senderId = message.senderId.toString();
+    }
+    if (message.senderName !== "") {
+      obj.senderName = message.senderName;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MailInfo>, I>>(base?: I): MailInfo {
+    return MailInfo.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MailInfo>, I>>(object: I): MailInfo {
+    const message = createBaseMailInfo();
+    message.id = object.id ?? 0n;
+    message.title = object.title ?? "";
+    message.content = object.content ?? "";
+    message.items = object.items?.map((e) => ItemInfo.fromPartial(e)) || [];
+    message.mailType = object.mailType ?? 0;
+    message.status = object.status ?? 0;
+    message.createTime = object.createTime ?? 0n;
+    message.expireTime = object.expireTime ?? 0n;
+    message.templateId = object.templateId ?? 0n;
+    message.senderId = object.senderId ?? 0n;
+    message.senderName = object.senderName ?? "";
+    return message;
+  },
+};
+
+function createBaseMailTemplateInfo(): MailTemplateInfo {
+  return { id: 0n, title: "", content: "", items: [], mailType: 0, createTime: 0n, expireTime: 0n };
+}
+
+export const MailTemplateInfo: MessageFns<MailTemplateInfo> = {
+  encode(message: MailTemplateInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.id !== 0n) {
+      if (BigInt.asIntN(64, message.id) !== message.id) {
+        throw new globalThis.Error("value provided for field message.id of type int64 too large");
+      }
+      writer.uint32(8).int64(message.id);
+    }
+    if (message.title !== "") {
+      writer.uint32(18).string(message.title);
+    }
+    if (message.content !== "") {
+      writer.uint32(26).string(message.content);
+    }
+    for (const v of message.items) {
+      ItemInfo.encode(v!, writer.uint32(34).fork()).join();
+    }
+    if (message.mailType !== 0) {
+      writer.uint32(40).int32(message.mailType);
+    }
+    if (message.createTime !== 0n) {
+      if (BigInt.asIntN(64, message.createTime) !== message.createTime) {
+        throw new globalThis.Error("value provided for field message.createTime of type int64 too large");
+      }
+      writer.uint32(48).int64(message.createTime);
+    }
+    if (message.expireTime !== 0n) {
+      if (BigInt.asIntN(64, message.expireTime) !== message.expireTime) {
+        throw new globalThis.Error("value provided for field message.expireTime of type int64 too large");
+      }
+      writer.uint32(56).int64(message.expireTime);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): MailTemplateInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMailTemplateInfo();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.id = reader.int64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.title = reader.string();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.content = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.items.push(ItemInfo.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.mailType = reader.int32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.createTime = reader.int64() as bigint;
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.expireTime = reader.int64() as bigint;
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): MailTemplateInfo {
+    return {
+      id: isSet(object.id) ? BigInt(object.id) : 0n,
+      title: isSet(object.title) ? globalThis.String(object.title) : "",
+      content: isSet(object.content) ? globalThis.String(object.content) : "",
+      items: globalThis.Array.isArray(object?.items) ? object.items.map((e: any) => ItemInfo.fromJSON(e)) : [],
+      mailType: isSet(object.mailType) ? globalThis.Number(object.mailType) : 0,
+      createTime: isSet(object.createTime) ? BigInt(object.createTime) : 0n,
+      expireTime: isSet(object.expireTime) ? BigInt(object.expireTime) : 0n,
+    };
+  },
+
+  toJSON(message: MailTemplateInfo): unknown {
+    const obj: any = {};
+    if (message.id !== 0n) {
+      obj.id = message.id.toString();
+    }
+    if (message.title !== "") {
+      obj.title = message.title;
+    }
+    if (message.content !== "") {
+      obj.content = message.content;
+    }
+    if (message.items?.length) {
+      obj.items = message.items.map((e) => ItemInfo.toJSON(e));
+    }
+    if (message.mailType !== 0) {
+      obj.mailType = Math.round(message.mailType);
+    }
+    if (message.createTime !== 0n) {
+      obj.createTime = message.createTime.toString();
+    }
+    if (message.expireTime !== 0n) {
+      obj.expireTime = message.expireTime.toString();
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<MailTemplateInfo>, I>>(base?: I): MailTemplateInfo {
+    return MailTemplateInfo.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<MailTemplateInfo>, I>>(object: I): MailTemplateInfo {
+    const message = createBaseMailTemplateInfo();
+    message.id = object.id ?? 0n;
+    message.title = object.title ?? "";
+    message.content = object.content ?? "";
+    message.items = object.items?.map((e) => ItemInfo.fromPartial(e)) || [];
+    message.mailType = object.mailType ?? 0;
+    message.createTime = object.createTime ?? 0n;
+    message.expireTime = object.expireTime ?? 0n;
+    return message;
+  },
+};
+
+function createBaseResourceInfo(): ResourceInfo {
+  return { type: 0, amount: 0 };
+}
+
+export const ResourceInfo: MessageFns<ResourceInfo> = {
+  encode(message: ResourceInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.type !== 0) {
+      writer.uint32(8).int32(message.type);
+    }
+    if (message.amount !== 0) {
+      writer.uint32(16).int32(message.amount);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ResourceInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseResourceInfo();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.type = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.amount = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ResourceInfo {
+    return {
+      type: isSet(object.type) ? globalThis.Number(object.type) : 0,
+      amount: isSet(object.amount) ? globalThis.Number(object.amount) : 0,
+    };
+  },
+
+  toJSON(message: ResourceInfo): unknown {
+    const obj: any = {};
+    if (message.type !== 0) {
+      obj.type = Math.round(message.type);
+    }
+    if (message.amount !== 0) {
+      obj.amount = Math.round(message.amount);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ResourceInfo>, I>>(base?: I): ResourceInfo {
+    return ResourceInfo.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ResourceInfo>, I>>(object: I): ResourceInfo {
+    const message = createBaseResourceInfo();
+    message.type = object.type ?? 0;
+    message.amount = object.amount ?? 0;
+    return message;
+  },
+};
+
+function createBasePartnerBaseInfo(): PartnerBaseInfo {
+  return {
+    partnerId: 0n,
+    unitId: 0,
+    level: 0,
+    exp: 0,
+    quality: 0,
+    star: 0,
+    createTime: 0n,
+    race: 0,
+    forte: 0,
+    properties: [],
+  };
+}
+
+export const PartnerBaseInfo: MessageFns<PartnerBaseInfo> = {
+  encode(message: PartnerBaseInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.partnerId !== 0n) {
+      if (BigInt.asIntN(64, message.partnerId) !== message.partnerId) {
+        throw new globalThis.Error("value provided for field message.partnerId of type int64 too large");
+      }
+      writer.uint32(8).int64(message.partnerId);
+    }
+    if (message.unitId !== 0) {
+      writer.uint32(16).int32(message.unitId);
+    }
+    if (message.level !== 0) {
+      writer.uint32(24).int32(message.level);
+    }
+    if (message.exp !== 0) {
+      writer.uint32(32).int32(message.exp);
+    }
+    if (message.quality !== 0) {
+      writer.uint32(40).int32(message.quality);
+    }
+    if (message.star !== 0) {
+      writer.uint32(48).int32(message.star);
+    }
+    if (message.createTime !== 0n) {
+      if (BigInt.asIntN(64, message.createTime) !== message.createTime) {
+        throw new globalThis.Error("value provided for field message.createTime of type int64 too large");
+      }
+      writer.uint32(56).int64(message.createTime);
+    }
+    if (message.race !== 0) {
+      writer.uint32(64).int32(message.race);
+    }
+    if (message.forte !== 0) {
+      writer.uint32(72).int32(message.forte);
+    }
+    for (const v of message.properties) {
+      PropertyInfo.encode(v!, writer.uint32(82).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PartnerBaseInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePartnerBaseInfo();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.partnerId = reader.int64() as bigint;
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.unitId = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.level = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.exp = reader.int32();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.quality = reader.int32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.star = reader.int32();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.createTime = reader.int64() as bigint;
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.race = reader.int32();
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.forte = reader.int32();
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.properties.push(PropertyInfo.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PartnerBaseInfo {
+    return {
+      partnerId: isSet(object.partnerId) ? BigInt(object.partnerId) : 0n,
+      unitId: isSet(object.unitId) ? globalThis.Number(object.unitId) : 0,
+      level: isSet(object.level) ? globalThis.Number(object.level) : 0,
+      exp: isSet(object.exp) ? globalThis.Number(object.exp) : 0,
+      quality: isSet(object.quality) ? globalThis.Number(object.quality) : 0,
+      star: isSet(object.star) ? globalThis.Number(object.star) : 0,
+      createTime: isSet(object.createTime) ? BigInt(object.createTime) : 0n,
+      race: isSet(object.race) ? globalThis.Number(object.race) : 0,
+      forte: isSet(object.forte) ? globalThis.Number(object.forte) : 0,
+      properties: globalThis.Array.isArray(object?.properties)
+        ? object.properties.map((e: any) => PropertyInfo.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: PartnerBaseInfo): unknown {
+    const obj: any = {};
+    if (message.partnerId !== 0n) {
+      obj.partnerId = message.partnerId.toString();
+    }
+    if (message.unitId !== 0) {
+      obj.unitId = Math.round(message.unitId);
+    }
+    if (message.level !== 0) {
+      obj.level = Math.round(message.level);
+    }
+    if (message.exp !== 0) {
+      obj.exp = Math.round(message.exp);
+    }
+    if (message.quality !== 0) {
+      obj.quality = Math.round(message.quality);
+    }
+    if (message.star !== 0) {
+      obj.star = Math.round(message.star);
+    }
+    if (message.createTime !== 0n) {
+      obj.createTime = message.createTime.toString();
+    }
+    if (message.race !== 0) {
+      obj.race = Math.round(message.race);
+    }
+    if (message.forte !== 0) {
+      obj.forte = Math.round(message.forte);
+    }
+    if (message.properties?.length) {
+      obj.properties = message.properties.map((e) => PropertyInfo.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PartnerBaseInfo>, I>>(base?: I): PartnerBaseInfo {
+    return PartnerBaseInfo.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PartnerBaseInfo>, I>>(object: I): PartnerBaseInfo {
+    const message = createBasePartnerBaseInfo();
+    message.partnerId = object.partnerId ?? 0n;
+    message.unitId = object.unitId ?? 0;
+    message.level = object.level ?? 0;
+    message.exp = object.exp ?? 0;
+    message.quality = object.quality ?? 0;
+    message.star = object.star ?? 0;
+    message.createTime = object.createTime ?? 0n;
+    message.race = object.race ?? 0;
+    message.forte = object.forte ?? 0;
+    message.properties = object.properties?.map((e) => PropertyInfo.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBasePartnerInfo(): PartnerInfo {
+  return {
+    baseInfo: undefined,
+    state: 0,
+    fragmentCount: 0,
+    fragmentNeed: 0,
+    canLevelUp: false,
+    canStarUp: false,
+    levelUpCost: [],
+    starUpCost: [],
+  };
+}
+
+export const PartnerInfo: MessageFns<PartnerInfo> = {
+  encode(message: PartnerInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.baseInfo !== undefined) {
+      PartnerBaseInfo.encode(message.baseInfo, writer.uint32(10).fork()).join();
+    }
+    if (message.state !== 0) {
+      writer.uint32(16).int32(message.state);
+    }
+    if (message.fragmentCount !== 0) {
+      writer.uint32(24).int32(message.fragmentCount);
+    }
+    if (message.fragmentNeed !== 0) {
+      writer.uint32(32).int32(message.fragmentNeed);
+    }
+    if (message.canLevelUp !== false) {
+      writer.uint32(40).bool(message.canLevelUp);
+    }
+    if (message.canStarUp !== false) {
+      writer.uint32(48).bool(message.canStarUp);
+    }
+    for (const v of message.levelUpCost) {
+      ItemCost.encode(v!, writer.uint32(58).fork()).join();
+    }
+    for (const v of message.starUpCost) {
+      ItemCost.encode(v!, writer.uint32(66).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PartnerInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePartnerInfo();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.baseInfo = PartnerBaseInfo.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.state = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.fragmentCount = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.fragmentNeed = reader.int32();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.canLevelUp = reader.bool();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.canStarUp = reader.bool();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.levelUpCost.push(ItemCost.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.starUpCost.push(ItemCost.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PartnerInfo {
+    return {
+      baseInfo: isSet(object.baseInfo) ? PartnerBaseInfo.fromJSON(object.baseInfo) : undefined,
+      state: isSet(object.state) ? globalThis.Number(object.state) : 0,
+      fragmentCount: isSet(object.fragmentCount) ? globalThis.Number(object.fragmentCount) : 0,
+      fragmentNeed: isSet(object.fragmentNeed) ? globalThis.Number(object.fragmentNeed) : 0,
+      canLevelUp: isSet(object.canLevelUp) ? globalThis.Boolean(object.canLevelUp) : false,
+      canStarUp: isSet(object.canStarUp) ? globalThis.Boolean(object.canStarUp) : false,
+      levelUpCost: globalThis.Array.isArray(object?.levelUpCost)
+        ? object.levelUpCost.map((e: any) => ItemCost.fromJSON(e))
+        : [],
+      starUpCost: globalThis.Array.isArray(object?.starUpCost)
+        ? object.starUpCost.map((e: any) => ItemCost.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: PartnerInfo): unknown {
+    const obj: any = {};
+    if (message.baseInfo !== undefined) {
+      obj.baseInfo = PartnerBaseInfo.toJSON(message.baseInfo);
+    }
+    if (message.state !== 0) {
+      obj.state = Math.round(message.state);
+    }
+    if (message.fragmentCount !== 0) {
+      obj.fragmentCount = Math.round(message.fragmentCount);
+    }
+    if (message.fragmentNeed !== 0) {
+      obj.fragmentNeed = Math.round(message.fragmentNeed);
+    }
+    if (message.canLevelUp !== false) {
+      obj.canLevelUp = message.canLevelUp;
+    }
+    if (message.canStarUp !== false) {
+      obj.canStarUp = message.canStarUp;
+    }
+    if (message.levelUpCost?.length) {
+      obj.levelUpCost = message.levelUpCost.map((e) => ItemCost.toJSON(e));
+    }
+    if (message.starUpCost?.length) {
+      obj.starUpCost = message.starUpCost.map((e) => ItemCost.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PartnerInfo>, I>>(base?: I): PartnerInfo {
+    return PartnerInfo.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PartnerInfo>, I>>(object: I): PartnerInfo {
+    const message = createBasePartnerInfo();
+    message.baseInfo = (object.baseInfo !== undefined && object.baseInfo !== null)
+      ? PartnerBaseInfo.fromPartial(object.baseInfo)
+      : undefined;
+    message.state = object.state ?? 0;
+    message.fragmentCount = object.fragmentCount ?? 0;
+    message.fragmentNeed = object.fragmentNeed ?? 0;
+    message.canLevelUp = object.canLevelUp ?? false;
+    message.canStarUp = object.canStarUp ?? false;
+    message.levelUpCost = object.levelUpCost?.map((e) => ItemCost.fromPartial(e)) || [];
+    message.starUpCost = object.starUpCost?.map((e) => ItemCost.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBasePropertyInfo(): PropertyInfo {
+  return { propId: 0, value: 0, extra: 0 };
+}
+
+export const PropertyInfo: MessageFns<PropertyInfo> = {
+  encode(message: PropertyInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.propId !== 0) {
+      writer.uint32(8).int32(message.propId);
+    }
+    if (message.value !== 0) {
+      writer.uint32(21).float(message.value);
+    }
+    if (message.extra !== 0) {
+      writer.uint32(29).float(message.extra);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PropertyInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePropertyInfo();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.propId = reader.int32() as any;
+          continue;
+        }
+        case 2: {
+          if (tag !== 21) {
+            break;
+          }
+
+          message.value = reader.float();
+          continue;
+        }
+        case 3: {
+          if (tag !== 29) {
+            break;
+          }
+
+          message.extra = reader.float();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PropertyInfo {
+    return {
+      propId: isSet(object.propId) ? propTypeFromJSON(object.propId) : 0,
+      value: isSet(object.value) ? globalThis.Number(object.value) : 0,
+      extra: isSet(object.extra) ? globalThis.Number(object.extra) : 0,
+    };
+  },
+
+  toJSON(message: PropertyInfo): unknown {
+    const obj: any = {};
+    if (message.propId !== 0) {
+      obj.propId = propTypeToJSON(message.propId);
+    }
+    if (message.value !== 0) {
+      obj.value = message.value;
+    }
+    if (message.extra !== 0) {
+      obj.extra = message.extra;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PropertyInfo>, I>>(base?: I): PropertyInfo {
+    return PropertyInfo.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PropertyInfo>, I>>(object: I): PropertyInfo {
+    const message = createBasePropertyInfo();
+    message.propId = object.propId ?? 0;
+    message.value = object.value ?? 0;
+    message.extra = object.extra ?? 0;
+    return message;
+  },
+};
+
+function createBasePropertyChange(): PropertyChange {
+  return { propId: 0, value: 0 };
+}
+
+export const PropertyChange: MessageFns<PropertyChange> = {
+  encode(message: PropertyChange, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.propId !== 0) {
+      writer.uint32(8).int32(message.propId);
+    }
+    if (message.value !== 0) {
+      writer.uint32(21).float(message.value);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PropertyChange {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePropertyChange();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.propId = reader.int32() as any;
+          continue;
+        }
+        case 2: {
+          if (tag !== 21) {
+            break;
+          }
+
+          message.value = reader.float();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PropertyChange {
+    return {
+      propId: isSet(object.propId) ? propTypeFromJSON(object.propId) : 0,
+      value: isSet(object.value) ? globalThis.Number(object.value) : 0,
+    };
+  },
+
+  toJSON(message: PropertyChange): unknown {
+    const obj: any = {};
+    if (message.propId !== 0) {
+      obj.propId = propTypeToJSON(message.propId);
+    }
+    if (message.value !== 0) {
+      obj.value = message.value;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PropertyChange>, I>>(base?: I): PropertyChange {
+    return PropertyChange.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PropertyChange>, I>>(object: I): PropertyChange {
+    const message = createBasePropertyChange();
+    message.propId = object.propId ?? 0;
+    message.value = object.value ?? 0;
+    return message;
+  },
+};
+
+function createBaseItemCost(): ItemCost {
+  return { itemId: 0, count: 0 };
+}
+
+export const ItemCost: MessageFns<ItemCost> = {
+  encode(message: ItemCost, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.itemId !== 0) {
+      writer.uint32(8).int32(message.itemId);
+    }
+    if (message.count !== 0) {
+      writer.uint32(16).int32(message.count);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ItemCost {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseItemCost();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.itemId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.count = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ItemCost {
+    return {
+      itemId: isSet(object.itemId) ? globalThis.Number(object.itemId) : 0,
+      count: isSet(object.count) ? globalThis.Number(object.count) : 0,
+    };
+  },
+
+  toJSON(message: ItemCost): unknown {
+    const obj: any = {};
+    if (message.itemId !== 0) {
+      obj.itemId = Math.round(message.itemId);
+    }
+    if (message.count !== 0) {
+      obj.count = Math.round(message.count);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ItemCost>, I>>(base?: I): ItemCost {
+    return ItemCost.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ItemCost>, I>>(object: I): ItemCost {
+    const message = createBaseItemCost();
+    message.itemId = object.itemId ?? 0;
+    message.count = object.count ?? 0;
+    return message;
+  },
+};
+
+function bytesFromBase64(b64: string): Uint8Array {
+  if ((globalThis as any).Buffer) {
+    return Uint8Array.from(globalThis.Buffer.from(b64, "base64"));
+  } else {
+    const bin = globalThis.atob(b64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; ++i) {
+      arr[i] = bin.charCodeAt(i);
+    }
+    return arr;
+  }
+}
+
+function base64FromBytes(arr: Uint8Array): string {
+  if ((globalThis as any).Buffer) {
+    return globalThis.Buffer.from(arr).toString("base64");
+  } else {
+    const bin: string[] = [];
+    arr.forEach((byte) => {
+      bin.push(globalThis.String.fromCharCode(byte));
+    });
+    return globalThis.btoa(bin.join(""));
+  }
+}
+
+type Builtin = Date | Function | Uint8Array | string | number | boolean | bigint | undefined;
+
+export type DeepPartial<T> = T extends Builtin ? T
+  : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
+  : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
+  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
+  : Partial<T>;
+
+type KeysOfUnion<T> = T extends T ? keyof T : never;
+export type Exact<P, I extends P> = P extends Builtin ? P
+  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+
+function isSet(value: any): boolean {
+  return value !== null && value !== undefined;
+}
+
+export interface MessageFns<T> {
+  encode(message: T, writer?: BinaryWriter): BinaryWriter;
+  decode(input: BinaryReader | Uint8Array, length?: number): T;
+  fromJSON(object: any): T;
+  toJSON(message: T): unknown;
+  create<I extends Exact<DeepPartial<T>, I>>(base?: I): T;
+  fromPartial<I extends Exact<DeepPartial<T>, I>>(object: I): T;
 }
