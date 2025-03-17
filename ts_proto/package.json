@@ -4,5 +4,8 @@
   },
   "devDependencies": {
     "ts-proto": "^2.6.1"
+  },
+  "dependencies": {
+    "long": "^5.3.1"
   }
 }

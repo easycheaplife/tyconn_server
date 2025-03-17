@@ -5,6 +5,7 @@
 // source: internal/service.proto
 
 /* eslint-disable */
+import Long = require("long");
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export const protobufPackage = "internal";
@@ -22,7 +23,7 @@ export interface ServiceStatus {
   /** 当前连接数 */
   clientCount: number;
   /** 同步时间戳 */
-  timestamp: number;
+  timestamp: Long;
   /** 额外信息 */
   extra: { [key: string]: string };
 }
@@ -33,7 +34,7 @@ export interface ServiceStatus_ExtraEntry {
 }
 
 function createBaseServiceStatus(): ServiceStatus {
-  return { nodeName: "", serviceType: "", host: "", port: 0, clientCount: 0, timestamp: 0, extra: {} };
+  return { nodeName: "", serviceType: "", host: "", port: 0, clientCount: 0, timestamp: Long.ZERO, extra: {} };
 }
 
 export const ServiceStatus: MessageFns<ServiceStatus> = {
@@ -53,8 +54,8 @@ export const ServiceStatus: MessageFns<ServiceStatus> = {
     if (message.clientCount !== 0) {
       writer.uint32(40).int32(message.clientCount);
     }
-    if (message.timestamp !== 0) {
-      writer.uint32(48).int64(message.timestamp);
+    if (!message.timestamp.equals(Long.ZERO)) {
+      writer.uint32(48).int64(message.timestamp.toString());
     }
     Object.entries(message.extra).forEach(([key, value]) => {
       ServiceStatus_ExtraEntry.encode({ key: key as any, value }, writer.uint32(58).fork()).join();
@@ -114,7 +115,7 @@ export const ServiceStatus: MessageFns<ServiceStatus> = {
             break;
           }
 
-          message.timestamp = longToNumber(reader.int64());
+          message.timestamp = Long.fromString(reader.int64().toString());
           continue;
         }
         case 7: {
@@ -144,7 +145,7 @@ export const ServiceStatus: MessageFns<ServiceStatus> = {
       host: isSet(object.host) ? globalThis.String(object.host) : "",
       port: isSet(object.port) ? globalThis.Number(object.port) : 0,
       clientCount: isSet(object.clientCount) ? globalThis.Number(object.clientCount) : 0,
-      timestamp: isSet(object.timestamp) ? globalThis.Number(object.timestamp) : 0,
+      timestamp: isSet(object.timestamp) ? Long.fromValue(object.timestamp) : Long.ZERO,
       extra: isObject(object.extra)
         ? Object.entries(object.extra).reduce<{ [key: string]: string }>((acc, [key, value]) => {
           acc[key] = String(value);
@@ -171,8 +172,8 @@ export const ServiceStatus: MessageFns<ServiceStatus> = {
     if (message.clientCount !== 0) {
       obj.clientCount = Math.round(message.clientCount);
     }
-    if (message.timestamp !== 0) {
-      obj.timestamp = Math.round(message.timestamp);
+    if (!message.timestamp.equals(Long.ZERO)) {
+      obj.timestamp = (message.timestamp || Long.ZERO).toString();
     }
     if (message.extra) {
       const entries = Object.entries(message.extra);
@@ -196,7 +197,9 @@ export const ServiceStatus: MessageFns<ServiceStatus> = {
     message.host = object.host ?? "";
     message.port = object.port ?? 0;
     message.clientCount = object.clientCount ?? 0;
-    message.timestamp = object.timestamp ?? 0;
+    message.timestamp = (object.timestamp !== undefined && object.timestamp !== null)
+      ? Long.fromValue(object.timestamp)
+      : Long.ZERO;
     message.extra = Object.entries(object.extra ?? {}).reduce<{ [key: string]: string }>((acc, [key, value]) => {
       if (value !== undefined) {
         acc[key] = globalThis.String(value);
@@ -286,7 +289,7 @@ export const ServiceStatus_ExtraEntry: MessageFns<ServiceStatus_ExtraEntry> = {
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
 
 export type DeepPartial<T> = T extends Builtin ? T
-  : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
+  : T extends Long ? string | number | Long : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
@@ -294,17 +297,6 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
-
-function longToNumber(int64: { toString(): string }): number {
-  const num = globalThis.Number(int64.toString());
-  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
-  }
-  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
-  }
-  return num;
-}
 
 function isObject(value: any): boolean {
   return typeof value === "object" && value !== null;

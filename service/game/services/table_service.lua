@@ -100,6 +100,7 @@ end
 
 -- 获取伙伴升级消耗
 function M.get_partner_level_up_cost(unit_id, level)
+    logger.info("get_partner_level_up_cost unit_id=%d, level=%d", unit_id, level)
     local unit_config = M.get_unit_config(tonumber(unit_id))
     if not unit_config then
         logger.error("Failed to get unit config for unit_id: %d", unit_id)
