@@ -5,12 +5,12 @@
 // source: internal/service.proto
 
 /* eslint-disable */
-import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export const protobufPackage = "internal";
 
 /** 服务状态同步 */
 export interface ServiceStatus {
+  $type: "internal.ServiceStatus";
   /** 节点名称 */
   nodeName: string;
   /** 服务类型(gate/game/etc) */
@@ -28,289 +28,19 @@ export interface ServiceStatus {
 }
 
 export interface ServiceStatus_ExtraEntry {
+  $type: "internal.ServiceStatus.ExtraEntry";
   key: string;
   value: string;
 }
 
-function createBaseServiceStatus(): ServiceStatus {
-  return { nodeName: "", serviceType: "", host: "", port: 0, clientCount: 0, timestamp: 0n, extra: {} };
-}
-
-export const ServiceStatus: MessageFns<ServiceStatus> = {
-  encode(message: ServiceStatus, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.nodeName !== "") {
-      writer.uint32(10).string(message.nodeName);
-    }
-    if (message.serviceType !== "") {
-      writer.uint32(18).string(message.serviceType);
-    }
-    if (message.host !== "") {
-      writer.uint32(26).string(message.host);
-    }
-    if (message.port !== 0) {
-      writer.uint32(32).int32(message.port);
-    }
-    if (message.clientCount !== 0) {
-      writer.uint32(40).int32(message.clientCount);
-    }
-    if (message.timestamp !== 0n) {
-      if (BigInt.asIntN(64, message.timestamp) !== message.timestamp) {
-        throw new globalThis.Error("value provided for field message.timestamp of type int64 too large");
-      }
-      writer.uint32(48).int64(message.timestamp);
-    }
-    Object.entries(message.extra).forEach(([key, value]) => {
-      ServiceStatus_ExtraEntry.encode({ key: key as any, value }, writer.uint32(58).fork()).join();
-    });
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): ServiceStatus {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseServiceStatus();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.nodeName = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.serviceType = reader.string();
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.host = reader.string();
-          continue;
-        }
-        case 4: {
-          if (tag !== 32) {
-            break;
-          }
-
-          message.port = reader.int32();
-          continue;
-        }
-        case 5: {
-          if (tag !== 40) {
-            break;
-          }
-
-          message.clientCount = reader.int32();
-          continue;
-        }
-        case 6: {
-          if (tag !== 48) {
-            break;
-          }
-
-          message.timestamp = reader.int64() as bigint;
-          continue;
-        }
-        case 7: {
-          if (tag !== 58) {
-            break;
-          }
-
-          const entry7 = ServiceStatus_ExtraEntry.decode(reader, reader.uint32());
-          if (entry7.value !== undefined) {
-            message.extra[entry7.key] = entry7.value;
-          }
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): ServiceStatus {
-    return {
-      nodeName: isSet(object.nodeName) ? globalThis.String(object.nodeName) : "",
-      serviceType: isSet(object.serviceType) ? globalThis.String(object.serviceType) : "",
-      host: isSet(object.host) ? globalThis.String(object.host) : "",
-      port: isSet(object.port) ? globalThis.Number(object.port) : 0,
-      clientCount: isSet(object.clientCount) ? globalThis.Number(object.clientCount) : 0,
-      timestamp: isSet(object.timestamp) ? BigInt(object.timestamp) : 0n,
-      extra: isObject(object.extra)
-        ? Object.entries(object.extra).reduce<{ [key: string]: string }>((acc, [key, value]) => {
-          acc[key] = String(value);
-          return acc;
-        }, {})
-        : {},
-    };
-  },
-
-  toJSON(message: ServiceStatus): unknown {
-    const obj: any = {};
-    if (message.nodeName !== "") {
-      obj.nodeName = message.nodeName;
-    }
-    if (message.serviceType !== "") {
-      obj.serviceType = message.serviceType;
-    }
-    if (message.host !== "") {
-      obj.host = message.host;
-    }
-    if (message.port !== 0) {
-      obj.port = Math.round(message.port);
-    }
-    if (message.clientCount !== 0) {
-      obj.clientCount = Math.round(message.clientCount);
-    }
-    if (message.timestamp !== 0n) {
-      obj.timestamp = message.timestamp.toString();
-    }
-    if (message.extra) {
-      const entries = Object.entries(message.extra);
-      if (entries.length > 0) {
-        obj.extra = {};
-        entries.forEach(([k, v]) => {
-          obj.extra[k] = v;
-        });
-      }
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<ServiceStatus>, I>>(base?: I): ServiceStatus {
-    return ServiceStatus.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<ServiceStatus>, I>>(object: I): ServiceStatus {
-    const message = createBaseServiceStatus();
-    message.nodeName = object.nodeName ?? "";
-    message.serviceType = object.serviceType ?? "";
-    message.host = object.host ?? "";
-    message.port = object.port ?? 0;
-    message.clientCount = object.clientCount ?? 0;
-    message.timestamp = object.timestamp ?? 0n;
-    message.extra = Object.entries(object.extra ?? {}).reduce<{ [key: string]: string }>((acc, [key, value]) => {
-      if (value !== undefined) {
-        acc[key] = globalThis.String(value);
-      }
-      return acc;
-    }, {});
-    return message;
-  },
+export const ServiceStatus: MessageFns<ServiceStatus, "internal.ServiceStatus"> = {
+  $type: "internal.ServiceStatus" as const,
 };
 
-function createBaseServiceStatus_ExtraEntry(): ServiceStatus_ExtraEntry {
-  return { key: "", value: "" };
-}
-
-export const ServiceStatus_ExtraEntry: MessageFns<ServiceStatus_ExtraEntry> = {
-  encode(message: ServiceStatus_ExtraEntry, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.key !== "") {
-      writer.uint32(10).string(message.key);
-    }
-    if (message.value !== "") {
-      writer.uint32(18).string(message.value);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): ServiceStatus_ExtraEntry {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseServiceStatus_ExtraEntry();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.key = reader.string();
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.value = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): ServiceStatus_ExtraEntry {
-    return {
-      key: isSet(object.key) ? globalThis.String(object.key) : "",
-      value: isSet(object.value) ? globalThis.String(object.value) : "",
-    };
-  },
-
-  toJSON(message: ServiceStatus_ExtraEntry): unknown {
-    const obj: any = {};
-    if (message.key !== "") {
-      obj.key = message.key;
-    }
-    if (message.value !== "") {
-      obj.value = message.value;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<ServiceStatus_ExtraEntry>, I>>(base?: I): ServiceStatus_ExtraEntry {
-    return ServiceStatus_ExtraEntry.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<ServiceStatus_ExtraEntry>, I>>(object: I): ServiceStatus_ExtraEntry {
-    const message = createBaseServiceStatus_ExtraEntry();
-    message.key = object.key ?? "";
-    message.value = object.value ?? "";
-    return message;
-  },
+export const ServiceStatus_ExtraEntry: MessageFns<ServiceStatus_ExtraEntry, "internal.ServiceStatus.ExtraEntry"> = {
+  $type: "internal.ServiceStatus.ExtraEntry" as const,
 };
 
-type Builtin = Date | Function | Uint8Array | string | number | boolean | bigint | undefined;
-
-export type DeepPartial<T> = T extends Builtin ? T
-  : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
-  : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
-  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
-  : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
-
-function isObject(value: any): boolean {
-  return typeof value === "object" && value !== null;
-}
-
-function isSet(value: any): boolean {
-  return value !== null && value !== undefined;
-}
-
-export interface MessageFns<T> {
-  encode(message: T, writer?: BinaryWriter): BinaryWriter;
-  decode(input: BinaryReader | Uint8Array, length?: number): T;
-  fromJSON(object: any): T;
-  toJSON(message: T): unknown;
-  create<I extends Exact<DeepPartial<T>, I>>(base?: I): T;
-  fromPartial<I extends Exact<DeepPartial<T>, I>>(object: I): T;
+export interface MessageFns<T, V extends string> {
+  readonly $type: V;
 }

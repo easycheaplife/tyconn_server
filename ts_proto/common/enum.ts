@@ -16,43 +16,6 @@ export enum UnitType {
   UNRECOGNIZED = -1,
 }
 
-export function unitTypeFromJSON(object: any): UnitType {
-  switch (object) {
-    case 0:
-    case "UNIT_TYPE_HERO":
-      return UnitType.UNIT_TYPE_HERO;
-    case 1:
-    case "UNIT_TYPE_NPC":
-      return UnitType.UNIT_TYPE_NPC;
-    case 2:
-    case "UNIT_TYPE_MONSTER":
-      return UnitType.UNIT_TYPE_MONSTER;
-    case 4:
-    case "UNIT_TYPE_PARTNER":
-      return UnitType.UNIT_TYPE_PARTNER;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return UnitType.UNRECOGNIZED;
-  }
-}
-
-export function unitTypeToJSON(object: UnitType): string {
-  switch (object) {
-    case UnitType.UNIT_TYPE_HERO:
-      return "UNIT_TYPE_HERO";
-    case UnitType.UNIT_TYPE_NPC:
-      return "UNIT_TYPE_NPC";
-    case UnitType.UNIT_TYPE_MONSTER:
-      return "UNIT_TYPE_MONSTER";
-    case UnitType.UNIT_TYPE_PARTNER:
-      return "UNIT_TYPE_PARTNER";
-    case UnitType.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 /** 背包类型 */
 export enum BagType {
   BAG_TYPE_NONE = 0,
@@ -63,43 +26,6 @@ export enum BagType {
   /** BAG_TYPE_EQUIP - 装备栏 */
   BAG_TYPE_EQUIP = 3,
   UNRECOGNIZED = -1,
-}
-
-export function bagTypeFromJSON(object: any): BagType {
-  switch (object) {
-    case 0:
-    case "BAG_TYPE_NONE":
-      return BagType.BAG_TYPE_NONE;
-    case 1:
-    case "BAG_TYPE_MAIN":
-      return BagType.BAG_TYPE_MAIN;
-    case 2:
-    case "BAG_TYPE_STORAGE":
-      return BagType.BAG_TYPE_STORAGE;
-    case 3:
-    case "BAG_TYPE_EQUIP":
-      return BagType.BAG_TYPE_EQUIP;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return BagType.UNRECOGNIZED;
-  }
-}
-
-export function bagTypeToJSON(object: BagType): string {
-  switch (object) {
-    case BagType.BAG_TYPE_NONE:
-      return "BAG_TYPE_NONE";
-    case BagType.BAG_TYPE_MAIN:
-      return "BAG_TYPE_MAIN";
-    case BagType.BAG_TYPE_STORAGE:
-      return "BAG_TYPE_STORAGE";
-    case BagType.BAG_TYPE_EQUIP:
-      return "BAG_TYPE_EQUIP";
-    case BagType.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 物品类型 */
@@ -118,58 +44,6 @@ export enum ItemType {
   /** ITEM_TYPE_TREASURE - 宝箱 */
   ITEM_TYPE_TREASURE = 9,
   UNRECOGNIZED = -1,
-}
-
-export function itemTypeFromJSON(object: any): ItemType {
-  switch (object) {
-    case 0:
-    case "ITEM_TYPE_NONE":
-      return ItemType.ITEM_TYPE_NONE;
-    case 1:
-    case "ITEM_TYPE_RESOURCE":
-      return ItemType.ITEM_TYPE_RESOURCE;
-    case 2:
-    case "ITEM_TYPE_NORMAL":
-      return ItemType.ITEM_TYPE_NORMAL;
-    case 3:
-    case "ITEM_TYPE_EQUIP":
-      return ItemType.ITEM_TYPE_EQUIP;
-    case 4:
-    case "ITEM_TYPE_PARTNER":
-      return ItemType.ITEM_TYPE_PARTNER;
-    case 5:
-    case "ITEM_TYPE_PARTNER_FRAGMENT":
-      return ItemType.ITEM_TYPE_PARTNER_FRAGMENT;
-    case 9:
-    case "ITEM_TYPE_TREASURE":
-      return ItemType.ITEM_TYPE_TREASURE;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return ItemType.UNRECOGNIZED;
-  }
-}
-
-export function itemTypeToJSON(object: ItemType): string {
-  switch (object) {
-    case ItemType.ITEM_TYPE_NONE:
-      return "ITEM_TYPE_NONE";
-    case ItemType.ITEM_TYPE_RESOURCE:
-      return "ITEM_TYPE_RESOURCE";
-    case ItemType.ITEM_TYPE_NORMAL:
-      return "ITEM_TYPE_NORMAL";
-    case ItemType.ITEM_TYPE_EQUIP:
-      return "ITEM_TYPE_EQUIP";
-    case ItemType.ITEM_TYPE_PARTNER:
-      return "ITEM_TYPE_PARTNER";
-    case ItemType.ITEM_TYPE_PARTNER_FRAGMENT:
-      return "ITEM_TYPE_PARTNER_FRAGMENT";
-    case ItemType.ITEM_TYPE_TREASURE:
-      return "ITEM_TYPE_TREASURE";
-    case ItemType.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 物品分类 */
@@ -194,68 +68,6 @@ export enum ItemCategory {
   UNRECOGNIZED = -1,
 }
 
-export function itemCategoryFromJSON(object: any): ItemCategory {
-  switch (object) {
-    case 0:
-    case "ITEM_CATEGORY_NONE":
-      return ItemCategory.ITEM_CATEGORY_NONE;
-    case 1:
-    case "ITEM_CATEGORY_WEAPON":
-      return ItemCategory.ITEM_CATEGORY_WEAPON;
-    case 2:
-    case "ITEM_CATEGORY_ARMOR":
-      return ItemCategory.ITEM_CATEGORY_ARMOR;
-    case 3:
-    case "ITEM_CATEGORY_ACCESSORY":
-      return ItemCategory.ITEM_CATEGORY_ACCESSORY;
-    case 4:
-    case "ITEM_CATEGORY_POTION":
-      return ItemCategory.ITEM_CATEGORY_POTION;
-    case 5:
-    case "ITEM_CATEGORY_SCROLL":
-      return ItemCategory.ITEM_CATEGORY_SCROLL;
-    case 6:
-    case "ITEM_CATEGORY_MATERIAL":
-      return ItemCategory.ITEM_CATEGORY_MATERIAL;
-    case 7:
-    case "ITEM_CATEGORY_QUEST":
-      return ItemCategory.ITEM_CATEGORY_QUEST;
-    case 8:
-    case "ITEM_CATEGORY_OTHER":
-      return ItemCategory.ITEM_CATEGORY_OTHER;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return ItemCategory.UNRECOGNIZED;
-  }
-}
-
-export function itemCategoryToJSON(object: ItemCategory): string {
-  switch (object) {
-    case ItemCategory.ITEM_CATEGORY_NONE:
-      return "ITEM_CATEGORY_NONE";
-    case ItemCategory.ITEM_CATEGORY_WEAPON:
-      return "ITEM_CATEGORY_WEAPON";
-    case ItemCategory.ITEM_CATEGORY_ARMOR:
-      return "ITEM_CATEGORY_ARMOR";
-    case ItemCategory.ITEM_CATEGORY_ACCESSORY:
-      return "ITEM_CATEGORY_ACCESSORY";
-    case ItemCategory.ITEM_CATEGORY_POTION:
-      return "ITEM_CATEGORY_POTION";
-    case ItemCategory.ITEM_CATEGORY_SCROLL:
-      return "ITEM_CATEGORY_SCROLL";
-    case ItemCategory.ITEM_CATEGORY_MATERIAL:
-      return "ITEM_CATEGORY_MATERIAL";
-    case ItemCategory.ITEM_CATEGORY_QUEST:
-      return "ITEM_CATEGORY_QUEST";
-    case ItemCategory.ITEM_CATEGORY_OTHER:
-      return "ITEM_CATEGORY_OTHER";
-    case ItemCategory.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 export enum SpecialItemID {
   SPECIAL_ITEM_ID_NONE = 0,
   /** SPECIAL_ITEM_ID_GOLD - 金币 */
@@ -263,38 +75,6 @@ export enum SpecialItemID {
   /** SPECIAL_ITEM_ID_EXP - 经验 */
   SPECIAL_ITEM_ID_EXP = 1005,
   UNRECOGNIZED = -1,
-}
-
-export function specialItemIDFromJSON(object: any): SpecialItemID {
-  switch (object) {
-    case 0:
-    case "SPECIAL_ITEM_ID_NONE":
-      return SpecialItemID.SPECIAL_ITEM_ID_NONE;
-    case 1001:
-    case "SPECIAL_ITEM_ID_GOLD":
-      return SpecialItemID.SPECIAL_ITEM_ID_GOLD;
-    case 1005:
-    case "SPECIAL_ITEM_ID_EXP":
-      return SpecialItemID.SPECIAL_ITEM_ID_EXP;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return SpecialItemID.UNRECOGNIZED;
-  }
-}
-
-export function specialItemIDToJSON(object: SpecialItemID): string {
-  switch (object) {
-    case SpecialItemID.SPECIAL_ITEM_ID_NONE:
-      return "SPECIAL_ITEM_ID_NONE";
-    case SpecialItemID.SPECIAL_ITEM_ID_GOLD:
-      return "SPECIAL_ITEM_ID_GOLD";
-    case SpecialItemID.SPECIAL_ITEM_ID_EXP:
-      return "SPECIAL_ITEM_ID_EXP";
-    case SpecialItemID.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 格子状态 */
@@ -307,43 +87,6 @@ export enum SlotState {
   /** SLOT_STATE_LOCKED - 锁定 */
   SLOT_STATE_LOCKED = 3,
   UNRECOGNIZED = -1,
-}
-
-export function slotStateFromJSON(object: any): SlotState {
-  switch (object) {
-    case 0:
-    case "SLOT_STATE_NONE":
-      return SlotState.SLOT_STATE_NONE;
-    case 1:
-    case "SLOT_STATE_EMPTY":
-      return SlotState.SLOT_STATE_EMPTY;
-    case 2:
-    case "SLOT_STATE_NORMAL":
-      return SlotState.SLOT_STATE_NORMAL;
-    case 3:
-    case "SLOT_STATE_LOCKED":
-      return SlotState.SLOT_STATE_LOCKED;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return SlotState.UNRECOGNIZED;
-  }
-}
-
-export function slotStateToJSON(object: SlotState): string {
-  switch (object) {
-    case SlotState.SLOT_STATE_NONE:
-      return "SLOT_STATE_NONE";
-    case SlotState.SLOT_STATE_EMPTY:
-      return "SLOT_STATE_EMPTY";
-    case SlotState.SLOT_STATE_NORMAL:
-      return "SLOT_STATE_NORMAL";
-    case SlotState.SLOT_STATE_LOCKED:
-      return "SLOT_STATE_LOCKED";
-    case SlotState.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 变化类型 */
@@ -360,53 +103,6 @@ export enum ChangeType {
   /** CHANGE_TYPE_DECOMPOSE - 分解 */
   CHANGE_TYPE_DECOMPOSE = 5,
   UNRECOGNIZED = -1,
-}
-
-export function changeTypeFromJSON(object: any): ChangeType {
-  switch (object) {
-    case 0:
-    case "CHANGE_TYPE_NONE":
-      return ChangeType.CHANGE_TYPE_NONE;
-    case 1:
-    case "CHANGE_TYPE_ADD":
-      return ChangeType.CHANGE_TYPE_ADD;
-    case 2:
-    case "CHANGE_TYPE_REDUCE":
-      return ChangeType.CHANGE_TYPE_REDUCE;
-    case 3:
-    case "CHANGE_TYPE_USE":
-      return ChangeType.CHANGE_TYPE_USE;
-    case 4:
-    case "CHANGE_TYPE_COMPOSE":
-      return ChangeType.CHANGE_TYPE_COMPOSE;
-    case 5:
-    case "CHANGE_TYPE_DECOMPOSE":
-      return ChangeType.CHANGE_TYPE_DECOMPOSE;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return ChangeType.UNRECOGNIZED;
-  }
-}
-
-export function changeTypeToJSON(object: ChangeType): string {
-  switch (object) {
-    case ChangeType.CHANGE_TYPE_NONE:
-      return "CHANGE_TYPE_NONE";
-    case ChangeType.CHANGE_TYPE_ADD:
-      return "CHANGE_TYPE_ADD";
-    case ChangeType.CHANGE_TYPE_REDUCE:
-      return "CHANGE_TYPE_REDUCE";
-    case ChangeType.CHANGE_TYPE_USE:
-      return "CHANGE_TYPE_USE";
-    case ChangeType.CHANGE_TYPE_COMPOSE:
-      return "CHANGE_TYPE_COMPOSE";
-    case ChangeType.CHANGE_TYPE_DECOMPOSE:
-      return "CHANGE_TYPE_DECOMPOSE";
-    case ChangeType.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 变化来源 */
@@ -447,108 +143,6 @@ export enum ChangeSource {
   UNRECOGNIZED = -1,
 }
 
-export function changeSourceFromJSON(object: any): ChangeSource {
-  switch (object) {
-    case 0:
-    case "SOURCE_NONE":
-      return ChangeSource.SOURCE_NONE;
-    case 1:
-    case "SOURCE_INIT":
-      return ChangeSource.SOURCE_INIT;
-    case 2:
-    case "SOURCE_REWARD":
-      return ChangeSource.SOURCE_REWARD;
-    case 3:
-    case "SOURCE_CREATE":
-      return ChangeSource.SOURCE_CREATE;
-    case 4:
-    case "SOURCE_USE":
-      return ChangeSource.SOURCE_USE;
-    case 5:
-    case "SOURCE_COMPOSE":
-      return ChangeSource.SOURCE_COMPOSE;
-    case 6:
-    case "SOURCE_DECOMPOSE":
-      return ChangeSource.SOURCE_DECOMPOSE;
-    case 7:
-    case "SOURCE_STACK":
-      return ChangeSource.SOURCE_STACK;
-    case 8:
-    case "SOURCE_BATCH_REMOVE":
-      return ChangeSource.SOURCE_BATCH_REMOVE;
-    case 9:
-    case "SOURCE_TRADE":
-      return ChangeSource.SOURCE_TRADE;
-    case 10:
-    case "SOURCE_MAIL":
-      return ChangeSource.SOURCE_MAIL;
-    case 11:
-    case "SOURCE_GM":
-      return ChangeSource.SOURCE_GM;
-    case 12:
-    case "SOURCE_REMOVE_GEM":
-      return ChangeSource.SOURCE_REMOVE_GEM;
-    case 13:
-    case "SOURCE_UNEQUIP":
-      return ChangeSource.SOURCE_UNEQUIP;
-    case 14:
-    case "SOURCE_ENHANCE":
-      return ChangeSource.SOURCE_ENHANCE;
-    case 15:
-    case "SOURCE_REFINE":
-      return ChangeSource.SOURCE_REFINE;
-    case 16:
-    case "SOURCE_REFORGE":
-      return ChangeSource.SOURCE_REFORGE;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return ChangeSource.UNRECOGNIZED;
-  }
-}
-
-export function changeSourceToJSON(object: ChangeSource): string {
-  switch (object) {
-    case ChangeSource.SOURCE_NONE:
-      return "SOURCE_NONE";
-    case ChangeSource.SOURCE_INIT:
-      return "SOURCE_INIT";
-    case ChangeSource.SOURCE_REWARD:
-      return "SOURCE_REWARD";
-    case ChangeSource.SOURCE_CREATE:
-      return "SOURCE_CREATE";
-    case ChangeSource.SOURCE_USE:
-      return "SOURCE_USE";
-    case ChangeSource.SOURCE_COMPOSE:
-      return "SOURCE_COMPOSE";
-    case ChangeSource.SOURCE_DECOMPOSE:
-      return "SOURCE_DECOMPOSE";
-    case ChangeSource.SOURCE_STACK:
-      return "SOURCE_STACK";
-    case ChangeSource.SOURCE_BATCH_REMOVE:
-      return "SOURCE_BATCH_REMOVE";
-    case ChangeSource.SOURCE_TRADE:
-      return "SOURCE_TRADE";
-    case ChangeSource.SOURCE_MAIL:
-      return "SOURCE_MAIL";
-    case ChangeSource.SOURCE_GM:
-      return "SOURCE_GM";
-    case ChangeSource.SOURCE_REMOVE_GEM:
-      return "SOURCE_REMOVE_GEM";
-    case ChangeSource.SOURCE_UNEQUIP:
-      return "SOURCE_UNEQUIP";
-    case ChangeSource.SOURCE_ENHANCE:
-      return "SOURCE_ENHANCE";
-    case ChangeSource.SOURCE_REFINE:
-      return "SOURCE_REFINE";
-    case ChangeSource.SOURCE_REFORGE:
-      return "SOURCE_REFORGE";
-    case ChangeSource.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 /** 效果类型 */
 export enum EffectType {
   EFFECT_TYPE_NONE = 0,
@@ -561,48 +155,6 @@ export enum EffectType {
   /** EFFECT_TYPE_PROP - 属性 */
   EFFECT_TYPE_PROP = 4,
   UNRECOGNIZED = -1,
-}
-
-export function effectTypeFromJSON(object: any): EffectType {
-  switch (object) {
-    case 0:
-    case "EFFECT_TYPE_NONE":
-      return EffectType.EFFECT_TYPE_NONE;
-    case 1:
-    case "EFFECT_TYPE_EXP":
-      return EffectType.EFFECT_TYPE_EXP;
-    case 2:
-    case "EFFECT_TYPE_GOLD":
-      return EffectType.EFFECT_TYPE_GOLD;
-    case 3:
-    case "EFFECT_TYPE_DIAMOND":
-      return EffectType.EFFECT_TYPE_DIAMOND;
-    case 4:
-    case "EFFECT_TYPE_PROP":
-      return EffectType.EFFECT_TYPE_PROP;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return EffectType.UNRECOGNIZED;
-  }
-}
-
-export function effectTypeToJSON(object: EffectType): string {
-  switch (object) {
-    case EffectType.EFFECT_TYPE_NONE:
-      return "EFFECT_TYPE_NONE";
-    case EffectType.EFFECT_TYPE_EXP:
-      return "EFFECT_TYPE_EXP";
-    case EffectType.EFFECT_TYPE_GOLD:
-      return "EFFECT_TYPE_GOLD";
-    case EffectType.EFFECT_TYPE_DIAMOND:
-      return "EFFECT_TYPE_DIAMOND";
-    case EffectType.EFFECT_TYPE_PROP:
-      return "EFFECT_TYPE_PROP";
-    case EffectType.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 品质 */
@@ -623,58 +175,6 @@ export enum Quality {
   UNRECOGNIZED = -1,
 }
 
-export function qualityFromJSON(object: any): Quality {
-  switch (object) {
-    case 0:
-    case "QUALITY_NONE":
-      return Quality.QUALITY_NONE;
-    case 1:
-    case "QUALITY_WHITE":
-      return Quality.QUALITY_WHITE;
-    case 2:
-    case "QUALITY_GREEN":
-      return Quality.QUALITY_GREEN;
-    case 3:
-    case "QUALITY_BLUE":
-      return Quality.QUALITY_BLUE;
-    case 4:
-    case "QUALITY_PURPLE":
-      return Quality.QUALITY_PURPLE;
-    case 5:
-    case "QUALITY_ORANGE":
-      return Quality.QUALITY_ORANGE;
-    case 6:
-    case "QUALITY_RED":
-      return Quality.QUALITY_RED;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return Quality.UNRECOGNIZED;
-  }
-}
-
-export function qualityToJSON(object: Quality): string {
-  switch (object) {
-    case Quality.QUALITY_NONE:
-      return "QUALITY_NONE";
-    case Quality.QUALITY_WHITE:
-      return "QUALITY_WHITE";
-    case Quality.QUALITY_GREEN:
-      return "QUALITY_GREEN";
-    case Quality.QUALITY_BLUE:
-      return "QUALITY_BLUE";
-    case Quality.QUALITY_PURPLE:
-      return "QUALITY_PURPLE";
-    case Quality.QUALITY_ORANGE:
-      return "QUALITY_ORANGE";
-    case Quality.QUALITY_RED:
-      return "QUALITY_RED";
-    case Quality.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 /** 排序规则 */
 export enum SortRule {
   SORT_RULE_NONE = 0,
@@ -689,53 +189,6 @@ export enum SortRule {
   /** SORT_RULE_TIME - 按时间 */
   SORT_RULE_TIME = 5,
   UNRECOGNIZED = -1,
-}
-
-export function sortRuleFromJSON(object: any): SortRule {
-  switch (object) {
-    case 0:
-    case "SORT_RULE_NONE":
-      return SortRule.SORT_RULE_NONE;
-    case 1:
-    case "SORT_RULE_TYPE":
-      return SortRule.SORT_RULE_TYPE;
-    case 2:
-    case "SORT_RULE_QUALITY":
-      return SortRule.SORT_RULE_QUALITY;
-    case 3:
-    case "SORT_RULE_LEVEL":
-      return SortRule.SORT_RULE_LEVEL;
-    case 4:
-    case "SORT_RULE_COUNT":
-      return SortRule.SORT_RULE_COUNT;
-    case 5:
-    case "SORT_RULE_TIME":
-      return SortRule.SORT_RULE_TIME;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return SortRule.UNRECOGNIZED;
-  }
-}
-
-export function sortRuleToJSON(object: SortRule): string {
-  switch (object) {
-    case SortRule.SORT_RULE_NONE:
-      return "SORT_RULE_NONE";
-    case SortRule.SORT_RULE_TYPE:
-      return "SORT_RULE_TYPE";
-    case SortRule.SORT_RULE_QUALITY:
-      return "SORT_RULE_QUALITY";
-    case SortRule.SORT_RULE_LEVEL:
-      return "SORT_RULE_LEVEL";
-    case SortRule.SORT_RULE_COUNT:
-      return "SORT_RULE_COUNT";
-    case SortRule.SORT_RULE_TIME:
-      return "SORT_RULE_TIME";
-    case SortRule.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 使用限制类型 */
@@ -754,58 +207,6 @@ export enum UseLimit {
   /** USE_LIMIT_WEEKLY - 每周限制 */
   USE_LIMIT_WEEKLY = 6,
   UNRECOGNIZED = -1,
-}
-
-export function useLimitFromJSON(object: any): UseLimit {
-  switch (object) {
-    case 0:
-    case "USE_LIMIT_NONE":
-      return UseLimit.USE_LIMIT_NONE;
-    case 1:
-    case "USE_LIMIT_LEVEL":
-      return UseLimit.USE_LIMIT_LEVEL;
-    case 2:
-    case "USE_LIMIT_VIP":
-      return UseLimit.USE_LIMIT_VIP;
-    case 3:
-    case "USE_LIMIT_TIME":
-      return UseLimit.USE_LIMIT_TIME;
-    case 4:
-    case "USE_LIMIT_COUNT":
-      return UseLimit.USE_LIMIT_COUNT;
-    case 5:
-    case "USE_LIMIT_DAILY":
-      return UseLimit.USE_LIMIT_DAILY;
-    case 6:
-    case "USE_LIMIT_WEEKLY":
-      return UseLimit.USE_LIMIT_WEEKLY;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return UseLimit.UNRECOGNIZED;
-  }
-}
-
-export function useLimitToJSON(object: UseLimit): string {
-  switch (object) {
-    case UseLimit.USE_LIMIT_NONE:
-      return "USE_LIMIT_NONE";
-    case UseLimit.USE_LIMIT_LEVEL:
-      return "USE_LIMIT_LEVEL";
-    case UseLimit.USE_LIMIT_VIP:
-      return "USE_LIMIT_VIP";
-    case UseLimit.USE_LIMIT_TIME:
-      return "USE_LIMIT_TIME";
-    case UseLimit.USE_LIMIT_COUNT:
-      return "USE_LIMIT_COUNT";
-    case UseLimit.USE_LIMIT_DAILY:
-      return "USE_LIMIT_DAILY";
-    case UseLimit.USE_LIMIT_WEEKLY:
-      return "USE_LIMIT_WEEKLY";
-    case UseLimit.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 通用属性类型 (用于玩家、伙伴等所有实体) */
@@ -858,138 +259,6 @@ export enum PropType {
   UNRECOGNIZED = -1,
 }
 
-export function propTypeFromJSON(object: any): PropType {
-  switch (object) {
-    case 0:
-    case "PROP_UNKNOWN":
-      return PropType.PROP_UNKNOWN;
-    case 101:
-    case "PROP_HP":
-      return PropType.PROP_HP;
-    case 102:
-    case "PROP_MP":
-      return PropType.PROP_MP;
-    case 103:
-    case "PROP_ATTACK":
-      return PropType.PROP_ATTACK;
-    case 104:
-    case "PROP_DEFENSE":
-      return PropType.PROP_DEFENSE;
-    case 105:
-    case "PROP_SPEED":
-      return PropType.PROP_SPEED;
-    case 201:
-    case "PROP_HIT":
-      return PropType.PROP_HIT;
-    case 202:
-    case "PROP_DODGE":
-      return PropType.PROP_DODGE;
-    case 203:
-    case "PROP_CRIT_RATE":
-      return PropType.PROP_CRIT_RATE;
-    case 204:
-    case "PROP_CRIT_DMG":
-      return PropType.PROP_CRIT_DMG;
-    case 205:
-    case "PROP_BLOCK":
-      return PropType.PROP_BLOCK;
-    case 206:
-    case "PROP_PENETRATION":
-      return PropType.PROP_PENETRATION;
-    case 301:
-    case "PROP_HEAL_BOOST":
-      return PropType.PROP_HEAL_BOOST;
-    case 302:
-    case "PROP_DMG_BOOST":
-      return PropType.PROP_DMG_BOOST;
-    case 303:
-    case "PROP_DMG_REDUCTION":
-      return PropType.PROP_DMG_REDUCTION;
-    case 304:
-    case "PROP_EXP_BOOST":
-      return PropType.PROP_EXP_BOOST;
-    case 401:
-    case "PROP_FIRE_RES":
-      return PropType.PROP_FIRE_RES;
-    case 402:
-    case "PROP_ICE_RES":
-      return PropType.PROP_ICE_RES;
-    case 403:
-    case "PROP_LIGHTNING_RES":
-      return PropType.PROP_LIGHTNING_RES;
-    case 404:
-    case "PROP_POISON_RES":
-      return PropType.PROP_POISON_RES;
-    case 501:
-    case "PROP_GOLD_BOOST":
-      return PropType.PROP_GOLD_BOOST;
-    case 502:
-    case "PROP_ITEM_FIND":
-      return PropType.PROP_ITEM_FIND;
-    case 503:
-    case "PROP_MOVEMENT_SPEED":
-      return PropType.PROP_MOVEMENT_SPEED;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return PropType.UNRECOGNIZED;
-  }
-}
-
-export function propTypeToJSON(object: PropType): string {
-  switch (object) {
-    case PropType.PROP_UNKNOWN:
-      return "PROP_UNKNOWN";
-    case PropType.PROP_HP:
-      return "PROP_HP";
-    case PropType.PROP_MP:
-      return "PROP_MP";
-    case PropType.PROP_ATTACK:
-      return "PROP_ATTACK";
-    case PropType.PROP_DEFENSE:
-      return "PROP_DEFENSE";
-    case PropType.PROP_SPEED:
-      return "PROP_SPEED";
-    case PropType.PROP_HIT:
-      return "PROP_HIT";
-    case PropType.PROP_DODGE:
-      return "PROP_DODGE";
-    case PropType.PROP_CRIT_RATE:
-      return "PROP_CRIT_RATE";
-    case PropType.PROP_CRIT_DMG:
-      return "PROP_CRIT_DMG";
-    case PropType.PROP_BLOCK:
-      return "PROP_BLOCK";
-    case PropType.PROP_PENETRATION:
-      return "PROP_PENETRATION";
-    case PropType.PROP_HEAL_BOOST:
-      return "PROP_HEAL_BOOST";
-    case PropType.PROP_DMG_BOOST:
-      return "PROP_DMG_BOOST";
-    case PropType.PROP_DMG_REDUCTION:
-      return "PROP_DMG_REDUCTION";
-    case PropType.PROP_EXP_BOOST:
-      return "PROP_EXP_BOOST";
-    case PropType.PROP_FIRE_RES:
-      return "PROP_FIRE_RES";
-    case PropType.PROP_ICE_RES:
-      return "PROP_ICE_RES";
-    case PropType.PROP_LIGHTNING_RES:
-      return "PROP_LIGHTNING_RES";
-    case PropType.PROP_POISON_RES:
-      return "PROP_POISON_RES";
-    case PropType.PROP_GOLD_BOOST:
-      return "PROP_GOLD_BOOST";
-    case PropType.PROP_ITEM_FIND:
-      return "PROP_ITEM_FIND";
-    case PropType.PROP_MOVEMENT_SPEED:
-      return "PROP_MOVEMENT_SPEED";
-    case PropType.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 /** 装备位置 */
 export enum EquipSlot {
   EQUIP_SLOT_NONE = 0,
@@ -1008,58 +277,6 @@ export enum EquipSlot {
   UNRECOGNIZED = -1,
 }
 
-export function equipSlotFromJSON(object: any): EquipSlot {
-  switch (object) {
-    case 0:
-    case "EQUIP_SLOT_NONE":
-      return EquipSlot.EQUIP_SLOT_NONE;
-    case 1:
-    case "EQUIP_SLOT_WEAPON":
-      return EquipSlot.EQUIP_SLOT_WEAPON;
-    case 2:
-    case "EQUIP_SLOT_ARMOR":
-      return EquipSlot.EQUIP_SLOT_ARMOR;
-    case 3:
-    case "EQUIP_SLOT_HELMET":
-      return EquipSlot.EQUIP_SLOT_HELMET;
-    case 4:
-    case "EQUIP_SLOT_NECKLACE":
-      return EquipSlot.EQUIP_SLOT_NECKLACE;
-    case 5:
-    case "EQUIP_SLOT_RING":
-      return EquipSlot.EQUIP_SLOT_RING;
-    case 6:
-    case "EQUIP_SLOT_BELT":
-      return EquipSlot.EQUIP_SLOT_BELT;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return EquipSlot.UNRECOGNIZED;
-  }
-}
-
-export function equipSlotToJSON(object: EquipSlot): string {
-  switch (object) {
-    case EquipSlot.EQUIP_SLOT_NONE:
-      return "EQUIP_SLOT_NONE";
-    case EquipSlot.EQUIP_SLOT_WEAPON:
-      return "EQUIP_SLOT_WEAPON";
-    case EquipSlot.EQUIP_SLOT_ARMOR:
-      return "EQUIP_SLOT_ARMOR";
-    case EquipSlot.EQUIP_SLOT_HELMET:
-      return "EQUIP_SLOT_HELMET";
-    case EquipSlot.EQUIP_SLOT_NECKLACE:
-      return "EQUIP_SLOT_NECKLACE";
-    case EquipSlot.EQUIP_SLOT_RING:
-      return "EQUIP_SLOT_RING";
-    case EquipSlot.EQUIP_SLOT_BELT:
-      return "EQUIP_SLOT_BELT";
-    case EquipSlot.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 /** 强化类型 */
 export enum EnhanceType {
   ENHANCE_TYPE_NONE = 0,
@@ -1072,48 +289,6 @@ export enum EnhanceType {
   /** ENHANCE_TYPE_REFORGE - 重铸 */
   ENHANCE_TYPE_REFORGE = 4,
   UNRECOGNIZED = -1,
-}
-
-export function enhanceTypeFromJSON(object: any): EnhanceType {
-  switch (object) {
-    case 0:
-    case "ENHANCE_TYPE_NONE":
-      return EnhanceType.ENHANCE_TYPE_NONE;
-    case 1:
-    case "ENHANCE_TYPE_LEVEL":
-      return EnhanceType.ENHANCE_TYPE_LEVEL;
-    case 2:
-    case "ENHANCE_TYPE_STAR":
-      return EnhanceType.ENHANCE_TYPE_STAR;
-    case 3:
-    case "ENHANCE_TYPE_REFINE":
-      return EnhanceType.ENHANCE_TYPE_REFINE;
-    case 4:
-    case "ENHANCE_TYPE_REFORGE":
-      return EnhanceType.ENHANCE_TYPE_REFORGE;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return EnhanceType.UNRECOGNIZED;
-  }
-}
-
-export function enhanceTypeToJSON(object: EnhanceType): string {
-  switch (object) {
-    case EnhanceType.ENHANCE_TYPE_NONE:
-      return "ENHANCE_TYPE_NONE";
-    case EnhanceType.ENHANCE_TYPE_LEVEL:
-      return "ENHANCE_TYPE_LEVEL";
-    case EnhanceType.ENHANCE_TYPE_STAR:
-      return "ENHANCE_TYPE_STAR";
-    case EnhanceType.ENHANCE_TYPE_REFINE:
-      return "ENHANCE_TYPE_REFINE";
-    case EnhanceType.ENHANCE_TYPE_REFORGE:
-      return "ENHANCE_TYPE_REFORGE";
-    case EnhanceType.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 物品标签 */
@@ -1136,63 +311,6 @@ export enum ItemTag {
   UNRECOGNIZED = -1,
 }
 
-export function itemTagFromJSON(object: any): ItemTag {
-  switch (object) {
-    case 0:
-    case "ITEM_TAG_NONE":
-      return ItemTag.ITEM_TAG_NONE;
-    case 1:
-    case "ITEM_TAG_QUEST":
-      return ItemTag.ITEM_TAG_QUEST;
-    case 2:
-    case "ITEM_TAG_RARE":
-      return ItemTag.ITEM_TAG_RARE;
-    case 3:
-    case "ITEM_TAG_TRADABLE":
-      return ItemTag.ITEM_TAG_TRADABLE;
-    case 4:
-    case "ITEM_TAG_BIND":
-      return ItemTag.ITEM_TAG_BIND;
-    case 5:
-    case "ITEM_TAG_EXPIRE":
-      return ItemTag.ITEM_TAG_EXPIRE;
-    case 6:
-    case "ITEM_TAG_STACK":
-      return ItemTag.ITEM_TAG_STACK;
-    case 7:
-    case "ITEM_TAG_UNIQUE":
-      return ItemTag.ITEM_TAG_UNIQUE;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return ItemTag.UNRECOGNIZED;
-  }
-}
-
-export function itemTagToJSON(object: ItemTag): string {
-  switch (object) {
-    case ItemTag.ITEM_TAG_NONE:
-      return "ITEM_TAG_NONE";
-    case ItemTag.ITEM_TAG_QUEST:
-      return "ITEM_TAG_QUEST";
-    case ItemTag.ITEM_TAG_RARE:
-      return "ITEM_TAG_RARE";
-    case ItemTag.ITEM_TAG_TRADABLE:
-      return "ITEM_TAG_TRADABLE";
-    case ItemTag.ITEM_TAG_BIND:
-      return "ITEM_TAG_BIND";
-    case ItemTag.ITEM_TAG_EXPIRE:
-      return "ITEM_TAG_EXPIRE";
-    case ItemTag.ITEM_TAG_STACK:
-      return "ITEM_TAG_STACK";
-    case ItemTag.ITEM_TAG_UNIQUE:
-      return "ITEM_TAG_UNIQUE";
-    case ItemTag.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 /** 绑定类型 */
 export enum BindType {
   /** BIND_TYPE_NONE - 未绑定 */
@@ -1200,33 +318,6 @@ export enum BindType {
   /** BIND_TYPE_BIND - 已绑定 */
   BIND_TYPE_BIND = 1,
   UNRECOGNIZED = -1,
-}
-
-export function bindTypeFromJSON(object: any): BindType {
-  switch (object) {
-    case 0:
-    case "BIND_TYPE_NONE":
-      return BindType.BIND_TYPE_NONE;
-    case 1:
-    case "BIND_TYPE_BIND":
-      return BindType.BIND_TYPE_BIND;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return BindType.UNRECOGNIZED;
-  }
-}
-
-export function bindTypeToJSON(object: BindType): string {
-  switch (object) {
-    case BindType.BIND_TYPE_NONE:
-      return "BIND_TYPE_NONE";
-    case BindType.BIND_TYPE_BIND:
-      return "BIND_TYPE_BIND";
-    case BindType.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 合成结果类型 */
@@ -1241,43 +332,6 @@ export enum ComposeResult {
   UNRECOGNIZED = -1,
 }
 
-export function composeResultFromJSON(object: any): ComposeResult {
-  switch (object) {
-    case 0:
-    case "COMPOSE_RESULT_NONE":
-      return ComposeResult.COMPOSE_RESULT_NONE;
-    case 1:
-    case "COMPOSE_RESULT_SUCCESS":
-      return ComposeResult.COMPOSE_RESULT_SUCCESS;
-    case 2:
-    case "COMPOSE_RESULT_FAIL":
-      return ComposeResult.COMPOSE_RESULT_FAIL;
-    case 3:
-    case "COMPOSE_RESULT_FAIL_CONSUME":
-      return ComposeResult.COMPOSE_RESULT_FAIL_CONSUME;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return ComposeResult.UNRECOGNIZED;
-  }
-}
-
-export function composeResultToJSON(object: ComposeResult): string {
-  switch (object) {
-    case ComposeResult.COMPOSE_RESULT_NONE:
-      return "COMPOSE_RESULT_NONE";
-    case ComposeResult.COMPOSE_RESULT_SUCCESS:
-      return "COMPOSE_RESULT_SUCCESS";
-    case ComposeResult.COMPOSE_RESULT_FAIL:
-      return "COMPOSE_RESULT_FAIL";
-    case ComposeResult.COMPOSE_RESULT_FAIL_CONSUME:
-      return "COMPOSE_RESULT_FAIL_CONSUME";
-    case ComposeResult.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 /** 分解结果类型 */
 export enum DecomposeResult {
   DECOMPOSE_RESULT_NONE = 0,
@@ -1288,43 +342,6 @@ export enum DecomposeResult {
   /** DECOMPOSE_RESULT_CRITICAL - 暴击产出 */
   DECOMPOSE_RESULT_CRITICAL = 3,
   UNRECOGNIZED = -1,
-}
-
-export function decomposeResultFromJSON(object: any): DecomposeResult {
-  switch (object) {
-    case 0:
-    case "DECOMPOSE_RESULT_NONE":
-      return DecomposeResult.DECOMPOSE_RESULT_NONE;
-    case 1:
-    case "DECOMPOSE_RESULT_NORMAL":
-      return DecomposeResult.DECOMPOSE_RESULT_NORMAL;
-    case 2:
-    case "DECOMPOSE_RESULT_EXTRA":
-      return DecomposeResult.DECOMPOSE_RESULT_EXTRA;
-    case 3:
-    case "DECOMPOSE_RESULT_CRITICAL":
-      return DecomposeResult.DECOMPOSE_RESULT_CRITICAL;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return DecomposeResult.UNRECOGNIZED;
-  }
-}
-
-export function decomposeResultToJSON(object: DecomposeResult): string {
-  switch (object) {
-    case DecomposeResult.DECOMPOSE_RESULT_NONE:
-      return "DECOMPOSE_RESULT_NONE";
-    case DecomposeResult.DECOMPOSE_RESULT_NORMAL:
-      return "DECOMPOSE_RESULT_NORMAL";
-    case DecomposeResult.DECOMPOSE_RESULT_EXTRA:
-      return "DECOMPOSE_RESULT_EXTRA";
-    case DecomposeResult.DECOMPOSE_RESULT_CRITICAL:
-      return "DECOMPOSE_RESULT_CRITICAL";
-    case DecomposeResult.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 使用限制类型 */
@@ -1338,43 +355,6 @@ export enum UseLimitType {
   /** USE_LIMIT_TYPE_TOTAL - 总次数限制 */
   USE_LIMIT_TYPE_TOTAL = 3,
   UNRECOGNIZED = -1,
-}
-
-export function useLimitTypeFromJSON(object: any): UseLimitType {
-  switch (object) {
-    case 0:
-    case "USE_LIMIT_TYPE_NONE":
-      return UseLimitType.USE_LIMIT_TYPE_NONE;
-    case 1:
-    case "USE_LIMIT_TYPE_DAILY":
-      return UseLimitType.USE_LIMIT_TYPE_DAILY;
-    case 2:
-    case "USE_LIMIT_TYPE_WEEKLY":
-      return UseLimitType.USE_LIMIT_TYPE_WEEKLY;
-    case 3:
-    case "USE_LIMIT_TYPE_TOTAL":
-      return UseLimitType.USE_LIMIT_TYPE_TOTAL;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return UseLimitType.UNRECOGNIZED;
-  }
-}
-
-export function useLimitTypeToJSON(object: UseLimitType): string {
-  switch (object) {
-    case UseLimitType.USE_LIMIT_TYPE_NONE:
-      return "USE_LIMIT_TYPE_NONE";
-    case UseLimitType.USE_LIMIT_TYPE_DAILY:
-      return "USE_LIMIT_TYPE_DAILY";
-    case UseLimitType.USE_LIMIT_TYPE_WEEKLY:
-      return "USE_LIMIT_TYPE_WEEKLY";
-    case UseLimitType.USE_LIMIT_TYPE_TOTAL:
-      return "USE_LIMIT_TYPE_TOTAL";
-    case UseLimitType.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 装备槽位 */
@@ -1401,73 +381,6 @@ export enum EquipSlotType {
   UNRECOGNIZED = -1,
 }
 
-export function equipSlotTypeFromJSON(object: any): EquipSlotType {
-  switch (object) {
-    case 0:
-    case "EQUIP_SLOT_TYPE_NONE":
-      return EquipSlotType.EQUIP_SLOT_TYPE_NONE;
-    case 1:
-    case "EQUIP_SLOT_TYPE_WEAPON":
-      return EquipSlotType.EQUIP_SLOT_TYPE_WEAPON;
-    case 2:
-    case "EQUIP_SLOT_TYPE_HEAD":
-      return EquipSlotType.EQUIP_SLOT_TYPE_HEAD;
-    case 3:
-    case "EQUIP_SLOT_TYPE_BODY":
-      return EquipSlotType.EQUIP_SLOT_TYPE_BODY;
-    case 4:
-    case "EQUIP_SLOT_TYPE_HANDS":
-      return EquipSlotType.EQUIP_SLOT_TYPE_HANDS;
-    case 5:
-    case "EQUIP_SLOT_TYPE_FEET":
-      return EquipSlotType.EQUIP_SLOT_TYPE_FEET;
-    case 6:
-    case "EQUIP_SLOT_TYPE_NECK":
-      return EquipSlotType.EQUIP_SLOT_TYPE_NECK;
-    case 7:
-    case "EQUIP_SLOT_TYPE_FINGER1":
-      return EquipSlotType.EQUIP_SLOT_TYPE_FINGER1;
-    case 8:
-    case "EQUIP_SLOT_TYPE_FINGER2":
-      return EquipSlotType.EQUIP_SLOT_TYPE_FINGER2;
-    case 9:
-    case "EQUIP_SLOT_TYPE_TRINKET":
-      return EquipSlotType.EQUIP_SLOT_TYPE_TRINKET;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return EquipSlotType.UNRECOGNIZED;
-  }
-}
-
-export function equipSlotTypeToJSON(object: EquipSlotType): string {
-  switch (object) {
-    case EquipSlotType.EQUIP_SLOT_TYPE_NONE:
-      return "EQUIP_SLOT_TYPE_NONE";
-    case EquipSlotType.EQUIP_SLOT_TYPE_WEAPON:
-      return "EQUIP_SLOT_TYPE_WEAPON";
-    case EquipSlotType.EQUIP_SLOT_TYPE_HEAD:
-      return "EQUIP_SLOT_TYPE_HEAD";
-    case EquipSlotType.EQUIP_SLOT_TYPE_BODY:
-      return "EQUIP_SLOT_TYPE_BODY";
-    case EquipSlotType.EQUIP_SLOT_TYPE_HANDS:
-      return "EQUIP_SLOT_TYPE_HANDS";
-    case EquipSlotType.EQUIP_SLOT_TYPE_FEET:
-      return "EQUIP_SLOT_TYPE_FEET";
-    case EquipSlotType.EQUIP_SLOT_TYPE_NECK:
-      return "EQUIP_SLOT_TYPE_NECK";
-    case EquipSlotType.EQUIP_SLOT_TYPE_FINGER1:
-      return "EQUIP_SLOT_TYPE_FINGER1";
-    case EquipSlotType.EQUIP_SLOT_TYPE_FINGER2:
-      return "EQUIP_SLOT_TYPE_FINGER2";
-    case EquipSlotType.EQUIP_SLOT_TYPE_TRINKET:
-      return "EQUIP_SLOT_TYPE_TRINKET";
-    case EquipSlotType.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 /** 装备属性类型 */
 export enum EquipPropType {
   EQUIP_PROP_TYPE_NONE = 0,
@@ -1490,68 +403,6 @@ export enum EquipPropType {
   UNRECOGNIZED = -1,
 }
 
-export function equipPropTypeFromJSON(object: any): EquipPropType {
-  switch (object) {
-    case 0:
-    case "EQUIP_PROP_TYPE_NONE":
-      return EquipPropType.EQUIP_PROP_TYPE_NONE;
-    case 1:
-    case "EQUIP_PROP_TYPE_ATK":
-      return EquipPropType.EQUIP_PROP_TYPE_ATK;
-    case 2:
-    case "EQUIP_PROP_TYPE_DEF":
-      return EquipPropType.EQUIP_PROP_TYPE_DEF;
-    case 3:
-    case "EQUIP_PROP_TYPE_HP":
-      return EquipPropType.EQUIP_PROP_TYPE_HP;
-    case 4:
-    case "EQUIP_PROP_TYPE_MP":
-      return EquipPropType.EQUIP_PROP_TYPE_MP;
-    case 5:
-    case "EQUIP_PROP_TYPE_CRIT_RATE":
-      return EquipPropType.EQUIP_PROP_TYPE_CRIT_RATE;
-    case 6:
-    case "EQUIP_PROP_TYPE_CRIT_DMG":
-      return EquipPropType.EQUIP_PROP_TYPE_CRIT_DMG;
-    case 7:
-    case "EQUIP_PROP_TYPE_SPEED":
-      return EquipPropType.EQUIP_PROP_TYPE_SPEED;
-    case 8:
-    case "EQUIP_PROP_TYPE_DODGE":
-      return EquipPropType.EQUIP_PROP_TYPE_DODGE;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return EquipPropType.UNRECOGNIZED;
-  }
-}
-
-export function equipPropTypeToJSON(object: EquipPropType): string {
-  switch (object) {
-    case EquipPropType.EQUIP_PROP_TYPE_NONE:
-      return "EQUIP_PROP_TYPE_NONE";
-    case EquipPropType.EQUIP_PROP_TYPE_ATK:
-      return "EQUIP_PROP_TYPE_ATK";
-    case EquipPropType.EQUIP_PROP_TYPE_DEF:
-      return "EQUIP_PROP_TYPE_DEF";
-    case EquipPropType.EQUIP_PROP_TYPE_HP:
-      return "EQUIP_PROP_TYPE_HP";
-    case EquipPropType.EQUIP_PROP_TYPE_MP:
-      return "EQUIP_PROP_TYPE_MP";
-    case EquipPropType.EQUIP_PROP_TYPE_CRIT_RATE:
-      return "EQUIP_PROP_TYPE_CRIT_RATE";
-    case EquipPropType.EQUIP_PROP_TYPE_CRIT_DMG:
-      return "EQUIP_PROP_TYPE_CRIT_DMG";
-    case EquipPropType.EQUIP_PROP_TYPE_SPEED:
-      return "EQUIP_PROP_TYPE_SPEED";
-    case EquipPropType.EQUIP_PROP_TYPE_DODGE:
-      return "EQUIP_PROP_TYPE_DODGE";
-    case EquipPropType.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 /** 强化结果类型 */
 export enum EnhanceResult {
   ENHANCE_RESULT_NONE = 0,
@@ -1564,48 +415,6 @@ export enum EnhanceResult {
   /** ENHANCE_RESULT_BREAK - 失败且装备破碎 */
   ENHANCE_RESULT_BREAK = 4,
   UNRECOGNIZED = -1,
-}
-
-export function enhanceResultFromJSON(object: any): EnhanceResult {
-  switch (object) {
-    case 0:
-    case "ENHANCE_RESULT_NONE":
-      return EnhanceResult.ENHANCE_RESULT_NONE;
-    case 1:
-    case "ENHANCE_RESULT_SUCCESS":
-      return EnhanceResult.ENHANCE_RESULT_SUCCESS;
-    case 2:
-    case "ENHANCE_RESULT_FAIL":
-      return EnhanceResult.ENHANCE_RESULT_FAIL;
-    case 3:
-    case "ENHANCE_RESULT_FAIL_DOWN":
-      return EnhanceResult.ENHANCE_RESULT_FAIL_DOWN;
-    case 4:
-    case "ENHANCE_RESULT_BREAK":
-      return EnhanceResult.ENHANCE_RESULT_BREAK;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return EnhanceResult.UNRECOGNIZED;
-  }
-}
-
-export function enhanceResultToJSON(object: EnhanceResult): string {
-  switch (object) {
-    case EnhanceResult.ENHANCE_RESULT_NONE:
-      return "ENHANCE_RESULT_NONE";
-    case EnhanceResult.ENHANCE_RESULT_SUCCESS:
-      return "ENHANCE_RESULT_SUCCESS";
-    case EnhanceResult.ENHANCE_RESULT_FAIL:
-      return "ENHANCE_RESULT_FAIL";
-    case EnhanceResult.ENHANCE_RESULT_FAIL_DOWN:
-      return "ENHANCE_RESULT_FAIL_DOWN";
-    case EnhanceResult.ENHANCE_RESULT_BREAK:
-      return "ENHANCE_RESULT_BREAK";
-    case EnhanceResult.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 精炼结果类型 */
@@ -1622,48 +431,6 @@ export enum RefineResult {
   UNRECOGNIZED = -1,
 }
 
-export function refineResultFromJSON(object: any): RefineResult {
-  switch (object) {
-    case 0:
-    case "REFINE_RESULT_NONE":
-      return RefineResult.REFINE_RESULT_NONE;
-    case 1:
-    case "REFINE_RESULT_SUCCESS":
-      return RefineResult.REFINE_RESULT_SUCCESS;
-    case 2:
-    case "REFINE_RESULT_FAIL":
-      return RefineResult.REFINE_RESULT_FAIL;
-    case 3:
-    case "REFINE_RESULT_FAIL_DOWN":
-      return RefineResult.REFINE_RESULT_FAIL_DOWN;
-    case 4:
-    case "REFINE_RESULT_BREAK":
-      return RefineResult.REFINE_RESULT_BREAK;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return RefineResult.UNRECOGNIZED;
-  }
-}
-
-export function refineResultToJSON(object: RefineResult): string {
-  switch (object) {
-    case RefineResult.REFINE_RESULT_NONE:
-      return "REFINE_RESULT_NONE";
-    case RefineResult.REFINE_RESULT_SUCCESS:
-      return "REFINE_RESULT_SUCCESS";
-    case RefineResult.REFINE_RESULT_FAIL:
-      return "REFINE_RESULT_FAIL";
-    case RefineResult.REFINE_RESULT_FAIL_DOWN:
-      return "REFINE_RESULT_FAIL_DOWN";
-    case RefineResult.REFINE_RESULT_BREAK:
-      return "REFINE_RESULT_BREAK";
-    case RefineResult.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 /** 洗练属性类型 */
 export enum ReforgePropType {
   REFORGE_PROP_TYPE_NONE = 0,
@@ -1676,43 +443,6 @@ export enum ReforgePropType {
   UNRECOGNIZED = -1,
 }
 
-export function reforgePropTypeFromJSON(object: any): ReforgePropType {
-  switch (object) {
-    case 0:
-    case "REFORGE_PROP_TYPE_NONE":
-      return ReforgePropType.REFORGE_PROP_TYPE_NONE;
-    case 1:
-    case "REFORGE_PROP_TYPE_FIXED":
-      return ReforgePropType.REFORGE_PROP_TYPE_FIXED;
-    case 2:
-    case "REFORGE_PROP_TYPE_RANDOM":
-      return ReforgePropType.REFORGE_PROP_TYPE_RANDOM;
-    case 3:
-    case "REFORGE_PROP_TYPE_SPECIAL":
-      return ReforgePropType.REFORGE_PROP_TYPE_SPECIAL;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return ReforgePropType.UNRECOGNIZED;
-  }
-}
-
-export function reforgePropTypeToJSON(object: ReforgePropType): string {
-  switch (object) {
-    case ReforgePropType.REFORGE_PROP_TYPE_NONE:
-      return "REFORGE_PROP_TYPE_NONE";
-    case ReforgePropType.REFORGE_PROP_TYPE_FIXED:
-      return "REFORGE_PROP_TYPE_FIXED";
-    case ReforgePropType.REFORGE_PROP_TYPE_RANDOM:
-      return "REFORGE_PROP_TYPE_RANDOM";
-    case ReforgePropType.REFORGE_PROP_TYPE_SPECIAL:
-      return "REFORGE_PROP_TYPE_SPECIAL";
-    case ReforgePropType.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 /** 洗练结果类型 */
 export enum ReforgeResult {
   REFORGE_RESULT_NONE = 0,
@@ -1723,43 +453,6 @@ export enum ReforgeResult {
   /** REFORGE_RESULT_PERFECT - 完美洗练 */
   REFORGE_RESULT_PERFECT = 3,
   UNRECOGNIZED = -1,
-}
-
-export function reforgeResultFromJSON(object: any): ReforgeResult {
-  switch (object) {
-    case 0:
-    case "REFORGE_RESULT_NONE":
-      return ReforgeResult.REFORGE_RESULT_NONE;
-    case 1:
-    case "REFORGE_RESULT_SUCCESS":
-      return ReforgeResult.REFORGE_RESULT_SUCCESS;
-    case 2:
-    case "REFORGE_RESULT_FAIL":
-      return ReforgeResult.REFORGE_RESULT_FAIL;
-    case 3:
-    case "REFORGE_RESULT_PERFECT":
-      return ReforgeResult.REFORGE_RESULT_PERFECT;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return ReforgeResult.UNRECOGNIZED;
-  }
-}
-
-export function reforgeResultToJSON(object: ReforgeResult): string {
-  switch (object) {
-    case ReforgeResult.REFORGE_RESULT_NONE:
-      return "REFORGE_RESULT_NONE";
-    case ReforgeResult.REFORGE_RESULT_SUCCESS:
-      return "REFORGE_RESULT_SUCCESS";
-    case ReforgeResult.REFORGE_RESULT_FAIL:
-      return "REFORGE_RESULT_FAIL";
-    case ReforgeResult.REFORGE_RESULT_PERFECT:
-      return "REFORGE_RESULT_PERFECT";
-    case ReforgeResult.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 宝石类型 */
@@ -1780,58 +473,6 @@ export enum GemType {
   UNRECOGNIZED = -1,
 }
 
-export function gemTypeFromJSON(object: any): GemType {
-  switch (object) {
-    case 0:
-    case "GEM_TYPE_NONE":
-      return GemType.GEM_TYPE_NONE;
-    case 1:
-    case "GEM_TYPE_ATTACK":
-      return GemType.GEM_TYPE_ATTACK;
-    case 2:
-    case "GEM_TYPE_DEFENSE":
-      return GemType.GEM_TYPE_DEFENSE;
-    case 3:
-    case "GEM_TYPE_HEALTH":
-      return GemType.GEM_TYPE_HEALTH;
-    case 4:
-    case "GEM_TYPE_CRIT":
-      return GemType.GEM_TYPE_CRIT;
-    case 5:
-    case "GEM_TYPE_SPEED":
-      return GemType.GEM_TYPE_SPEED;
-    case 6:
-    case "GEM_TYPE_SPECIAL":
-      return GemType.GEM_TYPE_SPECIAL;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return GemType.UNRECOGNIZED;
-  }
-}
-
-export function gemTypeToJSON(object: GemType): string {
-  switch (object) {
-    case GemType.GEM_TYPE_NONE:
-      return "GEM_TYPE_NONE";
-    case GemType.GEM_TYPE_ATTACK:
-      return "GEM_TYPE_ATTACK";
-    case GemType.GEM_TYPE_DEFENSE:
-      return "GEM_TYPE_DEFENSE";
-    case GemType.GEM_TYPE_HEALTH:
-      return "GEM_TYPE_HEALTH";
-    case GemType.GEM_TYPE_CRIT:
-      return "GEM_TYPE_CRIT";
-    case GemType.GEM_TYPE_SPEED:
-      return "GEM_TYPE_SPEED";
-    case GemType.GEM_TYPE_SPECIAL:
-      return "GEM_TYPE_SPECIAL";
-    case GemType.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 /** 宝石槽位状态 */
 export enum GemSlotState {
   GEM_SLOT_STATE_NONE = 0,
@@ -1844,43 +485,6 @@ export enum GemSlotState {
   UNRECOGNIZED = -1,
 }
 
-export function gemSlotStateFromJSON(object: any): GemSlotState {
-  switch (object) {
-    case 0:
-    case "GEM_SLOT_STATE_NONE":
-      return GemSlotState.GEM_SLOT_STATE_NONE;
-    case 1:
-    case "GEM_SLOT_STATE_EMPTY":
-      return GemSlotState.GEM_SLOT_STATE_EMPTY;
-    case 2:
-    case "GEM_SLOT_STATE_OCCUPIED":
-      return GemSlotState.GEM_SLOT_STATE_OCCUPIED;
-    case 3:
-    case "GEM_SLOT_STATE_LOCKED":
-      return GemSlotState.GEM_SLOT_STATE_LOCKED;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return GemSlotState.UNRECOGNIZED;
-  }
-}
-
-export function gemSlotStateToJSON(object: GemSlotState): string {
-  switch (object) {
-    case GemSlotState.GEM_SLOT_STATE_NONE:
-      return "GEM_SLOT_STATE_NONE";
-    case GemSlotState.GEM_SLOT_STATE_EMPTY:
-      return "GEM_SLOT_STATE_EMPTY";
-    case GemSlotState.GEM_SLOT_STATE_OCCUPIED:
-      return "GEM_SLOT_STATE_OCCUPIED";
-    case GemSlotState.GEM_SLOT_STATE_LOCKED:
-      return "GEM_SLOT_STATE_LOCKED";
-    case GemSlotState.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 /** 宝石操作结果 */
 export enum GemResult {
   GEM_RESULT_NONE = 0,
@@ -1891,43 +495,6 @@ export enum GemResult {
   /** GEM_RESULT_BREAK - 宝石破碎 */
   GEM_RESULT_BREAK = 3,
   UNRECOGNIZED = -1,
-}
-
-export function gemResultFromJSON(object: any): GemResult {
-  switch (object) {
-    case 0:
-    case "GEM_RESULT_NONE":
-      return GemResult.GEM_RESULT_NONE;
-    case 1:
-    case "GEM_RESULT_SUCCESS":
-      return GemResult.GEM_RESULT_SUCCESS;
-    case 2:
-    case "GEM_RESULT_FAIL":
-      return GemResult.GEM_RESULT_FAIL;
-    case 3:
-    case "GEM_RESULT_BREAK":
-      return GemResult.GEM_RESULT_BREAK;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return GemResult.UNRECOGNIZED;
-  }
-}
-
-export function gemResultToJSON(object: GemResult): string {
-  switch (object) {
-    case GemResult.GEM_RESULT_NONE:
-      return "GEM_RESULT_NONE";
-    case GemResult.GEM_RESULT_SUCCESS:
-      return "GEM_RESULT_SUCCESS";
-    case GemResult.GEM_RESULT_FAIL:
-      return "GEM_RESULT_FAIL";
-    case GemResult.GEM_RESULT_BREAK:
-      return "GEM_RESULT_BREAK";
-    case GemResult.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 物品状态 */
@@ -1944,48 +511,6 @@ export enum ItemState {
   UNRECOGNIZED = -1,
 }
 
-export function itemStateFromJSON(object: any): ItemState {
-  switch (object) {
-    case 0:
-    case "ITEM_STATE_NONE":
-      return ItemState.ITEM_STATE_NONE;
-    case 1:
-    case "ITEM_STATE_NORMAL":
-      return ItemState.ITEM_STATE_NORMAL;
-    case 2:
-    case "ITEM_STATE_LOCKED":
-      return ItemState.ITEM_STATE_LOCKED;
-    case 3:
-    case "ITEM_STATE_TRADING":
-      return ItemState.ITEM_STATE_TRADING;
-    case 4:
-    case "ITEM_STATE_AUCTIONING":
-      return ItemState.ITEM_STATE_AUCTIONING;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return ItemState.UNRECOGNIZED;
-  }
-}
-
-export function itemStateToJSON(object: ItemState): string {
-  switch (object) {
-    case ItemState.ITEM_STATE_NONE:
-      return "ITEM_STATE_NONE";
-    case ItemState.ITEM_STATE_NORMAL:
-      return "ITEM_STATE_NORMAL";
-    case ItemState.ITEM_STATE_LOCKED:
-      return "ITEM_STATE_LOCKED";
-    case ItemState.ITEM_STATE_TRADING:
-      return "ITEM_STATE_TRADING";
-    case ItemState.ITEM_STATE_AUCTIONING:
-      return "ITEM_STATE_AUCTIONING";
-    case ItemState.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 /** 交易状态 */
 export enum TradeState {
   TRADE_STATE_NONE = 0,
@@ -1996,43 +521,6 @@ export enum TradeState {
   /** TRADE_STATE_COMPLETED - 交易完成 */
   TRADE_STATE_COMPLETED = 3,
   UNRECOGNIZED = -1,
-}
-
-export function tradeStateFromJSON(object: any): TradeState {
-  switch (object) {
-    case 0:
-    case "TRADE_STATE_NONE":
-      return TradeState.TRADE_STATE_NONE;
-    case 1:
-    case "TRADE_STATE_PENDING":
-      return TradeState.TRADE_STATE_PENDING;
-    case 2:
-    case "TRADE_STATE_TRADING":
-      return TradeState.TRADE_STATE_TRADING;
-    case 3:
-    case "TRADE_STATE_COMPLETED":
-      return TradeState.TRADE_STATE_COMPLETED;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return TradeState.UNRECOGNIZED;
-  }
-}
-
-export function tradeStateToJSON(object: TradeState): string {
-  switch (object) {
-    case TradeState.TRADE_STATE_NONE:
-      return "TRADE_STATE_NONE";
-    case TradeState.TRADE_STATE_PENDING:
-      return "TRADE_STATE_PENDING";
-    case TradeState.TRADE_STATE_TRADING:
-      return "TRADE_STATE_TRADING";
-    case TradeState.TRADE_STATE_COMPLETED:
-      return "TRADE_STATE_COMPLETED";
-    case TradeState.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 拍卖状态 */
@@ -2047,43 +535,6 @@ export enum AuctionState {
   UNRECOGNIZED = -1,
 }
 
-export function auctionStateFromJSON(object: any): AuctionState {
-  switch (object) {
-    case 0:
-    case "AUCTION_STATE_NONE":
-      return AuctionState.AUCTION_STATE_NONE;
-    case 1:
-    case "AUCTION_STATE_ONGOING":
-      return AuctionState.AUCTION_STATE_ONGOING;
-    case 2:
-    case "AUCTION_STATE_COMPLETED":
-      return AuctionState.AUCTION_STATE_COMPLETED;
-    case 3:
-    case "AUCTION_STATE_CANCELLED":
-      return AuctionState.AUCTION_STATE_CANCELLED;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return AuctionState.UNRECOGNIZED;
-  }
-}
-
-export function auctionStateToJSON(object: AuctionState): string {
-  switch (object) {
-    case AuctionState.AUCTION_STATE_NONE:
-      return "AUCTION_STATE_NONE";
-    case AuctionState.AUCTION_STATE_ONGOING:
-      return "AUCTION_STATE_ONGOING";
-    case AuctionState.AUCTION_STATE_COMPLETED:
-      return "AUCTION_STATE_COMPLETED";
-    case AuctionState.AUCTION_STATE_CANCELLED:
-      return "AUCTION_STATE_CANCELLED";
-    case AuctionState.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 /** 邮件类型 */
 export enum MailType {
   MAIL_TYPE_NONE = 0,
@@ -2092,38 +543,6 @@ export enum MailType {
   /** MAIL_TYPE_PERSONAL - 个人邮件 */
   MAIL_TYPE_PERSONAL = 2,
   UNRECOGNIZED = -1,
-}
-
-export function mailTypeFromJSON(object: any): MailType {
-  switch (object) {
-    case 0:
-    case "MAIL_TYPE_NONE":
-      return MailType.MAIL_TYPE_NONE;
-    case 1:
-    case "MAIL_TYPE_SYSTEM":
-      return MailType.MAIL_TYPE_SYSTEM;
-    case 2:
-    case "MAIL_TYPE_PERSONAL":
-      return MailType.MAIL_TYPE_PERSONAL;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return MailType.UNRECOGNIZED;
-  }
-}
-
-export function mailTypeToJSON(object: MailType): string {
-  switch (object) {
-    case MailType.MAIL_TYPE_NONE:
-      return "MAIL_TYPE_NONE";
-    case MailType.MAIL_TYPE_SYSTEM:
-      return "MAIL_TYPE_SYSTEM";
-    case MailType.MAIL_TYPE_PERSONAL:
-      return "MAIL_TYPE_PERSONAL";
-    case MailType.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 邮件状态 */
@@ -2142,53 +561,6 @@ export enum MailStatus {
   UNRECOGNIZED = -1,
 }
 
-export function mailStatusFromJSON(object: any): MailStatus {
-  switch (object) {
-    case 0:
-    case "MAIL_STATUS_NONE":
-      return MailStatus.MAIL_STATUS_NONE;
-    case 1:
-    case "MAIL_STATUS_UNREAD":
-      return MailStatus.MAIL_STATUS_UNREAD;
-    case 2:
-    case "MAIL_STATUS_READ":
-      return MailStatus.MAIL_STATUS_READ;
-    case 3:
-    case "MAIL_STATUS_CLAIMED":
-      return MailStatus.MAIL_STATUS_CLAIMED;
-    case 4:
-    case "MAIL_STATUS_DELETED":
-      return MailStatus.MAIL_STATUS_DELETED;
-    case 5:
-    case "MAIL_STATUS_EXPIRED":
-      return MailStatus.MAIL_STATUS_EXPIRED;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return MailStatus.UNRECOGNIZED;
-  }
-}
-
-export function mailStatusToJSON(object: MailStatus): string {
-  switch (object) {
-    case MailStatus.MAIL_STATUS_NONE:
-      return "MAIL_STATUS_NONE";
-    case MailStatus.MAIL_STATUS_UNREAD:
-      return "MAIL_STATUS_UNREAD";
-    case MailStatus.MAIL_STATUS_READ:
-      return "MAIL_STATUS_READ";
-    case MailStatus.MAIL_STATUS_CLAIMED:
-      return "MAIL_STATUS_CLAIMED";
-    case MailStatus.MAIL_STATUS_DELETED:
-      return "MAIL_STATUS_DELETED";
-    case MailStatus.MAIL_STATUS_EXPIRED:
-      return "MAIL_STATUS_EXPIRED";
-    case MailStatus.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 /** 资源类型 */
 export enum ResourceType {
   RESOURCE_TYPE_NONE = 0,
@@ -2197,38 +569,6 @@ export enum ResourceType {
   /** RESOURCE_TYPE_EXP - 经验 */
   RESOURCE_TYPE_EXP = 2,
   UNRECOGNIZED = -1,
-}
-
-export function resourceTypeFromJSON(object: any): ResourceType {
-  switch (object) {
-    case 0:
-    case "RESOURCE_TYPE_NONE":
-      return ResourceType.RESOURCE_TYPE_NONE;
-    case 1:
-    case "RESOURCE_TYPE_GOLD":
-      return ResourceType.RESOURCE_TYPE_GOLD;
-    case 2:
-    case "RESOURCE_TYPE_EXP":
-      return ResourceType.RESOURCE_TYPE_EXP;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return ResourceType.UNRECOGNIZED;
-  }
-}
-
-export function resourceTypeToJSON(object: ResourceType): string {
-  switch (object) {
-    case ResourceType.RESOURCE_TYPE_NONE:
-      return "RESOURCE_TYPE_NONE";
-    case ResourceType.RESOURCE_TYPE_GOLD:
-      return "RESOURCE_TYPE_GOLD";
-    case ResourceType.RESOURCE_TYPE_EXP:
-      return "RESOURCE_TYPE_EXP";
-    case ResourceType.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 伙伴状态 */
@@ -2241,43 +581,6 @@ export enum PartnerState {
   /** PARTNER_STATE_LOCKED - 未解锁 */
   PARTNER_STATE_LOCKED = 3,
   UNRECOGNIZED = -1,
-}
-
-export function partnerStateFromJSON(object: any): PartnerState {
-  switch (object) {
-    case 0:
-    case "PARTNER_STATE_UNKNOWN":
-      return PartnerState.PARTNER_STATE_UNKNOWN;
-    case 1:
-    case "PARTNER_STATE_AVAILABLE":
-      return PartnerState.PARTNER_STATE_AVAILABLE;
-    case 2:
-    case "PARTNER_STATE_UNLOCKED":
-      return PartnerState.PARTNER_STATE_UNLOCKED;
-    case 3:
-    case "PARTNER_STATE_LOCKED":
-      return PartnerState.PARTNER_STATE_LOCKED;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return PartnerState.UNRECOGNIZED;
-  }
-}
-
-export function partnerStateToJSON(object: PartnerState): string {
-  switch (object) {
-    case PartnerState.PARTNER_STATE_UNKNOWN:
-      return "PARTNER_STATE_UNKNOWN";
-    case PartnerState.PARTNER_STATE_AVAILABLE:
-      return "PARTNER_STATE_AVAILABLE";
-    case PartnerState.PARTNER_STATE_UNLOCKED:
-      return "PARTNER_STATE_UNLOCKED";
-    case PartnerState.PARTNER_STATE_LOCKED:
-      return "PARTNER_STATE_LOCKED";
-    case PartnerState.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
 
 /** 伙伴种族 */
@@ -2302,68 +605,6 @@ export enum PartnerRace {
   UNRECOGNIZED = -1,
 }
 
-export function partnerRaceFromJSON(object: any): PartnerRace {
-  switch (object) {
-    case 0:
-    case "PARTNER_RACE_UNKNOWN":
-      return PartnerRace.PARTNER_RACE_UNKNOWN;
-    case 1:
-    case "PARTNER_RACE_HUMAN":
-      return PartnerRace.PARTNER_RACE_HUMAN;
-    case 2:
-    case "PARTNER_RACE_ELF":
-      return PartnerRace.PARTNER_RACE_ELF;
-    case 3:
-    case "PARTNER_RACE_DWARF":
-      return PartnerRace.PARTNER_RACE_DWARF;
-    case 4:
-    case "PARTNER_RACE_ORC":
-      return PartnerRace.PARTNER_RACE_ORC;
-    case 5:
-    case "PARTNER_RACE_UNDEAD":
-      return PartnerRace.PARTNER_RACE_UNDEAD;
-    case 6:
-    case "PARTNER_RACE_TAUREN":
-      return PartnerRace.PARTNER_RACE_TAUREN;
-    case 7:
-    case "PARTNER_RACE_GNOME":
-      return PartnerRace.PARTNER_RACE_GNOME;
-    case 8:
-    case "PARTNER_RACE_TROLL":
-      return PartnerRace.PARTNER_RACE_TROLL;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return PartnerRace.UNRECOGNIZED;
-  }
-}
-
-export function partnerRaceToJSON(object: PartnerRace): string {
-  switch (object) {
-    case PartnerRace.PARTNER_RACE_UNKNOWN:
-      return "PARTNER_RACE_UNKNOWN";
-    case PartnerRace.PARTNER_RACE_HUMAN:
-      return "PARTNER_RACE_HUMAN";
-    case PartnerRace.PARTNER_RACE_ELF:
-      return "PARTNER_RACE_ELF";
-    case PartnerRace.PARTNER_RACE_DWARF:
-      return "PARTNER_RACE_DWARF";
-    case PartnerRace.PARTNER_RACE_ORC:
-      return "PARTNER_RACE_ORC";
-    case PartnerRace.PARTNER_RACE_UNDEAD:
-      return "PARTNER_RACE_UNDEAD";
-    case PartnerRace.PARTNER_RACE_TAUREN:
-      return "PARTNER_RACE_TAUREN";
-    case PartnerRace.PARTNER_RACE_GNOME:
-      return "PARTNER_RACE_GNOME";
-    case PartnerRace.PARTNER_RACE_TROLL:
-      return "PARTNER_RACE_TROLL";
-    case PartnerRace.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
-}
-
 /** 伙伴特长/职业 */
 export enum PartnerForte {
   PARTNER_FORTE_UNKNOWN = 0,
@@ -2386,71 +627,4 @@ export enum PartnerForte {
   /** PARTNER_FORTE_WARLOCK - 术士 */
   PARTNER_FORTE_WARLOCK = 9,
   UNRECOGNIZED = -1,
-}
-
-export function partnerForteFromJSON(object: any): PartnerForte {
-  switch (object) {
-    case 0:
-    case "PARTNER_FORTE_UNKNOWN":
-      return PartnerForte.PARTNER_FORTE_UNKNOWN;
-    case 1:
-    case "PARTNER_FORTE_WARRIOR":
-      return PartnerForte.PARTNER_FORTE_WARRIOR;
-    case 2:
-    case "PARTNER_FORTE_MAGE":
-      return PartnerForte.PARTNER_FORTE_MAGE;
-    case 3:
-    case "PARTNER_FORTE_PRIEST":
-      return PartnerForte.PARTNER_FORTE_PRIEST;
-    case 4:
-    case "PARTNER_FORTE_ROGUE":
-      return PartnerForte.PARTNER_FORTE_ROGUE;
-    case 5:
-    case "PARTNER_FORTE_HUNTER":
-      return PartnerForte.PARTNER_FORTE_HUNTER;
-    case 6:
-    case "PARTNER_FORTE_PALADIN":
-      return PartnerForte.PARTNER_FORTE_PALADIN;
-    case 7:
-    case "PARTNER_FORTE_SHAMAN":
-      return PartnerForte.PARTNER_FORTE_SHAMAN;
-    case 8:
-    case "PARTNER_FORTE_DRUID":
-      return PartnerForte.PARTNER_FORTE_DRUID;
-    case 9:
-    case "PARTNER_FORTE_WARLOCK":
-      return PartnerForte.PARTNER_FORTE_WARLOCK;
-    case -1:
-    case "UNRECOGNIZED":
-    default:
-      return PartnerForte.UNRECOGNIZED;
-  }
-}
-
-export function partnerForteToJSON(object: PartnerForte): string {
-  switch (object) {
-    case PartnerForte.PARTNER_FORTE_UNKNOWN:
-      return "PARTNER_FORTE_UNKNOWN";
-    case PartnerForte.PARTNER_FORTE_WARRIOR:
-      return "PARTNER_FORTE_WARRIOR";
-    case PartnerForte.PARTNER_FORTE_MAGE:
-      return "PARTNER_FORTE_MAGE";
-    case PartnerForte.PARTNER_FORTE_PRIEST:
-      return "PARTNER_FORTE_PRIEST";
-    case PartnerForte.PARTNER_FORTE_ROGUE:
-      return "PARTNER_FORTE_ROGUE";
-    case PartnerForte.PARTNER_FORTE_HUNTER:
-      return "PARTNER_FORTE_HUNTER";
-    case PartnerForte.PARTNER_FORTE_PALADIN:
-      return "PARTNER_FORTE_PALADIN";
-    case PartnerForte.PARTNER_FORTE_SHAMAN:
-      return "PARTNER_FORTE_SHAMAN";
-    case PartnerForte.PARTNER_FORTE_DRUID:
-      return "PARTNER_FORTE_DRUID";
-    case PartnerForte.PARTNER_FORTE_WARLOCK:
-      return "PARTNER_FORTE_WARLOCK";
-    case PartnerForte.UNRECOGNIZED:
-    default:
-      return "UNRECOGNIZED";
-  }
 }
