@@ -8,6 +8,51 @@
 
 export const protobufPackage = "common";
 
+export enum UnitType {
+  UNIT_TYPE_HERO = 0,
+  UNIT_TYPE_NPC = 1,
+  UNIT_TYPE_MONSTER = 2,
+  UNIT_TYPE_PARTNER = 4,
+  UNRECOGNIZED = -1,
+}
+
+export function unitTypeFromJSON(object: any): UnitType {
+  switch (object) {
+    case 0:
+    case "UNIT_TYPE_HERO":
+      return UnitType.UNIT_TYPE_HERO;
+    case 1:
+    case "UNIT_TYPE_NPC":
+      return UnitType.UNIT_TYPE_NPC;
+    case 2:
+    case "UNIT_TYPE_MONSTER":
+      return UnitType.UNIT_TYPE_MONSTER;
+    case 4:
+    case "UNIT_TYPE_PARTNER":
+      return UnitType.UNIT_TYPE_PARTNER;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return UnitType.UNRECOGNIZED;
+  }
+}
+
+export function unitTypeToJSON(object: UnitType): string {
+  switch (object) {
+    case UnitType.UNIT_TYPE_HERO:
+      return "UNIT_TYPE_HERO";
+    case UnitType.UNIT_TYPE_NPC:
+      return "UNIT_TYPE_NPC";
+    case UnitType.UNIT_TYPE_MONSTER:
+      return "UNIT_TYPE_MONSTER";
+    case UnitType.UNIT_TYPE_PARTNER:
+      return "UNIT_TYPE_PARTNER";
+    case UnitType.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
 /** 背包类型 */
 export enum BagType {
   BAG_TYPE_NONE = 0,
@@ -763,47 +808,127 @@ export function useLimitToJSON(object: UseLimit): string {
   }
 }
 
-/** 道具类型 */
+/** 通用属性类型 (用于玩家、伙伴等所有实体) */
 export enum PropType {
-  PROP_TYPE_NONE = 0,
-  /** PROP_TYPE_HP - 生命值 */
-  PROP_TYPE_HP = 1,
-  /** PROP_TYPE_ATTACK - 攻击力 */
-  PROP_TYPE_ATTACK = 2,
-  /** PROP_TYPE_DEFENSE - 防御力 */
-  PROP_TYPE_DEFENSE = 3,
-  /** PROP_TYPE_SPEED - 速度 */
-  PROP_TYPE_SPEED = 4,
-  /** PROP_TYPE_CRIT - 暴击 */
-  PROP_TYPE_CRIT = 5,
-  /** PROP_TYPE_CRIT_DMG - 暴击伤害 */
-  PROP_TYPE_CRIT_DMG = 6,
+  PROP_UNKNOWN = 0,
+  /** PROP_HP - 基础属性 (100-199) */
+  PROP_HP = 101,
+  /** PROP_MP - 魔法值 */
+  PROP_MP = 102,
+  /** PROP_ATTACK - 攻击力 */
+  PROP_ATTACK = 103,
+  /** PROP_DEFENSE - 防御力 */
+  PROP_DEFENSE = 104,
+  /** PROP_SPEED - 速度 */
+  PROP_SPEED = 105,
+  /** PROP_HIT - 战斗属性 (200-299) */
+  PROP_HIT = 201,
+  /** PROP_DODGE - 闪避率 */
+  PROP_DODGE = 202,
+  /** PROP_CRIT_RATE - 暴击率 */
+  PROP_CRIT_RATE = 203,
+  /** PROP_CRIT_DMG - 暴击伤害 */
+  PROP_CRIT_DMG = 204,
+  /** PROP_BLOCK - 格挡率 */
+  PROP_BLOCK = 205,
+  /** PROP_PENETRATION - 穿透力 */
+  PROP_PENETRATION = 206,
+  /** PROP_HEAL_BOOST - 增益属性 (300-399) */
+  PROP_HEAL_BOOST = 301,
+  /** PROP_DMG_BOOST - 伤害加成 */
+  PROP_DMG_BOOST = 302,
+  /** PROP_DMG_REDUCTION - 伤害减免 */
+  PROP_DMG_REDUCTION = 303,
+  /** PROP_EXP_BOOST - 经验加成 */
+  PROP_EXP_BOOST = 304,
+  /** PROP_FIRE_RES - 抗性属性 (400-499) */
+  PROP_FIRE_RES = 401,
+  /** PROP_ICE_RES - 冰霜抗性 */
+  PROP_ICE_RES = 402,
+  /** PROP_LIGHTNING_RES - 雷电抗性 */
+  PROP_LIGHTNING_RES = 403,
+  /** PROP_POISON_RES - 毒素抗性 */
+  PROP_POISON_RES = 404,
+  /** PROP_GOLD_BOOST - 特殊属性 (500-599) */
+  PROP_GOLD_BOOST = 501,
+  /** PROP_ITEM_FIND - 物品发现率 */
+  PROP_ITEM_FIND = 502,
+  /** PROP_MOVEMENT_SPEED - 移动速度 */
+  PROP_MOVEMENT_SPEED = 503,
   UNRECOGNIZED = -1,
 }
 
 export function propTypeFromJSON(object: any): PropType {
   switch (object) {
     case 0:
-    case "PROP_TYPE_NONE":
-      return PropType.PROP_TYPE_NONE;
-    case 1:
-    case "PROP_TYPE_HP":
-      return PropType.PROP_TYPE_HP;
-    case 2:
-    case "PROP_TYPE_ATTACK":
-      return PropType.PROP_TYPE_ATTACK;
-    case 3:
-    case "PROP_TYPE_DEFENSE":
-      return PropType.PROP_TYPE_DEFENSE;
-    case 4:
-    case "PROP_TYPE_SPEED":
-      return PropType.PROP_TYPE_SPEED;
-    case 5:
-    case "PROP_TYPE_CRIT":
-      return PropType.PROP_TYPE_CRIT;
-    case 6:
-    case "PROP_TYPE_CRIT_DMG":
-      return PropType.PROP_TYPE_CRIT_DMG;
+    case "PROP_UNKNOWN":
+      return PropType.PROP_UNKNOWN;
+    case 101:
+    case "PROP_HP":
+      return PropType.PROP_HP;
+    case 102:
+    case "PROP_MP":
+      return PropType.PROP_MP;
+    case 103:
+    case "PROP_ATTACK":
+      return PropType.PROP_ATTACK;
+    case 104:
+    case "PROP_DEFENSE":
+      return PropType.PROP_DEFENSE;
+    case 105:
+    case "PROP_SPEED":
+      return PropType.PROP_SPEED;
+    case 201:
+    case "PROP_HIT":
+      return PropType.PROP_HIT;
+    case 202:
+    case "PROP_DODGE":
+      return PropType.PROP_DODGE;
+    case 203:
+    case "PROP_CRIT_RATE":
+      return PropType.PROP_CRIT_RATE;
+    case 204:
+    case "PROP_CRIT_DMG":
+      return PropType.PROP_CRIT_DMG;
+    case 205:
+    case "PROP_BLOCK":
+      return PropType.PROP_BLOCK;
+    case 206:
+    case "PROP_PENETRATION":
+      return PropType.PROP_PENETRATION;
+    case 301:
+    case "PROP_HEAL_BOOST":
+      return PropType.PROP_HEAL_BOOST;
+    case 302:
+    case "PROP_DMG_BOOST":
+      return PropType.PROP_DMG_BOOST;
+    case 303:
+    case "PROP_DMG_REDUCTION":
+      return PropType.PROP_DMG_REDUCTION;
+    case 304:
+    case "PROP_EXP_BOOST":
+      return PropType.PROP_EXP_BOOST;
+    case 401:
+    case "PROP_FIRE_RES":
+      return PropType.PROP_FIRE_RES;
+    case 402:
+    case "PROP_ICE_RES":
+      return PropType.PROP_ICE_RES;
+    case 403:
+    case "PROP_LIGHTNING_RES":
+      return PropType.PROP_LIGHTNING_RES;
+    case 404:
+    case "PROP_POISON_RES":
+      return PropType.PROP_POISON_RES;
+    case 501:
+    case "PROP_GOLD_BOOST":
+      return PropType.PROP_GOLD_BOOST;
+    case 502:
+    case "PROP_ITEM_FIND":
+      return PropType.PROP_ITEM_FIND;
+    case 503:
+    case "PROP_MOVEMENT_SPEED":
+      return PropType.PROP_MOVEMENT_SPEED;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -813,20 +938,52 @@ export function propTypeFromJSON(object: any): PropType {
 
 export function propTypeToJSON(object: PropType): string {
   switch (object) {
-    case PropType.PROP_TYPE_NONE:
-      return "PROP_TYPE_NONE";
-    case PropType.PROP_TYPE_HP:
-      return "PROP_TYPE_HP";
-    case PropType.PROP_TYPE_ATTACK:
-      return "PROP_TYPE_ATTACK";
-    case PropType.PROP_TYPE_DEFENSE:
-      return "PROP_TYPE_DEFENSE";
-    case PropType.PROP_TYPE_SPEED:
-      return "PROP_TYPE_SPEED";
-    case PropType.PROP_TYPE_CRIT:
-      return "PROP_TYPE_CRIT";
-    case PropType.PROP_TYPE_CRIT_DMG:
-      return "PROP_TYPE_CRIT_DMG";
+    case PropType.PROP_UNKNOWN:
+      return "PROP_UNKNOWN";
+    case PropType.PROP_HP:
+      return "PROP_HP";
+    case PropType.PROP_MP:
+      return "PROP_MP";
+    case PropType.PROP_ATTACK:
+      return "PROP_ATTACK";
+    case PropType.PROP_DEFENSE:
+      return "PROP_DEFENSE";
+    case PropType.PROP_SPEED:
+      return "PROP_SPEED";
+    case PropType.PROP_HIT:
+      return "PROP_HIT";
+    case PropType.PROP_DODGE:
+      return "PROP_DODGE";
+    case PropType.PROP_CRIT_RATE:
+      return "PROP_CRIT_RATE";
+    case PropType.PROP_CRIT_DMG:
+      return "PROP_CRIT_DMG";
+    case PropType.PROP_BLOCK:
+      return "PROP_BLOCK";
+    case PropType.PROP_PENETRATION:
+      return "PROP_PENETRATION";
+    case PropType.PROP_HEAL_BOOST:
+      return "PROP_HEAL_BOOST";
+    case PropType.PROP_DMG_BOOST:
+      return "PROP_DMG_BOOST";
+    case PropType.PROP_DMG_REDUCTION:
+      return "PROP_DMG_REDUCTION";
+    case PropType.PROP_EXP_BOOST:
+      return "PROP_EXP_BOOST";
+    case PropType.PROP_FIRE_RES:
+      return "PROP_FIRE_RES";
+    case PropType.PROP_ICE_RES:
+      return "PROP_ICE_RES";
+    case PropType.PROP_LIGHTNING_RES:
+      return "PROP_LIGHTNING_RES";
+    case PropType.PROP_POISON_RES:
+      return "PROP_POISON_RES";
+    case PropType.PROP_GOLD_BOOST:
+      return "PROP_GOLD_BOOST";
+    case PropType.PROP_ITEM_FIND:
+      return "PROP_ITEM_FIND";
+    case PropType.PROP_MOVEMENT_SPEED:
+      return "PROP_MOVEMENT_SPEED";
     case PropType.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
@@ -2069,6 +2226,230 @@ export function resourceTypeToJSON(object: ResourceType): string {
     case ResourceType.RESOURCE_TYPE_EXP:
       return "RESOURCE_TYPE_EXP";
     case ResourceType.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
+/** 伙伴状态 */
+export enum PartnerState {
+  PARTNER_STATE_UNKNOWN = 0,
+  /** PARTNER_STATE_AVAILABLE - 可解锁 */
+  PARTNER_STATE_AVAILABLE = 1,
+  /** PARTNER_STATE_UNLOCKED - 已解锁 */
+  PARTNER_STATE_UNLOCKED = 2,
+  /** PARTNER_STATE_LOCKED - 未解锁 */
+  PARTNER_STATE_LOCKED = 3,
+  UNRECOGNIZED = -1,
+}
+
+export function partnerStateFromJSON(object: any): PartnerState {
+  switch (object) {
+    case 0:
+    case "PARTNER_STATE_UNKNOWN":
+      return PartnerState.PARTNER_STATE_UNKNOWN;
+    case 1:
+    case "PARTNER_STATE_AVAILABLE":
+      return PartnerState.PARTNER_STATE_AVAILABLE;
+    case 2:
+    case "PARTNER_STATE_UNLOCKED":
+      return PartnerState.PARTNER_STATE_UNLOCKED;
+    case 3:
+    case "PARTNER_STATE_LOCKED":
+      return PartnerState.PARTNER_STATE_LOCKED;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return PartnerState.UNRECOGNIZED;
+  }
+}
+
+export function partnerStateToJSON(object: PartnerState): string {
+  switch (object) {
+    case PartnerState.PARTNER_STATE_UNKNOWN:
+      return "PARTNER_STATE_UNKNOWN";
+    case PartnerState.PARTNER_STATE_AVAILABLE:
+      return "PARTNER_STATE_AVAILABLE";
+    case PartnerState.PARTNER_STATE_UNLOCKED:
+      return "PARTNER_STATE_UNLOCKED";
+    case PartnerState.PARTNER_STATE_LOCKED:
+      return "PARTNER_STATE_LOCKED";
+    case PartnerState.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
+/** 伙伴种族 */
+export enum PartnerRace {
+  PARTNER_RACE_UNKNOWN = 0,
+  /** PARTNER_RACE_HUMAN - 人类 */
+  PARTNER_RACE_HUMAN = 1,
+  /** PARTNER_RACE_ELF - 精灵 */
+  PARTNER_RACE_ELF = 2,
+  /** PARTNER_RACE_DWARF - 矮人 */
+  PARTNER_RACE_DWARF = 3,
+  /** PARTNER_RACE_ORC - 兽人 */
+  PARTNER_RACE_ORC = 4,
+  /** PARTNER_RACE_UNDEAD - 亡灵 */
+  PARTNER_RACE_UNDEAD = 5,
+  /** PARTNER_RACE_TAUREN - 牛头人 */
+  PARTNER_RACE_TAUREN = 6,
+  /** PARTNER_RACE_GNOME - 侏儒 */
+  PARTNER_RACE_GNOME = 7,
+  /** PARTNER_RACE_TROLL - 巨魔 */
+  PARTNER_RACE_TROLL = 8,
+  UNRECOGNIZED = -1,
+}
+
+export function partnerRaceFromJSON(object: any): PartnerRace {
+  switch (object) {
+    case 0:
+    case "PARTNER_RACE_UNKNOWN":
+      return PartnerRace.PARTNER_RACE_UNKNOWN;
+    case 1:
+    case "PARTNER_RACE_HUMAN":
+      return PartnerRace.PARTNER_RACE_HUMAN;
+    case 2:
+    case "PARTNER_RACE_ELF":
+      return PartnerRace.PARTNER_RACE_ELF;
+    case 3:
+    case "PARTNER_RACE_DWARF":
+      return PartnerRace.PARTNER_RACE_DWARF;
+    case 4:
+    case "PARTNER_RACE_ORC":
+      return PartnerRace.PARTNER_RACE_ORC;
+    case 5:
+    case "PARTNER_RACE_UNDEAD":
+      return PartnerRace.PARTNER_RACE_UNDEAD;
+    case 6:
+    case "PARTNER_RACE_TAUREN":
+      return PartnerRace.PARTNER_RACE_TAUREN;
+    case 7:
+    case "PARTNER_RACE_GNOME":
+      return PartnerRace.PARTNER_RACE_GNOME;
+    case 8:
+    case "PARTNER_RACE_TROLL":
+      return PartnerRace.PARTNER_RACE_TROLL;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return PartnerRace.UNRECOGNIZED;
+  }
+}
+
+export function partnerRaceToJSON(object: PartnerRace): string {
+  switch (object) {
+    case PartnerRace.PARTNER_RACE_UNKNOWN:
+      return "PARTNER_RACE_UNKNOWN";
+    case PartnerRace.PARTNER_RACE_HUMAN:
+      return "PARTNER_RACE_HUMAN";
+    case PartnerRace.PARTNER_RACE_ELF:
+      return "PARTNER_RACE_ELF";
+    case PartnerRace.PARTNER_RACE_DWARF:
+      return "PARTNER_RACE_DWARF";
+    case PartnerRace.PARTNER_RACE_ORC:
+      return "PARTNER_RACE_ORC";
+    case PartnerRace.PARTNER_RACE_UNDEAD:
+      return "PARTNER_RACE_UNDEAD";
+    case PartnerRace.PARTNER_RACE_TAUREN:
+      return "PARTNER_RACE_TAUREN";
+    case PartnerRace.PARTNER_RACE_GNOME:
+      return "PARTNER_RACE_GNOME";
+    case PartnerRace.PARTNER_RACE_TROLL:
+      return "PARTNER_RACE_TROLL";
+    case PartnerRace.UNRECOGNIZED:
+    default:
+      return "UNRECOGNIZED";
+  }
+}
+
+/** 伙伴特长/职业 */
+export enum PartnerForte {
+  PARTNER_FORTE_UNKNOWN = 0,
+  /** PARTNER_FORTE_WARRIOR - 战士 */
+  PARTNER_FORTE_WARRIOR = 1,
+  /** PARTNER_FORTE_MAGE - 法师 */
+  PARTNER_FORTE_MAGE = 2,
+  /** PARTNER_FORTE_PRIEST - 牧师 */
+  PARTNER_FORTE_PRIEST = 3,
+  /** PARTNER_FORTE_ROGUE - 盗贼 */
+  PARTNER_FORTE_ROGUE = 4,
+  /** PARTNER_FORTE_HUNTER - 猎人 */
+  PARTNER_FORTE_HUNTER = 5,
+  /** PARTNER_FORTE_PALADIN - 圣骑士 */
+  PARTNER_FORTE_PALADIN = 6,
+  /** PARTNER_FORTE_SHAMAN - 萨满 */
+  PARTNER_FORTE_SHAMAN = 7,
+  /** PARTNER_FORTE_DRUID - 德鲁伊 */
+  PARTNER_FORTE_DRUID = 8,
+  /** PARTNER_FORTE_WARLOCK - 术士 */
+  PARTNER_FORTE_WARLOCK = 9,
+  UNRECOGNIZED = -1,
+}
+
+export function partnerForteFromJSON(object: any): PartnerForte {
+  switch (object) {
+    case 0:
+    case "PARTNER_FORTE_UNKNOWN":
+      return PartnerForte.PARTNER_FORTE_UNKNOWN;
+    case 1:
+    case "PARTNER_FORTE_WARRIOR":
+      return PartnerForte.PARTNER_FORTE_WARRIOR;
+    case 2:
+    case "PARTNER_FORTE_MAGE":
+      return PartnerForte.PARTNER_FORTE_MAGE;
+    case 3:
+    case "PARTNER_FORTE_PRIEST":
+      return PartnerForte.PARTNER_FORTE_PRIEST;
+    case 4:
+    case "PARTNER_FORTE_ROGUE":
+      return PartnerForte.PARTNER_FORTE_ROGUE;
+    case 5:
+    case "PARTNER_FORTE_HUNTER":
+      return PartnerForte.PARTNER_FORTE_HUNTER;
+    case 6:
+    case "PARTNER_FORTE_PALADIN":
+      return PartnerForte.PARTNER_FORTE_PALADIN;
+    case 7:
+    case "PARTNER_FORTE_SHAMAN":
+      return PartnerForte.PARTNER_FORTE_SHAMAN;
+    case 8:
+    case "PARTNER_FORTE_DRUID":
+      return PartnerForte.PARTNER_FORTE_DRUID;
+    case 9:
+    case "PARTNER_FORTE_WARLOCK":
+      return PartnerForte.PARTNER_FORTE_WARLOCK;
+    case -1:
+    case "UNRECOGNIZED":
+    default:
+      return PartnerForte.UNRECOGNIZED;
+  }
+}
+
+export function partnerForteToJSON(object: PartnerForte): string {
+  switch (object) {
+    case PartnerForte.PARTNER_FORTE_UNKNOWN:
+      return "PARTNER_FORTE_UNKNOWN";
+    case PartnerForte.PARTNER_FORTE_WARRIOR:
+      return "PARTNER_FORTE_WARRIOR";
+    case PartnerForte.PARTNER_FORTE_MAGE:
+      return "PARTNER_FORTE_MAGE";
+    case PartnerForte.PARTNER_FORTE_PRIEST:
+      return "PARTNER_FORTE_PRIEST";
+    case PartnerForte.PARTNER_FORTE_ROGUE:
+      return "PARTNER_FORTE_ROGUE";
+    case PartnerForte.PARTNER_FORTE_HUNTER:
+      return "PARTNER_FORTE_HUNTER";
+    case PartnerForte.PARTNER_FORTE_PALADIN:
+      return "PARTNER_FORTE_PALADIN";
+    case PartnerForte.PARTNER_FORTE_SHAMAN:
+      return "PARTNER_FORTE_SHAMAN";
+    case PartnerForte.PARTNER_FORTE_DRUID:
+      return "PARTNER_FORTE_DRUID";
+    case PartnerForte.PARTNER_FORTE_WARLOCK:
+      return "PARTNER_FORTE_WARLOCK";
+    case PartnerForte.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
   }

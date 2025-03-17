@@ -5,7 +5,6 @@
 // source: common/message.proto
 
 /* eslint-disable */
-import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
 
 export const protobufPackage = "common";
 
@@ -110,6 +109,24 @@ export enum MessageID {
   G2C_DELETE_MAIL_RESPONSE = 508,
   /** G2C_NEW_MAIL_PUSH - 新邮件推送 */
   G2C_NEW_MAIL_PUSH = 551,
+  /** C2G_PARTNER_LIST_REQUEST - 伙伴系统 (601-700) */
+  C2G_PARTNER_LIST_REQUEST = 601,
+  /** G2C_PARTNER_LIST_RESPONSE - 获取伙伴列表响应 */
+  G2C_PARTNER_LIST_RESPONSE = 602,
+  /** C2G_PARTNER_LEVEL_UP_REQUEST - 伙伴升级请求 */
+  C2G_PARTNER_LEVEL_UP_REQUEST = 603,
+  /** G2C_PARTNER_LEVEL_UP_RESPONSE - 伙伴升级响应 */
+  G2C_PARTNER_LEVEL_UP_RESPONSE = 604,
+  /** C2G_PARTNER_STAR_UP_REQUEST - 伙伴升星请求 */
+  C2G_PARTNER_STAR_UP_REQUEST = 605,
+  /** G2C_PARTNER_STAR_UP_RESPONSE - 伙伴升星响应 */
+  G2C_PARTNER_STAR_UP_RESPONSE = 606,
+  /** C2G_PARTNER_UNLOCK_REQUEST - 伙伴解锁请求 */
+  C2G_PARTNER_UNLOCK_REQUEST = 607,
+  /** G2C_PARTNER_UNLOCK_RESPONSE - 伙伴解锁响应 */
+  G2C_PARTNER_UNLOCK_RESPONSE = 608,
+  /** G2C_PARTNER_PROPERTY_CHANGED_PUSH - 伙伴属性变化推送 */
+  G2C_PARTNER_PROPERTY_CHANGED_PUSH = 651,
   UNRECOGNIZED = -1,
 }
 
@@ -265,6 +282,33 @@ export function messageIDFromJSON(object: any): MessageID {
     case 551:
     case "G2C_NEW_MAIL_PUSH":
       return MessageID.G2C_NEW_MAIL_PUSH;
+    case 601:
+    case "C2G_PARTNER_LIST_REQUEST":
+      return MessageID.C2G_PARTNER_LIST_REQUEST;
+    case 602:
+    case "G2C_PARTNER_LIST_RESPONSE":
+      return MessageID.G2C_PARTNER_LIST_RESPONSE;
+    case 603:
+    case "C2G_PARTNER_LEVEL_UP_REQUEST":
+      return MessageID.C2G_PARTNER_LEVEL_UP_REQUEST;
+    case 604:
+    case "G2C_PARTNER_LEVEL_UP_RESPONSE":
+      return MessageID.G2C_PARTNER_LEVEL_UP_RESPONSE;
+    case 605:
+    case "C2G_PARTNER_STAR_UP_REQUEST":
+      return MessageID.C2G_PARTNER_STAR_UP_REQUEST;
+    case 606:
+    case "G2C_PARTNER_STAR_UP_RESPONSE":
+      return MessageID.G2C_PARTNER_STAR_UP_RESPONSE;
+    case 607:
+    case "C2G_PARTNER_UNLOCK_REQUEST":
+      return MessageID.C2G_PARTNER_UNLOCK_REQUEST;
+    case 608:
+    case "G2C_PARTNER_UNLOCK_RESPONSE":
+      return MessageID.G2C_PARTNER_UNLOCK_RESPONSE;
+    case 651:
+    case "G2C_PARTNER_PROPERTY_CHANGED_PUSH":
+      return MessageID.G2C_PARTNER_PROPERTY_CHANGED_PUSH;
     case -1:
     case "UNRECOGNIZED":
     default:
@@ -374,401 +418,26 @@ export function messageIDToJSON(object: MessageID): string {
       return "G2C_DELETE_MAIL_RESPONSE";
     case MessageID.G2C_NEW_MAIL_PUSH:
       return "G2C_NEW_MAIL_PUSH";
+    case MessageID.C2G_PARTNER_LIST_REQUEST:
+      return "C2G_PARTNER_LIST_REQUEST";
+    case MessageID.G2C_PARTNER_LIST_RESPONSE:
+      return "G2C_PARTNER_LIST_RESPONSE";
+    case MessageID.C2G_PARTNER_LEVEL_UP_REQUEST:
+      return "C2G_PARTNER_LEVEL_UP_REQUEST";
+    case MessageID.G2C_PARTNER_LEVEL_UP_RESPONSE:
+      return "G2C_PARTNER_LEVEL_UP_RESPONSE";
+    case MessageID.C2G_PARTNER_STAR_UP_REQUEST:
+      return "C2G_PARTNER_STAR_UP_REQUEST";
+    case MessageID.G2C_PARTNER_STAR_UP_RESPONSE:
+      return "G2C_PARTNER_STAR_UP_RESPONSE";
+    case MessageID.C2G_PARTNER_UNLOCK_REQUEST:
+      return "C2G_PARTNER_UNLOCK_REQUEST";
+    case MessageID.G2C_PARTNER_UNLOCK_RESPONSE:
+      return "G2C_PARTNER_UNLOCK_RESPONSE";
+    case MessageID.G2C_PARTNER_PROPERTY_CHANGED_PUSH:
+      return "G2C_PARTNER_PROPERTY_CHANGED_PUSH";
     case MessageID.UNRECOGNIZED:
     default:
       return "UNRECOGNIZED";
   }
-}
-
-/** 会话信息 */
-export interface Session {
-  /** 消息ID */
-  messageId: number;
-  /** 序列号 */
-  sequence: number;
-  /** 时间戳 */
-  timestamp: number;
-  /** 版本号 */
-  version: string;
-}
-
-/** 基础请求 */
-export interface BaseRequest {
-  /** 会话信息 */
-  session:
-    | Session
-    | undefined;
-  /** 消息内容 */
-  payload: Uint8Array;
-}
-
-/** 基础响应 */
-export interface BaseResponse {
-  /** 会话信息 */
-  session:
-    | Session
-    | undefined;
-  /** 错误码 */
-  errorCode: number;
-  /** 错误信息 */
-  errorMsg: string;
-  /** 消息负载 */
-  payload: Uint8Array;
-}
-
-function createBaseSession(): Session {
-  return { messageId: 0, sequence: 0, timestamp: 0, version: "" };
-}
-
-export const Session: MessageFns<Session> = {
-  encode(message: Session, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.messageId !== 0) {
-      writer.uint32(8).int32(message.messageId);
-    }
-    if (message.sequence !== 0) {
-      writer.uint32(16).int32(message.sequence);
-    }
-    if (message.timestamp !== 0) {
-      writer.uint32(24).int64(message.timestamp);
-    }
-    if (message.version !== "") {
-      writer.uint32(34).string(message.version);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): Session {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseSession();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 8) {
-            break;
-          }
-
-          message.messageId = reader.int32();
-          continue;
-        }
-        case 2: {
-          if (tag !== 16) {
-            break;
-          }
-
-          message.sequence = reader.int32();
-          continue;
-        }
-        case 3: {
-          if (tag !== 24) {
-            break;
-          }
-
-          message.timestamp = longToNumber(reader.int64());
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.version = reader.string();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): Session {
-    return {
-      messageId: isSet(object.messageId) ? globalThis.Number(object.messageId) : 0,
-      sequence: isSet(object.sequence) ? globalThis.Number(object.sequence) : 0,
-      timestamp: isSet(object.timestamp) ? globalThis.Number(object.timestamp) : 0,
-      version: isSet(object.version) ? globalThis.String(object.version) : "",
-    };
-  },
-
-  toJSON(message: Session): unknown {
-    const obj: any = {};
-    if (message.messageId !== 0) {
-      obj.messageId = Math.round(message.messageId);
-    }
-    if (message.sequence !== 0) {
-      obj.sequence = Math.round(message.sequence);
-    }
-    if (message.timestamp !== 0) {
-      obj.timestamp = Math.round(message.timestamp);
-    }
-    if (message.version !== "") {
-      obj.version = message.version;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<Session>, I>>(base?: I): Session {
-    return Session.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<Session>, I>>(object: I): Session {
-    const message = createBaseSession();
-    message.messageId = object.messageId ?? 0;
-    message.sequence = object.sequence ?? 0;
-    message.timestamp = object.timestamp ?? 0;
-    message.version = object.version ?? "";
-    return message;
-  },
-};
-
-function createBaseBaseRequest(): BaseRequest {
-  return { session: undefined, payload: new Uint8Array(0) };
-}
-
-export const BaseRequest: MessageFns<BaseRequest> = {
-  encode(message: BaseRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.session !== undefined) {
-      Session.encode(message.session, writer.uint32(10).fork()).join();
-    }
-    if (message.payload.length !== 0) {
-      writer.uint32(18).bytes(message.payload);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): BaseRequest {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseBaseRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.session = Session.decode(reader, reader.uint32());
-          continue;
-        }
-        case 2: {
-          if (tag !== 18) {
-            break;
-          }
-
-          message.payload = reader.bytes();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): BaseRequest {
-    return {
-      session: isSet(object.session) ? Session.fromJSON(object.session) : undefined,
-      payload: isSet(object.payload) ? bytesFromBase64(object.payload) : new Uint8Array(0),
-    };
-  },
-
-  toJSON(message: BaseRequest): unknown {
-    const obj: any = {};
-    if (message.session !== undefined) {
-      obj.session = Session.toJSON(message.session);
-    }
-    if (message.payload.length !== 0) {
-      obj.payload = base64FromBytes(message.payload);
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<BaseRequest>, I>>(base?: I): BaseRequest {
-    return BaseRequest.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<BaseRequest>, I>>(object: I): BaseRequest {
-    const message = createBaseBaseRequest();
-    message.session = (object.session !== undefined && object.session !== null)
-      ? Session.fromPartial(object.session)
-      : undefined;
-    message.payload = object.payload ?? new Uint8Array(0);
-    return message;
-  },
-};
-
-function createBaseBaseResponse(): BaseResponse {
-  return { session: undefined, errorCode: 0, errorMsg: "", payload: new Uint8Array(0) };
-}
-
-export const BaseResponse: MessageFns<BaseResponse> = {
-  encode(message: BaseResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (message.session !== undefined) {
-      Session.encode(message.session, writer.uint32(10).fork()).join();
-    }
-    if (message.errorCode !== 0) {
-      writer.uint32(16).int32(message.errorCode);
-    }
-    if (message.errorMsg !== "") {
-      writer.uint32(26).string(message.errorMsg);
-    }
-    if (message.payload.length !== 0) {
-      writer.uint32(34).bytes(message.payload);
-    }
-    return writer;
-  },
-
-  decode(input: BinaryReader | Uint8Array, length?: number): BaseResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseBaseResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1: {
-          if (tag !== 10) {
-            break;
-          }
-
-          message.session = Session.decode(reader, reader.uint32());
-          continue;
-        }
-        case 2: {
-          if (tag !== 16) {
-            break;
-          }
-
-          message.errorCode = reader.int32();
-          continue;
-        }
-        case 3: {
-          if (tag !== 26) {
-            break;
-          }
-
-          message.errorMsg = reader.string();
-          continue;
-        }
-        case 4: {
-          if (tag !== 34) {
-            break;
-          }
-
-          message.payload = reader.bytes();
-          continue;
-        }
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skip(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): BaseResponse {
-    return {
-      session: isSet(object.session) ? Session.fromJSON(object.session) : undefined,
-      errorCode: isSet(object.errorCode) ? globalThis.Number(object.errorCode) : 0,
-      errorMsg: isSet(object.errorMsg) ? globalThis.String(object.errorMsg) : "",
-      payload: isSet(object.payload) ? bytesFromBase64(object.payload) : new Uint8Array(0),
-    };
-  },
-
-  toJSON(message: BaseResponse): unknown {
-    const obj: any = {};
-    if (message.session !== undefined) {
-      obj.session = Session.toJSON(message.session);
-    }
-    if (message.errorCode !== 0) {
-      obj.errorCode = Math.round(message.errorCode);
-    }
-    if (message.errorMsg !== "") {
-      obj.errorMsg = message.errorMsg;
-    }
-    if (message.payload.length !== 0) {
-      obj.payload = base64FromBytes(message.payload);
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<BaseResponse>, I>>(base?: I): BaseResponse {
-    return BaseResponse.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<BaseResponse>, I>>(object: I): BaseResponse {
-    const message = createBaseBaseResponse();
-    message.session = (object.session !== undefined && object.session !== null)
-      ? Session.fromPartial(object.session)
-      : undefined;
-    message.errorCode = object.errorCode ?? 0;
-    message.errorMsg = object.errorMsg ?? "";
-    message.payload = object.payload ?? new Uint8Array(0);
-    return message;
-  },
-};
-
-function bytesFromBase64(b64: string): Uint8Array {
-  if ((globalThis as any).Buffer) {
-    return Uint8Array.from(globalThis.Buffer.from(b64, "base64"));
-  } else {
-    const bin = globalThis.atob(b64);
-    const arr = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; ++i) {
-      arr[i] = bin.charCodeAt(i);
-    }
-    return arr;
-  }
-}
-
-function base64FromBytes(arr: Uint8Array): string {
-  if ((globalThis as any).Buffer) {
-    return globalThis.Buffer.from(arr).toString("base64");
-  } else {
-    const bin: string[] = [];
-    arr.forEach((byte) => {
-      bin.push(globalThis.String.fromCharCode(byte));
-    });
-    return globalThis.btoa(bin.join(""));
-  }
-}
-
-type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
-
-export type DeepPartial<T> = T extends Builtin ? T
-  : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
-  : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
-  : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
-  : Partial<T>;
-
-type KeysOfUnion<T> = T extends T ? keyof T : never;
-export type Exact<P, I extends P> = P extends Builtin ? P
-  : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
-
-function longToNumber(int64: { toString(): string }): number {
-  const num = globalThis.Number(int64.toString());
-  if (num > globalThis.Number.MAX_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is larger than Number.MAX_SAFE_INTEGER");
-  }
-  if (num < globalThis.Number.MIN_SAFE_INTEGER) {
-    throw new globalThis.Error("Value is smaller than Number.MIN_SAFE_INTEGER");
-  }
-  return num;
-}
-
-function isSet(value: any): boolean {
-  return value !== null && value !== undefined;
-}
-
-export interface MessageFns<T> {
-  encode(message: T, writer?: BinaryWriter): BinaryWriter;
-  decode(input: BinaryReader | Uint8Array, length?: number): T;
-  fromJSON(object: any): T;
-  toJSON(message: T): unknown;
-  create<I extends Exact<DeepPartial<T>, I>>(base?: I): T;
-  fromPartial<I extends Exact<DeepPartial<T>, I>>(object: I): T;
 }

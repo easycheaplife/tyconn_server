@@ -6,8 +6,45 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import { PropType, propTypeFromJSON, propTypeToJSON } from "./enum";
 
 export const protobufPackage = "common";
+
+/** 会话信息 */
+export interface Session {
+  /** 消息ID */
+  messageId: number;
+  /** 序列号 */
+  sequence: number;
+  /** 时间戳 */
+  timestamp: number;
+  /** 版本号 */
+  version: string;
+}
+
+/** 基础请求 */
+export interface BaseRequest {
+  /** 会话信息 */
+  session:
+    | Session
+    | undefined;
+  /** 消息内容 */
+  payload: Uint8Array;
+}
+
+/** 基础响应 */
+export interface BaseResponse {
+  /** 会话信息 */
+  session:
+    | Session
+    | undefined;
+  /** 错误码 */
+  errorCode: number;
+  /** 错误信息 */
+  errorMsg: string;
+  /** 消息负载 */
+  payload: Uint8Array;
+}
 
 /** 用户信息 */
 export interface UserInfo {
@@ -120,6 +157,374 @@ export interface ResourceInfo {
   /** 资源数量 */
   amount: number;
 }
+
+/** 伙伴基本信息 */
+export interface PartnerBaseInfo {
+  /** 伙伴ID */
+  partnerId: number;
+  /** 单位ID */
+  unitId: number;
+  /** 等级 */
+  level: number;
+  /** 经验 */
+  exp: number;
+  /** 品质 */
+  quality: number;
+  /** 星级 */
+  star: number;
+  /** 创建时间 */
+  createTime: number;
+  /** 种族 */
+  race: number;
+  /** 特长/职业 */
+  forte: number;
+  /** 属性列表 */
+  properties: PropertyInfo[];
+}
+
+/** 伙伴完整信息 */
+export interface PartnerInfo {
+  /** 基本信息 */
+  baseInfo:
+    | PartnerBaseInfo
+    | undefined;
+  /** 状态 (1:可解锁, 2:已解锁, 3:未解锁) */
+  state: number;
+  /** 拥有的碎片数量 */
+  fragmentCount: number;
+  /** 解锁所需的碎片数量 */
+  fragmentNeed: number;
+  /** 是否可以升级 */
+  canLevelUp: boolean;
+  /** 是否可以升星 */
+  canStarUp: boolean;
+  /** 升级消耗 */
+  levelUpCost: ItemCost[];
+  /** 升星消耗 */
+  starUpCost: ItemCost[];
+}
+
+/** 属性信息 */
+export interface PropertyInfo {
+  /** 属性ID */
+  propId: PropType;
+  /** 基础值 */
+  value: number;
+  /** 额外值(装备、星级加成等) */
+  extra: number;
+}
+
+/** 属性变化 */
+export interface PropertyChange {
+  /** 属性ID */
+  propId: PropType;
+  /** 变化值 */
+  value: number;
+}
+
+/** 物品消耗 */
+export interface ItemCost {
+  /** 物品ID */
+  itemId: number;
+  /** 数量 */
+  count: number;
+}
+
+function createBaseSession(): Session {
+  return { messageId: 0, sequence: 0, timestamp: 0, version: "" };
+}
+
+export const Session: MessageFns<Session> = {
+  encode(message: Session, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.messageId !== 0) {
+      writer.uint32(8).int32(message.messageId);
+    }
+    if (message.sequence !== 0) {
+      writer.uint32(16).int32(message.sequence);
+    }
+    if (message.timestamp !== 0) {
+      writer.uint32(24).int64(message.timestamp);
+    }
+    if (message.version !== "") {
+      writer.uint32(34).string(message.version);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): Session {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseSession();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.messageId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.sequence = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.timestamp = longToNumber(reader.int64());
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.version = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Session {
+    return {
+      messageId: isSet(object.messageId) ? globalThis.Number(object.messageId) : 0,
+      sequence: isSet(object.sequence) ? globalThis.Number(object.sequence) : 0,
+      timestamp: isSet(object.timestamp) ? globalThis.Number(object.timestamp) : 0,
+      version: isSet(object.version) ? globalThis.String(object.version) : "",
+    };
+  },
+
+  toJSON(message: Session): unknown {
+    const obj: any = {};
+    if (message.messageId !== 0) {
+      obj.messageId = Math.round(message.messageId);
+    }
+    if (message.sequence !== 0) {
+      obj.sequence = Math.round(message.sequence);
+    }
+    if (message.timestamp !== 0) {
+      obj.timestamp = Math.round(message.timestamp);
+    }
+    if (message.version !== "") {
+      obj.version = message.version;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<Session>, I>>(base?: I): Session {
+    return Session.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<Session>, I>>(object: I): Session {
+    const message = createBaseSession();
+    message.messageId = object.messageId ?? 0;
+    message.sequence = object.sequence ?? 0;
+    message.timestamp = object.timestamp ?? 0;
+    message.version = object.version ?? "";
+    return message;
+  },
+};
+
+function createBaseBaseRequest(): BaseRequest {
+  return { session: undefined, payload: new Uint8Array(0) };
+}
+
+export const BaseRequest: MessageFns<BaseRequest> = {
+  encode(message: BaseRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.session !== undefined) {
+      Session.encode(message.session, writer.uint32(10).fork()).join();
+    }
+    if (message.payload.length !== 0) {
+      writer.uint32(18).bytes(message.payload);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BaseRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBaseRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.session = Session.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.payload = reader.bytes();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BaseRequest {
+    return {
+      session: isSet(object.session) ? Session.fromJSON(object.session) : undefined,
+      payload: isSet(object.payload) ? bytesFromBase64(object.payload) : new Uint8Array(0),
+    };
+  },
+
+  toJSON(message: BaseRequest): unknown {
+    const obj: any = {};
+    if (message.session !== undefined) {
+      obj.session = Session.toJSON(message.session);
+    }
+    if (message.payload.length !== 0) {
+      obj.payload = base64FromBytes(message.payload);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<BaseRequest>, I>>(base?: I): BaseRequest {
+    return BaseRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<BaseRequest>, I>>(object: I): BaseRequest {
+    const message = createBaseBaseRequest();
+    message.session = (object.session !== undefined && object.session !== null)
+      ? Session.fromPartial(object.session)
+      : undefined;
+    message.payload = object.payload ?? new Uint8Array(0);
+    return message;
+  },
+};
+
+function createBaseBaseResponse(): BaseResponse {
+  return { session: undefined, errorCode: 0, errorMsg: "", payload: new Uint8Array(0) };
+}
+
+export const BaseResponse: MessageFns<BaseResponse> = {
+  encode(message: BaseResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.session !== undefined) {
+      Session.encode(message.session, writer.uint32(10).fork()).join();
+    }
+    if (message.errorCode !== 0) {
+      writer.uint32(16).int32(message.errorCode);
+    }
+    if (message.errorMsg !== "") {
+      writer.uint32(26).string(message.errorMsg);
+    }
+    if (message.payload.length !== 0) {
+      writer.uint32(34).bytes(message.payload);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): BaseResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseBaseResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.session = Session.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.errorCode = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.errorMsg = reader.string();
+          continue;
+        }
+        case 4: {
+          if (tag !== 34) {
+            break;
+          }
+
+          message.payload = reader.bytes();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): BaseResponse {
+    return {
+      session: isSet(object.session) ? Session.fromJSON(object.session) : undefined,
+      errorCode: isSet(object.errorCode) ? globalThis.Number(object.errorCode) : 0,
+      errorMsg: isSet(object.errorMsg) ? globalThis.String(object.errorMsg) : "",
+      payload: isSet(object.payload) ? bytesFromBase64(object.payload) : new Uint8Array(0),
+    };
+  },
+
+  toJSON(message: BaseResponse): unknown {
+    const obj: any = {};
+    if (message.session !== undefined) {
+      obj.session = Session.toJSON(message.session);
+    }
+    if (message.errorCode !== 0) {
+      obj.errorCode = Math.round(message.errorCode);
+    }
+    if (message.errorMsg !== "") {
+      obj.errorMsg = message.errorMsg;
+    }
+    if (message.payload.length !== 0) {
+      obj.payload = base64FromBytes(message.payload);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<BaseResponse>, I>>(base?: I): BaseResponse {
+    return BaseResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<BaseResponse>, I>>(object: I): BaseResponse {
+    const message = createBaseBaseResponse();
+    message.session = (object.session !== undefined && object.session !== null)
+      ? Session.fromPartial(object.session)
+      : undefined;
+    message.errorCode = object.errorCode ?? 0;
+    message.errorMsg = object.errorMsg ?? "";
+    message.payload = object.payload ?? new Uint8Array(0);
+    return message;
+  },
+};
 
 function createBaseUserInfo(): UserInfo {
   return {
@@ -1172,6 +1577,679 @@ export const ResourceInfo: MessageFns<ResourceInfo> = {
     return message;
   },
 };
+
+function createBasePartnerBaseInfo(): PartnerBaseInfo {
+  return {
+    partnerId: 0,
+    unitId: 0,
+    level: 0,
+    exp: 0,
+    quality: 0,
+    star: 0,
+    createTime: 0,
+    race: 0,
+    forte: 0,
+    properties: [],
+  };
+}
+
+export const PartnerBaseInfo: MessageFns<PartnerBaseInfo> = {
+  encode(message: PartnerBaseInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.partnerId !== 0) {
+      writer.uint32(8).int64(message.partnerId);
+    }
+    if (message.unitId !== 0) {
+      writer.uint32(16).int32(message.unitId);
+    }
+    if (message.level !== 0) {
+      writer.uint32(24).int32(message.level);
+    }
+    if (message.exp !== 0) {
+      writer.uint32(32).int32(message.exp);
+    }
+    if (message.quality !== 0) {
+      writer.uint32(40).int32(message.quality);
+    }
+    if (message.star !== 0) {
+      writer.uint32(48).int32(message.star);
+    }
+    if (message.createTime !== 0) {
+      writer.uint32(56).int64(message.createTime);
+    }
+    if (message.race !== 0) {
+      writer.uint32(64).int32(message.race);
+    }
+    if (message.forte !== 0) {
+      writer.uint32(72).int32(message.forte);
+    }
+    for (const v of message.properties) {
+      PropertyInfo.encode(v!, writer.uint32(82).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PartnerBaseInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePartnerBaseInfo();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.partnerId = longToNumber(reader.int64());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.unitId = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.level = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.exp = reader.int32();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.quality = reader.int32();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.star = reader.int32();
+          continue;
+        }
+        case 7: {
+          if (tag !== 56) {
+            break;
+          }
+
+          message.createTime = longToNumber(reader.int64());
+          continue;
+        }
+        case 8: {
+          if (tag !== 64) {
+            break;
+          }
+
+          message.race = reader.int32();
+          continue;
+        }
+        case 9: {
+          if (tag !== 72) {
+            break;
+          }
+
+          message.forte = reader.int32();
+          continue;
+        }
+        case 10: {
+          if (tag !== 82) {
+            break;
+          }
+
+          message.properties.push(PropertyInfo.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PartnerBaseInfo {
+    return {
+      partnerId: isSet(object.partnerId) ? globalThis.Number(object.partnerId) : 0,
+      unitId: isSet(object.unitId) ? globalThis.Number(object.unitId) : 0,
+      level: isSet(object.level) ? globalThis.Number(object.level) : 0,
+      exp: isSet(object.exp) ? globalThis.Number(object.exp) : 0,
+      quality: isSet(object.quality) ? globalThis.Number(object.quality) : 0,
+      star: isSet(object.star) ? globalThis.Number(object.star) : 0,
+      createTime: isSet(object.createTime) ? globalThis.Number(object.createTime) : 0,
+      race: isSet(object.race) ? globalThis.Number(object.race) : 0,
+      forte: isSet(object.forte) ? globalThis.Number(object.forte) : 0,
+      properties: globalThis.Array.isArray(object?.properties)
+        ? object.properties.map((e: any) => PropertyInfo.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: PartnerBaseInfo): unknown {
+    const obj: any = {};
+    if (message.partnerId !== 0) {
+      obj.partnerId = Math.round(message.partnerId);
+    }
+    if (message.unitId !== 0) {
+      obj.unitId = Math.round(message.unitId);
+    }
+    if (message.level !== 0) {
+      obj.level = Math.round(message.level);
+    }
+    if (message.exp !== 0) {
+      obj.exp = Math.round(message.exp);
+    }
+    if (message.quality !== 0) {
+      obj.quality = Math.round(message.quality);
+    }
+    if (message.star !== 0) {
+      obj.star = Math.round(message.star);
+    }
+    if (message.createTime !== 0) {
+      obj.createTime = Math.round(message.createTime);
+    }
+    if (message.race !== 0) {
+      obj.race = Math.round(message.race);
+    }
+    if (message.forte !== 0) {
+      obj.forte = Math.round(message.forte);
+    }
+    if (message.properties?.length) {
+      obj.properties = message.properties.map((e) => PropertyInfo.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PartnerBaseInfo>, I>>(base?: I): PartnerBaseInfo {
+    return PartnerBaseInfo.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PartnerBaseInfo>, I>>(object: I): PartnerBaseInfo {
+    const message = createBasePartnerBaseInfo();
+    message.partnerId = object.partnerId ?? 0;
+    message.unitId = object.unitId ?? 0;
+    message.level = object.level ?? 0;
+    message.exp = object.exp ?? 0;
+    message.quality = object.quality ?? 0;
+    message.star = object.star ?? 0;
+    message.createTime = object.createTime ?? 0;
+    message.race = object.race ?? 0;
+    message.forte = object.forte ?? 0;
+    message.properties = object.properties?.map((e) => PropertyInfo.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBasePartnerInfo(): PartnerInfo {
+  return {
+    baseInfo: undefined,
+    state: 0,
+    fragmentCount: 0,
+    fragmentNeed: 0,
+    canLevelUp: false,
+    canStarUp: false,
+    levelUpCost: [],
+    starUpCost: [],
+  };
+}
+
+export const PartnerInfo: MessageFns<PartnerInfo> = {
+  encode(message: PartnerInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.baseInfo !== undefined) {
+      PartnerBaseInfo.encode(message.baseInfo, writer.uint32(10).fork()).join();
+    }
+    if (message.state !== 0) {
+      writer.uint32(16).int32(message.state);
+    }
+    if (message.fragmentCount !== 0) {
+      writer.uint32(24).int32(message.fragmentCount);
+    }
+    if (message.fragmentNeed !== 0) {
+      writer.uint32(32).int32(message.fragmentNeed);
+    }
+    if (message.canLevelUp !== false) {
+      writer.uint32(40).bool(message.canLevelUp);
+    }
+    if (message.canStarUp !== false) {
+      writer.uint32(48).bool(message.canStarUp);
+    }
+    for (const v of message.levelUpCost) {
+      ItemCost.encode(v!, writer.uint32(58).fork()).join();
+    }
+    for (const v of message.starUpCost) {
+      ItemCost.encode(v!, writer.uint32(66).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PartnerInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePartnerInfo();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.baseInfo = PartnerBaseInfo.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.state = reader.int32();
+          continue;
+        }
+        case 3: {
+          if (tag !== 24) {
+            break;
+          }
+
+          message.fragmentCount = reader.int32();
+          continue;
+        }
+        case 4: {
+          if (tag !== 32) {
+            break;
+          }
+
+          message.fragmentNeed = reader.int32();
+          continue;
+        }
+        case 5: {
+          if (tag !== 40) {
+            break;
+          }
+
+          message.canLevelUp = reader.bool();
+          continue;
+        }
+        case 6: {
+          if (tag !== 48) {
+            break;
+          }
+
+          message.canStarUp = reader.bool();
+          continue;
+        }
+        case 7: {
+          if (tag !== 58) {
+            break;
+          }
+
+          message.levelUpCost.push(ItemCost.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 8: {
+          if (tag !== 66) {
+            break;
+          }
+
+          message.starUpCost.push(ItemCost.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PartnerInfo {
+    return {
+      baseInfo: isSet(object.baseInfo) ? PartnerBaseInfo.fromJSON(object.baseInfo) : undefined,
+      state: isSet(object.state) ? globalThis.Number(object.state) : 0,
+      fragmentCount: isSet(object.fragmentCount) ? globalThis.Number(object.fragmentCount) : 0,
+      fragmentNeed: isSet(object.fragmentNeed) ? globalThis.Number(object.fragmentNeed) : 0,
+      canLevelUp: isSet(object.canLevelUp) ? globalThis.Boolean(object.canLevelUp) : false,
+      canStarUp: isSet(object.canStarUp) ? globalThis.Boolean(object.canStarUp) : false,
+      levelUpCost: globalThis.Array.isArray(object?.levelUpCost)
+        ? object.levelUpCost.map((e: any) => ItemCost.fromJSON(e))
+        : [],
+      starUpCost: globalThis.Array.isArray(object?.starUpCost)
+        ? object.starUpCost.map((e: any) => ItemCost.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: PartnerInfo): unknown {
+    const obj: any = {};
+    if (message.baseInfo !== undefined) {
+      obj.baseInfo = PartnerBaseInfo.toJSON(message.baseInfo);
+    }
+    if (message.state !== 0) {
+      obj.state = Math.round(message.state);
+    }
+    if (message.fragmentCount !== 0) {
+      obj.fragmentCount = Math.round(message.fragmentCount);
+    }
+    if (message.fragmentNeed !== 0) {
+      obj.fragmentNeed = Math.round(message.fragmentNeed);
+    }
+    if (message.canLevelUp !== false) {
+      obj.canLevelUp = message.canLevelUp;
+    }
+    if (message.canStarUp !== false) {
+      obj.canStarUp = message.canStarUp;
+    }
+    if (message.levelUpCost?.length) {
+      obj.levelUpCost = message.levelUpCost.map((e) => ItemCost.toJSON(e));
+    }
+    if (message.starUpCost?.length) {
+      obj.starUpCost = message.starUpCost.map((e) => ItemCost.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PartnerInfo>, I>>(base?: I): PartnerInfo {
+    return PartnerInfo.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PartnerInfo>, I>>(object: I): PartnerInfo {
+    const message = createBasePartnerInfo();
+    message.baseInfo = (object.baseInfo !== undefined && object.baseInfo !== null)
+      ? PartnerBaseInfo.fromPartial(object.baseInfo)
+      : undefined;
+    message.state = object.state ?? 0;
+    message.fragmentCount = object.fragmentCount ?? 0;
+    message.fragmentNeed = object.fragmentNeed ?? 0;
+    message.canLevelUp = object.canLevelUp ?? false;
+    message.canStarUp = object.canStarUp ?? false;
+    message.levelUpCost = object.levelUpCost?.map((e) => ItemCost.fromPartial(e)) || [];
+    message.starUpCost = object.starUpCost?.map((e) => ItemCost.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBasePropertyInfo(): PropertyInfo {
+  return { propId: 0, value: 0, extra: 0 };
+}
+
+export const PropertyInfo: MessageFns<PropertyInfo> = {
+  encode(message: PropertyInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.propId !== 0) {
+      writer.uint32(8).int32(message.propId);
+    }
+    if (message.value !== 0) {
+      writer.uint32(21).float(message.value);
+    }
+    if (message.extra !== 0) {
+      writer.uint32(29).float(message.extra);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PropertyInfo {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePropertyInfo();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.propId = reader.int32() as any;
+          continue;
+        }
+        case 2: {
+          if (tag !== 21) {
+            break;
+          }
+
+          message.value = reader.float();
+          continue;
+        }
+        case 3: {
+          if (tag !== 29) {
+            break;
+          }
+
+          message.extra = reader.float();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PropertyInfo {
+    return {
+      propId: isSet(object.propId) ? propTypeFromJSON(object.propId) : 0,
+      value: isSet(object.value) ? globalThis.Number(object.value) : 0,
+      extra: isSet(object.extra) ? globalThis.Number(object.extra) : 0,
+    };
+  },
+
+  toJSON(message: PropertyInfo): unknown {
+    const obj: any = {};
+    if (message.propId !== 0) {
+      obj.propId = propTypeToJSON(message.propId);
+    }
+    if (message.value !== 0) {
+      obj.value = message.value;
+    }
+    if (message.extra !== 0) {
+      obj.extra = message.extra;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PropertyInfo>, I>>(base?: I): PropertyInfo {
+    return PropertyInfo.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PropertyInfo>, I>>(object: I): PropertyInfo {
+    const message = createBasePropertyInfo();
+    message.propId = object.propId ?? 0;
+    message.value = object.value ?? 0;
+    message.extra = object.extra ?? 0;
+    return message;
+  },
+};
+
+function createBasePropertyChange(): PropertyChange {
+  return { propId: 0, value: 0 };
+}
+
+export const PropertyChange: MessageFns<PropertyChange> = {
+  encode(message: PropertyChange, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.propId !== 0) {
+      writer.uint32(8).int32(message.propId);
+    }
+    if (message.value !== 0) {
+      writer.uint32(21).float(message.value);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): PropertyChange {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBasePropertyChange();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.propId = reader.int32() as any;
+          continue;
+        }
+        case 2: {
+          if (tag !== 21) {
+            break;
+          }
+
+          message.value = reader.float();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): PropertyChange {
+    return {
+      propId: isSet(object.propId) ? propTypeFromJSON(object.propId) : 0,
+      value: isSet(object.value) ? globalThis.Number(object.value) : 0,
+    };
+  },
+
+  toJSON(message: PropertyChange): unknown {
+    const obj: any = {};
+    if (message.propId !== 0) {
+      obj.propId = propTypeToJSON(message.propId);
+    }
+    if (message.value !== 0) {
+      obj.value = message.value;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<PropertyChange>, I>>(base?: I): PropertyChange {
+    return PropertyChange.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<PropertyChange>, I>>(object: I): PropertyChange {
+    const message = createBasePropertyChange();
+    message.propId = object.propId ?? 0;
+    message.value = object.value ?? 0;
+    return message;
+  },
+};
+
+function createBaseItemCost(): ItemCost {
+  return { itemId: 0, count: 0 };
+}
+
+export const ItemCost: MessageFns<ItemCost> = {
+  encode(message: ItemCost, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.itemId !== 0) {
+      writer.uint32(8).int32(message.itemId);
+    }
+    if (message.count !== 0) {
+      writer.uint32(16).int32(message.count);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): ItemCost {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseItemCost();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.itemId = reader.int32();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.count = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ItemCost {
+    return {
+      itemId: isSet(object.itemId) ? globalThis.Number(object.itemId) : 0,
+      count: isSet(object.count) ? globalThis.Number(object.count) : 0,
+    };
+  },
+
+  toJSON(message: ItemCost): unknown {
+    const obj: any = {};
+    if (message.itemId !== 0) {
+      obj.itemId = Math.round(message.itemId);
+    }
+    if (message.count !== 0) {
+      obj.count = Math.round(message.count);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ItemCost>, I>>(base?: I): ItemCost {
+    return ItemCost.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ItemCost>, I>>(object: I): ItemCost {
+    const message = createBaseItemCost();
+    message.itemId = object.itemId ?? 0;
+    message.count = object.count ?? 0;
+    return message;
+  },
+};
+
+function bytesFromBase64(b64: string): Uint8Array {
+  if ((globalThis as any).Buffer) {
+    return Uint8Array.from(globalThis.Buffer.from(b64, "base64"));
+  } else {
+    const bin = globalThis.atob(b64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; ++i) {
+      arr[i] = bin.charCodeAt(i);
+    }
+    return arr;
+  }
+}
+
+function base64FromBytes(arr: Uint8Array): string {
+  if ((globalThis as any).Buffer) {
+    return globalThis.Buffer.from(arr).toString("base64");
+  } else {
+    const bin: string[] = [];
+    arr.forEach((byte) => {
+      bin.push(globalThis.String.fromCharCode(byte));
+    });
+    return globalThis.btoa(bin.join(""));
+  }
+}
 
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
 

@@ -6,7 +6,16 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import { BagInfo, CardInfo, ItemInfo, MailInfo, ResourceInfo, UserInfo } from "../common/entity";
+import {
+  BagInfo,
+  CardInfo,
+  ItemInfo,
+  MailInfo,
+  PartnerInfo,
+  PropertyChange,
+  ResourceInfo,
+  UserInfo,
+} from "../common/entity";
 import { BagType, bagTypeFromJSON, bagTypeToJSON } from "../common/enum";
 
 export const protobufPackage = "command";
@@ -120,7 +129,7 @@ export interface C2GUseItemRequest {
   count: number;
 }
 
-/** 使用物品响应 {{Res:204}} */
+/** 使用物品响应 {{Res:204=202}} */
 export interface G2CUseItemResponse {
   /** 变化的物品列表 */
   bags: BagInfo[];
@@ -439,6 +448,86 @@ export interface G2CDeleteMailResponse {
 export interface G2CNewMailPush {
   /** 新邮件信息 */
   mail: MailInfo | undefined;
+}
+
+/** 获取伙伴列表请求 {{Req:601}} */
+export interface C2GPartnerListRequest {
+  /** JWT令牌 */
+  token: string;
+}
+
+/** 获取伙伴列表响应 {{Res:602}} */
+export interface G2CPartnerListResponse {
+  /** 伙伴列表 */
+  partners: PartnerInfo[];
+}
+
+/** 伙伴升级请求 {{Req:603}} */
+export interface C2GPartnerLevelUpRequest {
+  /** JWT令牌 */
+  token: string;
+  /** 伙伴ID */
+  partnerId: number;
+}
+
+/** 伙伴升级响应 {{Res:604}} */
+export interface G2CPartnerLevelUpResponse {
+  /** 更新后的伙伴信息 */
+  partner:
+    | PartnerInfo
+    | undefined;
+  /** 属性增益 */
+  propertyGains: PropertyChange[];
+  /** 消耗的物品 */
+  consumedItems: ItemInfo[];
+}
+
+/** 伙伴升星请求 {{Req:605}} */
+export interface C2GPartnerStarUpRequest {
+  /** JWT令牌 */
+  token: string;
+  /** 伙伴ID */
+  partnerId: number;
+}
+
+/** 伙伴升星响应 {{Res:606}} */
+export interface G2CPartnerStarUpResponse {
+  /** 更新后的伙伴信息 */
+  partner:
+    | PartnerInfo
+    | undefined;
+  /** 属性增益 */
+  propertyGains: PropertyChange[];
+  /** 消耗的物品 */
+  consumedItems: ItemInfo[];
+}
+
+/** 伙伴解锁请求 {{Req:607}} */
+export interface C2GPartnerUnlockRequest {
+  /** JWT令牌 */
+  token: string;
+  /** 单位ID */
+  unitId: number;
+}
+
+/** 伙伴解锁响应 {{Res:608}} */
+export interface G2CPartnerUnlockResponse {
+  /** 新解锁的伙伴信息 */
+  partner:
+    | PartnerInfo
+    | undefined;
+  /** 消耗的碎片数量 */
+  consumedFragments: number;
+}
+
+/** 伙伴属性变化推送 {{Push:651}} */
+export interface G2CPartnerPropertyChangedPush {
+  /** 伙伴ID */
+  partnerId: number;
+  /** 属性变化 */
+  propertyChanges: PropertyChange[];
+  /** 变化原因 */
+  reason: string;
 }
 
 function createBaseC2LLoginRequest(): C2LLoginRequest {
@@ -4410,6 +4499,724 @@ export const G2CNewMailPush: MessageFns<G2CNewMailPush> = {
   fromPartial<I extends Exact<DeepPartial<G2CNewMailPush>, I>>(object: I): G2CNewMailPush {
     const message = createBaseG2CNewMailPush();
     message.mail = (object.mail !== undefined && object.mail !== null) ? MailInfo.fromPartial(object.mail) : undefined;
+    return message;
+  },
+};
+
+function createBaseC2GPartnerListRequest(): C2GPartnerListRequest {
+  return { token: "" };
+}
+
+export const C2GPartnerListRequest: MessageFns<C2GPartnerListRequest> = {
+  encode(message: C2GPartnerListRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): C2GPartnerListRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseC2GPartnerListRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): C2GPartnerListRequest {
+    return { token: isSet(object.token) ? globalThis.String(object.token) : "" };
+  },
+
+  toJSON(message: C2GPartnerListRequest): unknown {
+    const obj: any = {};
+    if (message.token !== "") {
+      obj.token = message.token;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<C2GPartnerListRequest>, I>>(base?: I): C2GPartnerListRequest {
+    return C2GPartnerListRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<C2GPartnerListRequest>, I>>(object: I): C2GPartnerListRequest {
+    const message = createBaseC2GPartnerListRequest();
+    message.token = object.token ?? "";
+    return message;
+  },
+};
+
+function createBaseG2CPartnerListResponse(): G2CPartnerListResponse {
+  return { partners: [] };
+}
+
+export const G2CPartnerListResponse: MessageFns<G2CPartnerListResponse> = {
+  encode(message: G2CPartnerListResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    for (const v of message.partners) {
+      PartnerInfo.encode(v!, writer.uint32(10).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CPartnerListResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CPartnerListResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.partners.push(PartnerInfo.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CPartnerListResponse {
+    return {
+      partners: globalThis.Array.isArray(object?.partners)
+        ? object.partners.map((e: any) => PartnerInfo.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: G2CPartnerListResponse): unknown {
+    const obj: any = {};
+    if (message.partners?.length) {
+      obj.partners = message.partners.map((e) => PartnerInfo.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CPartnerListResponse>, I>>(base?: I): G2CPartnerListResponse {
+    return G2CPartnerListResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CPartnerListResponse>, I>>(object: I): G2CPartnerListResponse {
+    const message = createBaseG2CPartnerListResponse();
+    message.partners = object.partners?.map((e) => PartnerInfo.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseC2GPartnerLevelUpRequest(): C2GPartnerLevelUpRequest {
+  return { token: "", partnerId: 0 };
+}
+
+export const C2GPartnerLevelUpRequest: MessageFns<C2GPartnerLevelUpRequest> = {
+  encode(message: C2GPartnerLevelUpRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    if (message.partnerId !== 0) {
+      writer.uint32(16).int64(message.partnerId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): C2GPartnerLevelUpRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseC2GPartnerLevelUpRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.partnerId = longToNumber(reader.int64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): C2GPartnerLevelUpRequest {
+    return {
+      token: isSet(object.token) ? globalThis.String(object.token) : "",
+      partnerId: isSet(object.partnerId) ? globalThis.Number(object.partnerId) : 0,
+    };
+  },
+
+  toJSON(message: C2GPartnerLevelUpRequest): unknown {
+    const obj: any = {};
+    if (message.token !== "") {
+      obj.token = message.token;
+    }
+    if (message.partnerId !== 0) {
+      obj.partnerId = Math.round(message.partnerId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<C2GPartnerLevelUpRequest>, I>>(base?: I): C2GPartnerLevelUpRequest {
+    return C2GPartnerLevelUpRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<C2GPartnerLevelUpRequest>, I>>(object: I): C2GPartnerLevelUpRequest {
+    const message = createBaseC2GPartnerLevelUpRequest();
+    message.token = object.token ?? "";
+    message.partnerId = object.partnerId ?? 0;
+    return message;
+  },
+};
+
+function createBaseG2CPartnerLevelUpResponse(): G2CPartnerLevelUpResponse {
+  return { partner: undefined, propertyGains: [], consumedItems: [] };
+}
+
+export const G2CPartnerLevelUpResponse: MessageFns<G2CPartnerLevelUpResponse> = {
+  encode(message: G2CPartnerLevelUpResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.partner !== undefined) {
+      PartnerInfo.encode(message.partner, writer.uint32(10).fork()).join();
+    }
+    for (const v of message.propertyGains) {
+      PropertyChange.encode(v!, writer.uint32(18).fork()).join();
+    }
+    for (const v of message.consumedItems) {
+      ItemInfo.encode(v!, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CPartnerLevelUpResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CPartnerLevelUpResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.partner = PartnerInfo.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.propertyGains.push(PropertyChange.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.consumedItems.push(ItemInfo.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CPartnerLevelUpResponse {
+    return {
+      partner: isSet(object.partner) ? PartnerInfo.fromJSON(object.partner) : undefined,
+      propertyGains: globalThis.Array.isArray(object?.propertyGains)
+        ? object.propertyGains.map((e: any) => PropertyChange.fromJSON(e))
+        : [],
+      consumedItems: globalThis.Array.isArray(object?.consumedItems)
+        ? object.consumedItems.map((e: any) => ItemInfo.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: G2CPartnerLevelUpResponse): unknown {
+    const obj: any = {};
+    if (message.partner !== undefined) {
+      obj.partner = PartnerInfo.toJSON(message.partner);
+    }
+    if (message.propertyGains?.length) {
+      obj.propertyGains = message.propertyGains.map((e) => PropertyChange.toJSON(e));
+    }
+    if (message.consumedItems?.length) {
+      obj.consumedItems = message.consumedItems.map((e) => ItemInfo.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CPartnerLevelUpResponse>, I>>(base?: I): G2CPartnerLevelUpResponse {
+    return G2CPartnerLevelUpResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CPartnerLevelUpResponse>, I>>(object: I): G2CPartnerLevelUpResponse {
+    const message = createBaseG2CPartnerLevelUpResponse();
+    message.partner = (object.partner !== undefined && object.partner !== null)
+      ? PartnerInfo.fromPartial(object.partner)
+      : undefined;
+    message.propertyGains = object.propertyGains?.map((e) => PropertyChange.fromPartial(e)) || [];
+    message.consumedItems = object.consumedItems?.map((e) => ItemInfo.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseC2GPartnerStarUpRequest(): C2GPartnerStarUpRequest {
+  return { token: "", partnerId: 0 };
+}
+
+export const C2GPartnerStarUpRequest: MessageFns<C2GPartnerStarUpRequest> = {
+  encode(message: C2GPartnerStarUpRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    if (message.partnerId !== 0) {
+      writer.uint32(16).int64(message.partnerId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): C2GPartnerStarUpRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseC2GPartnerStarUpRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.partnerId = longToNumber(reader.int64());
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): C2GPartnerStarUpRequest {
+    return {
+      token: isSet(object.token) ? globalThis.String(object.token) : "",
+      partnerId: isSet(object.partnerId) ? globalThis.Number(object.partnerId) : 0,
+    };
+  },
+
+  toJSON(message: C2GPartnerStarUpRequest): unknown {
+    const obj: any = {};
+    if (message.token !== "") {
+      obj.token = message.token;
+    }
+    if (message.partnerId !== 0) {
+      obj.partnerId = Math.round(message.partnerId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<C2GPartnerStarUpRequest>, I>>(base?: I): C2GPartnerStarUpRequest {
+    return C2GPartnerStarUpRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<C2GPartnerStarUpRequest>, I>>(object: I): C2GPartnerStarUpRequest {
+    const message = createBaseC2GPartnerStarUpRequest();
+    message.token = object.token ?? "";
+    message.partnerId = object.partnerId ?? 0;
+    return message;
+  },
+};
+
+function createBaseG2CPartnerStarUpResponse(): G2CPartnerStarUpResponse {
+  return { partner: undefined, propertyGains: [], consumedItems: [] };
+}
+
+export const G2CPartnerStarUpResponse: MessageFns<G2CPartnerStarUpResponse> = {
+  encode(message: G2CPartnerStarUpResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.partner !== undefined) {
+      PartnerInfo.encode(message.partner, writer.uint32(10).fork()).join();
+    }
+    for (const v of message.propertyGains) {
+      PropertyChange.encode(v!, writer.uint32(18).fork()).join();
+    }
+    for (const v of message.consumedItems) {
+      ItemInfo.encode(v!, writer.uint32(26).fork()).join();
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CPartnerStarUpResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CPartnerStarUpResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.partner = PartnerInfo.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.propertyGains.push(PropertyChange.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.consumedItems.push(ItemInfo.decode(reader, reader.uint32()));
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CPartnerStarUpResponse {
+    return {
+      partner: isSet(object.partner) ? PartnerInfo.fromJSON(object.partner) : undefined,
+      propertyGains: globalThis.Array.isArray(object?.propertyGains)
+        ? object.propertyGains.map((e: any) => PropertyChange.fromJSON(e))
+        : [],
+      consumedItems: globalThis.Array.isArray(object?.consumedItems)
+        ? object.consumedItems.map((e: any) => ItemInfo.fromJSON(e))
+        : [],
+    };
+  },
+
+  toJSON(message: G2CPartnerStarUpResponse): unknown {
+    const obj: any = {};
+    if (message.partner !== undefined) {
+      obj.partner = PartnerInfo.toJSON(message.partner);
+    }
+    if (message.propertyGains?.length) {
+      obj.propertyGains = message.propertyGains.map((e) => PropertyChange.toJSON(e));
+    }
+    if (message.consumedItems?.length) {
+      obj.consumedItems = message.consumedItems.map((e) => ItemInfo.toJSON(e));
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CPartnerStarUpResponse>, I>>(base?: I): G2CPartnerStarUpResponse {
+    return G2CPartnerStarUpResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CPartnerStarUpResponse>, I>>(object: I): G2CPartnerStarUpResponse {
+    const message = createBaseG2CPartnerStarUpResponse();
+    message.partner = (object.partner !== undefined && object.partner !== null)
+      ? PartnerInfo.fromPartial(object.partner)
+      : undefined;
+    message.propertyGains = object.propertyGains?.map((e) => PropertyChange.fromPartial(e)) || [];
+    message.consumedItems = object.consumedItems?.map((e) => ItemInfo.fromPartial(e)) || [];
+    return message;
+  },
+};
+
+function createBaseC2GPartnerUnlockRequest(): C2GPartnerUnlockRequest {
+  return { token: "", unitId: 0 };
+}
+
+export const C2GPartnerUnlockRequest: MessageFns<C2GPartnerUnlockRequest> = {
+  encode(message: C2GPartnerUnlockRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.token !== "") {
+      writer.uint32(10).string(message.token);
+    }
+    if (message.unitId !== 0) {
+      writer.uint32(16).int32(message.unitId);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): C2GPartnerUnlockRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseC2GPartnerUnlockRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.token = reader.string();
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.unitId = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): C2GPartnerUnlockRequest {
+    return {
+      token: isSet(object.token) ? globalThis.String(object.token) : "",
+      unitId: isSet(object.unitId) ? globalThis.Number(object.unitId) : 0,
+    };
+  },
+
+  toJSON(message: C2GPartnerUnlockRequest): unknown {
+    const obj: any = {};
+    if (message.token !== "") {
+      obj.token = message.token;
+    }
+    if (message.unitId !== 0) {
+      obj.unitId = Math.round(message.unitId);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<C2GPartnerUnlockRequest>, I>>(base?: I): C2GPartnerUnlockRequest {
+    return C2GPartnerUnlockRequest.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<C2GPartnerUnlockRequest>, I>>(object: I): C2GPartnerUnlockRequest {
+    const message = createBaseC2GPartnerUnlockRequest();
+    message.token = object.token ?? "";
+    message.unitId = object.unitId ?? 0;
+    return message;
+  },
+};
+
+function createBaseG2CPartnerUnlockResponse(): G2CPartnerUnlockResponse {
+  return { partner: undefined, consumedFragments: 0 };
+}
+
+export const G2CPartnerUnlockResponse: MessageFns<G2CPartnerUnlockResponse> = {
+  encode(message: G2CPartnerUnlockResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.partner !== undefined) {
+      PartnerInfo.encode(message.partner, writer.uint32(10).fork()).join();
+    }
+    if (message.consumedFragments !== 0) {
+      writer.uint32(16).int32(message.consumedFragments);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CPartnerUnlockResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CPartnerUnlockResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 10) {
+            break;
+          }
+
+          message.partner = PartnerInfo.decode(reader, reader.uint32());
+          continue;
+        }
+        case 2: {
+          if (tag !== 16) {
+            break;
+          }
+
+          message.consumedFragments = reader.int32();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CPartnerUnlockResponse {
+    return {
+      partner: isSet(object.partner) ? PartnerInfo.fromJSON(object.partner) : undefined,
+      consumedFragments: isSet(object.consumedFragments) ? globalThis.Number(object.consumedFragments) : 0,
+    };
+  },
+
+  toJSON(message: G2CPartnerUnlockResponse): unknown {
+    const obj: any = {};
+    if (message.partner !== undefined) {
+      obj.partner = PartnerInfo.toJSON(message.partner);
+    }
+    if (message.consumedFragments !== 0) {
+      obj.consumedFragments = Math.round(message.consumedFragments);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CPartnerUnlockResponse>, I>>(base?: I): G2CPartnerUnlockResponse {
+    return G2CPartnerUnlockResponse.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CPartnerUnlockResponse>, I>>(object: I): G2CPartnerUnlockResponse {
+    const message = createBaseG2CPartnerUnlockResponse();
+    message.partner = (object.partner !== undefined && object.partner !== null)
+      ? PartnerInfo.fromPartial(object.partner)
+      : undefined;
+    message.consumedFragments = object.consumedFragments ?? 0;
+    return message;
+  },
+};
+
+function createBaseG2CPartnerPropertyChangedPush(): G2CPartnerPropertyChangedPush {
+  return { partnerId: 0, propertyChanges: [], reason: "" };
+}
+
+export const G2CPartnerPropertyChangedPush: MessageFns<G2CPartnerPropertyChangedPush> = {
+  encode(message: G2CPartnerPropertyChangedPush, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
+    if (message.partnerId !== 0) {
+      writer.uint32(8).int64(message.partnerId);
+    }
+    for (const v of message.propertyChanges) {
+      PropertyChange.encode(v!, writer.uint32(18).fork()).join();
+    }
+    if (message.reason !== "") {
+      writer.uint32(26).string(message.reason);
+    }
+    return writer;
+  },
+
+  decode(input: BinaryReader | Uint8Array, length?: number): G2CPartnerPropertyChangedPush {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseG2CPartnerPropertyChangedPush();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1: {
+          if (tag !== 8) {
+            break;
+          }
+
+          message.partnerId = longToNumber(reader.int64());
+          continue;
+        }
+        case 2: {
+          if (tag !== 18) {
+            break;
+          }
+
+          message.propertyChanges.push(PropertyChange.decode(reader, reader.uint32()));
+          continue;
+        }
+        case 3: {
+          if (tag !== 26) {
+            break;
+          }
+
+          message.reason = reader.string();
+          continue;
+        }
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skip(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): G2CPartnerPropertyChangedPush {
+    return {
+      partnerId: isSet(object.partnerId) ? globalThis.Number(object.partnerId) : 0,
+      propertyChanges: globalThis.Array.isArray(object?.propertyChanges)
+        ? object.propertyChanges.map((e: any) => PropertyChange.fromJSON(e))
+        : [],
+      reason: isSet(object.reason) ? globalThis.String(object.reason) : "",
+    };
+  },
+
+  toJSON(message: G2CPartnerPropertyChangedPush): unknown {
+    const obj: any = {};
+    if (message.partnerId !== 0) {
+      obj.partnerId = Math.round(message.partnerId);
+    }
+    if (message.propertyChanges?.length) {
+      obj.propertyChanges = message.propertyChanges.map((e) => PropertyChange.toJSON(e));
+    }
+    if (message.reason !== "") {
+      obj.reason = message.reason;
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<G2CPartnerPropertyChangedPush>, I>>(base?: I): G2CPartnerPropertyChangedPush {
+    return G2CPartnerPropertyChangedPush.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<G2CPartnerPropertyChangedPush>, I>>(
+    object: I,
+  ): G2CPartnerPropertyChangedPush {
+    const message = createBaseG2CPartnerPropertyChangedPush();
+    message.partnerId = object.partnerId ?? 0;
+    message.propertyChanges = object.propertyChanges?.map((e) => PropertyChange.fromPartial(e)) || [];
+    message.reason = object.reason ?? "";
     return message;
   },
 };
