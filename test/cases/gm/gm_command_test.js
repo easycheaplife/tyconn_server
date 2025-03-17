@@ -19,6 +19,25 @@ class GMCommandTest extends BaseTest {
             // 查找 -t 参数后的第一个参数作为测试用例名
             const args = process.argv;
             const tIndex = args.indexOf('-t');
+            
+            // 检查是否为直接执行GM命令的格式
+            // 例如: node test/run_test.js -t gm_command additem 1005 10000
+            if (tIndex >= 0 && args[tIndex + 1] === 'gm_command' && args.length > tIndex + 2) {
+                const gmCommand = args[tIndex + 2];
+                const gmParams = args.slice(tIndex + 3);
+                
+                console.log(`Executing GM command: ${gmCommand} with params: ${gmParams.join(', ')}`);
+                
+                try {
+                    const response = await this.client.gmCommand(gmCommand, gmParams);
+                    console.log('GM Command Response:', response);
+                    return true;
+                } catch (error) {
+                    console.error('GM Command Failed:', error);
+                    throw error;
+                }
+            }
+            
             const testCase = tIndex >= 0 ? args[tIndex + 2] : null; // -t gm_command test_name
             
             if (testCase && this.testCases[testCase]) {

@@ -326,7 +326,7 @@ message G2CPartnerListResponse {
 // 伙伴升级请求 {{Req:603}}
 message C2GPartnerLevelUpRequest {
     string token = 1;       // JWT令牌
-    string partner_id = 2;   // 伙伴ID
+    int64 partner_id = 2;   // 伙伴ID
 }
 
 // 伙伴升级响应 {{Res:604}}
@@ -339,7 +339,7 @@ message G2CPartnerLevelUpResponse {
 // 伙伴升星请求 {{Req:605}}
 message C2GPartnerStarUpRequest {
     string token = 1;       // JWT令牌
-    string partner_id = 2;   // 伙伴ID
+    int64 partner_id = 2;   // 伙伴ID
 }
 
 // 伙伴升星响应 {{Res:606}}

@@ -41,8 +41,20 @@ class StarUpPartnerTest extends BaseTest {
             const partnerId = unlockedPartner.base_info.partner_id.high !== undefined ? 
                 (BigInt(unlockedPartner.base_info.partner_id.high) << BigInt(32)) + BigInt(unlockedPartner.base_info.partner_id.low) :
                 unlockedPartner.base_info.partner_id;
-            console.log(partnerId);
-            const starUpResponse = await this.client.starUpPartner(partnerId.toString());
+            console.log(`Using partnerId: ${partnerId} for star up (type: ${typeof partnerId})`);
+            
+            // 在开始升星前，先添加足够的升星材料
+            // 获取升星需要的物品
+            const starUpItems = unlockedPartner.star_up_cost;
+            if (starUpItems && starUpItems.length > 0) {
+                console.log('Adding required items for star up:');
+                for (const item of starUpItems) {
+                    console.log(`  Add item ${item.item_id} x ${item.count + 20}`); // 多添加一些
+                    await this.client.gmCommand('add_item', [item.item_id.toString(), (item.count + 20).toString()]);
+                }
+            }
+            
+            const starUpResponse = await this.client.starUpPartner(partnerId);
             
             // 验证响应
             assert(starUpResponse, 'Star up response should not be null');

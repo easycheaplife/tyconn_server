@@ -417,26 +417,6 @@ function M.level_up_partner(user_id, partner_id)
     db_client.log_partner_change(user_id, partner_id, "LEVEL_UP", 
         string.format("Level: %d -> %d", old_level, partner.level))
     
-    -- 计算属性变化
-    local property_changes = {}
-    for _, new_prop in ipairs(partner.properties) do
-        local old_value = 0
-        for _, old_prop in ipairs(old_properties) do
-            if old_prop.prop_id == new_prop.prop_id then
-                old_value = old_prop.value
-                break
-            end
-        end
-        
-        local change = new_prop.value - old_value
-        if change ~= 0 then
-            table.insert(property_changes, {
-                prop_id = new_prop.prop_id,
-                value = change
-            })
-        end
-    end
-    
     -- 构造返回的伙伴信息
     local updated_partner = {
         base_info = {
