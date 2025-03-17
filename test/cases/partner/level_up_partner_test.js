@@ -45,6 +45,17 @@ class LevelUpPartnerTest extends BaseTest {
                 console.log(`伙伴ID高32位: ${partnerId.high}, 低32位: ${partnerId.low}`);
             }
             
+            // 在开始升级前，先添加足够的升级材料
+            // 获取升级需要的物品
+            const levelUpItems = unlockedPartner.level_up_cost;
+            if (levelUpItems && levelUpItems.length > 0) {
+                console.log('Adding required items for level up:');
+                for (const item of levelUpItems) {
+                    console.log(`  Add item ${item.item_id} x ${item.count + 2000}`); // 多添加一些
+                    await this.client.gmCommand('add_item', [item.item_id.toString(), (item.count + 2000).toString()]);
+                }
+            }
+            
             // 调用API进行升级，不转换ID
             const levelUpResponse = await this.client.levelUpPartner(partnerId);
             
