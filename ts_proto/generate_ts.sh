@@ -5,4 +5,5 @@ find ../proto -name "*.proto" -exec protoc \
   --ts_proto_out=. \
   --ts_proto_opt=forceLong=long \
   --ts_proto_opt=useOptionals=messages \
+  --ts_proto_opt=esModuleInterop=true \
   {} \;

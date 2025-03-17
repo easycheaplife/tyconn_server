@@ -5,8 +5,8 @@
 // source: command/command.proto
 
 /* eslint-disable */
-import Long = require("long");
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import Long from "long";
 import {
   BagInfo,
   CardInfo,

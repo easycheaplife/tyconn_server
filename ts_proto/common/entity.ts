@@ -5,8 +5,8 @@
 // source: common/entity.proto
 
 /* eslint-disable */
-import Long = require("long");
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
+import Long from "long";
 import { PropType, propTypeFromJSON, propTypeToJSON } from "./enum";
 
 export const protobufPackage = "common";
