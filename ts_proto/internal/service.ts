@@ -6,7 +6,6 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import Long from "long";
 
 export const protobufPackage = "internal";
 
@@ -23,7 +22,7 @@ export interface ServiceStatus {
   /** 当前连接数 */
   clientCount: number;
   /** 同步时间戳 */
-  timestamp: Long;
+  timestamp: bigint;
   /** 额外信息 */
   extra: { [key: string]: string };
 }
@@ -34,7 +33,7 @@ export interface ServiceStatus_ExtraEntry {
 }
 
 function createBaseServiceStatus(): ServiceStatus {
-  return { nodeName: "", serviceType: "", host: "", port: 0, clientCount: 0, timestamp: Long.ZERO, extra: {} };
+  return { nodeName: "", serviceType: "", host: "", port: 0, clientCount: 0, timestamp: 0n, extra: {} };
 }
 
 export const ServiceStatus: MessageFns<ServiceStatus> = {
@@ -54,8 +53,11 @@ export const ServiceStatus: MessageFns<ServiceStatus> = {
     if (message.clientCount !== 0) {
       writer.uint32(40).int32(message.clientCount);
     }
-    if (!message.timestamp.equals(Long.ZERO)) {
-      writer.uint32(48).int64(message.timestamp.toString());
+    if (message.timestamp !== 0n) {
+      if (BigInt.asIntN(64, message.timestamp) !== message.timestamp) {
+        throw new globalThis.Error("value provided for field message.timestamp of type int64 too large");
+      }
+      writer.uint32(48).int64(message.timestamp);
     }
     Object.entries(message.extra).forEach(([key, value]) => {
       ServiceStatus_ExtraEntry.encode({ key: key as any, value }, writer.uint32(58).fork()).join();
@@ -115,7 +117,7 @@ export const ServiceStatus: MessageFns<ServiceStatus> = {
             break;
           }
 
-          message.timestamp = Long.fromString(reader.int64().toString());
+          message.timestamp = reader.int64() as bigint;
           continue;
         }
         case 7: {
@@ -145,7 +147,7 @@ export const ServiceStatus: MessageFns<ServiceStatus> = {
       host: isSet(object.host) ? globalThis.String(object.host) : "",
       port: isSet(object.port) ? globalThis.Number(object.port) : 0,
       clientCount: isSet(object.clientCount) ? globalThis.Number(object.clientCount) : 0,
-      timestamp: isSet(object.timestamp) ? Long.fromValue(object.timestamp) : Long.ZERO,
+      timestamp: isSet(object.timestamp) ? BigInt(object.timestamp) : 0n,
       extra: isObject(object.extra)
         ? Object.entries(object.extra).reduce<{ [key: string]: string }>((acc, [key, value]) => {
           acc[key] = String(value);
@@ -172,8 +174,8 @@ export const ServiceStatus: MessageFns<ServiceStatus> = {
     if (message.clientCount !== 0) {
       obj.clientCount = Math.round(message.clientCount);
     }
-    if (!message.timestamp.equals(Long.ZERO)) {
-      obj.timestamp = (message.timestamp || Long.ZERO).toString();
+    if (message.timestamp !== 0n) {
+      obj.timestamp = message.timestamp.toString();
     }
     if (message.extra) {
       const entries = Object.entries(message.extra);
@@ -197,9 +199,7 @@ export const ServiceStatus: MessageFns<ServiceStatus> = {
     message.host = object.host ?? "";
     message.port = object.port ?? 0;
     message.clientCount = object.clientCount ?? 0;
-    message.timestamp = (object.timestamp !== undefined && object.timestamp !== null)
-      ? Long.fromValue(object.timestamp)
-      : Long.ZERO;
+    message.timestamp = object.timestamp ?? 0n;
     message.extra = Object.entries(object.extra ?? {}).reduce<{ [key: string]: string }>((acc, [key, value]) => {
       if (value !== undefined) {
         acc[key] = globalThis.String(value);
@@ -286,10 +286,10 @@ export const ServiceStatus_ExtraEntry: MessageFns<ServiceStatus_ExtraEntry> = {
   },
 };
 
-type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+type Builtin = Date | Function | Uint8Array | string | number | boolean | bigint | undefined;
 
 export type DeepPartial<T> = T extends Builtin ? T
-  : T extends Long ? string | number | Long : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
+  : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;

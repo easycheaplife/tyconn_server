@@ -6,7 +6,6 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import Long from "long";
 import {
   BagInfo,
   CardInfo,
@@ -48,7 +47,7 @@ export interface L2CLoginResponse {
 /** 心跳请求 {{Req:3}} */
 export interface C2GHeartbeatRequest {
   /** 时间戳 */
-  timestamp: Long;
+  timestamp: bigint;
   /** JWT令牌,用于身份验证 */
   token: string;
 }
@@ -56,7 +55,7 @@ export interface C2GHeartbeatRequest {
 /** 心跳响应 {{Res:4}} */
 export interface G2CHeartbeatResponse {
   /** 服务器时间戳 */
-  timestamp: Long;
+  timestamp: bigint;
 }
 
 /** 获取用户信息请求 {{Req:5}} */
@@ -94,7 +93,7 @@ export interface G2CLoginGameResponse {
   /** 资源信息 */
   resources: ResourceInfo[];
   /** 服务器时间（毫秒） */
-  serverTime: Long;
+  serverTime: bigint;
 }
 
 /** 获取用户卡牌请求 {{Req:101}} */
@@ -406,13 +405,13 @@ export interface C2GReadMailRequest {
   /** JWT令牌 */
   token: string;
   /** 邮件ID */
-  mailId: Long;
+  mailId: bigint;
 }
 
 /** 读取邮件响应 {{Res:504}} */
 export interface G2CReadMailResponse {
   /** 邮件ID */
-  mailId: Long;
+  mailId: bigint;
 }
 
 /** 领取邮件附件请求 {{Req:505}} */
@@ -420,13 +419,13 @@ export interface C2GClaimMailItemsRequest {
   /** JWT令牌 */
   token: string;
   /** 邮件ID */
-  mailId: Long;
+  mailId: bigint;
 }
 
 /** 领取邮件附件响应 {{Res:506}} */
 export interface G2CClaimMailItemsResponse {
   /** 邮件ID */
-  mailId: Long;
+  mailId: bigint;
   /** 获得的物品 */
   items: ItemInfo[];
 }
@@ -436,13 +435,13 @@ export interface C2GDeleteMailRequest {
   /** JWT令牌 */
   token: string;
   /** 邮件ID */
-  mailId: Long;
+  mailId: bigint;
 }
 
 /** 删除邮件响应 {{Res:508}} */
 export interface G2CDeleteMailResponse {
   /** 邮件ID */
-  mailId: Long;
+  mailId: bigint;
 }
 
 /** 新邮件推送 {{Push:551}} */
@@ -468,7 +467,7 @@ export interface C2GPartnerLevelUpRequest {
   /** JWT令牌 */
   token: string;
   /** 伙伴ID */
-  partnerId: Long;
+  partnerId: bigint;
 }
 
 /** 伙伴升级响应 {{Res:604}} */
@@ -488,7 +487,7 @@ export interface C2GPartnerStarUpRequest {
   /** JWT令牌 */
   token: string;
   /** 伙伴ID */
-  partnerId: Long;
+  partnerId: bigint;
 }
 
 /** 伙伴升星响应 {{Res:606}} */
@@ -524,7 +523,7 @@ export interface G2CPartnerUnlockResponse {
 /** 伙伴属性变化推送 {{Push:651}} */
 export interface G2CPartnerPropertyChangedPush {
   /** 伙伴ID */
-  partnerId: Long;
+  partnerId: bigint;
   /** 属性变化 */
   propertyChanges: PropertyChange[];
   /** 变化原因 */
@@ -748,13 +747,16 @@ export const L2CLoginResponse: MessageFns<L2CLoginResponse> = {
 };
 
 function createBaseC2GHeartbeatRequest(): C2GHeartbeatRequest {
-  return { timestamp: Long.ZERO, token: "" };
+  return { timestamp: 0n, token: "" };
 }
 
 export const C2GHeartbeatRequest: MessageFns<C2GHeartbeatRequest> = {
   encode(message: C2GHeartbeatRequest, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (!message.timestamp.equals(Long.ZERO)) {
-      writer.uint32(8).int64(message.timestamp.toString());
+    if (message.timestamp !== 0n) {
+      if (BigInt.asIntN(64, message.timestamp) !== message.timestamp) {
+        throw new globalThis.Error("value provided for field message.timestamp of type int64 too large");
+      }
+      writer.uint32(8).int64(message.timestamp);
     }
     if (message.token !== "") {
       writer.uint32(18).string(message.token);
@@ -774,7 +776,7 @@ export const C2GHeartbeatRequest: MessageFns<C2GHeartbeatRequest> = {
             break;
           }
 
-          message.timestamp = Long.fromString(reader.int64().toString());
+          message.timestamp = reader.int64() as bigint;
           continue;
         }
         case 2: {
@@ -796,15 +798,15 @@ export const C2GHeartbeatRequest: MessageFns<C2GHeartbeatRequest> = {
 
   fromJSON(object: any): C2GHeartbeatRequest {
     return {
-      timestamp: isSet(object.timestamp) ? Long.fromValue(object.timestamp) : Long.ZERO,
+      timestamp: isSet(object.timestamp) ? BigInt(object.timestamp) : 0n,
       token: isSet(object.token) ? globalThis.String(object.token) : "",
     };
   },
 
   toJSON(message: C2GHeartbeatRequest): unknown {
     const obj: any = {};
-    if (!message.timestamp.equals(Long.ZERO)) {
-      obj.timestamp = (message.timestamp || Long.ZERO).toString();
+    if (message.timestamp !== 0n) {
+      obj.timestamp = message.timestamp.toString();
     }
     if (message.token !== "") {
       obj.token = message.token;
@@ -817,22 +819,23 @@ export const C2GHeartbeatRequest: MessageFns<C2GHeartbeatRequest> = {
   },
   fromPartial<I extends Exact<DeepPartial<C2GHeartbeatRequest>, I>>(object: I): C2GHeartbeatRequest {
     const message = createBaseC2GHeartbeatRequest();
-    message.timestamp = (object.timestamp !== undefined && object.timestamp !== null)
-      ? Long.fromValue(object.timestamp)
-      : Long.ZERO;
+    message.timestamp = object.timestamp ?? 0n;
     message.token = object.token ?? "";
     return message;
   },
 };
 
 function createBaseG2CHeartbeatResponse(): G2CHeartbeatResponse {
-  return { timestamp: Long.ZERO };
+  return { timestamp: 0n };
 }
 
 export const G2CHeartbeatResponse: MessageFns<G2CHeartbeatResponse> = {
   encode(message: G2CHeartbeatResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (!message.timestamp.equals(Long.ZERO)) {
-      writer.uint32(8).int64(message.timestamp.toString());
+    if (message.timestamp !== 0n) {
+      if (BigInt.asIntN(64, message.timestamp) !== message.timestamp) {
+        throw new globalThis.Error("value provided for field message.timestamp of type int64 too large");
+      }
+      writer.uint32(8).int64(message.timestamp);
     }
     return writer;
   },
@@ -849,7 +852,7 @@ export const G2CHeartbeatResponse: MessageFns<G2CHeartbeatResponse> = {
             break;
           }
 
-          message.timestamp = Long.fromString(reader.int64().toString());
+          message.timestamp = reader.int64() as bigint;
           continue;
         }
       }
@@ -862,13 +865,13 @@ export const G2CHeartbeatResponse: MessageFns<G2CHeartbeatResponse> = {
   },
 
   fromJSON(object: any): G2CHeartbeatResponse {
-    return { timestamp: isSet(object.timestamp) ? Long.fromValue(object.timestamp) : Long.ZERO };
+    return { timestamp: isSet(object.timestamp) ? BigInt(object.timestamp) : 0n };
   },
 
   toJSON(message: G2CHeartbeatResponse): unknown {
     const obj: any = {};
-    if (!message.timestamp.equals(Long.ZERO)) {
-      obj.timestamp = (message.timestamp || Long.ZERO).toString();
+    if (message.timestamp !== 0n) {
+      obj.timestamp = message.timestamp.toString();
     }
     return obj;
   },
@@ -878,9 +881,7 @@ export const G2CHeartbeatResponse: MessageFns<G2CHeartbeatResponse> = {
   },
   fromPartial<I extends Exact<DeepPartial<G2CHeartbeatResponse>, I>>(object: I): G2CHeartbeatResponse {
     const message = createBaseG2CHeartbeatResponse();
-    message.timestamp = (object.timestamp !== undefined && object.timestamp !== null)
-      ? Long.fromValue(object.timestamp)
-      : Long.ZERO;
+    message.timestamp = object.timestamp ?? 0n;
     return message;
   },
 };
@@ -1078,7 +1079,7 @@ export const C2GLoginGameRequest: MessageFns<C2GLoginGameRequest> = {
 };
 
 function createBaseG2CLoginGameResponse(): G2CLoginGameResponse {
-  return { user: undefined, isNewUser: false, bags: [], resources: [], serverTime: Long.ZERO };
+  return { user: undefined, isNewUser: false, bags: [], resources: [], serverTime: 0n };
 }
 
 export const G2CLoginGameResponse: MessageFns<G2CLoginGameResponse> = {
@@ -1095,8 +1096,11 @@ export const G2CLoginGameResponse: MessageFns<G2CLoginGameResponse> = {
     for (const v of message.resources) {
       ResourceInfo.encode(v!, writer.uint32(34).fork()).join();
     }
-    if (!message.serverTime.equals(Long.ZERO)) {
-      writer.uint32(40).int64(message.serverTime.toString());
+    if (message.serverTime !== 0n) {
+      if (BigInt.asIntN(64, message.serverTime) !== message.serverTime) {
+        throw new globalThis.Error("value provided for field message.serverTime of type int64 too large");
+      }
+      writer.uint32(40).int64(message.serverTime);
     }
     return writer;
   },
@@ -1145,7 +1149,7 @@ export const G2CLoginGameResponse: MessageFns<G2CLoginGameResponse> = {
             break;
           }
 
-          message.serverTime = Long.fromString(reader.int64().toString());
+          message.serverTime = reader.int64() as bigint;
           continue;
         }
       }
@@ -1165,7 +1169,7 @@ export const G2CLoginGameResponse: MessageFns<G2CLoginGameResponse> = {
       resources: globalThis.Array.isArray(object?.resources)
         ? object.resources.map((e: any) => ResourceInfo.fromJSON(e))
         : [],
-      serverTime: isSet(object.serverTime) ? Long.fromValue(object.serverTime) : Long.ZERO,
+      serverTime: isSet(object.serverTime) ? BigInt(object.serverTime) : 0n,
     };
   },
 
@@ -1183,8 +1187,8 @@ export const G2CLoginGameResponse: MessageFns<G2CLoginGameResponse> = {
     if (message.resources?.length) {
       obj.resources = message.resources.map((e) => ResourceInfo.toJSON(e));
     }
-    if (!message.serverTime.equals(Long.ZERO)) {
-      obj.serverTime = (message.serverTime || Long.ZERO).toString();
+    if (message.serverTime !== 0n) {
+      obj.serverTime = message.serverTime.toString();
     }
     return obj;
   },
@@ -1198,9 +1202,7 @@ export const G2CLoginGameResponse: MessageFns<G2CLoginGameResponse> = {
     message.isNewUser = object.isNewUser ?? false;
     message.bags = object.bags?.map((e) => BagInfo.fromPartial(e)) || [];
     message.resources = object.resources?.map((e) => ResourceInfo.fromPartial(e)) || [];
-    message.serverTime = (object.serverTime !== undefined && object.serverTime !== null)
-      ? Long.fromValue(object.serverTime)
-      : Long.ZERO;
+    message.serverTime = object.serverTime ?? 0n;
     return message;
   },
 };
@@ -4033,7 +4035,7 @@ export const G2CMailListResponse: MessageFns<G2CMailListResponse> = {
 };
 
 function createBaseC2GReadMailRequest(): C2GReadMailRequest {
-  return { token: "", mailId: Long.ZERO };
+  return { token: "", mailId: 0n };
 }
 
 export const C2GReadMailRequest: MessageFns<C2GReadMailRequest> = {
@@ -4041,8 +4043,11 @@ export const C2GReadMailRequest: MessageFns<C2GReadMailRequest> = {
     if (message.token !== "") {
       writer.uint32(10).string(message.token);
     }
-    if (!message.mailId.equals(Long.ZERO)) {
-      writer.uint32(16).int64(message.mailId.toString());
+    if (message.mailId !== 0n) {
+      if (BigInt.asIntN(64, message.mailId) !== message.mailId) {
+        throw new globalThis.Error("value provided for field message.mailId of type int64 too large");
+      }
+      writer.uint32(16).int64(message.mailId);
     }
     return writer;
   },
@@ -4067,7 +4072,7 @@ export const C2GReadMailRequest: MessageFns<C2GReadMailRequest> = {
             break;
           }
 
-          message.mailId = Long.fromString(reader.int64().toString());
+          message.mailId = reader.int64() as bigint;
           continue;
         }
       }
@@ -4082,7 +4087,7 @@ export const C2GReadMailRequest: MessageFns<C2GReadMailRequest> = {
   fromJSON(object: any): C2GReadMailRequest {
     return {
       token: isSet(object.token) ? globalThis.String(object.token) : "",
-      mailId: isSet(object.mailId) ? Long.fromValue(object.mailId) : Long.ZERO,
+      mailId: isSet(object.mailId) ? BigInt(object.mailId) : 0n,
     };
   },
 
@@ -4091,8 +4096,8 @@ export const C2GReadMailRequest: MessageFns<C2GReadMailRequest> = {
     if (message.token !== "") {
       obj.token = message.token;
     }
-    if (!message.mailId.equals(Long.ZERO)) {
-      obj.mailId = (message.mailId || Long.ZERO).toString();
+    if (message.mailId !== 0n) {
+      obj.mailId = message.mailId.toString();
     }
     return obj;
   },
@@ -4103,21 +4108,22 @@ export const C2GReadMailRequest: MessageFns<C2GReadMailRequest> = {
   fromPartial<I extends Exact<DeepPartial<C2GReadMailRequest>, I>>(object: I): C2GReadMailRequest {
     const message = createBaseC2GReadMailRequest();
     message.token = object.token ?? "";
-    message.mailId = (object.mailId !== undefined && object.mailId !== null)
-      ? Long.fromValue(object.mailId)
-      : Long.ZERO;
+    message.mailId = object.mailId ?? 0n;
     return message;
   },
 };
 
 function createBaseG2CReadMailResponse(): G2CReadMailResponse {
-  return { mailId: Long.ZERO };
+  return { mailId: 0n };
 }
 
 export const G2CReadMailResponse: MessageFns<G2CReadMailResponse> = {
   encode(message: G2CReadMailResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (!message.mailId.equals(Long.ZERO)) {
-      writer.uint32(8).int64(message.mailId.toString());
+    if (message.mailId !== 0n) {
+      if (BigInt.asIntN(64, message.mailId) !== message.mailId) {
+        throw new globalThis.Error("value provided for field message.mailId of type int64 too large");
+      }
+      writer.uint32(8).int64(message.mailId);
     }
     return writer;
   },
@@ -4134,7 +4140,7 @@ export const G2CReadMailResponse: MessageFns<G2CReadMailResponse> = {
             break;
           }
 
-          message.mailId = Long.fromString(reader.int64().toString());
+          message.mailId = reader.int64() as bigint;
           continue;
         }
       }
@@ -4147,13 +4153,13 @@ export const G2CReadMailResponse: MessageFns<G2CReadMailResponse> = {
   },
 
   fromJSON(object: any): G2CReadMailResponse {
-    return { mailId: isSet(object.mailId) ? Long.fromValue(object.mailId) : Long.ZERO };
+    return { mailId: isSet(object.mailId) ? BigInt(object.mailId) : 0n };
   },
 
   toJSON(message: G2CReadMailResponse): unknown {
     const obj: any = {};
-    if (!message.mailId.equals(Long.ZERO)) {
-      obj.mailId = (message.mailId || Long.ZERO).toString();
+    if (message.mailId !== 0n) {
+      obj.mailId = message.mailId.toString();
     }
     return obj;
   },
@@ -4163,15 +4169,13 @@ export const G2CReadMailResponse: MessageFns<G2CReadMailResponse> = {
   },
   fromPartial<I extends Exact<DeepPartial<G2CReadMailResponse>, I>>(object: I): G2CReadMailResponse {
     const message = createBaseG2CReadMailResponse();
-    message.mailId = (object.mailId !== undefined && object.mailId !== null)
-      ? Long.fromValue(object.mailId)
-      : Long.ZERO;
+    message.mailId = object.mailId ?? 0n;
     return message;
   },
 };
 
 function createBaseC2GClaimMailItemsRequest(): C2GClaimMailItemsRequest {
-  return { token: "", mailId: Long.ZERO };
+  return { token: "", mailId: 0n };
 }
 
 export const C2GClaimMailItemsRequest: MessageFns<C2GClaimMailItemsRequest> = {
@@ -4179,8 +4183,11 @@ export const C2GClaimMailItemsRequest: MessageFns<C2GClaimMailItemsRequest> = {
     if (message.token !== "") {
       writer.uint32(10).string(message.token);
     }
-    if (!message.mailId.equals(Long.ZERO)) {
-      writer.uint32(16).int64(message.mailId.toString());
+    if (message.mailId !== 0n) {
+      if (BigInt.asIntN(64, message.mailId) !== message.mailId) {
+        throw new globalThis.Error("value provided for field message.mailId of type int64 too large");
+      }
+      writer.uint32(16).int64(message.mailId);
     }
     return writer;
   },
@@ -4205,7 +4212,7 @@ export const C2GClaimMailItemsRequest: MessageFns<C2GClaimMailItemsRequest> = {
             break;
           }
 
-          message.mailId = Long.fromString(reader.int64().toString());
+          message.mailId = reader.int64() as bigint;
           continue;
         }
       }
@@ -4220,7 +4227,7 @@ export const C2GClaimMailItemsRequest: MessageFns<C2GClaimMailItemsRequest> = {
   fromJSON(object: any): C2GClaimMailItemsRequest {
     return {
       token: isSet(object.token) ? globalThis.String(object.token) : "",
-      mailId: isSet(object.mailId) ? Long.fromValue(object.mailId) : Long.ZERO,
+      mailId: isSet(object.mailId) ? BigInt(object.mailId) : 0n,
     };
   },
 
@@ -4229,8 +4236,8 @@ export const C2GClaimMailItemsRequest: MessageFns<C2GClaimMailItemsRequest> = {
     if (message.token !== "") {
       obj.token = message.token;
     }
-    if (!message.mailId.equals(Long.ZERO)) {
-      obj.mailId = (message.mailId || Long.ZERO).toString();
+    if (message.mailId !== 0n) {
+      obj.mailId = message.mailId.toString();
     }
     return obj;
   },
@@ -4241,21 +4248,22 @@ export const C2GClaimMailItemsRequest: MessageFns<C2GClaimMailItemsRequest> = {
   fromPartial<I extends Exact<DeepPartial<C2GClaimMailItemsRequest>, I>>(object: I): C2GClaimMailItemsRequest {
     const message = createBaseC2GClaimMailItemsRequest();
     message.token = object.token ?? "";
-    message.mailId = (object.mailId !== undefined && object.mailId !== null)
-      ? Long.fromValue(object.mailId)
-      : Long.ZERO;
+    message.mailId = object.mailId ?? 0n;
     return message;
   },
 };
 
 function createBaseG2CClaimMailItemsResponse(): G2CClaimMailItemsResponse {
-  return { mailId: Long.ZERO, items: [] };
+  return { mailId: 0n, items: [] };
 }
 
 export const G2CClaimMailItemsResponse: MessageFns<G2CClaimMailItemsResponse> = {
   encode(message: G2CClaimMailItemsResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (!message.mailId.equals(Long.ZERO)) {
-      writer.uint32(8).int64(message.mailId.toString());
+    if (message.mailId !== 0n) {
+      if (BigInt.asIntN(64, message.mailId) !== message.mailId) {
+        throw new globalThis.Error("value provided for field message.mailId of type int64 too large");
+      }
+      writer.uint32(8).int64(message.mailId);
     }
     for (const v of message.items) {
       ItemInfo.encode(v!, writer.uint32(18).fork()).join();
@@ -4275,7 +4283,7 @@ export const G2CClaimMailItemsResponse: MessageFns<G2CClaimMailItemsResponse> = 
             break;
           }
 
-          message.mailId = Long.fromString(reader.int64().toString());
+          message.mailId = reader.int64() as bigint;
           continue;
         }
         case 2: {
@@ -4297,15 +4305,15 @@ export const G2CClaimMailItemsResponse: MessageFns<G2CClaimMailItemsResponse> = 
 
   fromJSON(object: any): G2CClaimMailItemsResponse {
     return {
-      mailId: isSet(object.mailId) ? Long.fromValue(object.mailId) : Long.ZERO,
+      mailId: isSet(object.mailId) ? BigInt(object.mailId) : 0n,
       items: globalThis.Array.isArray(object?.items) ? object.items.map((e: any) => ItemInfo.fromJSON(e)) : [],
     };
   },
 
   toJSON(message: G2CClaimMailItemsResponse): unknown {
     const obj: any = {};
-    if (!message.mailId.equals(Long.ZERO)) {
-      obj.mailId = (message.mailId || Long.ZERO).toString();
+    if (message.mailId !== 0n) {
+      obj.mailId = message.mailId.toString();
     }
     if (message.items?.length) {
       obj.items = message.items.map((e) => ItemInfo.toJSON(e));
@@ -4318,16 +4326,14 @@ export const G2CClaimMailItemsResponse: MessageFns<G2CClaimMailItemsResponse> = 
   },
   fromPartial<I extends Exact<DeepPartial<G2CClaimMailItemsResponse>, I>>(object: I): G2CClaimMailItemsResponse {
     const message = createBaseG2CClaimMailItemsResponse();
-    message.mailId = (object.mailId !== undefined && object.mailId !== null)
-      ? Long.fromValue(object.mailId)
-      : Long.ZERO;
+    message.mailId = object.mailId ?? 0n;
     message.items = object.items?.map((e) => ItemInfo.fromPartial(e)) || [];
     return message;
   },
 };
 
 function createBaseC2GDeleteMailRequest(): C2GDeleteMailRequest {
-  return { token: "", mailId: Long.ZERO };
+  return { token: "", mailId: 0n };
 }
 
 export const C2GDeleteMailRequest: MessageFns<C2GDeleteMailRequest> = {
@@ -4335,8 +4341,11 @@ export const C2GDeleteMailRequest: MessageFns<C2GDeleteMailRequest> = {
     if (message.token !== "") {
       writer.uint32(10).string(message.token);
     }
-    if (!message.mailId.equals(Long.ZERO)) {
-      writer.uint32(16).int64(message.mailId.toString());
+    if (message.mailId !== 0n) {
+      if (BigInt.asIntN(64, message.mailId) !== message.mailId) {
+        throw new globalThis.Error("value provided for field message.mailId of type int64 too large");
+      }
+      writer.uint32(16).int64(message.mailId);
     }
     return writer;
   },
@@ -4361,7 +4370,7 @@ export const C2GDeleteMailRequest: MessageFns<C2GDeleteMailRequest> = {
             break;
           }
 
-          message.mailId = Long.fromString(reader.int64().toString());
+          message.mailId = reader.int64() as bigint;
           continue;
         }
       }
@@ -4376,7 +4385,7 @@ export const C2GDeleteMailRequest: MessageFns<C2GDeleteMailRequest> = {
   fromJSON(object: any): C2GDeleteMailRequest {
     return {
       token: isSet(object.token) ? globalThis.String(object.token) : "",
-      mailId: isSet(object.mailId) ? Long.fromValue(object.mailId) : Long.ZERO,
+      mailId: isSet(object.mailId) ? BigInt(object.mailId) : 0n,
     };
   },
 
@@ -4385,8 +4394,8 @@ export const C2GDeleteMailRequest: MessageFns<C2GDeleteMailRequest> = {
     if (message.token !== "") {
       obj.token = message.token;
     }
-    if (!message.mailId.equals(Long.ZERO)) {
-      obj.mailId = (message.mailId || Long.ZERO).toString();
+    if (message.mailId !== 0n) {
+      obj.mailId = message.mailId.toString();
     }
     return obj;
   },
@@ -4397,21 +4406,22 @@ export const C2GDeleteMailRequest: MessageFns<C2GDeleteMailRequest> = {
   fromPartial<I extends Exact<DeepPartial<C2GDeleteMailRequest>, I>>(object: I): C2GDeleteMailRequest {
     const message = createBaseC2GDeleteMailRequest();
     message.token = object.token ?? "";
-    message.mailId = (object.mailId !== undefined && object.mailId !== null)
-      ? Long.fromValue(object.mailId)
-      : Long.ZERO;
+    message.mailId = object.mailId ?? 0n;
     return message;
   },
 };
 
 function createBaseG2CDeleteMailResponse(): G2CDeleteMailResponse {
-  return { mailId: Long.ZERO };
+  return { mailId: 0n };
 }
 
 export const G2CDeleteMailResponse: MessageFns<G2CDeleteMailResponse> = {
   encode(message: G2CDeleteMailResponse, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (!message.mailId.equals(Long.ZERO)) {
-      writer.uint32(16).int64(message.mailId.toString());
+    if (message.mailId !== 0n) {
+      if (BigInt.asIntN(64, message.mailId) !== message.mailId) {
+        throw new globalThis.Error("value provided for field message.mailId of type int64 too large");
+      }
+      writer.uint32(16).int64(message.mailId);
     }
     return writer;
   },
@@ -4428,7 +4438,7 @@ export const G2CDeleteMailResponse: MessageFns<G2CDeleteMailResponse> = {
             break;
           }
 
-          message.mailId = Long.fromString(reader.int64().toString());
+          message.mailId = reader.int64() as bigint;
           continue;
         }
       }
@@ -4441,13 +4451,13 @@ export const G2CDeleteMailResponse: MessageFns<G2CDeleteMailResponse> = {
   },
 
   fromJSON(object: any): G2CDeleteMailResponse {
-    return { mailId: isSet(object.mailId) ? Long.fromValue(object.mailId) : Long.ZERO };
+    return { mailId: isSet(object.mailId) ? BigInt(object.mailId) : 0n };
   },
 
   toJSON(message: G2CDeleteMailResponse): unknown {
     const obj: any = {};
-    if (!message.mailId.equals(Long.ZERO)) {
-      obj.mailId = (message.mailId || Long.ZERO).toString();
+    if (message.mailId !== 0n) {
+      obj.mailId = message.mailId.toString();
     }
     return obj;
   },
@@ -4457,9 +4467,7 @@ export const G2CDeleteMailResponse: MessageFns<G2CDeleteMailResponse> = {
   },
   fromPartial<I extends Exact<DeepPartial<G2CDeleteMailResponse>, I>>(object: I): G2CDeleteMailResponse {
     const message = createBaseG2CDeleteMailResponse();
-    message.mailId = (object.mailId !== undefined && object.mailId !== null)
-      ? Long.fromValue(object.mailId)
-      : Long.ZERO;
+    message.mailId = object.mailId ?? 0n;
     return message;
   },
 };
@@ -4643,7 +4651,7 @@ export const G2CPartnerListResponse: MessageFns<G2CPartnerListResponse> = {
 };
 
 function createBaseC2GPartnerLevelUpRequest(): C2GPartnerLevelUpRequest {
-  return { token: "", partnerId: Long.ZERO };
+  return { token: "", partnerId: 0n };
 }
 
 export const C2GPartnerLevelUpRequest: MessageFns<C2GPartnerLevelUpRequest> = {
@@ -4651,8 +4659,11 @@ export const C2GPartnerLevelUpRequest: MessageFns<C2GPartnerLevelUpRequest> = {
     if (message.token !== "") {
       writer.uint32(10).string(message.token);
     }
-    if (!message.partnerId.equals(Long.ZERO)) {
-      writer.uint32(16).int64(message.partnerId.toString());
+    if (message.partnerId !== 0n) {
+      if (BigInt.asIntN(64, message.partnerId) !== message.partnerId) {
+        throw new globalThis.Error("value provided for field message.partnerId of type int64 too large");
+      }
+      writer.uint32(16).int64(message.partnerId);
     }
     return writer;
   },
@@ -4677,7 +4688,7 @@ export const C2GPartnerLevelUpRequest: MessageFns<C2GPartnerLevelUpRequest> = {
             break;
           }
 
-          message.partnerId = Long.fromString(reader.int64().toString());
+          message.partnerId = reader.int64() as bigint;
           continue;
         }
       }
@@ -4692,7 +4703,7 @@ export const C2GPartnerLevelUpRequest: MessageFns<C2GPartnerLevelUpRequest> = {
   fromJSON(object: any): C2GPartnerLevelUpRequest {
     return {
       token: isSet(object.token) ? globalThis.String(object.token) : "",
-      partnerId: isSet(object.partnerId) ? Long.fromValue(object.partnerId) : Long.ZERO,
+      partnerId: isSet(object.partnerId) ? BigInt(object.partnerId) : 0n,
     };
   },
 
@@ -4701,8 +4712,8 @@ export const C2GPartnerLevelUpRequest: MessageFns<C2GPartnerLevelUpRequest> = {
     if (message.token !== "") {
       obj.token = message.token;
     }
-    if (!message.partnerId.equals(Long.ZERO)) {
-      obj.partnerId = (message.partnerId || Long.ZERO).toString();
+    if (message.partnerId !== 0n) {
+      obj.partnerId = message.partnerId.toString();
     }
     return obj;
   },
@@ -4713,9 +4724,7 @@ export const C2GPartnerLevelUpRequest: MessageFns<C2GPartnerLevelUpRequest> = {
   fromPartial<I extends Exact<DeepPartial<C2GPartnerLevelUpRequest>, I>>(object: I): C2GPartnerLevelUpRequest {
     const message = createBaseC2GPartnerLevelUpRequest();
     message.token = object.token ?? "";
-    message.partnerId = (object.partnerId !== undefined && object.partnerId !== null)
-      ? Long.fromValue(object.partnerId)
-      : Long.ZERO;
+    message.partnerId = object.partnerId ?? 0n;
     return message;
   },
 };
@@ -4819,7 +4828,7 @@ export const G2CPartnerLevelUpResponse: MessageFns<G2CPartnerLevelUpResponse> = 
 };
 
 function createBaseC2GPartnerStarUpRequest(): C2GPartnerStarUpRequest {
-  return { token: "", partnerId: Long.ZERO };
+  return { token: "", partnerId: 0n };
 }
 
 export const C2GPartnerStarUpRequest: MessageFns<C2GPartnerStarUpRequest> = {
@@ -4827,8 +4836,11 @@ export const C2GPartnerStarUpRequest: MessageFns<C2GPartnerStarUpRequest> = {
     if (message.token !== "") {
       writer.uint32(10).string(message.token);
     }
-    if (!message.partnerId.equals(Long.ZERO)) {
-      writer.uint32(16).int64(message.partnerId.toString());
+    if (message.partnerId !== 0n) {
+      if (BigInt.asIntN(64, message.partnerId) !== message.partnerId) {
+        throw new globalThis.Error("value provided for field message.partnerId of type int64 too large");
+      }
+      writer.uint32(16).int64(message.partnerId);
     }
     return writer;
   },
@@ -4853,7 +4865,7 @@ export const C2GPartnerStarUpRequest: MessageFns<C2GPartnerStarUpRequest> = {
             break;
           }
 
-          message.partnerId = Long.fromString(reader.int64().toString());
+          message.partnerId = reader.int64() as bigint;
           continue;
         }
       }
@@ -4868,7 +4880,7 @@ export const C2GPartnerStarUpRequest: MessageFns<C2GPartnerStarUpRequest> = {
   fromJSON(object: any): C2GPartnerStarUpRequest {
     return {
       token: isSet(object.token) ? globalThis.String(object.token) : "",
-      partnerId: isSet(object.partnerId) ? Long.fromValue(object.partnerId) : Long.ZERO,
+      partnerId: isSet(object.partnerId) ? BigInt(object.partnerId) : 0n,
     };
   },
 
@@ -4877,8 +4889,8 @@ export const C2GPartnerStarUpRequest: MessageFns<C2GPartnerStarUpRequest> = {
     if (message.token !== "") {
       obj.token = message.token;
     }
-    if (!message.partnerId.equals(Long.ZERO)) {
-      obj.partnerId = (message.partnerId || Long.ZERO).toString();
+    if (message.partnerId !== 0n) {
+      obj.partnerId = message.partnerId.toString();
     }
     return obj;
   },
@@ -4889,9 +4901,7 @@ export const C2GPartnerStarUpRequest: MessageFns<C2GPartnerStarUpRequest> = {
   fromPartial<I extends Exact<DeepPartial<C2GPartnerStarUpRequest>, I>>(object: I): C2GPartnerStarUpRequest {
     const message = createBaseC2GPartnerStarUpRequest();
     message.token = object.token ?? "";
-    message.partnerId = (object.partnerId !== undefined && object.partnerId !== null)
-      ? Long.fromValue(object.partnerId)
-      : Long.ZERO;
+    message.partnerId = object.partnerId ?? 0n;
     return message;
   },
 };
@@ -5149,13 +5159,16 @@ export const G2CPartnerUnlockResponse: MessageFns<G2CPartnerUnlockResponse> = {
 };
 
 function createBaseG2CPartnerPropertyChangedPush(): G2CPartnerPropertyChangedPush {
-  return { partnerId: Long.ZERO, propertyChanges: [], reason: "" };
+  return { partnerId: 0n, propertyChanges: [], reason: "" };
 }
 
 export const G2CPartnerPropertyChangedPush: MessageFns<G2CPartnerPropertyChangedPush> = {
   encode(message: G2CPartnerPropertyChangedPush, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (!message.partnerId.equals(Long.ZERO)) {
-      writer.uint32(8).int64(message.partnerId.toString());
+    if (message.partnerId !== 0n) {
+      if (BigInt.asIntN(64, message.partnerId) !== message.partnerId) {
+        throw new globalThis.Error("value provided for field message.partnerId of type int64 too large");
+      }
+      writer.uint32(8).int64(message.partnerId);
     }
     for (const v of message.propertyChanges) {
       PropertyChange.encode(v!, writer.uint32(18).fork()).join();
@@ -5178,7 +5191,7 @@ export const G2CPartnerPropertyChangedPush: MessageFns<G2CPartnerPropertyChanged
             break;
           }
 
-          message.partnerId = Long.fromString(reader.int64().toString());
+          message.partnerId = reader.int64() as bigint;
           continue;
         }
         case 2: {
@@ -5208,7 +5221,7 @@ export const G2CPartnerPropertyChangedPush: MessageFns<G2CPartnerPropertyChanged
 
   fromJSON(object: any): G2CPartnerPropertyChangedPush {
     return {
-      partnerId: isSet(object.partnerId) ? Long.fromValue(object.partnerId) : Long.ZERO,
+      partnerId: isSet(object.partnerId) ? BigInt(object.partnerId) : 0n,
       propertyChanges: globalThis.Array.isArray(object?.propertyChanges)
         ? object.propertyChanges.map((e: any) => PropertyChange.fromJSON(e))
         : [],
@@ -5218,8 +5231,8 @@ export const G2CPartnerPropertyChangedPush: MessageFns<G2CPartnerPropertyChanged
 
   toJSON(message: G2CPartnerPropertyChangedPush): unknown {
     const obj: any = {};
-    if (!message.partnerId.equals(Long.ZERO)) {
-      obj.partnerId = (message.partnerId || Long.ZERO).toString();
+    if (message.partnerId !== 0n) {
+      obj.partnerId = message.partnerId.toString();
     }
     if (message.propertyChanges?.length) {
       obj.propertyChanges = message.propertyChanges.map((e) => PropertyChange.toJSON(e));
@@ -5237,19 +5250,17 @@ export const G2CPartnerPropertyChangedPush: MessageFns<G2CPartnerPropertyChanged
     object: I,
   ): G2CPartnerPropertyChangedPush {
     const message = createBaseG2CPartnerPropertyChangedPush();
-    message.partnerId = (object.partnerId !== undefined && object.partnerId !== null)
-      ? Long.fromValue(object.partnerId)
-      : Long.ZERO;
+    message.partnerId = object.partnerId ?? 0n;
     message.propertyChanges = object.propertyChanges?.map((e) => PropertyChange.fromPartial(e)) || [];
     message.reason = object.reason ?? "";
     return message;
   },
 };
 
-type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+type Builtin = Date | Function | Uint8Array | string | number | boolean | bigint | undefined;
 
 export type DeepPartial<T> = T extends Builtin ? T
-  : T extends Long ? string | number | Long : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
+  : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;

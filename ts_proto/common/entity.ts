@@ -6,7 +6,6 @@
 
 /* eslint-disable */
 import { BinaryReader, BinaryWriter } from "@bufbuild/protobuf/wire";
-import Long from "long";
 import { PropType, propTypeFromJSON, propTypeToJSON } from "./enum";
 
 export const protobufPackage = "common";
@@ -18,7 +17,7 @@ export interface Session {
   /** 序列号 */
   sequence: number;
   /** 时间戳 */
-  timestamp: Long;
+  timestamp: bigint;
   /** 版本号 */
   version: string;
 }
@@ -50,15 +49,15 @@ export interface BaseResponse {
 /** 用户信息 */
 export interface UserInfo {
   /** 用户ID */
-  userId: Long;
+  userId: bigint;
   /** 用户名 */
   username: string;
   /** 等级 */
   level: number;
   /** 经验值 */
-  exp: Long;
+  exp: bigint;
   /** 金币 */
-  gold: Long;
+  gold: bigint;
   /** VIP等级 */
   vipLevel: number;
   /** 生命值 */
@@ -68,27 +67,27 @@ export interface UserInfo {
   /** 防御力 */
   defense: number;
   /** 创建时间 */
-  createTime: Long;
+  createTime: bigint;
   /** 最后登录时间 */
-  loginTime: Long;
+  loginTime: bigint;
 }
 
 /** 卡牌信息 */
 export interface CardInfo {
   /** 卡牌ID */
-  cardId: Long;
+  cardId: bigint;
   /** 卡牌类型 */
   cardType: number;
   /** 等级 */
   level: number;
   /** 经验值 */
-  exp: Long;
+  exp: bigint;
   /** 品质 */
   quality: number;
   /** 星级 */
   star: number;
   /** 获得时间 */
-  createTime: Long;
+  createTime: bigint;
   /** 战力 */
   power: number;
 }
@@ -110,7 +109,7 @@ export interface BagInfo {
 /** 邮件信息 */
 export interface MailInfo {
   /** 邮件ID */
-  id: Long;
+  id: bigint;
   /** 标题 */
   title: string;
   /** 内容 */
@@ -122,13 +121,13 @@ export interface MailInfo {
   /** 邮件状态 */
   status: number;
   /** 创建时间 */
-  createTime: Long;
+  createTime: bigint;
   /** 过期时间 */
-  expireTime: Long;
+  expireTime: bigint;
   /** 模板ID */
-  templateId: Long;
+  templateId: bigint;
   /** 发送者ID */
-  senderId: Long;
+  senderId: bigint;
   /** 发送者名称 */
   senderName: string;
 }
@@ -136,7 +135,7 @@ export interface MailInfo {
 /** 邮件模板信息 */
 export interface MailTemplateInfo {
   /** 模板ID */
-  id: Long;
+  id: bigint;
   /** 标题 */
   title: string;
   /** 内容 */
@@ -146,9 +145,9 @@ export interface MailTemplateInfo {
   /** 邮件类型 */
   mailType: number;
   /** 创建时间 */
-  createTime: Long;
+  createTime: bigint;
   /** 过期时间 */
-  expireTime: Long;
+  expireTime: bigint;
 }
 
 /** 用户资源信息 */
@@ -162,7 +161,7 @@ export interface ResourceInfo {
 /** 伙伴基本信息 */
 export interface PartnerBaseInfo {
   /** 伙伴ID */
-  partnerId: Long;
+  partnerId: bigint;
   /** 单位ID */
   unitId: number;
   /** 等级 */
@@ -174,7 +173,7 @@ export interface PartnerBaseInfo {
   /** 星级 */
   star: number;
   /** 创建时间 */
-  createTime: Long;
+  createTime: bigint;
   /** 种族 */
   race: number;
   /** 特长/职业 */
@@ -232,7 +231,7 @@ export interface ItemCost {
 }
 
 function createBaseSession(): Session {
-  return { messageId: 0, sequence: 0, timestamp: Long.ZERO, version: "" };
+  return { messageId: 0, sequence: 0, timestamp: 0n, version: "" };
 }
 
 export const Session: MessageFns<Session> = {
@@ -243,8 +242,11 @@ export const Session: MessageFns<Session> = {
     if (message.sequence !== 0) {
       writer.uint32(16).int32(message.sequence);
     }
-    if (!message.timestamp.equals(Long.ZERO)) {
-      writer.uint32(24).int64(message.timestamp.toString());
+    if (message.timestamp !== 0n) {
+      if (BigInt.asIntN(64, message.timestamp) !== message.timestamp) {
+        throw new globalThis.Error("value provided for field message.timestamp of type int64 too large");
+      }
+      writer.uint32(24).int64(message.timestamp);
     }
     if (message.version !== "") {
       writer.uint32(34).string(message.version);
@@ -280,7 +282,7 @@ export const Session: MessageFns<Session> = {
             break;
           }
 
-          message.timestamp = Long.fromString(reader.int64().toString());
+          message.timestamp = reader.int64() as bigint;
           continue;
         }
         case 4: {
@@ -304,7 +306,7 @@ export const Session: MessageFns<Session> = {
     return {
       messageId: isSet(object.messageId) ? globalThis.Number(object.messageId) : 0,
       sequence: isSet(object.sequence) ? globalThis.Number(object.sequence) : 0,
-      timestamp: isSet(object.timestamp) ? Long.fromValue(object.timestamp) : Long.ZERO,
+      timestamp: isSet(object.timestamp) ? BigInt(object.timestamp) : 0n,
       version: isSet(object.version) ? globalThis.String(object.version) : "",
     };
   },
@@ -317,8 +319,8 @@ export const Session: MessageFns<Session> = {
     if (message.sequence !== 0) {
       obj.sequence = Math.round(message.sequence);
     }
-    if (!message.timestamp.equals(Long.ZERO)) {
-      obj.timestamp = (message.timestamp || Long.ZERO).toString();
+    if (message.timestamp !== 0n) {
+      obj.timestamp = message.timestamp.toString();
     }
     if (message.version !== "") {
       obj.version = message.version;
@@ -333,9 +335,7 @@ export const Session: MessageFns<Session> = {
     const message = createBaseSession();
     message.messageId = object.messageId ?? 0;
     message.sequence = object.sequence ?? 0;
-    message.timestamp = (object.timestamp !== undefined && object.timestamp !== null)
-      ? Long.fromValue(object.timestamp)
-      : Long.ZERO;
+    message.timestamp = object.timestamp ?? 0n;
     message.version = object.version ?? "";
     return message;
   },
@@ -531,24 +531,27 @@ export const BaseResponse: MessageFns<BaseResponse> = {
 
 function createBaseUserInfo(): UserInfo {
   return {
-    userId: Long.ZERO,
+    userId: 0n,
     username: "",
     level: 0,
-    exp: Long.ZERO,
-    gold: Long.ZERO,
+    exp: 0n,
+    gold: 0n,
     vipLevel: 0,
     hp: 0,
     attack: 0,
     defense: 0,
-    createTime: Long.ZERO,
-    loginTime: Long.ZERO,
+    createTime: 0n,
+    loginTime: 0n,
   };
 }
 
 export const UserInfo: MessageFns<UserInfo> = {
   encode(message: UserInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (!message.userId.equals(Long.ZERO)) {
-      writer.uint32(8).int64(message.userId.toString());
+    if (message.userId !== 0n) {
+      if (BigInt.asIntN(64, message.userId) !== message.userId) {
+        throw new globalThis.Error("value provided for field message.userId of type int64 too large");
+      }
+      writer.uint32(8).int64(message.userId);
     }
     if (message.username !== "") {
       writer.uint32(18).string(message.username);
@@ -556,11 +559,17 @@ export const UserInfo: MessageFns<UserInfo> = {
     if (message.level !== 0) {
       writer.uint32(24).int32(message.level);
     }
-    if (!message.exp.equals(Long.ZERO)) {
-      writer.uint32(32).int64(message.exp.toString());
+    if (message.exp !== 0n) {
+      if (BigInt.asIntN(64, message.exp) !== message.exp) {
+        throw new globalThis.Error("value provided for field message.exp of type int64 too large");
+      }
+      writer.uint32(32).int64(message.exp);
     }
-    if (!message.gold.equals(Long.ZERO)) {
-      writer.uint32(40).int64(message.gold.toString());
+    if (message.gold !== 0n) {
+      if (BigInt.asIntN(64, message.gold) !== message.gold) {
+        throw new globalThis.Error("value provided for field message.gold of type int64 too large");
+      }
+      writer.uint32(40).int64(message.gold);
     }
     if (message.vipLevel !== 0) {
       writer.uint32(48).int32(message.vipLevel);
@@ -574,11 +583,17 @@ export const UserInfo: MessageFns<UserInfo> = {
     if (message.defense !== 0) {
       writer.uint32(72).int32(message.defense);
     }
-    if (!message.createTime.equals(Long.ZERO)) {
-      writer.uint32(80).int64(message.createTime.toString());
+    if (message.createTime !== 0n) {
+      if (BigInt.asIntN(64, message.createTime) !== message.createTime) {
+        throw new globalThis.Error("value provided for field message.createTime of type int64 too large");
+      }
+      writer.uint32(80).int64(message.createTime);
     }
-    if (!message.loginTime.equals(Long.ZERO)) {
-      writer.uint32(88).int64(message.loginTime.toString());
+    if (message.loginTime !== 0n) {
+      if (BigInt.asIntN(64, message.loginTime) !== message.loginTime) {
+        throw new globalThis.Error("value provided for field message.loginTime of type int64 too large");
+      }
+      writer.uint32(88).int64(message.loginTime);
     }
     return writer;
   },
@@ -595,7 +610,7 @@ export const UserInfo: MessageFns<UserInfo> = {
             break;
           }
 
-          message.userId = Long.fromString(reader.int64().toString());
+          message.userId = reader.int64() as bigint;
           continue;
         }
         case 2: {
@@ -619,7 +634,7 @@ export const UserInfo: MessageFns<UserInfo> = {
             break;
           }
 
-          message.exp = Long.fromString(reader.int64().toString());
+          message.exp = reader.int64() as bigint;
           continue;
         }
         case 5: {
@@ -627,7 +642,7 @@ export const UserInfo: MessageFns<UserInfo> = {
             break;
           }
 
-          message.gold = Long.fromString(reader.int64().toString());
+          message.gold = reader.int64() as bigint;
           continue;
         }
         case 6: {
@@ -667,7 +682,7 @@ export const UserInfo: MessageFns<UserInfo> = {
             break;
           }
 
-          message.createTime = Long.fromString(reader.int64().toString());
+          message.createTime = reader.int64() as bigint;
           continue;
         }
         case 11: {
@@ -675,7 +690,7 @@ export const UserInfo: MessageFns<UserInfo> = {
             break;
           }
 
-          message.loginTime = Long.fromString(reader.int64().toString());
+          message.loginTime = reader.int64() as bigint;
           continue;
         }
       }
@@ -689,24 +704,24 @@ export const UserInfo: MessageFns<UserInfo> = {
 
   fromJSON(object: any): UserInfo {
     return {
-      userId: isSet(object.userId) ? Long.fromValue(object.userId) : Long.ZERO,
+      userId: isSet(object.userId) ? BigInt(object.userId) : 0n,
       username: isSet(object.username) ? globalThis.String(object.username) : "",
       level: isSet(object.level) ? globalThis.Number(object.level) : 0,
-      exp: isSet(object.exp) ? Long.fromValue(object.exp) : Long.ZERO,
-      gold: isSet(object.gold) ? Long.fromValue(object.gold) : Long.ZERO,
+      exp: isSet(object.exp) ? BigInt(object.exp) : 0n,
+      gold: isSet(object.gold) ? BigInt(object.gold) : 0n,
       vipLevel: isSet(object.vipLevel) ? globalThis.Number(object.vipLevel) : 0,
       hp: isSet(object.hp) ? globalThis.Number(object.hp) : 0,
       attack: isSet(object.attack) ? globalThis.Number(object.attack) : 0,
       defense: isSet(object.defense) ? globalThis.Number(object.defense) : 0,
-      createTime: isSet(object.createTime) ? Long.fromValue(object.createTime) : Long.ZERO,
-      loginTime: isSet(object.loginTime) ? Long.fromValue(object.loginTime) : Long.ZERO,
+      createTime: isSet(object.createTime) ? BigInt(object.createTime) : 0n,
+      loginTime: isSet(object.loginTime) ? BigInt(object.loginTime) : 0n,
     };
   },
 
   toJSON(message: UserInfo): unknown {
     const obj: any = {};
-    if (!message.userId.equals(Long.ZERO)) {
-      obj.userId = (message.userId || Long.ZERO).toString();
+    if (message.userId !== 0n) {
+      obj.userId = message.userId.toString();
     }
     if (message.username !== "") {
       obj.username = message.username;
@@ -714,11 +729,11 @@ export const UserInfo: MessageFns<UserInfo> = {
     if (message.level !== 0) {
       obj.level = Math.round(message.level);
     }
-    if (!message.exp.equals(Long.ZERO)) {
-      obj.exp = (message.exp || Long.ZERO).toString();
+    if (message.exp !== 0n) {
+      obj.exp = message.exp.toString();
     }
-    if (!message.gold.equals(Long.ZERO)) {
-      obj.gold = (message.gold || Long.ZERO).toString();
+    if (message.gold !== 0n) {
+      obj.gold = message.gold.toString();
     }
     if (message.vipLevel !== 0) {
       obj.vipLevel = Math.round(message.vipLevel);
@@ -732,11 +747,11 @@ export const UserInfo: MessageFns<UserInfo> = {
     if (message.defense !== 0) {
       obj.defense = Math.round(message.defense);
     }
-    if (!message.createTime.equals(Long.ZERO)) {
-      obj.createTime = (message.createTime || Long.ZERO).toString();
+    if (message.createTime !== 0n) {
+      obj.createTime = message.createTime.toString();
     }
-    if (!message.loginTime.equals(Long.ZERO)) {
-      obj.loginTime = (message.loginTime || Long.ZERO).toString();
+    if (message.loginTime !== 0n) {
+      obj.loginTime = message.loginTime.toString();
     }
     return obj;
   },
@@ -746,44 +761,32 @@ export const UserInfo: MessageFns<UserInfo> = {
   },
   fromPartial<I extends Exact<DeepPartial<UserInfo>, I>>(object: I): UserInfo {
     const message = createBaseUserInfo();
-    message.userId = (object.userId !== undefined && object.userId !== null)
-      ? Long.fromValue(object.userId)
-      : Long.ZERO;
+    message.userId = object.userId ?? 0n;
     message.username = object.username ?? "";
     message.level = object.level ?? 0;
-    message.exp = (object.exp !== undefined && object.exp !== null) ? Long.fromValue(object.exp) : Long.ZERO;
-    message.gold = (object.gold !== undefined && object.gold !== null) ? Long.fromValue(object.gold) : Long.ZERO;
+    message.exp = object.exp ?? 0n;
+    message.gold = object.gold ?? 0n;
     message.vipLevel = object.vipLevel ?? 0;
     message.hp = object.hp ?? 0;
     message.attack = object.attack ?? 0;
     message.defense = object.defense ?? 0;
-    message.createTime = (object.createTime !== undefined && object.createTime !== null)
-      ? Long.fromValue(object.createTime)
-      : Long.ZERO;
-    message.loginTime = (object.loginTime !== undefined && object.loginTime !== null)
-      ? Long.fromValue(object.loginTime)
-      : Long.ZERO;
+    message.createTime = object.createTime ?? 0n;
+    message.loginTime = object.loginTime ?? 0n;
     return message;
   },
 };
 
 function createBaseCardInfo(): CardInfo {
-  return {
-    cardId: Long.ZERO,
-    cardType: 0,
-    level: 0,
-    exp: Long.ZERO,
-    quality: 0,
-    star: 0,
-    createTime: Long.ZERO,
-    power: 0,
-  };
+  return { cardId: 0n, cardType: 0, level: 0, exp: 0n, quality: 0, star: 0, createTime: 0n, power: 0 };
 }
 
 export const CardInfo: MessageFns<CardInfo> = {
   encode(message: CardInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (!message.cardId.equals(Long.ZERO)) {
-      writer.uint32(8).int64(message.cardId.toString());
+    if (message.cardId !== 0n) {
+      if (BigInt.asIntN(64, message.cardId) !== message.cardId) {
+        throw new globalThis.Error("value provided for field message.cardId of type int64 too large");
+      }
+      writer.uint32(8).int64(message.cardId);
     }
     if (message.cardType !== 0) {
       writer.uint32(16).int32(message.cardType);
@@ -791,8 +794,11 @@ export const CardInfo: MessageFns<CardInfo> = {
     if (message.level !== 0) {
       writer.uint32(24).int32(message.level);
     }
-    if (!message.exp.equals(Long.ZERO)) {
-      writer.uint32(32).int64(message.exp.toString());
+    if (message.exp !== 0n) {
+      if (BigInt.asIntN(64, message.exp) !== message.exp) {
+        throw new globalThis.Error("value provided for field message.exp of type int64 too large");
+      }
+      writer.uint32(32).int64(message.exp);
     }
     if (message.quality !== 0) {
       writer.uint32(40).int32(message.quality);
@@ -800,8 +806,11 @@ export const CardInfo: MessageFns<CardInfo> = {
     if (message.star !== 0) {
       writer.uint32(48).int32(message.star);
     }
-    if (!message.createTime.equals(Long.ZERO)) {
-      writer.uint32(56).int64(message.createTime.toString());
+    if (message.createTime !== 0n) {
+      if (BigInt.asIntN(64, message.createTime) !== message.createTime) {
+        throw new globalThis.Error("value provided for field message.createTime of type int64 too large");
+      }
+      writer.uint32(56).int64(message.createTime);
     }
     if (message.power !== 0) {
       writer.uint32(64).int32(message.power);
@@ -821,7 +830,7 @@ export const CardInfo: MessageFns<CardInfo> = {
             break;
           }
 
-          message.cardId = Long.fromString(reader.int64().toString());
+          message.cardId = reader.int64() as bigint;
           continue;
         }
         case 2: {
@@ -845,7 +854,7 @@ export const CardInfo: MessageFns<CardInfo> = {
             break;
           }
 
-          message.exp = Long.fromString(reader.int64().toString());
+          message.exp = reader.int64() as bigint;
           continue;
         }
         case 5: {
@@ -869,7 +878,7 @@ export const CardInfo: MessageFns<CardInfo> = {
             break;
           }
 
-          message.createTime = Long.fromString(reader.int64().toString());
+          message.createTime = reader.int64() as bigint;
           continue;
         }
         case 8: {
@@ -891,21 +900,21 @@ export const CardInfo: MessageFns<CardInfo> = {
 
   fromJSON(object: any): CardInfo {
     return {
-      cardId: isSet(object.cardId) ? Long.fromValue(object.cardId) : Long.ZERO,
+      cardId: isSet(object.cardId) ? BigInt(object.cardId) : 0n,
       cardType: isSet(object.cardType) ? globalThis.Number(object.cardType) : 0,
       level: isSet(object.level) ? globalThis.Number(object.level) : 0,
-      exp: isSet(object.exp) ? Long.fromValue(object.exp) : Long.ZERO,
+      exp: isSet(object.exp) ? BigInt(object.exp) : 0n,
       quality: isSet(object.quality) ? globalThis.Number(object.quality) : 0,
       star: isSet(object.star) ? globalThis.Number(object.star) : 0,
-      createTime: isSet(object.createTime) ? Long.fromValue(object.createTime) : Long.ZERO,
+      createTime: isSet(object.createTime) ? BigInt(object.createTime) : 0n,
       power: isSet(object.power) ? globalThis.Number(object.power) : 0,
     };
   },
 
   toJSON(message: CardInfo): unknown {
     const obj: any = {};
-    if (!message.cardId.equals(Long.ZERO)) {
-      obj.cardId = (message.cardId || Long.ZERO).toString();
+    if (message.cardId !== 0n) {
+      obj.cardId = message.cardId.toString();
     }
     if (message.cardType !== 0) {
       obj.cardType = Math.round(message.cardType);
@@ -913,8 +922,8 @@ export const CardInfo: MessageFns<CardInfo> = {
     if (message.level !== 0) {
       obj.level = Math.round(message.level);
     }
-    if (!message.exp.equals(Long.ZERO)) {
-      obj.exp = (message.exp || Long.ZERO).toString();
+    if (message.exp !== 0n) {
+      obj.exp = message.exp.toString();
     }
     if (message.quality !== 0) {
       obj.quality = Math.round(message.quality);
@@ -922,8 +931,8 @@ export const CardInfo: MessageFns<CardInfo> = {
     if (message.star !== 0) {
       obj.star = Math.round(message.star);
     }
-    if (!message.createTime.equals(Long.ZERO)) {
-      obj.createTime = (message.createTime || Long.ZERO).toString();
+    if (message.createTime !== 0n) {
+      obj.createTime = message.createTime.toString();
     }
     if (message.power !== 0) {
       obj.power = Math.round(message.power);
@@ -936,17 +945,13 @@ export const CardInfo: MessageFns<CardInfo> = {
   },
   fromPartial<I extends Exact<DeepPartial<CardInfo>, I>>(object: I): CardInfo {
     const message = createBaseCardInfo();
-    message.cardId = (object.cardId !== undefined && object.cardId !== null)
-      ? Long.fromValue(object.cardId)
-      : Long.ZERO;
+    message.cardId = object.cardId ?? 0n;
     message.cardType = object.cardType ?? 0;
     message.level = object.level ?? 0;
-    message.exp = (object.exp !== undefined && object.exp !== null) ? Long.fromValue(object.exp) : Long.ZERO;
+    message.exp = object.exp ?? 0n;
     message.quality = object.quality ?? 0;
     message.star = object.star ?? 0;
-    message.createTime = (object.createTime !== undefined && object.createTime !== null)
-      ? Long.fromValue(object.createTime)
-      : Long.ZERO;
+    message.createTime = object.createTime ?? 0n;
     message.power = object.power ?? 0;
     return message;
   },
@@ -1138,24 +1143,27 @@ export const BagInfo: MessageFns<BagInfo> = {
 
 function createBaseMailInfo(): MailInfo {
   return {
-    id: Long.ZERO,
+    id: 0n,
     title: "",
     content: "",
     items: [],
     mailType: 0,
     status: 0,
-    createTime: Long.ZERO,
-    expireTime: Long.ZERO,
-    templateId: Long.ZERO,
-    senderId: Long.ZERO,
+    createTime: 0n,
+    expireTime: 0n,
+    templateId: 0n,
+    senderId: 0n,
     senderName: "",
   };
 }
 
 export const MailInfo: MessageFns<MailInfo> = {
   encode(message: MailInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (!message.id.equals(Long.ZERO)) {
-      writer.uint32(8).int64(message.id.toString());
+    if (message.id !== 0n) {
+      if (BigInt.asIntN(64, message.id) !== message.id) {
+        throw new globalThis.Error("value provided for field message.id of type int64 too large");
+      }
+      writer.uint32(8).int64(message.id);
     }
     if (message.title !== "") {
       writer.uint32(18).string(message.title);
@@ -1172,17 +1180,29 @@ export const MailInfo: MessageFns<MailInfo> = {
     if (message.status !== 0) {
       writer.uint32(48).int32(message.status);
     }
-    if (!message.createTime.equals(Long.ZERO)) {
-      writer.uint32(56).int64(message.createTime.toString());
+    if (message.createTime !== 0n) {
+      if (BigInt.asIntN(64, message.createTime) !== message.createTime) {
+        throw new globalThis.Error("value provided for field message.createTime of type int64 too large");
+      }
+      writer.uint32(56).int64(message.createTime);
     }
-    if (!message.expireTime.equals(Long.ZERO)) {
-      writer.uint32(64).int64(message.expireTime.toString());
+    if (message.expireTime !== 0n) {
+      if (BigInt.asIntN(64, message.expireTime) !== message.expireTime) {
+        throw new globalThis.Error("value provided for field message.expireTime of type int64 too large");
+      }
+      writer.uint32(64).int64(message.expireTime);
     }
-    if (!message.templateId.equals(Long.ZERO)) {
-      writer.uint32(72).int64(message.templateId.toString());
+    if (message.templateId !== 0n) {
+      if (BigInt.asIntN(64, message.templateId) !== message.templateId) {
+        throw new globalThis.Error("value provided for field message.templateId of type int64 too large");
+      }
+      writer.uint32(72).int64(message.templateId);
     }
-    if (!message.senderId.equals(Long.ZERO)) {
-      writer.uint32(80).int64(message.senderId.toString());
+    if (message.senderId !== 0n) {
+      if (BigInt.asIntN(64, message.senderId) !== message.senderId) {
+        throw new globalThis.Error("value provided for field message.senderId of type int64 too large");
+      }
+      writer.uint32(80).int64(message.senderId);
     }
     if (message.senderName !== "") {
       writer.uint32(90).string(message.senderName);
@@ -1202,7 +1222,7 @@ export const MailInfo: MessageFns<MailInfo> = {
             break;
           }
 
-          message.id = Long.fromString(reader.int64().toString());
+          message.id = reader.int64() as bigint;
           continue;
         }
         case 2: {
@@ -1250,7 +1270,7 @@ export const MailInfo: MessageFns<MailInfo> = {
             break;
           }
 
-          message.createTime = Long.fromString(reader.int64().toString());
+          message.createTime = reader.int64() as bigint;
           continue;
         }
         case 8: {
@@ -1258,7 +1278,7 @@ export const MailInfo: MessageFns<MailInfo> = {
             break;
           }
 
-          message.expireTime = Long.fromString(reader.int64().toString());
+          message.expireTime = reader.int64() as bigint;
           continue;
         }
         case 9: {
@@ -1266,7 +1286,7 @@ export const MailInfo: MessageFns<MailInfo> = {
             break;
           }
 
-          message.templateId = Long.fromString(reader.int64().toString());
+          message.templateId = reader.int64() as bigint;
           continue;
         }
         case 10: {
@@ -1274,7 +1294,7 @@ export const MailInfo: MessageFns<MailInfo> = {
             break;
           }
 
-          message.senderId = Long.fromString(reader.int64().toString());
+          message.senderId = reader.int64() as bigint;
           continue;
         }
         case 11: {
@@ -1296,24 +1316,24 @@ export const MailInfo: MessageFns<MailInfo> = {
 
   fromJSON(object: any): MailInfo {
     return {
-      id: isSet(object.id) ? Long.fromValue(object.id) : Long.ZERO,
+      id: isSet(object.id) ? BigInt(object.id) : 0n,
       title: isSet(object.title) ? globalThis.String(object.title) : "",
       content: isSet(object.content) ? globalThis.String(object.content) : "",
       items: globalThis.Array.isArray(object?.items) ? object.items.map((e: any) => ItemInfo.fromJSON(e)) : [],
       mailType: isSet(object.mailType) ? globalThis.Number(object.mailType) : 0,
       status: isSet(object.status) ? globalThis.Number(object.status) : 0,
-      createTime: isSet(object.createTime) ? Long.fromValue(object.createTime) : Long.ZERO,
-      expireTime: isSet(object.expireTime) ? Long.fromValue(object.expireTime) : Long.ZERO,
-      templateId: isSet(object.templateId) ? Long.fromValue(object.templateId) : Long.ZERO,
-      senderId: isSet(object.senderId) ? Long.fromValue(object.senderId) : Long.ZERO,
+      createTime: isSet(object.createTime) ? BigInt(object.createTime) : 0n,
+      expireTime: isSet(object.expireTime) ? BigInt(object.expireTime) : 0n,
+      templateId: isSet(object.templateId) ? BigInt(object.templateId) : 0n,
+      senderId: isSet(object.senderId) ? BigInt(object.senderId) : 0n,
       senderName: isSet(object.senderName) ? globalThis.String(object.senderName) : "",
     };
   },
 
   toJSON(message: MailInfo): unknown {
     const obj: any = {};
-    if (!message.id.equals(Long.ZERO)) {
-      obj.id = (message.id || Long.ZERO).toString();
+    if (message.id !== 0n) {
+      obj.id = message.id.toString();
     }
     if (message.title !== "") {
       obj.title = message.title;
@@ -1330,17 +1350,17 @@ export const MailInfo: MessageFns<MailInfo> = {
     if (message.status !== 0) {
       obj.status = Math.round(message.status);
     }
-    if (!message.createTime.equals(Long.ZERO)) {
-      obj.createTime = (message.createTime || Long.ZERO).toString();
+    if (message.createTime !== 0n) {
+      obj.createTime = message.createTime.toString();
     }
-    if (!message.expireTime.equals(Long.ZERO)) {
-      obj.expireTime = (message.expireTime || Long.ZERO).toString();
+    if (message.expireTime !== 0n) {
+      obj.expireTime = message.expireTime.toString();
     }
-    if (!message.templateId.equals(Long.ZERO)) {
-      obj.templateId = (message.templateId || Long.ZERO).toString();
+    if (message.templateId !== 0n) {
+      obj.templateId = message.templateId.toString();
     }
-    if (!message.senderId.equals(Long.ZERO)) {
-      obj.senderId = (message.senderId || Long.ZERO).toString();
+    if (message.senderId !== 0n) {
+      obj.senderId = message.senderId.toString();
     }
     if (message.senderName !== "") {
       obj.senderName = message.senderName;
@@ -1353,45 +1373,32 @@ export const MailInfo: MessageFns<MailInfo> = {
   },
   fromPartial<I extends Exact<DeepPartial<MailInfo>, I>>(object: I): MailInfo {
     const message = createBaseMailInfo();
-    message.id = (object.id !== undefined && object.id !== null) ? Long.fromValue(object.id) : Long.ZERO;
+    message.id = object.id ?? 0n;
     message.title = object.title ?? "";
     message.content = object.content ?? "";
     message.items = object.items?.map((e) => ItemInfo.fromPartial(e)) || [];
     message.mailType = object.mailType ?? 0;
     message.status = object.status ?? 0;
-    message.createTime = (object.createTime !== undefined && object.createTime !== null)
-      ? Long.fromValue(object.createTime)
-      : Long.ZERO;
-    message.expireTime = (object.expireTime !== undefined && object.expireTime !== null)
-      ? Long.fromValue(object.expireTime)
-      : Long.ZERO;
-    message.templateId = (object.templateId !== undefined && object.templateId !== null)
-      ? Long.fromValue(object.templateId)
-      : Long.ZERO;
-    message.senderId = (object.senderId !== undefined && object.senderId !== null)
-      ? Long.fromValue(object.senderId)
-      : Long.ZERO;
+    message.createTime = object.createTime ?? 0n;
+    message.expireTime = object.expireTime ?? 0n;
+    message.templateId = object.templateId ?? 0n;
+    message.senderId = object.senderId ?? 0n;
     message.senderName = object.senderName ?? "";
     return message;
   },
 };
 
 function createBaseMailTemplateInfo(): MailTemplateInfo {
-  return {
-    id: Long.ZERO,
-    title: "",
-    content: "",
-    items: [],
-    mailType: 0,
-    createTime: Long.ZERO,
-    expireTime: Long.ZERO,
-  };
+  return { id: 0n, title: "", content: "", items: [], mailType: 0, createTime: 0n, expireTime: 0n };
 }
 
 export const MailTemplateInfo: MessageFns<MailTemplateInfo> = {
   encode(message: MailTemplateInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (!message.id.equals(Long.ZERO)) {
-      writer.uint32(8).int64(message.id.toString());
+    if (message.id !== 0n) {
+      if (BigInt.asIntN(64, message.id) !== message.id) {
+        throw new globalThis.Error("value provided for field message.id of type int64 too large");
+      }
+      writer.uint32(8).int64(message.id);
     }
     if (message.title !== "") {
       writer.uint32(18).string(message.title);
@@ -1405,11 +1412,17 @@ export const MailTemplateInfo: MessageFns<MailTemplateInfo> = {
     if (message.mailType !== 0) {
       writer.uint32(40).int32(message.mailType);
     }
-    if (!message.createTime.equals(Long.ZERO)) {
-      writer.uint32(48).int64(message.createTime.toString());
+    if (message.createTime !== 0n) {
+      if (BigInt.asIntN(64, message.createTime) !== message.createTime) {
+        throw new globalThis.Error("value provided for field message.createTime of type int64 too large");
+      }
+      writer.uint32(48).int64(message.createTime);
     }
-    if (!message.expireTime.equals(Long.ZERO)) {
-      writer.uint32(56).int64(message.expireTime.toString());
+    if (message.expireTime !== 0n) {
+      if (BigInt.asIntN(64, message.expireTime) !== message.expireTime) {
+        throw new globalThis.Error("value provided for field message.expireTime of type int64 too large");
+      }
+      writer.uint32(56).int64(message.expireTime);
     }
     return writer;
   },
@@ -1426,7 +1439,7 @@ export const MailTemplateInfo: MessageFns<MailTemplateInfo> = {
             break;
           }
 
-          message.id = Long.fromString(reader.int64().toString());
+          message.id = reader.int64() as bigint;
           continue;
         }
         case 2: {
@@ -1466,7 +1479,7 @@ export const MailTemplateInfo: MessageFns<MailTemplateInfo> = {
             break;
           }
 
-          message.createTime = Long.fromString(reader.int64().toString());
+          message.createTime = reader.int64() as bigint;
           continue;
         }
         case 7: {
@@ -1474,7 +1487,7 @@ export const MailTemplateInfo: MessageFns<MailTemplateInfo> = {
             break;
           }
 
-          message.expireTime = Long.fromString(reader.int64().toString());
+          message.expireTime = reader.int64() as bigint;
           continue;
         }
       }
@@ -1488,20 +1501,20 @@ export const MailTemplateInfo: MessageFns<MailTemplateInfo> = {
 
   fromJSON(object: any): MailTemplateInfo {
     return {
-      id: isSet(object.id) ? Long.fromValue(object.id) : Long.ZERO,
+      id: isSet(object.id) ? BigInt(object.id) : 0n,
       title: isSet(object.title) ? globalThis.String(object.title) : "",
       content: isSet(object.content) ? globalThis.String(object.content) : "",
       items: globalThis.Array.isArray(object?.items) ? object.items.map((e: any) => ItemInfo.fromJSON(e)) : [],
       mailType: isSet(object.mailType) ? globalThis.Number(object.mailType) : 0,
-      createTime: isSet(object.createTime) ? Long.fromValue(object.createTime) : Long.ZERO,
-      expireTime: isSet(object.expireTime) ? Long.fromValue(object.expireTime) : Long.ZERO,
+      createTime: isSet(object.createTime) ? BigInt(object.createTime) : 0n,
+      expireTime: isSet(object.expireTime) ? BigInt(object.expireTime) : 0n,
     };
   },
 
   toJSON(message: MailTemplateInfo): unknown {
     const obj: any = {};
-    if (!message.id.equals(Long.ZERO)) {
-      obj.id = (message.id || Long.ZERO).toString();
+    if (message.id !== 0n) {
+      obj.id = message.id.toString();
     }
     if (message.title !== "") {
       obj.title = message.title;
@@ -1515,11 +1528,11 @@ export const MailTemplateInfo: MessageFns<MailTemplateInfo> = {
     if (message.mailType !== 0) {
       obj.mailType = Math.round(message.mailType);
     }
-    if (!message.createTime.equals(Long.ZERO)) {
-      obj.createTime = (message.createTime || Long.ZERO).toString();
+    if (message.createTime !== 0n) {
+      obj.createTime = message.createTime.toString();
     }
-    if (!message.expireTime.equals(Long.ZERO)) {
-      obj.expireTime = (message.expireTime || Long.ZERO).toString();
+    if (message.expireTime !== 0n) {
+      obj.expireTime = message.expireTime.toString();
     }
     return obj;
   },
@@ -1529,17 +1542,13 @@ export const MailTemplateInfo: MessageFns<MailTemplateInfo> = {
   },
   fromPartial<I extends Exact<DeepPartial<MailTemplateInfo>, I>>(object: I): MailTemplateInfo {
     const message = createBaseMailTemplateInfo();
-    message.id = (object.id !== undefined && object.id !== null) ? Long.fromValue(object.id) : Long.ZERO;
+    message.id = object.id ?? 0n;
     message.title = object.title ?? "";
     message.content = object.content ?? "";
     message.items = object.items?.map((e) => ItemInfo.fromPartial(e)) || [];
     message.mailType = object.mailType ?? 0;
-    message.createTime = (object.createTime !== undefined && object.createTime !== null)
-      ? Long.fromValue(object.createTime)
-      : Long.ZERO;
-    message.expireTime = (object.expireTime !== undefined && object.expireTime !== null)
-      ? Long.fromValue(object.expireTime)
-      : Long.ZERO;
+    message.createTime = object.createTime ?? 0n;
+    message.expireTime = object.expireTime ?? 0n;
     return message;
   },
 };
@@ -1622,13 +1631,13 @@ export const ResourceInfo: MessageFns<ResourceInfo> = {
 
 function createBasePartnerBaseInfo(): PartnerBaseInfo {
   return {
-    partnerId: Long.ZERO,
+    partnerId: 0n,
     unitId: 0,
     level: 0,
     exp: 0,
     quality: 0,
     star: 0,
-    createTime: Long.ZERO,
+    createTime: 0n,
     race: 0,
     forte: 0,
     properties: [],
@@ -1637,8 +1646,11 @@ function createBasePartnerBaseInfo(): PartnerBaseInfo {
 
 export const PartnerBaseInfo: MessageFns<PartnerBaseInfo> = {
   encode(message: PartnerBaseInfo, writer: BinaryWriter = new BinaryWriter()): BinaryWriter {
-    if (!message.partnerId.equals(Long.ZERO)) {
-      writer.uint32(8).int64(message.partnerId.toString());
+    if (message.partnerId !== 0n) {
+      if (BigInt.asIntN(64, message.partnerId) !== message.partnerId) {
+        throw new globalThis.Error("value provided for field message.partnerId of type int64 too large");
+      }
+      writer.uint32(8).int64(message.partnerId);
     }
     if (message.unitId !== 0) {
       writer.uint32(16).int32(message.unitId);
@@ -1655,8 +1667,11 @@ export const PartnerBaseInfo: MessageFns<PartnerBaseInfo> = {
     if (message.star !== 0) {
       writer.uint32(48).int32(message.star);
     }
-    if (!message.createTime.equals(Long.ZERO)) {
-      writer.uint32(56).int64(message.createTime.toString());
+    if (message.createTime !== 0n) {
+      if (BigInt.asIntN(64, message.createTime) !== message.createTime) {
+        throw new globalThis.Error("value provided for field message.createTime of type int64 too large");
+      }
+      writer.uint32(56).int64(message.createTime);
     }
     if (message.race !== 0) {
       writer.uint32(64).int32(message.race);
@@ -1682,7 +1697,7 @@ export const PartnerBaseInfo: MessageFns<PartnerBaseInfo> = {
             break;
           }
 
-          message.partnerId = Long.fromString(reader.int64().toString());
+          message.partnerId = reader.int64() as bigint;
           continue;
         }
         case 2: {
@@ -1730,7 +1745,7 @@ export const PartnerBaseInfo: MessageFns<PartnerBaseInfo> = {
             break;
           }
 
-          message.createTime = Long.fromString(reader.int64().toString());
+          message.createTime = reader.int64() as bigint;
           continue;
         }
         case 8: {
@@ -1768,13 +1783,13 @@ export const PartnerBaseInfo: MessageFns<PartnerBaseInfo> = {
 
   fromJSON(object: any): PartnerBaseInfo {
     return {
-      partnerId: isSet(object.partnerId) ? Long.fromValue(object.partnerId) : Long.ZERO,
+      partnerId: isSet(object.partnerId) ? BigInt(object.partnerId) : 0n,
       unitId: isSet(object.unitId) ? globalThis.Number(object.unitId) : 0,
       level: isSet(object.level) ? globalThis.Number(object.level) : 0,
       exp: isSet(object.exp) ? globalThis.Number(object.exp) : 0,
       quality: isSet(object.quality) ? globalThis.Number(object.quality) : 0,
       star: isSet(object.star) ? globalThis.Number(object.star) : 0,
-      createTime: isSet(object.createTime) ? Long.fromValue(object.createTime) : Long.ZERO,
+      createTime: isSet(object.createTime) ? BigInt(object.createTime) : 0n,
       race: isSet(object.race) ? globalThis.Number(object.race) : 0,
       forte: isSet(object.forte) ? globalThis.Number(object.forte) : 0,
       properties: globalThis.Array.isArray(object?.properties)
@@ -1785,8 +1800,8 @@ export const PartnerBaseInfo: MessageFns<PartnerBaseInfo> = {
 
   toJSON(message: PartnerBaseInfo): unknown {
     const obj: any = {};
-    if (!message.partnerId.equals(Long.ZERO)) {
-      obj.partnerId = (message.partnerId || Long.ZERO).toString();
+    if (message.partnerId !== 0n) {
+      obj.partnerId = message.partnerId.toString();
     }
     if (message.unitId !== 0) {
       obj.unitId = Math.round(message.unitId);
@@ -1803,8 +1818,8 @@ export const PartnerBaseInfo: MessageFns<PartnerBaseInfo> = {
     if (message.star !== 0) {
       obj.star = Math.round(message.star);
     }
-    if (!message.createTime.equals(Long.ZERO)) {
-      obj.createTime = (message.createTime || Long.ZERO).toString();
+    if (message.createTime !== 0n) {
+      obj.createTime = message.createTime.toString();
     }
     if (message.race !== 0) {
       obj.race = Math.round(message.race);
@@ -1823,17 +1838,13 @@ export const PartnerBaseInfo: MessageFns<PartnerBaseInfo> = {
   },
   fromPartial<I extends Exact<DeepPartial<PartnerBaseInfo>, I>>(object: I): PartnerBaseInfo {
     const message = createBasePartnerBaseInfo();
-    message.partnerId = (object.partnerId !== undefined && object.partnerId !== null)
-      ? Long.fromValue(object.partnerId)
-      : Long.ZERO;
+    message.partnerId = object.partnerId ?? 0n;
     message.unitId = object.unitId ?? 0;
     message.level = object.level ?? 0;
     message.exp = object.exp ?? 0;
     message.quality = object.quality ?? 0;
     message.star = object.star ?? 0;
-    message.createTime = (object.createTime !== undefined && object.createTime !== null)
-      ? Long.fromValue(object.createTime)
-      : Long.ZERO;
+    message.createTime = object.createTime ?? 0n;
     message.race = object.race ?? 0;
     message.forte = object.forte ?? 0;
     message.properties = object.properties?.map((e) => PropertyInfo.fromPartial(e)) || [];
@@ -2297,10 +2308,10 @@ function base64FromBytes(arr: Uint8Array): string {
   }
 }
 
-type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
+type Builtin = Date | Function | Uint8Array | string | number | boolean | bigint | undefined;
 
 export type DeepPartial<T> = T extends Builtin ? T
-  : T extends Long ? string | number | Long : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
+  : T extends globalThis.Array<infer U> ? globalThis.Array<DeepPartial<U>>
   : T extends ReadonlyArray<infer U> ? ReadonlyArray<DeepPartial<U>>
   : T extends {} ? { [K in keyof T]?: DeepPartial<T[K]> }
   : Partial<T>;
