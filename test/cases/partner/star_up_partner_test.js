@@ -38,10 +38,14 @@ class StarUpPartnerTest extends BaseTest {
             
             // 测试: 伙伴升星
             console.log('\nTesting partner star up...');
-            const partnerId = unlockedPartner.base_info.partner_id.high !== undefined ? 
-                (BigInt(unlockedPartner.base_info.partner_id.high) << BigInt(32)) + BigInt(unlockedPartner.base_info.partner_id.low) :
-                unlockedPartner.base_info.partner_id;
-            console.log(`Using partnerId: ${partnerId} for star up (type: ${typeof partnerId})`);
+            // 直接使用原始的partner_id，不做任何转换
+            const partnerId = unlockedPartner.base_info.partner_id;
+            console.log(`原始伙伴ID:`, JSON.stringify(partnerId));
+                        
+            // 如果是对象格式 (high/low)，记录更多信息用于调试
+            if (partnerId && typeof partnerId === 'object' && partnerId.high !== undefined) {
+                console.log(`伙伴ID高32位: ${partnerId.high}, 低32位: ${partnerId.low}`);
+            }
             
             // 在开始升星前，先添加足够的升星材料
             // 获取升星需要的物品

@@ -511,7 +511,6 @@ function M.get_user_items(user_id)
         -- 新用户，返回空列表
         return {}
     end
-    logger.info("items: %s", utils.table_to_string(items))
     return items
 end
 
