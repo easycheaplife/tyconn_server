@@ -414,8 +414,7 @@ function M.level_up_partner(user_id, partner_id)
     end
     
     -- 记录伙伴变化
-    db_client.log_partner_change(user_id, partner_id, "LEVEL_UP", 
-        string.format("Level: %d -> %d", old_level, partner.level))
+    db_client.log_partner_change(user_id, partner_id, old_level, partner.level, "LEVEL_UP", os.time(), utils.table_to_string(consumed_items))
     
     -- 构造返回的伙伴信息
     local updated_partner = {
@@ -514,9 +513,7 @@ function M.star_up_partner(user_id, partner_id)
     end
     
     -- 记录伙伴变化
-    db_client.log_partner_change(user_id, partner_id, "STAR_UP", 
-        string.format("Star: %d -> %d", old_star, partner.star))
-
+    db_client.log_partner_change(user_id, partner_id, old_star, partner.star, "STAR_UP", os.time(), utils.table_to_string(consumed_items))
     
     -- 构造返回的伙伴信息
     local updated_partner = {
@@ -616,8 +613,7 @@ function M.unlock_partner(user_id, unit_id)
     end
     
     -- 记录伙伴变化
-    db_client.log_partner_change(user_id, new_partner.id, "UNLOCK", 
-        string.format("Unlocked unit_id=%d using %d fragments of item_id=%d", unit_id, fragment_need, fragment_item_id))
+    db_client.log_partner_change(user_id, new_partner.id, unit_id, fragment_need, "UNLOCK", os.time())
     
     -- 获取伙伴的最新碎片数量
     local items = item_service.get_user_items_by_type(user_id, enum.ItemType.ITEM_TYPE_PARTNER_FRAGMENT)

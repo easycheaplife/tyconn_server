@@ -671,8 +671,8 @@ function M.delete_partner(partner_id)
 end
 
 -- 记录伙伴变化
-function M.log_partner_change(user_id, partner_id, change_type, details)
-    if not user_id or not partner_id or not change_type then
+function M.log_partner_change(user_id, partner_id, old_value, new_value, change_type, operation_time, consume_items)
+    if not user_id or not partner_id then
         logger.error("log_partner_change: missing required parameters")
         return false
     end
@@ -680,9 +680,11 @@ function M.log_partner_change(user_id, partner_id, change_type, details)
     local log_data = {
         user_id = user_id,
         partner_id = partner_id,
+        old_value = old_value,
+        new_value = new_value,
         change_type = change_type,
-        details = details or "",
-        create_time = os.time()
+        operation_time = operation_time or os.time(),
+        consume_items = consume_items
     }
     
     local ok, result = pcall(call_db, "log_partner_change", log_data)

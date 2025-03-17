@@ -157,34 +157,56 @@ function M.log_partner_change(log)
         return false, "Invalid log info"
     end
     
-    -- 构建日志字段
-    local fields = {
-        "user_id", "partner_id", "change_type", "change_desc", 
-        "old_value", "new_value", "change_time"
-    }
-    local values = {
-        log.user_id, log.partner_id, log.change_type, 
-        log.change_desc or "", log.old_value or "", 
-        log.new_value or "", log.change_time or os.time()
-    }
-    
-    -- 构建SQL字段和值
-    local field_str = table.concat(fields, ", ")
-    local value_placeholders = {}
-    for i = 1, #values do
-        if type(values[i]) == "string" then
-            value_placeholders[i] = string.format("'%s'", db_util.escape_string(values[i]))
-        else
-            value_placeholders[i] = tostring(values[i])
-        end
+    -- 根据变化类型选择对应的日志表
+    local table_name
+    if log.change_type == "LEVEL_UP" then
+        table_name = "partner_level_logs"
+    elseif log.change_type == "STAR_UP" then
+        table_name = "partner_star_logs"
+    elseif log.change_type == "UNLOCK" then
+        table_name = "partner_unlock_logs"
+    else
+        logger.error("Invalid change type: %s", log.change_type)
+        return false
     end
-    local value_str = table.concat(value_placeholders, ", ")
     
     -- 构建SQL语句
-    local query = string.format(
-        "INSERT INTO partner_change_logs (%s) VALUES (%s)",
-        field_str, value_str
-    )
+    local query
+    if log.change_type == "LEVEL_UP" then
+        query = string.format([[
+            INSERT INTO partner_level_logs (
+                partner_id, user_id, old_level, new_level, 
+                old_exp, new_exp, consume_items, operation_time
+            ) VALUES (
+                %d, %d, %d, %d, 
+                0, 0, %s, %d
+            )
+        ]], log.partner_id, log.user_id, log.old_value, log.new_value, 
+            log.consume_items and string.format("'%s'", db_util.escape_string(log.consume_items)) or "NULL",
+            log.operation_time)
+    elseif log.change_type == "STAR_UP" then
+        query = string.format([[
+            INSERT INTO partner_star_logs (
+                partner_id, user_id, old_star, new_star, 
+                consume_items, operation_time
+            ) VALUES (
+                %d, %d, %d, %d, 
+                %s, %d
+            )
+        ]], log.partner_id, log.user_id, log.old_value, log.new_value,
+            log.consume_items and string.format("'%s'", db_util.escape_string(log.consume_items)) or "NULL",
+            log.operation_time)
+    elseif log.change_type == "UNLOCK" then
+        query = string.format([[
+            INSERT INTO partner_unlock_logs (
+                partner_id, user_id, unit_id, fragment_count, 
+                operation_time
+            ) VALUES (
+                %d, %d, %d, %d, 
+                %d
+            )
+        ]], log.partner_id, log.user_id, log.old_value, log.new_value, log.operation_time)
+    end
     
     local ok = db_util.query(query)
     if not ok then
