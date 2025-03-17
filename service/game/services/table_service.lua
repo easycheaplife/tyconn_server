@@ -331,4 +331,85 @@ function M.get_item_config(item_id)
     return configs[item_id]
 end
 
+-- 获取随机装备模板
+function M.get_random_equip_template(part)
+    local templates = {
+        [1] = {
+            name = "头盔",
+            item_id_base = 2001,
+            slots = {1},
+            props = {
+                defense = {10, 20, 30, 40, 50},
+                hp = {50, 100, 150, 200, 250}
+            }
+        },
+        [2] = {
+            name = "护甲",
+            item_id_base = 2002,
+            slots = {2},
+            props = {
+                defense = {20, 40, 60, 80, 100},
+                hp = {100, 200, 300, 400, 500}
+            }
+        },
+        [3] = {
+            name = "武器",
+            item_id_base = 2003,
+            slots = {3},
+            props = {
+                attack = {30, 60, 90, 120, 150},
+                crit = {1, 2, 3, 4, 5}
+            }
+        },
+        [4] = {
+            name = "鞋子",
+            item_id_base = 2004,
+            slots = {4},
+            props = {
+                speed = {10, 20, 30, 40, 50},
+                dodge = {1, 2, 3, 4, 5}
+            }
+        },
+        [5] = {
+            name = "手套",
+            item_id_base = 2005,
+            slots = {5},
+            props = {
+                attack_speed = {5, 10, 15, 20, 25},
+                accuracy = {1, 2, 3, 4, 5}
+            }
+        },
+        [6] = {
+            name = "项链",
+            item_id_base = 2006,
+            slots = {6},
+            props = {
+                magic_attack = {20, 40, 60, 80, 100},
+                mp = {50, 100, 150, 200, 250}
+            }
+        }
+    }
+    
+    if part and part > 0 and part <= 6 then
+        return templates[part]
+    else
+        -- 随机选择一个部位
+        local parts = {1, 2, 3, 4, 5, 6}
+        local idx = math.random(1, #parts)
+        return templates[parts[idx]]
+    end
+end
+
+-- 获取装备基础配置
+function M.get_equip_base_config()
+    return {
+        min_quality = 1,
+        max_quality = 5,
+        min_level = 1,
+        max_level = 100,
+        parts = {1, 2, 3, 4, 5, 6},  -- 可用装备部位
+        quality_odds = {60, 25, 10, 4, 1}  -- 各品质概率
+    }
+end
+
 return M 
