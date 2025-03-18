@@ -16,6 +16,56 @@
  * 3. 运行所有测试：
  *    node test/run_test.js -t gm_command_test
  * 
+ * GM指令说明：
+ * 
+ * 基础指令：
+ * - set_level <level>：设置角色等级
+ *   参数说明：
+ *   - level: 目标等级(1-99)
+ *   示例：set_level 99
+ * 
+ * 物品管理指令：
+ * - add_item <item_id> <count>：添加物品
+ *   参数说明：
+ *   - item_id: 物品ID(1001-9999)
+ *   - count: 添加数量(1-2000)
+ *   示例：add_item 1001 100
+ * 
+ * - del_item <item_id> <count>：删除物品
+ *   参数说明：
+ *   - item_id: 物品ID(1001-9999)
+ *   - count: 删除数量(1-2000)
+ *   示例：del_item 1001 50
+ * 
+ * - clear_bag <bag_type>：清空背包
+ *   参数说明：
+ *   - bag_type: 背包类型(1=主背包)
+ *   示例：clear_bag 1
+ * 
+ * 伙伴系统指令：
+ * - add_partner <unit_id>：添加伙伴
+ *   参数说明：
+ *   - unit_id: 伙伴单位ID(4301-4350)
+ *   示例：add_partner 4301
+ * 
+ * - add_fragments <fragment_id> <count>：添加伙伴碎片
+ *   参数说明：
+ *   - fragment_id: 碎片ID(5301-5350)
+ *   - count: 添加数量(1-999)
+ *   示例：add_fragments 5301 100
+ * 
+ * - set_partner_level <partner_id> <level>：设置伙伴等级
+ *   参数说明：
+ *   - partner_id: 伙伴实例ID(创建后获得)
+ *   - level: 目标等级(1-100)
+ *   示例：set_partner_level 40113330800919552 50
+ * 
+ * - set_partner_star <partner_id> <star>：设置伙伴星级
+ *   参数说明：
+ *   - partner_id: 伙伴实例ID(创建后获得)
+ *   - star: 目标星级(1-5)
+ *   示例：set_partner_star 40113330800919552 5
+ * 
  * 可用测试用例：
  * - add_item：测试添加物品功能
  * - delete_item：测试删除物品功能
@@ -27,16 +77,12 @@
  * - set_partner_level：测试设置伙伴等级功能
  * - set_partner_star：测试设置伙伴星级功能
  * 
- * 伙伴命令说明：
- * - add_partner <伙伴ID>：添加指定ID的伙伴，如果已存在则返回现有伙伴
- * - add_fragments <碎片ID> <数量>：添加指定数量的伙伴碎片
- * - set_partner_level <伙伴实例ID> <等级>：设置指定伙伴的等级
- * - set_partner_star <伙伴实例ID> <星级>：设置指定伙伴的星级
- * 
  * 注意：
  * 1. 伙伴ID指的是配置表中的unitId，而伙伴实例ID是创建后的partnerId
  * 2. 测试会自动处理伙伴不存在的情况，会先尝试添加伙伴再进行操作
  * 3. 如果指定伙伴不可用，测试会尝试使用第一个已解锁的伙伴
+ * 4. 所有数值参数都需要是有效的正整数
+ * 5. 物品和碎片数量不能超过最大堆叠限制(2000)
  */
 
 const assert = require('assert');
