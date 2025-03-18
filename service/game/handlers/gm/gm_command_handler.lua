@@ -6,6 +6,7 @@ local handler_helper = require "game.handlers.handler_helper"
 local message_helper = require "message_helper" 
 local error = require "error"    
 local message = require "message"
+local utils = require "utils"
 
 local M = {}
 
@@ -38,27 +39,27 @@ function M.handle(client_id, msg)
             message.MessageID.G2C_GM_COMMAND_RESPONSE)
     end
 
-    -- 执行GM指令
-    local ok, msg = gm_service.execute_command(user.user_id, request.command, request.params)
+    -- 执行GM命令
+    local ok, result, err = gm_service.execute_command(user.user_id, request.command, request.params)
     if not ok then
-        logger.error("GM command failed - user_id: %d, command: %s, error: %s",
-            user.user_id, request.command, msg)
+        logger.error("GM command failed - user_id: %d, command: %s, error: %s, params: %s", 
+            user.user_id, request.command, err or "unknown error", utils.table_to_string(request.params))
         return message_helper.create_error_response(
             base_request,
             RESP_TYPE,
             error.ErrorCode.ERROR_CODE_GM_COMMAND_FAILED,
-            msg,
+            err or "GM command failed",
             message.MessageID.G2C_GM_COMMAND_RESPONSE)
     end
 
     -- 构造响应数据
     local response_data = {
-        result = "success",  -- 改为字符串类型
-        message = msg or ""
+        result = "success",
+        message = tostring(result or "") -- 确保message是字符串
     }
 
     logger.info("GM command success - user_id: %d, command: %s, message: %s",
-        user.user_id, request.command, msg)
+        user.user_id, request.command, tostring(result or ""))
 
     return message_helper.create_success_response(
         base_request,

@@ -175,4 +175,36 @@ function M.delete_partner(partner_id, user_id)
     return true
 end
 
+-- 记录伙伴变化历史
+function M.log_partner_change(user_id, partner_id, old_value, new_value, change_type, change_time, extra_info)
+    if not user_id or not partner_id or not change_type then
+        logger.error("Missing required parameters for partner change log")
+        return false, "missing required parameters"
+    end
+
+    -- 构建变化记录
+    local change_record = {
+        user_id = user_id,
+        partner_id = partner_id,
+        change_type = change_type,
+        old_value = tostring(old_value),
+        new_value = tostring(new_value),
+        change_time = change_time or os.time(),
+        extra_info = extra_info or ""
+    }
+
+    -- 写入数据库
+    local ok = db_client.log_partner_change(change_record)
+    if not ok then
+        logger.error("Failed to log partner change for user_id: %d, partner_id: %d, type: %s", 
+            user_id, partner_id, change_type)
+        return false
+    end
+
+    logger.debug("Logged partner change: user_id=%d, partner_id=%d, type=%s, old=%s, new=%s", 
+        user_id, partner_id, change_type, tostring(old_value), tostring(new_value))
+
+    return true
+end
+
 return M 

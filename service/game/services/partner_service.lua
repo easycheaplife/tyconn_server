@@ -6,7 +6,6 @@ local utils = require "utils"
 local item_service = require "services.item_service"
 local user_service = require "services.user_service"
 local table_service = require "services.table_service"
-local db_client = require "game.db_client"
 local enum = require "enum"
 
 local M = {}
@@ -416,7 +415,7 @@ function M.level_up_partner(user_id, partner_id)
     end
     
     -- 记录伙伴变化
-    db_client.log_partner_change(user_id, partner_id, old_level, partner.level, "LEVEL_UP", os.time(), utils.table_to_string(consumed_items))
+    partner_dao.log_partner_change(user_id, partner_id, old_level, partner.level, "LEVEL_UP", os.time(), utils.table_to_string(consumed_items))
     
     -- 构造返回的伙伴信息
     local updated_partner = {
@@ -515,7 +514,7 @@ function M.star_up_partner(user_id, partner_id)
     end
     
     -- 记录伙伴变化
-    db_client.log_partner_change(user_id, partner_id, old_star, partner.star, "STAR_UP", os.time(), utils.table_to_string(consumed_items))
+    partner_dao.log_partner_change(user_id, partner_id, old_star, partner.star, "STAR_UP", os.time(), utils.table_to_string(consumed_items))
     
     -- 构造返回的伙伴信息
     local updated_partner = {
@@ -615,7 +614,7 @@ function M.unlock_partner(user_id, unit_id)
     end
     
     -- 记录伙伴变化
-    db_client.log_partner_change(user_id, new_partner.id, unit_id, fragment_need, "UNLOCK", os.time())
+    partner_dao.log_partner_change(user_id, new_partner.id, unit_id, fragment_need, "UNLOCK", os.time())
     
     -- 获取伙伴的最新碎片数量
     local items = item_service.get_user_items_by_type(user_id, enum.ItemType.ITEM_TYPE_PARTNER_FRAGMENT)
@@ -652,6 +651,195 @@ function M.unlock_partner(user_id, unit_id)
     
     -- 返回消耗的碎片数量
     return true, unlocked_partner, fragment_need
+end
+
+-- GM指令：直接添加伙伴
+function M.gm_add_partner(user_id, unit_id)
+    logger.info("GM add partner for user_id: %d, unit_id: %d", user_id, unit_id)
+    
+    -- 检查伙伴是否已存在
+    local exists, existing_partner = _check_partner_exists(user_id, unit_id)
+    if exists then
+        logger.info("Partner already exists: user_id=%d, unit_id=%d, returning existing partner", user_id, unit_id)
+        return true, existing_partner
+    end
+    
+    -- 获取单位配置
+    local unit_config = table_service.get_unit_config(unit_id)
+    if not unit_config then
+        logger.error("Failed to get unit config for unit_id: %d", unit_id)
+        return false, nil, "unit config not found"
+    end
+    
+    -- 检查是否是伙伴类型
+    if unit_config.type ~= PARTNER_TYPE then
+        logger.error("Unit is not partner type: unit_id=%d, type=%d", unit_id, unit_config.type)
+        return false, nil, "unit is not partner type"
+    end
+    
+    -- 创建伙伴
+    local new_partner = _create_partner(user_id, unit_id)
+    if not new_partner then
+        logger.error("Failed to create partner: user_id=%d, unit_id=%d", user_id, unit_id)
+        return false, nil, "failed to create partner"
+    end
+    
+    -- 记录伙伴变化
+    partner_dao.log_partner_change(user_id, new_partner.id, unit_id, 0, "GM_ADD", os.time())
+    
+    return true, new_partner
+end
+
+-- GM指令：添加伙伴碎片
+function M.gm_add_fragments(user_id, fragment_id, count)
+    logger.info("GM add partner fragments for user_id: %d, fragment_id: %d, count: %d", user_id, fragment_id, count)
+    
+    -- 获取碎片物品配置
+    local item_config = table_service.get_item_config(fragment_id)
+    if not item_config then
+        logger.error("Failed to get item config for fragment_id: %d", fragment_id)
+        return false, "fragment config not found"
+    end
+    
+    -- 检查是否是伙伴碎片类型
+    if item_config.type ~= PARTNER_FRAGMENT_TYPE then
+        logger.error("Item is not partner fragment type: fragment_id=%d, type=%d", fragment_id, item_config.type)
+        return false, "item is not partner fragment type"
+    end
+    
+    -- 添加碎片到背包
+    local result, err = item_service.add_items_to_slot(user_id, {
+        {
+            item_id = fragment_id,
+            count = count
+        }
+    }, enum.ChangeSource.SOURCE_GM)
+    
+    if not result then
+        logger.error("Failed to add fragments: %s", err)
+        return false, err
+    end
+    
+    return true, string.format("Added %d fragments of item %d", count, fragment_id)
+end
+
+-- GM指令：设置伙伴等级
+function M.gm_set_partner_level(user_id, partner_id, level)
+    logger.info("GM set partner level for user_id: %d, partner_id: %d, level: %d", user_id, partner_id, level)
+    
+    -- 获取伙伴信息
+    local partner = _get_partner_by_id(partner_id)
+    if not partner then
+        logger.error("Partner not found: partner_id=%d", partner_id)
+        return false, "partner not found"
+    end
+    
+    -- 检查伙伴所属
+    if partner.user_id ~= user_id then
+        logger.error("Partner does not belong to user: user_id=%d, partner_id=%d", user_id, partner_id)
+        return false, "partner does not belong to user"
+    end
+    
+    -- 获取最大等级
+    local max_level = table_service.get_max_partner_level()
+    if level > max_level then
+        level = max_level
+        logger.info("Capped level to max: %d", max_level)
+    end
+    
+    -- 记录旧等级
+    local old_level = partner.level
+    
+    -- 设置新等级
+    partner.level = level
+    partner.exp = 0  -- 重置经验值
+    
+    -- 更新伙伴属性
+    local unit_config = table_service.get_unit_config(partner.unit_id)
+    if unit_config then
+        partner.properties = get_partner_properties(
+            partner.unit_id, 
+            level, 
+            partner.star, 
+            unit_config.quality or enum.Quality.QUALITY_WHITE
+        )
+        
+        -- 更新战力
+        partner.power = calculate_power(partner)
+    end
+    
+    -- 保存到数据库
+    local ok = partner_dao.update_partner(partner)
+    if not ok then
+        logger.error("Failed to update partner level: partner_id=%d", partner_id)
+        return false, "failed to update partner level"
+    end
+    
+    -- 记录伙伴变化
+    partner_dao.log_partner_change(user_id, partner_id, old_level, level, "GM_SET_LEVEL", os.time())
+    
+    return true, partner
+end
+
+-- GM指令：设置伙伴星级
+function M.gm_set_partner_star(user_id, partner_id, star)
+    logger.info("GM set partner star for user_id: %d, partner_id: %d, star: %d", user_id, partner_id, star)
+    
+    -- 获取伙伴信息
+    local partner = _get_partner_by_id(partner_id)
+    if not partner then
+        logger.error("Partner not found: partner_id=%d", partner_id)
+        return false, "partner not found"
+    end
+    
+    -- 检查伙伴所属
+    if partner.user_id ~= user_id then
+        logger.error("Partner does not belong to user: user_id=%d, partner_id=%d", user_id, partner_id)
+        return false, "partner does not belong to user"
+    end
+    
+    -- 获取单位配置
+    local unit_config = table_service.get_unit_config(partner.unit_id)
+    if not unit_config then
+        logger.error("Failed to get unit config for unit_id: %d", partner.unit_id)
+        return false, "unit config not found"
+    end
+    
+    -- 获取最大星级
+    local max_star = table_service.get_max_partner_star(unit_config.star_id)
+    if star > max_star then
+        star = max_star
+        logger.info("Capped star to max: %d", max_star)
+    end
+    
+    -- 记录旧星级
+    local old_star = partner.star
+    
+    -- 设置新星级
+    partner.star = star
+    
+    -- 更新伙伴属性
+    partner.properties = get_partner_properties(
+        partner.unit_id, 
+        partner.level, 
+        star, 
+        unit_config.quality or enum.Quality.QUALITY_WHITE
+    )
+    
+    -- 更新战力
+    partner.power = calculate_power(partner)
+    
+    -- 保存到数据库
+    local ok = partner_dao.update_partner(partner)
+    if not ok then
+        logger.error("Failed to update partner star: partner_id=%d", partner_id)
+        return false, "failed to update partner star"
+    end
+    
+    -- 记录伙伴变化
+    partner_dao.log_partner_change(user_id, partner_id, old_star, star, "GM_SET_STAR", os.time())
+    
+    return true, partner
 end
 
 return M 

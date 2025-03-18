@@ -5,6 +5,7 @@ local user_service = require "services.user_service"
 local mail_service = require "services.mail_service"
 local utils = require "utils"
 local enum = require "enum"
+local partner_service = require "services.partner_service"
 
 local M = {}
 
@@ -12,29 +13,31 @@ local M = {}
 local GM_HANDLERS = {
     -- 添加物品
     add_item = function(user_id, params)
-        if #params < 1 then
-            return false, "params not enough"
-        end
-
-        local item_id = tonumber(params[1])
-        local count = tonumber(params[2] or 1)
-        if not item_id or not count or count <= 0 then
-            logger.error("add_item - params: %s", utils.table_to_string(params))
-            return false, "invalid params"
+        if not params or #params < 2 then
+            return {false, nil, "params not enough, usage: add_item <item_id> <count>"}
         end
         
-        local result, err = item_service.add_items_to_slot(user_id, {
+        local item_id = tonumber(params[1])
+        local count = tonumber(params[2])
+        
+        if not item_id or item_id <= 0 or not count or count <= 0 then
+            return {false, nil, "invalid params"}
+        end
+        
+        -- 添加物品
+        local ok, err = item_service.add_items_to_slot(user_id, {
             {
                 item_id = item_id,
                 count = count
             }
         }, enum.ChangeSource.SOURCE_GM)
-        logger.info("add_item - result: %s, err: %s", result, err)
-        if not result then
-            return false, err
+        logger.info("add_item - result: %s, err: %s", tostring(ok), tostring(err or "success"))
+        
+        if not ok then
+            return {false, nil, err or "Failed to add item"}
         end
-
-        return true, "添加物品成功"
+        
+        return {true, string.format("Item added: %d x %d", item_id, count), nil}
     end,
 
     -- 删除物品
@@ -216,6 +219,88 @@ local GM_HANDLERS = {
         end
         
         return true, "System mail sent successfully"
+    end,
+
+    -- 添加伙伴
+    add_partner = function(user_id, params)
+        if not params or #params < 1 then
+            return {false, nil, "Missing unit_id parameter"}
+        end
+        
+        local unit_id = tonumber(params[1])
+        if not unit_id then
+            return {false, nil, "Invalid unit_id parameter"}
+        end
+        
+        local ok, result, err = partner_service.gm_add_partner(user_id, unit_id)
+        if not ok then
+            return {false, nil, err or "Failed to add partner"}
+        end
+        
+        return {true, result, nil}
+    end,
+
+    -- 添加伙伴碎片
+    add_fragments = function(user_id, params)
+        if not params or #params < 2 then
+            return {false, nil, "Missing fragment_id or count parameter"}
+        end
+        
+        local fragment_id = tonumber(params[1])
+        local count = tonumber(params[2])
+        
+        if not fragment_id or not count then
+            return {false, nil, "Invalid fragment_id or count parameter"}
+        end
+        
+        local ok, result, err = partner_service.gm_add_fragments(user_id, fragment_id, count)
+        if not ok then
+            return {false, nil, err or "Failed to add fragments"}
+        end
+        
+        return {true, result, nil}
+    end,
+
+    -- 设置伙伴等级
+    set_partner_level = function(user_id, params)
+        if not params or #params < 2 then
+            return {false, nil, "Missing partner_id or level parameter"}
+        end
+        
+        local partner_id = tonumber(params[1])
+        local level = tonumber(params[2])
+        
+        if not partner_id or not level then
+            return {false, nil, "Invalid partner_id or level parameter"}
+        end
+        
+        local ok, result, err = partner_service.gm_set_partner_level(user_id, partner_id, level)
+        if not ok then
+            return {false, nil, err or "Failed to set partner level"}
+        end
+        
+        return {true, result, nil}
+    end,
+
+    -- 设置伙伴星级
+    set_partner_star = function(user_id, params)
+        if not params or #params < 2 then
+            return {false, nil, "Missing partner_id or star parameter"}
+        end
+        
+        local partner_id = tonumber(params[1])
+        local star = tonumber(params[2])
+        
+        if not partner_id or not star then
+            return {false, nil, "Invalid partner_id or star parameter"}
+        end
+        
+        local ok, result, err = partner_service.gm_set_partner_star(user_id, partner_id, star)
+        if not ok then
+            return {false, nil, err or "Failed to set partner star"}
+        end
+        
+        return {true, result, nil}
     end
 }
 
@@ -224,27 +309,44 @@ function M.execute_command(user_id, command, params)
     -- 1. 检查权限
     local ok, err = user_service.check_gm_permission(user_id)
     if not ok then
-        return false, err
+        return false, nil, err
     end
 
     -- 2. 获取命令处理器
     local handler = GM_HANDLERS[command]
     if not handler then
         logger.warn("Invalid GM command: %s", command)
-        return false, "unknown GM command"
+        return false, nil, "unknown GM command"
     end
 
     -- 3. 执行命令
-    local ok, result = xpcall(function()
+    local success, result, err = xpcall(function()
         return handler(user_id, params)
     end, debug.traceback)
 
-    if not ok then
+    if not success then
         logger.error("GM command failed: %s", result)
-        return false, "GM command failed"
+        return false, nil, "GM command failed"
     end
 
-    return result
+    -- 4. 返回结果
+    -- 处理不同类型的返回值
+    if type(result) == "table" and result[1] ~= nil then
+        -- 如果是表并且有至少一个元素，按约定返回 {ok, result, err}
+        return result[1], result[2], result[3]
+    elseif type(result) == "boolean" then
+        -- 如果是布尔值，直接返回
+        if result then
+            -- 成功返回
+            return true, "success", nil
+        else
+            -- 失败返回
+            return false, nil, "command failed"
+        end
+    else
+        -- 其他情况，返回原始结果
+        return true, result, nil
+    end
 end
 
 return M 
