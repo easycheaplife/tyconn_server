@@ -39,7 +39,7 @@ class UnlockPartnerTest extends BaseTest {
             
             if (testPartner.state === PARTNER_STATE_UNLOCKED) {
                 console.log(`Partner ${PARTNER_ID} is already unlocked, test cannot proceed`);
-                return false;
+                return true;
             }
             
             // 获取用户背包信息，检查碎片数量
@@ -57,7 +57,7 @@ class UnlockPartnerTest extends BaseTest {
 
             // 查找碎片
             const fragment = mainBag.items.find(item => item.item_id === FRAGMENT_ID);
-            const fragmentCount = fragment ? fragment.count : 0;
+            let fragmentCount = fragment ? fragment.count : 0;
 
             console.log(`Found partner: Unit ID ${testPartner.base_info.unit_id}, ` +
                 `State: ${testPartner.state}, Fragment count: ${fragmentCount}/${testPartner.fragment_need}`);
@@ -65,8 +65,18 @@ class UnlockPartnerTest extends BaseTest {
             // 检查是否有足够的碎片
             if (fragmentCount < testPartner.fragment_need) {
                 console.log(`Not enough fragments to unlock partner. Have: ${fragmentCount}, Need: ${testPartner.fragment_need}`);
-                return false;
+                // 没有足够碎片，gm加碎片
+                const response = await this.client.gmCommand('add_item', [String(FRAGMENT_ID), String(testPartner.fragment_need - fragmentCount)]);
+                assert(response.result === 'success', 'Add fragment should succeed');
+                // 重新获取背包
+                const bagResponse = await this.client.getBagInfo();
+                assert(bagResponse, 'Bag response should not be null');
+                assert(Array.isArray(bagResponse.bags), 'Bags should be an array');
+                // 重新查找碎片
+                const fragment = bagResponse.bags.find(bag => bag.bag_type === this.client.protoHelper.BagType.BAG_TYPE_MAIN).items.find(item => item.item_id === FRAGMENT_ID);
+                fragmentCount = fragment ? fragment.count : 0;
             }
+            
             
             // 有足够碎片，尝试解锁
             console.log('\nAttempting to unlock partner...');

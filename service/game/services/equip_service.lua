@@ -554,7 +554,7 @@ function M.random_equipment(user_id, part)
         user_id = user_id,
         item_id = item_id,
         count = 1,
-        bag_type = enum.BagType.EQUIPMENT,
+        bag_type = enum.BagType.BAG_TYPE_MAIN,
         slot_index = 0, -- 临时
         bind_type = enum.BindType.BIND_NONE,
         acquire_time = os.time(),
@@ -575,23 +575,25 @@ function M.random_equipment(user_id, part)
     end
     
     -- 查找空闲格子
+    bag_type = enum.BagType.BAG_TYPE_MAIN
     local bag_service = require "services.bag_service"
-    local bag_type, slot_index = bag_service.find_empty_slot(user_id, enum.BagType.EQUIPMENT)
+    local slot_index = bag_service.find_empty_slot(user_id, bag_type)
     
-    if not bag_type or not slot_index then
+    if not slot_index then
         logger.error("No empty slot found for new equipment")
         return nil, "no empty slot"
     end
     
-    -- 设置格子
-    equip.bag_type = bag_type
-    equip.slot_index = slot_index
-    
     -- 添加到物品列表
-    local ok = item_dao.add_user_item(user_id, equip)
+    local item_service = get_item_service()
+    local ok, err = item_service.add_items_to_slot(user_id, {
+        item_id = equip.item_id,
+        count = equip.count
+    }, enum.ChangeSource.SOURCE_RANDOM, bag_type)
+    
     if not ok then
-        logger.error("Failed to add random equipment for user %d", user_id)
-        return nil, "add item failed"
+        logger.error("Failed to add random equipment for user %d: %s", user_id, err)
+        return nil, err
     end
     
     -- 计算装备配置

@@ -50,14 +50,7 @@ function M.handle(client_id, msg)
     
     -- 计算战力差值
     local power_diff = 0
-    if current_equip then
-        local current_power = equip_service.get_equipment_power_one(current_equip)
-        local new_power = equip_service.get_equipment_power_one(new_equip)
-        power_diff = new_power - current_power
-    else
-        power_diff = equip_service.get_equipment_power_one(new_equip)
-    end
-    
+
     -- 转换新装备信息
     local new_equip_info = {
         id = new_equip.id,

@@ -10,7 +10,7 @@ async function upgradeEquipLevel() {
     const response = await this.sendGameRequest(
         'C2G_EQUIP_LEVEL_UPGRADE_REQUEST',
         request,
-        'command.G2CUpgradeEquipLevelResponse'
+        'command.G2CEquipLevelUpgradeResponse'
     );
 
     // 打印响应

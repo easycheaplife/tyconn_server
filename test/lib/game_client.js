@@ -112,6 +112,11 @@ class GameClient extends BaseClient {
         }
         return fullFields;
     }
+
+    async initUserBags() {
+        const response = await this.sendRequest(this.protoHelper.MessageID.C2G_INIT_USER_BAGS_REQUEST, {});
+        return this.decodeResponse(response, 'command.G2CInitUserBagsResponse');
+    }
 }
 
 module.exports = GameClient; 

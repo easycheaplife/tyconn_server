@@ -8,12 +8,23 @@ class UpgradeEquipLevelTest extends BaseTest {
 
     async test() {
         try {
-            // 首先获取当前装备等级
-            console.log('\nGetting current equipment level...');
-            const initialEquip = await this.client.getEquipInfo();
+            // 首先获取装备等级信息
+            console.log('\nGetting current equipment level info...');
+            const levelInfo = await this.client.getEquipLevelInfo();
             
-            const initialLevel = initialEquip.level;
-            console.log(`Current equipment system level: ${initialLevel}`);
+            // 检查响应
+            assert(levelInfo, 'Level info response should not be null');
+            console.log('Equipment level info:', levelInfo);
+            
+            // 确保有足够的升级材料
+            if (levelInfo.item_id && levelInfo.item_count) {
+                console.log(`Adding required items for upgrade: item_id=${levelInfo.item_id}, count=${levelInfo.item_count}`);
+                // 添加比需求多一些的物品数量
+                await this.client.gmCommand('add_item', [
+                    levelInfo.item_id.toString(), 
+                    (levelInfo.item_count + 100).toString()
+                ]);
+            }
             
             // 测试升级装备等级
             console.log('\nTesting equipment system upgrade...');
@@ -22,27 +33,17 @@ class UpgradeEquipLevelTest extends BaseTest {
             // 验证升级请求处理
             assert(upgradeResponse, 'Upgrade response should not be null');
             
-            if (upgradeResponse.success) {
-                console.log('Equipment level upgrade successful!');
-                
-                // 如果是即时升级，验证新等级
-                if (!upgradeResponse.is_upgrading) {
-                    const newEquipment = await this.client.getEquipInfo();
-                    console.log(`New equipment system level: ${newEquipment.level}`);
-                    assert(newEquipment.level > initialLevel, 
-                        'Equipment level should increase after upgrade');
-                }
-                // 如果是正在升级中，验证升级状态
-                else {
-                    console.log('Equipment upgrade in progress');
-                    console.log(`Estimated completion time: ${upgradeResponse.end_time}`);
-                    assert(upgradeResponse.end_time > 0, 
-                        'Upgrade end time should be set');
-                }
+            // 验证升级结果
+            assert(upgradeResponse.current_level > levelInfo.current_level || upgradeResponse.is_upgrading, 
+                'Equipment level should increase or be upgrading');
+            
+            if (upgradeResponse.is_upgrading) {
+                console.log('Equipment upgrade in progress');
+                console.log(`Remaining time: ${upgradeResponse.remaining_time} seconds`);
+                assert(upgradeResponse.remaining_time > 0, 'Remaining time should be positive');
             } else {
-                // 升级可能因为各种游戏逻辑原因失败（资源不足等）
-                console.log('Equipment level upgrade failed:', upgradeResponse.message);
-                console.log('This might be due to game logic (e.g., insufficient resources)');
+                console.log('Equipment level upgrade successful!');
+                console.log(`New level: ${upgradeResponse.current_level}`);
             }
             
             return true;

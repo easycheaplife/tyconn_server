@@ -12,17 +12,17 @@ class UnequipItemTest extends BaseTest {
             console.log('\nGetting current equipment info...');
             const equipmentInfo = await this.client.getEquipInfo();
             
-            // 寻找已装备的槽位
-            let equippedSlot = null;
-            for (const slot of equipmentInfo.slots) {
-                if (slot.item) {
-                    equippedSlot = slot.slot_id;
+            // 寻找已装备的物品
+            let equippedItem = null;
+            for (const item of equipmentInfo.equipped_items) {
+                if (item) {
+                    equippedItem = item;
                     break;
                 }
             }
             
-            // 如果没有已装备槽位，尝试装备一个物品
-            if (!equippedSlot) {
+            // 如果没有已装备物品，尝试装备一个物品
+            if (!equippedItem) {
                 console.log('No equipped items found, trying to equip one first...');
                 
                 // 首先获取背包信息，寻找可装备物品
@@ -58,8 +58,8 @@ class UnequipItemTest extends BaseTest {
                     const equipResponse = await this.client.equipItem(bagType, bagSlot, equipSlot);
                     
                     // 检查装备是否成功
-                    if (equipResponse.success) {
-                        equippedSlot = equipSlot;
+                    if (equipResponse.equipped_item) {
+                        equippedItem = equipResponse.equipped_item;
                     } else {
                         console.log('Failed to equip item for testing');
                     }
@@ -68,26 +68,29 @@ class UnequipItemTest extends BaseTest {
                 }
             }
             
-            // 如果有已装备槽位，尝试卸下
-            if (equippedSlot) {
-                console.log(`\nTesting unequip item from slot ${equippedSlot}...`);
+            // 如果有已装备物品，尝试卸下
+            if (equippedItem) {
+                const equipSlot = (equippedItem.item_id % 6) + 1;
+                console.log(`\nTesting unequip item from slot ${equipSlot}...`);
                 
                 // 卸下装备
-                const unequipResponse = await this.client.unequipItem(equippedSlot);
+                const unequipResponse = await this.client.unequipItem(equipSlot);
                 
                 // 验证卸下成功
-                assert(unequipResponse.success, 'Unequipping should be successful');
+                assert(unequipResponse.unequipped_item, 'Unequipped item should be returned');
                 
                 // 验证物品已卸下
                 const finalEquipment = await this.client.getEquipInfo();
-                for (const slot of finalEquipment.slots) {
-                    if (slot.slot_id === equippedSlot) {
-                        assert(!slot.item, 'Slot should be empty after unequipping');
+                let stillEquipped = false;
+                for (const item of finalEquipment.equipped_items) {
+                    if (item && item.item_id === equippedItem.item_id) {
+                        stillEquipped = true;
                         break;
                     }
                 }
+                assert(!stillEquipped, 'Item should not be equipped after unequipping');
                 
-                console.log('Successfully unequipped item from slot', equippedSlot);
+                console.log('Successfully unequipped item from slot', equipSlot);
                 return true;
             } else {
                 console.log('No equipped item available for unequip test');
