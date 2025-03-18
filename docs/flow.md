@@ -612,3 +612,157 @@ sequenceDiagram
 9. 邮件保存成功
 10. 向在线用户推送新邮件通知
 11. 客户端收到新邮件通知
+
+## 8. 伙伴系统流程
+
+### 8.1 获取伙伴列表流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 获取伙伴列表请求(token)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>GM: 5. 调用partner_service获取伙伴列表
+    GM->>DB: 6. 查询用户伙伴
+    DB-->>GM: 7. 返回伙伴数据
+    GM->>GM: 8. 处理伙伴状态和属性
+    GM-->>G: 9. 返回伙伴列表
+    G-->>C: 10. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送获取伙伴列表请求
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器调用partner_service获取伙伴列表
+6. 查询用户伙伴数据（优先从缓存获取）
+7. DB代理返回伙伴数据
+8. 处理伙伴状态（已解锁/可解锁/未解锁）和属性
+9. 游戏服务器处理并返回数据
+10. 网关将响应发送给客户端
+
+### 8.2 伙伴升级流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 伙伴升级请求(token, partner_id)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>GM: 5. 调用partner_service升级伙伴
+    GM->>DB: 6. 获取伙伴信息
+    DB-->>GM: 7. 返回伙伴数据
+    GM->>GM: 8. 验证升级条件
+    GM->>DB: 9. 扣除升级材料
+    DB-->>GM: 10. 扣除成功
+    GM->>DB: 11. 更新伙伴等级
+    DB-->>GM: 12. 更新成功
+    GM-->>G: 13. 返回升级结果
+    G-->>C: 14. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送伙伴升级请求，包含伙伴ID
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器调用partner_service升级伙伴
+6. 查询伙伴信息
+7. DB代理返回伙伴数据
+8. 验证升级条件（等级上限、材料是否足够）
+9. 扣除升级所需材料
+10. 材料扣除成功
+11. 更新伙伴等级
+12. 数据库更新成功
+13. 游戏服务器返回升级结果
+14. 网关将响应发送给客户端
+
+### 8.3 伙伴升星流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 伙伴升星请求(token, partner_id)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>GM: 5. 调用partner_service升星伙伴
+    GM->>DB: 6. 获取伙伴信息
+    DB-->>GM: 7. 返回伙伴数据
+    GM->>GM: 8. 验证升星条件
+    GM->>DB: 9. 扣除升星材料
+    DB-->>GM: 10. 扣除成功
+    GM->>DB: 11. 更新伙伴星级
+    DB-->>GM: 12. 更新成功
+    GM-->>G: 13. 返回升星结果
+    G-->>C: 14. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送伙伴升星请求，包含伙伴ID
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器调用partner_service升星伙伴
+6. 查询伙伴信息
+7. DB代理返回伙伴数据
+8. 验证升星条件（星级上限、材料是否足够）
+9. 扣除升星所需材料
+10. 材料扣除成功
+11. 更新伙伴星级
+12. 数据库更新成功
+13. 游戏服务器返回升星结果
+14. 网关将响应发送给客户端
+
+### 8.4 伙伴解锁流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 伙伴解锁请求(token, unit_id)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>GM: 5. 调用partner_service解锁伙伴
+    GM->>DB: 6. 获取伙伴碎片信息
+    DB-->>GM: 7. 返回碎片数据
+    GM->>GM: 8. 验证解锁条件
+    GM->>DB: 9. 扣除伙伴碎片
+    DB-->>GM: 10. 扣除成功
+    GM->>DB: 11. 创建新伙伴
+    DB-->>GM: 12. 创建成功
+    GM-->>G: 13. 返回解锁结果
+    G-->>C: 14. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送伙伴解锁请求，包含单位ID
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器调用partner_service解锁伙伴
+6. 查询用户伙伴碎片信息
+7. DB代理返回碎片数据
+8. 验证解锁条件（碎片是否足够）
+9. 扣除解锁所需碎片
+10. 碎片扣除成功
+11. 创建新的伙伴实例
+12. 数据库创建成功
+13. 游戏服务器返回解锁结果
+14. 网关将响应发送给客户端
