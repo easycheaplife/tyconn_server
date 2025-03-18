@@ -62,6 +62,19 @@ enum MessageID {
     C2G_GM_COMMAND_REQUEST = 300;   // GM命令请求
     G2C_GM_COMMAND_RESPONSE = 301;  // GM命令响应
 
+    // 邮件系统 (300-399)
+    C2G_GM_COMMAND_REQUEST = 300;   // GM命令请求
+    G2C_GM_COMMAND_RESPONSE = 301;  // GM命令响应
+
+    // 伙伴系统 (400-499)
+    C2G_PARTNER_LIST_REQUEST = 400;  // 获取伙伴列表请求
+    G2C_PARTNER_LIST_RESPONSE = 401; // 获取伙伴列表响应
+    C2G_PARTNER_UPGRADE_REQUEST = 402; // 伙伴升级请求
+    G2C_PARTNER_UPGRADE_RESPONSE = 403; // 伙伴升级响应
+    C2G_PARTNER_STAR_UPGRADE_REQUEST = 404; // 伙伴升星请求
+    G2C_PARTNER_STAR_UPGRADE_RESPONSE = 405; // 伙伴升星响应
+    C2G_PARTNER_UNLOCK_REQUEST = 406; // 伙伴解锁请求
+    G2C_PARTNER_UNLOCK_RESPONSE = 407; // 伙伴解锁响应
 }
 ```
 ### 1.3 错误码
@@ -103,6 +116,15 @@ enum ErrorCode {
     ERROR_CODE_CARD_NOT_FOUND = 400;      // 卡牌不存在
     ERROR_CODE_CARD_ALREADY_EXISTS = 401; // 卡牌已存在
     ERROR_CODE_CARD_NOT_ENOUGH = 402;     // 卡牌数量不足
+    
+    // 伙伴系统 (500-599)
+    ERROR_CODE_PARTNER_NOT_FOUND = 500;      // 伙伴不存在
+    ERROR_CODE_PARTNER_ALREADY_EXISTS = 501; // 伙伴已存在
+    ERROR_CODE_FRAGMENT_NOT_ENOUGH = 502;    // 碎片不足
+    ERROR_CODE_LEVEL_NOT_ENOUGH = 503;      // 等级不足
+    ERROR_CODE_LEVEL_MAX = 504;            // 已达到最高等级
+    ERROR_CODE_STAR_MAX = 505;             // 已达到最高星级
+    ERROR_CODE_MATERIAL_NOT_ENOUGH = 506;  // 材料不足
 }
 ```
 
@@ -826,12 +848,8 @@ message UserInfo {
     int64 user_id = 1;         // 用户ID
     string username = 2;       // 用户名
     int32 level = 3;           // 等级
-    int64 create_time = 10;    // 创建时间
-    int64 login_time = 11;     // 登录时间，每次登录时更新
-    int32 hp = 12;             // 血量
-    int32 attack = 13;         // 攻击力
-    int32 defense = 14;        // 防御力
-    int32 vip_level = 15;      // VIP等级
+    int64 exp = 4;          // 经验值
+    int32 vip_level = 5;      // VIP等级
 }
 
 // 资源信息
@@ -852,6 +870,133 @@ message ResourceInfo {
 2. `resources` 字段返回用户拥有的所有资源类型和数量
 3. `is_new_user` 字段表示是否为首次登录的新用户
 4. 当为新用户时，系统会自动初始化用户数据（卡牌、背包等）
+
+### 3.9 伙伴系统接口
+
+#### 3.9.1 获取伙伴列表
+**连接类型:** `WebSocket`
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf
+message C2GPartnerListRequest {
+    string token = 1;       // JWT令牌
+}
+```
+
+**响应格式:**
+```protobuf
+message G2CPartnerListResponse {
+    repeated PartnerInfo partners = 1;  // 伙伴列表
+}
+
+message PartnerInfo {
+    int64 partner_id = 1;   // 伙伴ID
+    int32 unit_id = 2;      // 单位ID
+    int32 level = 3;        // 等级
+    int32 star = 4;         // 星级
+    int32 exp = 5;          // 经验值
+    int32 state = 6;        // 状态(1:已解锁 2:可解锁 3:未解锁)
+    int32 fragment_count = 7; // 碎片数量
+    int64 create_time = 8;  // 创建时间
+    int64 update_time = 9;  // 更新时间
+    repeated AttributeInfo attributes = 10; // 属性列表
+}
+
+message AttributeInfo {
+    int32 type = 1;         // 属性类型
+    int32 value = 2;        // 属性值
+}
+```
+
+**错误码说明:**
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+
+#### 3.9.2 伙伴升级
+**连接类型:** `WebSocket`
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf
+message C2GPartnerUpgradeRequest {
+    string token = 1;       // JWT令牌
+    int64 partner_id = 2;   // 伙伴ID
+}
+```
+
+**响应格式:**
+```protobuf
+message G2CPartnerUpgradeResponse {
+    bool success = 1;       // 是否成功
+    PartnerInfo partner = 2; // 更新后的伙伴信息
+}
+```
+
+**错误码说明:**
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+- ERROR_CODE_PARTNER_NOT_FOUND: 伙伴不存在
+- ERROR_CODE_LEVEL_MAX: 已达到最高等级
+- ERROR_CODE_MATERIAL_NOT_ENOUGH: 材料不足
+
+#### 3.9.3 伙伴升星
+**连接类型:** `WebSocket`
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf
+message C2GPartnerStarUpgradeRequest {
+    string token = 1;       // JWT令牌
+    int64 partner_id = 2;   // 伙伴ID
+}
+```
+
+**响应格式:**
+```protobuf
+message G2CPartnerStarUpgradeResponse {
+    bool success = 1;       // 是否成功
+    PartnerInfo partner = 2; // 更新后的伙伴信息
+}
+```
+
+**错误码说明:**
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+- ERROR_CODE_PARTNER_NOT_FOUND: 伙伴不存在
+- ERROR_CODE_STAR_MAX: 已达到最高星级
+- ERROR_CODE_MATERIAL_NOT_ENOUGH: 材料不足
+
+#### 3.9.4 伙伴解锁
+**连接类型:** `WebSocket`
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf
+message C2GPartnerUnlockRequest {
+    string token = 1;       // JWT令牌
+    int32 unit_id = 2;      // 单位ID
+}
+```
+
+**响应格式:**
+```protobuf
+message G2CPartnerUnlockResponse {
+    bool success = 1;       // 是否成功
+    PartnerInfo partner = 2; // 新创建的伙伴信息
+}
+```
+
+**错误码说明:**
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+- ERROR_CODE_PARTNER_ALREADY_EXISTS: 伙伴已存在
+- ERROR_CODE_FRAGMENT_NOT_ENOUGH: 碎片不足
+- ERROR_CODE_LEVEL_NOT_ENOUGH: 等级不足
 
 ## 4. 系统配置
 
@@ -895,15 +1040,26 @@ message ResourceInfo {
 - 支持批量通知
 - 保证通知送达
 
-// 资源信息
-message ResourceInfo {
-    int32 type = 1;           // 资源类型，见ResourceType枚举
-    int32 amount = 2;         // 资源数量
-}
-
 // 资源类型
 enum ResourceType {
     RESOURCE_TYPE_NONE = 0;   // 无效类型
     RESOURCE_TYPE_GOLD = 1;   // 金币
     RESOURCE_TYPE_EXP = 2;    // 经验
+}
+
+// 伙伴相关枚举定义
+enum PartnerState {
+    PARTNER_STATE_NONE = 0;      // 无效状态
+    PARTNER_STATE_UNLOCKED = 1;  // 已解锁
+    PARTNER_STATE_UNLOCKABLE = 2; // 可解锁
+    PARTNER_STATE_LOCKED = 3;    // 未解锁
+}
+
+enum PartnerAttributeType {
+    ATTRIBUTE_TYPE_NONE = 0;     // 无效类型
+    ATTRIBUTE_TYPE_HP = 1;       // 生命值
+    ATTRIBUTE_TYPE_ATTACK = 2;   // 攻击力
+    ATTRIBUTE_TYPE_DEFENSE = 3;  // 防御力
+    ATTRIBUTE_TYPE_CRIT = 4;     // 暴击率
+    ATTRIBUTE_TYPE_SPEED = 5;    // 速度
 }

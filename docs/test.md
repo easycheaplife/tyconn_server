@@ -113,6 +113,7 @@ node test/run_test.js -t gm_command
 
 # 运行指定测试用例
 node test/run_test.js -t gm_command add_item     # 测试添加物品
+node test/run_test.js -t gm_command add_item 1005 10000    # 测试添加指定物品和数量
 node test/run_test.js -t gm_command delete_item  # 测试删除物品
 node test/run_test.js -t gm_command set_level    # 测试设置等级
 node test/run_test.js -t gm_command error_cases  # 测试错误处理
@@ -123,6 +124,111 @@ node test/run_test.js -t gm_command error_cases  # 测试错误处理
 - 测试账号需要有 GM 权限
 - 背包需要有足够空间
 - 物品 1001 和 2012 的最大堆叠数量为 2000
+
+### 3.3 伙伴系统测试
+```javascript
+// test/cases/partner/partner_list_test.js
+class PartnerListTest extends BaseTest {
+    async test() {
+        // 获取伙伴列表
+        const response = await this.client.getPartnerList();
+        assert.strictEqual(response.errorCode, 0);
+        
+        // 验证列表结构
+        assert(Array.isArray(response.partners));
+        
+        // 检查伙伴状态
+        if (response.partners.length > 0) {
+            const partner = response.partners[0];
+            assert(partner.partner_id > 0);
+            assert(partner.unit_id > 0);
+            assert([1, 2, 3].includes(partner.state)); // 检查状态是否合法
+        }
+    }
+}
+
+// test/cases/partner/partner_upgrade_test.js
+class PartnerUpgradeTest extends BaseTest {
+    async test() {
+        // 首先获取伙伴列表
+        const listResponse = await this.client.getPartnerList();
+        assert.strictEqual(listResponse.errorCode, 0);
+        
+        // 确保至少有一个已解锁的伙伴
+        const unlockedPartner = listResponse.partners.find(p => p.state === 1);
+        
+        if (!unlockedPartner) {
+            // 如果没有已解锁的伙伴，使用GM命令添加一个
+            await this.client.gmCommand('add_partner', ['4301']);
+            const newList = await this.client.getPartnerList();
+            const newPartner = newList.partners.find(p => p.state === 1);
+            assert(newPartner, "Failed to add test partner");
+            
+            // 使用新添加的伙伴测试升级
+            const upgradeResponse = await this.client.upgradePartner(newPartner.partner_id);
+            assert.strictEqual(upgradeResponse.errorCode, 0);
+            assert(upgradeResponse.partner.level > newPartner.level);
+        } else {
+            // 使用已有伙伴测试升级
+            const upgradeResponse = await this.client.upgradePartner(unlockedPartner.partner_id);
+            assert.strictEqual(upgradeResponse.errorCode, 0);
+            assert(upgradeResponse.partner.level > unlockedPartner.level);
+        }
+    }
+}
+
+// test/cases/partner/partner_unlock_test.js
+class PartnerUnlockTest extends BaseTest {
+    async test() {
+        // 先获取一个可解锁状态的伙伴
+        const listResponse = await this.client.getPartnerList();
+        const unlockablePartner = listResponse.partners.find(p => p.state === 2);
+        
+        if (!unlockablePartner) {
+            // 如果没有可解锁的伙伴，使用GM命令添加足够的碎片
+            await this.client.gmCommand('add_fragments', ['4302', '50']);
+            const newList = await this.client.getPartnerList();
+            const newUnlockable = newList.partners.find(p => p.state === 2);
+            assert(newUnlockable, "Failed to create unlockable partner");
+            
+            // 测试解锁
+            const unlockResponse = await this.client.unlockPartner(newUnlockable.unit_id);
+            assert.strictEqual(unlockResponse.errorCode, 0);
+            assert.strictEqual(unlockResponse.partner.state, 1);
+        } else {
+            // 测试解锁已有的可解锁伙伴
+            const unlockResponse = await this.client.unlockPartner(unlockablePartner.unit_id);
+            assert.strictEqual(unlockResponse.errorCode, 0);
+            assert.strictEqual(unlockResponse.partner.state, 1);
+        }
+    }
+}
+```
+
+#### 运行伙伴系统测试
+```bash
+# 运行所有伙伴系统测试
+node test/run_test.js -t partner
+
+# 运行指定测试用例
+node test/run_test.js -t partner_list     # 测试获取伙伴列表
+node test/run_test.js -t partner_upgrade  # 测试伙伴升级
+node test/run_test.js -t partner_star     # 测试伙伴升星
+node test/run_test.js -t partner_unlock   # 测试伙伴解锁
+```
+
+#### 伙伴系统GM指令
+| 指令 | 参数 | 说明 | 示例 |
+|------|------|------|------|
+| add_partner | unit_id | 添加伙伴 | add_partner 4301 |
+| add_fragments | unit_id, count | 添加伙伴碎片 | add_fragments 4302 50 |
+| set_partner_level | partner_id, level | 设置伙伴等级 | set_partner_level 1001 30 |
+| set_partner_star | partner_id, star | 设置伙伴星级 | set_partner_star 1001 5 |
+
+#### 注意事项
+- 伙伴升级和升星测试需要足够的材料或经验
+- 伙伴解锁测试需要足够的碎片
+- 单位ID 4301-4350 为测试用伙伴
 
 ## 4. 压力测试
 

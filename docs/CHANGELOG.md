@@ -1,6 +1,6 @@
 # 更新日志
 
-## [未发布]
+## [0.3.0] - 2024-03-18
 
 ### 新增
 - 服务器架构改进
@@ -46,6 +46,28 @@
   - 将特殊物品ID与资源类型关联
   - 优化资源信息返回格式
   
+- 伙伴系统
+  - 添加伙伴基础功能
+    - 获取伙伴列表
+    - 伙伴升级
+    - 伙伴升星
+    - 伙伴解锁
+  - 实现伙伴状态管理
+    - 已解锁状态(1)
+    - 可解锁状态(2)
+    - 未解锁状态(3)
+  - 添加伙伴属性计算系统
+    - 基于等级的属性成长
+    - 基于星级的属性加成
+  - 实现伙伴碎片系统
+    - 碎片收集
+    - 使用碎片解锁伙伴
+  - 添加伙伴相关GM命令
+    - add_partner: 添加伙伴
+    - add_fragments: 添加伙伴碎片
+    - set_partner_level: 设置伙伴等级
+    - set_partner_star: 设置伙伴星级
+  
 ### 优化
 - 服务器架构文档
   - 更新分层架构图
@@ -53,12 +75,14 @@
   - 完善集群部署说明
   - 补充负载均衡实现细节
   - 更新高可用设计说明
+  - 添加伙伴系统架构说明
 
 - GM命令系统
   - 优化clear_bag命令，支持指定背包类型
   - 添加物品合成的测试用例
   - 添加物品分解的测试用例
-
+  - 添加伙伴系统相关GM命令
+  
 - 用户登录流程
   - 优化登录时间更新机制
   - 改进用户会话管理
@@ -82,6 +106,11 @@
   - 更新测试用例支持新的背包协议
   - 添加服务器性能测试
   - 添加数据库性能测试
+  - 添加伙伴系统测试用例
+    - 伙伴列表获取测试
+    - 伙伴升级测试
+    - 伙伴升星测试
+    - 伙伴解锁测试
 
 ### 协议更新
 - 背包系统相关消息
@@ -96,12 +125,37 @@
   - C2G_DECOMPOSE_ITEM_REQUEST (212): 物品分解
     - 新增item_slots参数，指定分解物品
 
+- 伙伴系统相关消息
+  - C2G_PARTNER_LIST_REQUEST (400): 获取伙伴列表
+  - G2C_PARTNER_LIST_RESPONSE (401): 伙伴列表响应
+  - C2G_PARTNER_UPGRADE_REQUEST (402): 伙伴升级请求
+  - G2C_PARTNER_UPGRADE_RESPONSE (403): 伙伴升级响应
+  - C2G_PARTNER_STAR_UPGRADE_REQUEST (404): 伙伴升星请求
+  - G2C_PARTNER_STAR_UPGRADE_RESPONSE (405): 伙伴升星响应
+  - C2G_PARTNER_UNLOCK_REQUEST (406): 伙伴解锁请求
+  - G2C_PARTNER_UNLOCK_RESPONSE (407): 伙伴解锁响应
+
+- 错误码更新
+  - 伙伴系统错误码 (500-599)
+    - ERROR_CODE_PARTNER_NOT_FOUND (500): 伙伴不存在
+    - ERROR_CODE_PARTNER_ALREADY_EXISTS (501): 伙伴已存在
+    - ERROR_CODE_FRAGMENT_NOT_ENOUGH (502): 碎片不足
+    - ERROR_CODE_LEVEL_NOT_ENOUGH (503): 等级不足
+    - ERROR_CODE_LEVEL_MAX (504): 已达到最高等级
+    - ERROR_CODE_STAR_MAX (505): 已达到最高星级
+    - ERROR_CODE_MATERIAL_NOT_ENOUGH (506): 材料不足
+
 ### 测试用例
 - 新增物品合成测试用例
 - 新增物品分解测试用例
 - 新增背包整理测试用例
 - 新增物品移动测试用例
 - 更新GM命令测试用例
+- 新增伙伴系统测试用例
+  - partner_list_test: 伙伴列表获取测试
+  - partner_upgrade_test: 伙伴升级测试
+  - partner_star_upgrade_test: 伙伴升星测试
+  - partner_unlock_test: 伙伴解锁测试
 
 ## [0.2.0] - 2024-02-25
 
