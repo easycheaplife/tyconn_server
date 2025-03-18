@@ -220,9 +220,11 @@ function M.get_user_partners(user_id)
         
         -- 从配置中获取解锁所需的碎片信息
         local fragment_need = 0
+        local fragment_id = 0
         if unit_config.shards and type(unit_config.shards) == "table" and #unit_config.shards >= 2 then
             -- 碎片配置格式: {物品ID, 数量}
             fragment_need = unit_config.shards[2]
+            fragment_id = unit_config.shards[1]
         else
             fragment_need = unit_config.unlock_fragments or table_service.get_default_unlock_fragments()
         end
@@ -240,7 +242,7 @@ function M.get_user_partners(user_id)
             
             -- 确保 level 和 star 是数字类型
             local partner_level = tonumber(partner.level) or 1
-            local partner_star = tonumber(partner.star) or 1
+            local partner_star = tonumber(partner.star) or 0
             logger.info("partner_star=%d, max_star=%d for unit_id=%d", partner_star, max_star, unit_id)
             
             local can_level_up = partner_level < max_level
@@ -288,7 +290,7 @@ function M.get_user_partners(user_id)
         else
             -- 未解锁的伙伴
             logger.info("Processing locked partner: unit_id=%d", unit_id)
-            local fragment_count = fragment_map[unit_id] or 0
+            local fragment_count = fragment_map[fragment_id] or 0
             local state = enum.PartnerState.PARTNER_STATE_LOCKED -- 默认为未解锁状态 (3)
             
             -- 如果碎片足够但未解锁，设为可解锁状态
@@ -306,7 +308,7 @@ function M.get_user_partners(user_id)
                     level = 1,
                     exp = 0,
                     quality = unit_config.quality or enum.Quality.QUALITY_WHITE,
-                    star = 1,
+                    star = 0,
                     create_time = 0,
                     race = unit_config.race or 0,
                     forte = unit_config.forte or 0
