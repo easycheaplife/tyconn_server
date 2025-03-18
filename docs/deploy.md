@@ -24,7 +24,7 @@ apt-get install -y libmysqlclient-dev mysql-server redis-server nginx
 
 ### 1. 获取代码
 ```bash
-git clone git@github.com:easycheaplife/tyconn_server.git
+git clone git@101.201.58.203:cl/tyconn_server.git
 git clone https://github.com/cloudwu/skynet.git
 ```
 

@@ -145,7 +145,7 @@ local function _create_partner(user_id, unit_id)
         unit_id = unit_id,
         level = 1,
         exp = 0,
-        star = 1,
+        star = 0,
         -- 从配置获取quality、race和forte字段的值，而不是存入数据库
         properties = get_partner_properties(unit_id, 1, 1, unit_config.quality or enum.Quality.QUALITY_WHITE)
     })
