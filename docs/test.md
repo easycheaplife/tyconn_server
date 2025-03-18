@@ -100,11 +100,26 @@ class GMCommandTest extends BaseTest {
 ```
 
 #### GM 指令说明
-| 指令 | 参数 | 说明 | 示例 |
-|------|------|------|------|
-| add_item | item_id, count | 添加物品 | add_item 1001 100 |
-| del_item | item_id, count | 删除物品 | del_item 1001 50 |
-| set_level | level | 设置等级 | set_level 99 |
+
+##### 基础指令
+| 指令名称    | 参数说明                | 功能描述       | 使用示例                                 |
+|------------|------------------------|--------------|----------------------------------------|
+| `set_level`  | level                   | 设置角色等级   | `set_level 99`                          |
+
+##### 物品管理指令
+| 指令名称    | 参数说明                | 功能描述       | 使用示例                                 |
+|------------|------------------------|--------------|----------------------------------------|
+| `add_item`   | item_id, count          | 添加物品       | `add_item 1001 100`                     |
+| `del_item`   | item_id, count          | 删除物品       | `del_item 1001 50`                      |
+| `clear_bag`  | bag_type                | 清空背包       | `clear_bag 1`                           |
+
+##### 伙伴系统指令
+| 指令名称           | 参数说明                | 功能描述       | 使用示例                                 |
+|-------------------|------------------------|--------------|----------------------------------------|
+| `add_partner`      | unit_id                | 添加伙伴       | `add_partner 4301`                      |
+| `add_fragments`    | fragment_id, count     | 添加伙伴碎片   | `add_fragments 5301 100`                |
+| `set_partner_level`| partner_id, level      | 设置伙伴等级   | `set_partner_level 40113330800919552 50`|
+| `set_partner_star` | partner_id, star       | 设置伙伴星级   | `set_partner_star 40113330800919552 5`  |
 
 #### 运行测试
 ```bash
@@ -112,11 +127,19 @@ class GMCommandTest extends BaseTest {
 node test/run_test.js -t gm_command
 
 # 运行指定测试用例
-node test/run_test.js -t gm_command add_item     # 测试添加物品
-node test/run_test.js -t gm_command add_item 1005 10000    # 测试添加指定物品和数量
-node test/run_test.js -t gm_command delete_item  # 测试删除物品
-node test/run_test.js -t gm_command set_level    # 测试设置等级
-node test/run_test.js -t gm_command error_cases  # 测试错误处理
+node test/run_test.js -t gm_command_test add_item     # 测试添加物品
+node test/run_test.js -t gm_command_test delete_item  # 测试删除物品
+node test/run_test.js -t gm_command_test set_level    # 测试设置等级
+node test/run_test.js -t gm_command_test clear_bag    # 测试清空背包
+node test/run_test.js -t gm_command_test error_cases  # 测试错误处理
+node test/run_test.js -t gm_command_test add_partner  # 测试添加伙伴
+node test/run_test.js -t gm_command_test add_fragments # 测试添加碎片
+node test/run_test.js -t gm_command_test set_partner_level # 测试设置伙伴等级
+node test/run_test.js -t gm_command_test set_partner_star # 测试设置伙伴星级
+
+# 直接执行特定GM命令
+node test/run_test.js -t gm_command add_item 1001 100    # 添加指定物品和数量
+node test/run_test.js -t gm_command add_partner 4301     # 添加特定伙伴
 ```
 
 #### 注意事项
@@ -124,6 +147,8 @@ node test/run_test.js -t gm_command error_cases  # 测试错误处理
 - 测试账号需要有 GM 权限
 - 背包需要有足够空间
 - 物品 1001 和 2012 的最大堆叠数量为 2000
+- 伙伴ID (unit_id) 和伙伴实例ID (partner_id) 是不同概念
+- 伙伴命令会自动处理伙伴不存在的情况
 
 ### 3.3 伙伴系统测试
 ```javascript
@@ -218,17 +243,22 @@ node test/run_test.js -t partner_unlock   # 测试伙伴解锁
 ```
 
 #### 伙伴系统GM指令
-| 指令 | 参数 | 说明 | 示例 |
-|------|------|------|------|
-| add_partner | unit_id | 添加伙伴 | add_partner 4301 |
-| add_fragments | unit_id, count | 添加伙伴碎片 | add_fragments 4302 50 |
-| set_partner_level | partner_id, level | 设置伙伴等级 | set_partner_level 1001 30 |
-| set_partner_star | partner_id, star | 设置伙伴星级 | set_partner_star 1001 5 |
+
+##### 伙伴管理指令
+| 指令名称           | 参数说明                | 功能描述       | 使用示例                                 |
+|-------------------|------------------------|--------------|----------------------------------------|
+| `add_partner`      | unit_id                | 添加伙伴       | `add_partner 4301`                      |
+| `add_fragments`    | fragment_id, count     | 添加伙伴碎片   | `add_fragments 5301 100`                |
+| `set_partner_level`| partner_id, level      | 设置伙伴等级   | `set_partner_level 40113330800919552 50`|
+| `set_partner_star` | partner_id, star       | 设置伙伴星级   | `set_partner_star 40113330800919552 5`  |
 
 #### 注意事项
 - 伙伴升级和升星测试需要足够的材料或经验
 - 伙伴解锁测试需要足够的碎片
 - 单位ID 4301-4350 为测试用伙伴
+- 伙伴ID (unit_id) 是配置表中的单位ID，而伙伴实例ID (partner_id) 是创建后的实例ID
+- 测试命令会自动处理伙伴不存在的情况，会先尝试添加伙伴再进行操作
+- 如果指定伙伴不可用，测试会尝试使用第一个已解锁的伙伴
 
 ## 4. 压力测试
 
