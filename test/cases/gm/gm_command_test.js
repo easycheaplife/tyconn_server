@@ -46,30 +46,6 @@
  * - add_partner <unit_id>：添加伙伴
  *   参数说明：
  *   - unit_id: 伙伴单位ID(4301-4350)
- *   响应格式：
- *   {
- *     partner: {
- *       base_info: {
- *         partner_id: string,
- *         unit_id: number,
- *         level: number,
- *         exp: number,
- *         quality: number,
- *         star: number,
- *         create_time: string,
- *         race: number,
- *         forte: number,
- *         properties: Array<{prop_id: string, value: number}>
- *       },
- *       state: number,
- *       fragment_count: number,
- *       fragment_need: number,
- *       can_level_up: boolean,
- *       can_star_up: boolean,
- *       level_up_cost: Array<{item_id: number, count: number}>,
- *       star_up_cost: Array<{item_id: number, count: number}>
- *     }
- *   }
  *   示例：add_partner 4301
  * 
  * - add_fragments <fragment_id> <count>：添加伙伴碎片
@@ -82,60 +58,31 @@
  *   参数说明：
  *   - partner_id: 伙伴实例ID(创建后获得)
  *   - level: 目标等级(1-100)
- *   响应格式：
- *   {
- *     partner: {
- *       base_info: {...},
- *       state: number,
- *       fragment_count: number,
- *       fragment_need: number,
- *       can_level_up: boolean,
- *       can_star_up: boolean,
- *       level_up_cost: Array<{item_id: number, count: number}>,
- *       star_up_cost: Array<{item_id: number, count: number}>
- *     },
- *     property_gains: Array<{prop_id: string, value: number}>,
- *     bags: Array<{
- *       size: number,
- *       bag_type: number,
- *       items: Array<{slot: number, item_id: number, count: number}>
- *     }>
- *   }
  *   示例：set_partner_level 40113330800919552 50
  * 
  * - set_partner_star <partner_id> <star>：设置伙伴星级
  *   参数说明：
  *   - partner_id: 伙伴实例ID(创建后获得)
  *   - star: 目标星级(1-5)
- *   响应格式：
- *   {
- *     partner: {
- *       base_info: {...},
- *       state: number,
- *       fragment_count: number,
- *       fragment_need: number,
- *       can_level_up: boolean,
- *       can_star_up: boolean,
- *       level_up_cost: Array<{item_id: number, count: number}>,
- *       star_up_cost: Array<{item_id: number, count: number}>
- *     },
- *     property_gains: Array<{prop_id: string, value: number}>,
- *     bags: Array<{
- *       size: number,
- *       bag_type: number,
- *       items: Array<{slot: number, item_id: number, count: number}>
- *     }>
- *   }
  *   示例：set_partner_star 40113330800919552 5
  * 
- * 注意事项：
+ * 可用测试用例：
+ * - add_item：测试添加物品功能
+ * - delete_item：测试删除物品功能
+ * - set_level：测试设置角色等级功能
+ * - error_cases：测试错误处理
+ * - clear_bag：测试清空背包功能
+ * - add_partner：测试添加伙伴功能
+ * - add_fragments：测试添加伙伴碎片功能
+ * - set_partner_level：测试设置伙伴等级功能
+ * - set_partner_star：测试设置伙伴星级功能
+ * 
+ * 注意：
  * 1. 伙伴ID指的是配置表中的unitId，而伙伴实例ID是创建后的partnerId
  * 2. 测试会自动处理伙伴不存在的情况，会先尝试添加伙伴再进行操作
  * 3. 如果指定伙伴不可用，测试会尝试使用第一个已解锁的伙伴
  * 4. 所有数值参数都需要是有效的正整数
  * 5. 物品和碎片数量不能超过最大堆叠限制(2000)
- * 6. 背包变化(bags)字段包含所有相关物品的变化信息
- * 7. 属性变化(property_gains)仅在升级和升星时返回
  */
 
 const assert = require('assert');
