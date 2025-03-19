@@ -83,6 +83,8 @@ enum ChangeSource {
     SOURCE_ENHANCE = 14;     // 强化
     SOURCE_REFINE = 15;      // 精炼
     SOURCE_REFORGE = 16;     // 洗练
+    SOURCE_PARTNER_STAR_UP = 17;    // 伙伴升星   
+    SOURCE_PARTNER_LEVEL_UP = 18;   // 伙伴升级
 }
 
 // 效果类型

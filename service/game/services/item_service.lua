@@ -2377,7 +2377,7 @@ function M.check_items_enough(user_id, items)
 end
 
 -- 消耗物品
-function M.consume_items(user_id, items)
+function M.consume_items(user_id, items, source)
     if not user_id or not items then
         return false, "invalid params"
     end
@@ -2415,7 +2415,7 @@ function M.consume_items(user_id, items)
                 
                 -- 记录物品变化
                 item_dao.log_change(user_id, item_id, consume_count,
-                    enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_CONSUME,
+                    enum.ChangeType.CHANGE_TYPE_REDUCE, source,
                     before_count, item.count)
                 
                 -- 记录消耗的物品

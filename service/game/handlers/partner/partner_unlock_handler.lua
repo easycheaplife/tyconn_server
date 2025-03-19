@@ -3,6 +3,7 @@ local logger = require "logger"
 local pb = require "pb"
 local message_helper = require "message_helper" 
 local partner_service = require "services.partner_service"
+local bag_service = require "services.bag_service"
 local handler_helper = require "game.handlers.handler_helper"
 local utils = require "utils"
 local error = require "error"   
@@ -38,7 +39,8 @@ function M.handle(client_id, msg)
     end
 
     -- 解锁伙伴
-    local result, unlocked_partner, consumed_fragments = partner_service.unlock_partner(user.user_id, request.unit_id)
+    local result, unlocked_partner = partner_service.unlock_partner(user.user_id, request.unit_id)
+    logger.debug("unlocked_partner: %s", utils.table_to_string(unlocked_partner))
     if not result then
         logger.error("Failed to unlock partner for user: %d, unit_id: %d", user.user_id, request.unit_id)
         return message_helper.create_error_response(
@@ -49,10 +51,46 @@ function M.handle(client_id, msg)
             message.MessageID.G2C_PARTNER_UNLOCK_RESPONSE)
     end
 
+    -- 获取最新的背包信息
+    local bags = bag_service.get_user_bags(user.user_id)
+    if not bags then
+        logger.error("Failed to get bags for user: %d", user.user_id)
+        return message_helper.create_error_response(
+            base_request,
+            "command.G2CPartnerUnlockResponse",
+            error.ErrorCode.ERROR_CODE_GET_BAG_FAILED,
+            "Failed to get bags",
+            message.MessageID.G2C_PARTNER_UNLOCK_RESPONSE)
+    end
+    
+    -- 只返回包含变化物品的背包信息
+    local changed_bags = {}
+    for _, bag in ipairs(bags) do
+        if bag.bag_type == pb.enum("common.BagType", "BAG_TYPE_MAIN") then
+            local changed_items = {}
+            for _, bag_item in ipairs(bag.items) do
+                if bag_item.item_id == unlocked_partner.fragment_item_id then
+                    table.insert(changed_items, {
+                        slot = bag_item.slot,
+                        item_id = bag_item.item_id,
+                        count = bag_item.count
+                    })
+                end
+            end
+            if #changed_items > 0 then
+                table.insert(changed_bags, {
+                    size = bag.size,
+                    bag_type = bag.bag_type,
+                    items = changed_items
+                })
+            end
+        end
+    end
+
     -- 构造响应数据
     local response_data = {
         partner = unlocked_partner,
-        consumed_fragments = consumed_fragments
+        bags = changed_bags
     }
 
     logger.debug("Sending partner unlock response: %s", utils.table_to_string(response_data))

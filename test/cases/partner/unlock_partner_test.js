@@ -77,7 +77,6 @@ class UnlockPartnerTest extends BaseTest {
                 fragmentCount = fragment ? fragment.count : 0;
             }
             
-            
             // 有足够碎片，尝试解锁
             console.log('\nAttempting to unlock partner...');
             const unlockResponse = await this.client.unlockPartner(PARTNER_ID);
@@ -85,17 +84,26 @@ class UnlockPartnerTest extends BaseTest {
             // 验证响应
             assert(unlockResponse, 'Unlock response should not be null');
             assert(unlockResponse.partner, 'Unlocked partner info should be included');
-            assert(unlockResponse.consumed_fragments, 'Consumed fragments info should be included');
+            assert(Array.isArray(unlockResponse.bags), 'Bags should be included in response');
             
             // 验证状态已更改为已解锁
             assert(unlockResponse.partner.state === PARTNER_STATE_UNLOCKED, 
                 `Partner state should be "unlocked" after unlock (actual: ${unlockResponse.partner.state})`);
-                
-            // 验证消耗的碎片数量
-            assert(unlockResponse.consumed_fragments > 0, 
-                'Consumed fragments should be positive');
             
-            console.log(`Partner ${PARTNER_ID} unlocked successfully, consumed ${unlockResponse.consumed_fragments} fragments`);
+            // 从bags中获取碎片变化信息
+            const itemBag = unlockResponse.bags.find(bag => 
+                bag.bag_type === this.client.protoHelper.BagType.BAG_TYPE_MAIN
+            );
+            assert(itemBag, 'Item bag should exist in response');
+            
+            const changedFragment = itemBag.items.find(item => item.item_id === FRAGMENT_ID);
+            assert(changedFragment, 'Changed fragment should exist in response');
+            
+            // 计算消耗的碎片数量
+            const consumedFragments = fragmentCount - changedFragment.count;
+            assert(consumedFragments > 0, 'Consumed fragments should be positive');
+            
+            console.log(`Partner ${PARTNER_ID} unlocked successfully, consumed ${consumedFragments} fragments`);
             
             // 确认解锁后的伙伴数据已更新
             const updatedResponse = await this.client.getPartnerList();
@@ -115,8 +123,8 @@ class UnlockPartnerTest extends BaseTest {
             const updatedFragment = updatedMainBag.items.find(item => item.item_id === FRAGMENT_ID);
             const updatedFragmentCount = updatedFragment ? updatedFragment.count : 0;
             
-            assert(updatedFragmentCount === fragmentCount - unlockResponse.consumed_fragments,
-                `Fragment count should decrease by ${unlockResponse.consumed_fragments}`);
+            assert(updatedFragmentCount === fragmentCount - consumedFragments,
+                `Fragment count should decrease by ${consumedFragments}`);
             
             return true;
         } catch (error) {

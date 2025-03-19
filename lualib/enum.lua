@@ -1,5 +1,5 @@
 -- Generating enum.lua from proto/common/enum.proto
--- Generate time: 2025-03-13 10:07:38
+-- Generate time: 2025-03-19 03:38:51
 
 local M = {}
 
@@ -85,6 +85,8 @@ M.ChangeSource = {
     SOURCE_ENHANCE = 14,    -- 强化
     SOURCE_REFINE = 15,    -- 精炼
     SOURCE_REFORGE = 16,    -- 洗练
+    SOURCE_PARTNER_STAR_UP = 17,    -- 伙伴升星
+    SOURCE_PARTNER_LEVEL_UP = 18,    -- 伙伴升级
 }
 
 -- 效果类型

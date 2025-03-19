@@ -76,7 +76,7 @@ function M.handle(client_id, msg)
     
     -- 将变化的背包列表按repeated common.BagInfo bags 格式返回  
     for _, bag in ipairs(bags) do
-        if bag.bag_type == pb.enum("common.BagType", "BAG_TYPE_ITEM") then
+        if bag.bag_type == pb.enum("common.BagType", "BAG_TYPE_MAIN") then
             for _, item in ipairs(result.result_item) do
                 for _, bag_item in ipairs(bag.items) do
                     if item.item_id == bag_item.item_id then

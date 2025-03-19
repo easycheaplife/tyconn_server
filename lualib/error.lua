@@ -1,5 +1,5 @@
 -- Generating error.lua from proto/common/error.proto
--- Generate time: 2025-03-13 10:07:38
+-- Generate time: 2025-03-19 03:38:51
 
 local M = {}
 

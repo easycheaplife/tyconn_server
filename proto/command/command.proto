@@ -333,7 +333,7 @@ message C2GPartnerLevelUpRequest {
 message G2CPartnerLevelUpResponse {
     common.PartnerInfo partner = 1;  // 更新后的伙伴信息
     repeated common.PropertyChange property_gains = 2;  // 属性增益
-    repeated common.ItemInfo consumed_items = 3;  // 消耗的物品
+    repeated common.BagInfo bags = 3;  // 变化的物品列表
 }
 
 // 伙伴升星请求 {{Req:605}}
@@ -346,7 +346,7 @@ message C2GPartnerStarUpRequest {
 message G2CPartnerStarUpResponse {
     common.PartnerInfo partner = 1;  // 更新后的伙伴信息
     repeated common.PropertyChange property_gains = 2;  // 属性增益
-    repeated common.ItemInfo consumed_items = 3;  // 消耗的物品
+    repeated common.BagInfo bags = 3;  // 变化的物品列表
 }
 
 // 伙伴解锁请求 {{Req:607}}
@@ -358,7 +358,7 @@ message C2GPartnerUnlockRequest {
 // 伙伴解锁响应 {{Res:608}}
 message G2CPartnerUnlockResponse {
     common.PartnerInfo partner = 1;  // 新解锁的伙伴信息
-    int32 consumed_fragments = 2;    // 消耗的碎片数量
+    repeated common.BagInfo bags = 2;  // 变化的物品列表
 }
 
 // 伙伴属性变化推送 {{Push:651}}

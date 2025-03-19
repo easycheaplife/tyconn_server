@@ -396,7 +396,7 @@ function M.level_up_partner(user_id, partner_id)
     end
     
     -- 扣除物品
-    local consume_result, consumed_items = item_service.consume_items(user_id, level_up_cost)
+    local consume_result, consumed_items = item_service.consume_items(user_id, level_up_cost, enum.ChangeSource.SOURCE_PARTNER_LEVEL_UP)
     if not consume_result then
         logger.error("Failed to consume items for level up partner_id: %d", partner_id)
         return false
@@ -493,7 +493,7 @@ function M.star_up_partner(user_id, partner_id)
     end
     
     -- 扣除物品
-    local consume_result, consumed_items = item_service.consume_items(user_id, star_up_cost)
+    local consume_result, consumed_items = item_service.consume_items(user_id, star_up_cost, enum.ChangeSource.SOURCE_PARTNER_STAR_UP)
     if not consume_result then
         logger.error("Failed to consume items for star up partner_id: %d", partner_id)
         return false
@@ -643,6 +643,7 @@ function M.unlock_partner(user_id, unit_id)
         state = enum.PartnerState.PARTNER_STATE_UNLOCKED, -- 已解锁
         fragment_count = updated_fragment_count,
         fragment_need = 0,
+        fragment_item_id = fragment_item_id,
         can_level_up = true,
         can_star_up = new_partner.star < table_service.get_max_partner_star(unit_config.star_id),
         level_up_cost = table_service.get_partner_level_up_cost(unit_id, 1),
@@ -650,7 +651,7 @@ function M.unlock_partner(user_id, unit_id)
     }
     
     -- 返回消耗的碎片数量
-    return true, unlocked_partner, fragment_need
+    return true, unlocked_partner
 end
 
 -- GM指令：直接添加伙伴

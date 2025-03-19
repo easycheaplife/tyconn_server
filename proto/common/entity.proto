@@ -118,10 +118,11 @@ message PartnerInfo {
   int32 state = 2;                    // 状态 (1:可解锁, 2:已解锁, 3:未解锁)
   int32 fragment_count = 3;           // 拥有的碎片数量
   int32 fragment_need = 4;            // 解锁所需的碎片数量
-  bool can_level_up = 5;              // 是否可以升级
-  bool can_star_up = 6;               // 是否可以升星
-  repeated ItemCost level_up_cost = 7; // 升级消耗
-  repeated ItemCost star_up_cost = 8;  // 升星消耗
+  int32 fragment_item_id = 5;         // 碎片物品ID
+  bool can_level_up = 6;              // 是否可以升级
+  bool can_star_up = 7;               // 是否可以升星
+  repeated ItemCost level_up_cost = 8; // 升级消耗
+  repeated ItemCost star_up_cost = 9;  // 升星消耗
 }
 
 // 属性信息
