@@ -107,33 +107,32 @@ function M.get_partner_level_up_cost(unit_id, level)
         return nil
     end
 
-    local configs = config_service.get_config("experience")
-    if not configs then
-        logger.error("Failed to get exp configs")
-        return nil
-    end
-
-    local exp_config = configs[level]
+    local exp_config = config_service.get_exp_config(level)
     if not exp_config then
         logger.error("Failed to get exp config for level: %d", level)
         return nil
     end
 
     -- 根据单位类型返回对应的消耗值
-    local exp_count = 0
-    if unit_config.type == enum.UnitType.UNIT_TYPE_HERO then  -- UNIT_TYPE_HERO
-        exp_count = exp_config.hero_id
-    elseif unit_config.type == enum.UnitType.UNIT_TYPE_PARTNER then  -- UNIT_TYPE_PARTNER
-        exp_count = exp_config.partner_id
+    local exp_info = nil
+    if unit_config.type == enum.UnitType.UNIT_TYPE_HERO then
+        exp_info = exp_config.hero_exp
+    elseif unit_config.type == enum.UnitType.UNIT_TYPE_PARTNER then
+        exp_info = exp_config.partner_exp
     else
         logger.error("Invalid unit type: %d for unit_id: %d", unit_config.type, unit_id)
         return nil
     end
 
+    if not exp_info or not exp_info.item_id or not exp_info.value then
+        logger.error("Invalid exp info for level: %d", level)
+        return nil
+    end
+
     return {
         {
-            item_id = enum.SpecialItemID.SPECIAL_ITEM_ID_EXP,
-            count = exp_count
+            item_id = exp_info.item_id,
+            count = exp_info.value
         }
     }
 end

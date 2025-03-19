@@ -493,10 +493,26 @@ function M.load_exp_configs()
     for id, config in pairs(data) do
         local level = tonumber(config.Id) or 0
         if level > 0 then
+            -- 处理英雄经验配置
+            local hero_exp = config.Hero_exp or {}
+            local hero_exp_item_id = tonumber(hero_exp[1]) or 0
+            local hero_exp_value = tonumber(hero_exp[2]) or 0
+            
+            -- 处理伙伴经验配置
+            local partner_exp = config.Partner_exp or {}
+            local partner_exp_item_id = tonumber(partner_exp[1]) or 0
+            local partner_exp_value = tonumber(partner_exp[2]) or 0
+            
             exps[level] = {
                 id = level,
-                hero_id = tonumber(config.Hero_id) or 0,
-                partner_id = tonumber(config.Partner_id) or 0,
+                hero_exp = {
+                    item_id = hero_exp_item_id,
+                    value = hero_exp_value
+                },
+                partner_exp = {
+                    item_id = partner_exp_item_id,
+                    value = partner_exp_value
+                },
                 partner_num = tonumber(config.Partner_num) or 0,
                 cultivation_level = config.L_cultivation_level
             }
