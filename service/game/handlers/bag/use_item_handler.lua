@@ -77,20 +77,26 @@ function M.handle(client_id, msg)
     -- 将变化的背包列表按repeated common.BagInfo bags 格式返回  
     for _, bag in ipairs(bags) do
         if bag.bag_type == pb.enum("common.BagType", "BAG_TYPE_MAIN") then
-            for _, item in ipairs(result.result_item) do
-                for _, bag_item in ipairs(bag.items) do
-                    if item.item_id == bag_item.item_id then
-                        item.count = bag_item.count
-                        item.slot_id = bag_item.slot_id
+            -- 安全处理 result_item
+            if result and result.result_item then
+                for _, item in ipairs(result.result_item) do
+                    for _, bag_item in ipairs(bag.items) do
+                        if item.item_id == bag_item.item_id then
+                            item.count = bag_item.count
+                            item.slot_id = bag_item.slot_id
+                        end
                     end
                 end
             end
 
-            for _, item in ipairs(result.effect_items) do
-                for _, bag_item in ipairs(bag.items) do
-                    if item.item_id == bag_item.item_id then
-                        item.count = bag_item.count
-                        item.slot_id = bag_item.slot_id
+            -- 安全处理 effect_items
+            if result and result.effect_items then
+                for _, item in ipairs(result.effect_items) do
+                    for _, bag_item in ipairs(bag.items) do
+                        if item.item_id == bag_item.item_id then
+                            item.count = bag_item.count
+                            item.slot_id = bag_item.slot_id
+                        end
                     end
                 end
             end
