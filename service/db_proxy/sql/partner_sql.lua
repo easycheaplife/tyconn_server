@@ -76,10 +76,10 @@ M.CHECK_PARTNER_EXISTS = [[
 M.LOG_PARTNER_LEVEL_CHANGE = [[
     INSERT INTO partner_level_logs (
         partner_id, user_id, old_level, new_level, 
-        change_time, extra_info
+        old_exp, new_exp, consume_items, operation_time
     ) VALUES (
         %d, %d, %d, %d, 
-        %d, '%s'
+        %d, %d, '%s', %d
     )
 ]]
 
@@ -87,10 +87,10 @@ M.LOG_PARTNER_LEVEL_CHANGE = [[
 M.LOG_PARTNER_STAR_CHANGE = [[
     INSERT INTO partner_star_logs (
         partner_id, user_id, old_star, new_star, 
-        change_time, extra_info
+        consume_items, operation_time
     ) VALUES (
         %d, %d, %d, %d, 
-        %d, '%s'
+        '%s', %d
     )
 ]]
 
@@ -98,10 +98,10 @@ M.LOG_PARTNER_STAR_CHANGE = [[
 M.LOG_PARTNER_UNLOCK = [[
     INSERT INTO partner_unlock_logs (
         partner_id, user_id, unit_id, fragment_count, 
-        change_time, extra_info
+        operation_time
     ) VALUES (
         %d, %d, %d, %d, 
-        %d, '%s'
+        %d
     )
 ]]
 

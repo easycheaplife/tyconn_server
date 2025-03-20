@@ -161,34 +161,39 @@ function M.log_partner_change(log)
     local data = {
         partner_id = tonumber(log.partner_id),
         user_id = tonumber(log.user_id),
+        change_type = tostring(log.change_type),
         old_value = tonumber(log.old_value) or 0,
         new_value = tonumber(log.new_value) or 0,
-        change_time = tonumber(log.change_time) or os.time(),
-        extra_info = db_util.escape_string(log.extra_info or "")
+        operation_time = tonumber(log.change_time) or os.time(),
+        consume_items = db_util.escape_string(log.extra_info or "[]")
     }
     
     -- 根据变化类型选择对应的SQL语句
     local query
-    if log.change_type == "GM_SET_LEVEL" or log.change_type == "LEVEL_UP" then
+    if data.change_type == "GM_SET_LEVEL" or data.change_type == "LEVEL_UP" then
         query = string.format(sql.LOG_PARTNER_LEVEL_CHANGE,
             data.partner_id, data.user_id,
             data.old_value, data.new_value,
-            data.change_time, data.extra_info)
+            0, 0, -- old_exp, new_exp (暂时设为0，后续可以从partner对象中获取)
+            data.consume_items,
+            data.operation_time)
             
-    elseif log.change_type == "GM_SET_STAR" or log.change_type == "STAR_UP" then
+    elseif data.change_type == "GM_SET_STAR" or data.change_type == "STAR_UP" then
         query = string.format(sql.LOG_PARTNER_STAR_CHANGE,
             data.partner_id, data.user_id,
             data.old_value, data.new_value,
-            data.change_time, data.extra_info)
+            data.consume_items,
+            data.operation_time)
             
-    elseif log.change_type == "GM_ADD" or log.change_type == "UNLOCK" then
+    elseif data.change_type == "GM_ADD" or data.change_type == "UNLOCK" then
         query = string.format(sql.LOG_PARTNER_UNLOCK,
             data.partner_id, data.user_id,
-            data.old_value, data.new_value,
-            data.change_time, data.extra_info)
+            data.old_value, -- unit_id
+            data.new_value, -- fragment_count
+            data.operation_time)
             
     else
-        logger.error("Invalid change type: %s", log.change_type)
+        logger.error("Invalid change type: %s", data.change_type)
         return false, "Invalid change type"
     end
     
@@ -198,7 +203,7 @@ function M.log_partner_change(log)
     local ok = db_util.query(query)
     if not ok then
         logger.error("Failed to log partner change for user: %d, partner_id: %d, type: %s", 
-            data.user_id, data.partner_id, log.change_type)
+            data.user_id, data.partner_id, data.change_type)
         return false, "Database error"
     end
     
