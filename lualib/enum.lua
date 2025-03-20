@@ -1,5 +1,5 @@
 -- Generating enum.lua from proto/common/enum.proto
--- Generate time: 2025-03-19 03:38:51
+-- Generate time: 2025-03-20 03:26:52
 
 local M = {}
 
@@ -70,23 +70,37 @@ M.ChangeType = {
 M.ChangeSource = {
     SOURCE_NONE = 0,
     SOURCE_INIT = 1,    -- 初始化
-    SOURCE_REWARD = 2,    -- 奖励
-    SOURCE_CREATE = 3,    -- 创建
-    SOURCE_USE = 4,    -- 使用
-    SOURCE_COMPOSE = 5,    -- 合成
-    SOURCE_DECOMPOSE = 6,    -- 分解
-    SOURCE_STACK = 7,    -- 堆叠
-    SOURCE_BATCH_REMOVE = 8,    -- 批量删除
-    SOURCE_TRADE = 9,    -- 交易
-    SOURCE_MAIL = 10,    -- 邮件
-    SOURCE_GM = 11,    -- GM
-    SOURCE_REMOVE_GEM = 12,    -- 卸下宝石
-    SOURCE_UNEQUIP = 13,    -- 卸下装备
-    SOURCE_ENHANCE = 14,    -- 强化
-    SOURCE_REFINE = 15,    -- 精炼
-    SOURCE_REFORGE = 16,    -- 洗练
-    SOURCE_PARTNER_STAR_UP = 17,    -- 伙伴升星
-    SOURCE_PARTNER_LEVEL_UP = 18,    -- 伙伴升级
+    SOURCE_CREATE = 2,    -- 创建
+    SOURCE_USE = 3,    -- 使用
+    SOURCE_CONSUME = 4,    -- 消耗
+    SOURCE_BATCH_REMOVE = 5,    -- 批量删除
+    SOURCE_LOCK = 6,    -- 锁定
+    SOURCE_UNLOCK = 7,    -- 解锁
+    SOURCE_RANDOM = 8,    -- 随机获得
+    SOURCE_STACK = 11,    -- 堆叠
+    SOURCE_TRADE = 12,    -- 交易
+    SOURCE_MAIL = 13,    -- 邮件
+    SOURCE_GM = 14,    -- GM命令
+    SOURCE_MOVE = 15,    -- 物品移动
+    SOURCE_SPLIT = 16,    -- 物品拆分
+    SOURCE_CLEAR_BAG = 17,    -- 清空背包
+    SOURCE_EQUIP = 21,    -- 装备
+    SOURCE_UNEQUIP = 22,    -- 卸下装备
+    SOURCE_ENHANCE = 23,    -- 强化
+    SOURCE_REFINE = 24,    -- 精炼
+    SOURCE_REFORGE = 25,    -- 洗练
+    SOURCE_INLAY = 31,    -- 镶嵌宝石
+    SOURCE_INLAY_BREAK = 32,    -- 宝石破碎
+    SOURCE_REMOVE_GEM = 33,    -- 卸下宝石
+    SOURCE_COMPOSE = 41,    -- 合成
+    SOURCE_DECOMPOSE = 42,    -- 分解
+    SOURCE_PARTNER_STAR_UP = 51,    -- 伙伴升星
+    SOURCE_PARTNER_LEVEL_UP = 52,    -- 伙伴升级
+    SOURCE_UNLOCK_PARTNER = 53,    -- 解锁伙伴
+    SOURCE_REWARD = 61,    -- 奖励
+    SOURCE_QUEST = 62,    -- 任务奖励
+    SOURCE_ACTIVITY = 63,    -- 活动奖励
+    SOURCE_ACHIEVEMENT = 64,    -- 成就奖励
 }
 
 -- 效果类型

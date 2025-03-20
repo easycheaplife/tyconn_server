@@ -157,61 +157,48 @@ function M.log_partner_change(log)
         return false, "Invalid log info"
     end
     
-    -- 根据变化类型选择对应的日志表
-    local table_name
-    if log.change_type == "LEVEL_UP" then
-        table_name = "partner_level_logs"
-    elseif log.change_type == "STAR_UP" then
-        table_name = "partner_star_logs"
-    elseif log.change_type == "UNLOCK" then
-        table_name = "partner_unlock_logs"
+    -- 确保所有字段都有合适的默认值
+    local data = {
+        partner_id = tonumber(log.partner_id),
+        user_id = tonumber(log.user_id),
+        old_value = tonumber(log.old_value) or 0,
+        new_value = tonumber(log.new_value) or 0,
+        change_time = tonumber(log.change_time) or os.time(),
+        extra_info = db_util.escape_string(log.extra_info or "")
+    }
+    
+    -- 根据变化类型选择对应的SQL语句
+    local query
+    if log.change_type == "GM_SET_LEVEL" or log.change_type == "LEVEL_UP" then
+        query = string.format(sql.LOG_PARTNER_LEVEL_CHANGE,
+            data.partner_id, data.user_id,
+            data.old_value, data.new_value,
+            data.change_time, data.extra_info)
+            
+    elseif log.change_type == "GM_SET_STAR" or log.change_type == "STAR_UP" then
+        query = string.format(sql.LOG_PARTNER_STAR_CHANGE,
+            data.partner_id, data.user_id,
+            data.old_value, data.new_value,
+            data.change_time, data.extra_info)
+            
+    elseif log.change_type == "GM_ADD" or log.change_type == "UNLOCK" then
+        query = string.format(sql.LOG_PARTNER_UNLOCK,
+            data.partner_id, data.user_id,
+            data.old_value, data.new_value,
+            data.change_time, data.extra_info)
+            
     else
         logger.error("Invalid change type: %s", log.change_type)
-        return false
+        return false, "Invalid change type"
     end
     
-    -- 构建SQL语句
-    local query
-    if log.change_type == "LEVEL_UP" then
-        query = string.format([[
-            INSERT INTO partner_level_logs (
-                partner_id, user_id, old_level, new_level, 
-                old_exp, new_exp, consume_items, operation_time
-            ) VALUES (
-                %d, %d, %d, %d, 
-                0, 0, %s, %d
-            )
-        ]], log.partner_id, log.user_id, log.old_value, log.new_value, 
-            log.consume_items and string.format("'%s'", db_util.escape_string(log.consume_items)) or "NULL",
-            log.operation_time)
-    elseif log.change_type == "STAR_UP" then
-        query = string.format([[
-            INSERT INTO partner_star_logs (
-                partner_id, user_id, old_star, new_star, 
-                consume_items, operation_time
-            ) VALUES (
-                %d, %d, %d, %d, 
-                %s, %d
-            )
-        ]], log.partner_id, log.user_id, log.old_value, log.new_value,
-            log.consume_items and string.format("'%s'", db_util.escape_string(log.consume_items)) or "NULL",
-            log.operation_time)
-    elseif log.change_type == "UNLOCK" then
-        query = string.format([[
-            INSERT INTO partner_unlock_logs (
-                partner_id, user_id, unit_id, fragment_count, 
-                operation_time
-            ) VALUES (
-                %d, %d, %d, %d, 
-                %d
-            )
-        ]], log.partner_id, log.user_id, log.old_value, log.new_value, log.operation_time)
-    end
+    -- 记录详细日志
+    logger.debug("Executing partner change log query: %s", query)
     
     local ok = db_util.query(query)
     if not ok then
-        logger.error("Failed to log partner change for user: %d, partner_id: %d", 
-            log.user_id, log.partner_id)
+        logger.error("Failed to log partner change for user: %d, partner_id: %d, type: %s", 
+            data.user_id, data.partner_id, log.change_type)
         return false, "Database error"
     end
     

@@ -177,31 +177,51 @@ end
 
 -- 记录伙伴变化历史
 function M.log_partner_change(user_id, partner_id, old_value, new_value, change_type, change_time, extra_info)
-    if not user_id or not partner_id or not change_type then
-        logger.error("Missing required parameters for partner change log")
-        return false, "missing required parameters"
+    -- 参数验证
+    if not user_id then
+        logger.error("log_partner_change: missing user_id")
+        return false, "missing user_id"
+    end
+    if not partner_id then
+        logger.error("log_partner_change: missing partner_id")
+        return false, "missing partner_id"
+    end
+    if not change_type then
+        logger.error("log_partner_change: missing change_type")
+        return false, "missing change_type"
+    end
+
+    -- 确保所有参数都有合适的默认值
+    old_value = old_value or ""
+    new_value = new_value or ""
+    change_time = change_time or os.time()
+    extra_info = extra_info or {}
+
+    -- 如果 extra_info 是表，转换为字符串
+    if type(extra_info) == "table" then
+        extra_info = utils.table_to_string(extra_info)
     end
 
     -- 构建变化记录
     local change_record = {
-        user_id = user_id,
-        partner_id = partner_id,
-        change_type = change_type,
+        user_id = tonumber(user_id),
+        partner_id = tonumber(partner_id),
+        change_type = tostring(change_type),
         old_value = tostring(old_value),
         new_value = tostring(new_value),
-        change_time = change_time or os.time(),
-        extra_info = extra_info or ""
+        change_time = tonumber(change_time),
+        extra_info = tostring(extra_info)
     }
 
     -- 写入数据库
     local ok = db_client.log_partner_change(change_record)
     if not ok then
-        logger.error("Failed to log partner change for user_id: %d, partner_id: %d, type: %s", 
-            user_id, partner_id, change_type)
-        return false
+        logger.error("Failed to log partner change: user_id=%d, partner_id=%d, type=%s, old=%s, new=%s", 
+            user_id, partner_id, change_type, tostring(old_value), tostring(new_value))
+        return false, "failed to write to database"
     end
 
-    logger.debug("Logged partner change: user_id=%d, partner_id=%d, type=%s, old=%s, new=%s", 
+    logger.info("Logged partner change: user_id=%d, partner_id=%d, type=%s, old=%s, new=%s", 
         user_id, partner_id, change_type, tostring(old_value), tostring(new_value))
 
     return true

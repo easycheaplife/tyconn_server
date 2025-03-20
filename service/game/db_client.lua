@@ -671,23 +671,44 @@ function M.delete_partner(partner_id)
 end
 
 -- 记录伙伴变化
-function M.log_partner_change(user_id, partner_id, old_value, new_value, change_type, operation_time, consume_items)
-    if not user_id or not partner_id then
-        logger.error("log_partner_change: missing required parameters")
+function M.log_partner_change(log_data)
+    -- 参数验证
+    if not log_data then
+        logger.error("log_partner_change: log_data is nil")
         return false
     end
     
-    local log_data = {
-        user_id = user_id,
-        partner_id = partner_id,
-        old_value = old_value,
-        new_value = new_value,
-        change_type = change_type,
-        operation_time = operation_time or os.time(),
-        consume_items = consume_items
-    }
+    if not log_data.user_id then
+        logger.error("log_partner_change: missing user_id")
+        return false
+    end
     
-    local ok, result = pcall(call_db, "log_partner_change", log_data)
+    if not log_data.partner_id then
+        logger.error("log_partner_change: missing partner_id")
+        return false
+    end
+    
+    if not log_data.change_type then
+        logger.error("log_partner_change: missing change_type")
+        return false
+    end
+
+    -- 确保所有字段都是正确的类型
+    local data = {
+        user_id = tonumber(log_data.user_id),
+        partner_id = tonumber(log_data.partner_id),
+        change_type = tostring(log_data.change_type),
+        old_value = tostring(log_data.old_value or ""),
+        new_value = tostring(log_data.new_value or ""),
+        change_time = tonumber(log_data.change_time or os.time()),
+        extra_info = tostring(log_data.extra_info or "")
+    }
+
+    -- 记录详细日志
+    logger.debug("Logging partner change: %s", utils.table_to_string(data))
+    
+    -- 调用数据库服务
+    local ok, result = pcall(call_db, "log_partner_change", data)
     if not ok then
         logger.error("Failed to log partner change: %s", result)
         return false

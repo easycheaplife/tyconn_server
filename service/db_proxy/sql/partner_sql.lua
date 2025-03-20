@@ -72,4 +72,37 @@ M.CHECK_PARTNER_EXISTS = [[
     WHERE user_id = %d AND unit_id = %d
 ]]
 
+-- 伙伴等级变化日志
+M.LOG_PARTNER_LEVEL_CHANGE = [[
+    INSERT INTO partner_level_logs (
+        partner_id, user_id, old_level, new_level, 
+        change_time, extra_info
+    ) VALUES (
+        %d, %d, %d, %d, 
+        %d, '%s'
+    )
+]]
+
+-- 伙伴星级变化日志
+M.LOG_PARTNER_STAR_CHANGE = [[
+    INSERT INTO partner_star_logs (
+        partner_id, user_id, old_star, new_star, 
+        change_time, extra_info
+    ) VALUES (
+        %d, %d, %d, %d, 
+        %d, '%s'
+    )
+]]
+
+-- 伙伴解锁日志
+M.LOG_PARTNER_UNLOCK = [[
+    INSERT INTO partner_unlock_logs (
+        partner_id, user_id, unit_id, fragment_count, 
+        change_time, extra_info
+    ) VALUES (
+        %d, %d, %d, %d, 
+        %d, '%s'
+    )
+]]
+
 return M

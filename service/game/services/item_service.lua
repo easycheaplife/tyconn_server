@@ -57,6 +57,13 @@ function M.init_user_items(user_id)
     -- 2. 添加默认物品
     local default_items = config_service.get_initial_items()
     if #default_items > 0 then
+        -- 记录每个物品的变化
+        for _, item in ipairs(default_items) do
+            item_dao.log_change(user_id, item.item_id, item.count,
+                enum.ChangeType.CHANGE_TYPE_ADD, enum.ChangeSource.SOURCE_INIT,
+                0, item.count)  -- 从0增加到指定数量
+        end
+
         local ok, err = M.add_items_to_slot(user_id, default_items, enum.ChangeSource.SOURCE_INIT)
         if not ok then
             logger.error("Failed to add default items for user %d: %s", user_id, err)
@@ -1314,6 +1321,11 @@ function M.equip_item(user_id, item_id, slot_id)
         end
     end
     
+    -- 记录物品变化
+    item_dao.log_change(user_id, item_id, 1,
+        enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_EQUIP,
+        item.count + 1, item.count)
+    
     -- 10. 保存更新
     local ok = bag_dao.update_user_bag(user_id, enum.BagType.BAG_TYPE_EQUIP, equip_bag)
     if not ok then
@@ -1356,10 +1368,15 @@ function M.unequip_item(user_id, slot_id)
         return false, err
     end
     
+    -- 记录物品变化
+    item_dao.log_change(user_id, equip.item_id, 1,
+        enum.ChangeType.CHANGE_TYPE_ADD, enum.ChangeSource.SOURCE_UNEQUIP,
+        0, 1)
+    
     -- 4. 清空装备槽位
     equip_bag.slots[slot_id] = {
         index = slot_id,
-            state = enum.SlotState.SLOT_STATE_EMPTY
+        state = enum.SlotState.SLOT_STATE_EMPTY
     }
     
     -- 5. 保存更新
@@ -1858,6 +1875,11 @@ function M.inlay_gem(user_id, equip_id, gem_id, slot_index, protect_item)
             end
         end
         
+        -- 记录宝石变化
+        item_dao.log_change(user_id, gem.item_id, 1,
+            enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_INLAY,
+            gem.count + 1, gem.count)
+        
         -- 镶嵌到装备
         equip.gem_slots[slot_index] = {
             state = enum.GemSlotState.OCCUPIED,
@@ -1885,6 +1907,11 @@ function M.inlay_gem(user_id, equip_id, gem_id, slot_index, protect_item)
                 end
             end
         end
+        
+        -- 记录宝石破碎
+        item_dao.log_change(user_id, gem.item_id, 1,
+            enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_INLAY_BREAK,
+            gem.count + 1, gem.count)
     end
     
     -- 8. 保存更新
@@ -1962,6 +1989,11 @@ function M.remove_gem(user_id, equip_id, slot_index, protect_item)
         if not ok then
             return false, err
         end
+        
+        -- 记录宝石返还
+        item_dao.log_change(user_id, slot.gem_id, 1,
+            enum.ChangeType.CHANGE_TYPE_ADD, enum.ChangeSource.SOURCE_REMOVE_GEM,
+            0, 1)
     end
     
     -- 6. 清空槽位

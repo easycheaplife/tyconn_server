@@ -216,13 +216,20 @@ function M.compose_item(user_id, target_id)
     
     table.insert(material_items, found_item)
     
-    -- 5. 调用item_service处理合成逻辑
+    -- 5. 消耗材料时
+    for _, material in ipairs(material_items) do
+        item_dao.log_change(user_id, material.item_id, material.count,
+            enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_COMPOSE,
+            material.count, 0)
+    end
+    
+    -- 6. 调用item_service处理合成逻辑
     local ok, result, new_item_data, remain_items = item_service.process_compose(target_id, material_items)
     if not ok then
         return false, result
     end
     
-    -- 6. 从背包中移除被消耗的材料物品
+    -- 7. 从背包中移除被消耗的材料物品
     for i = #items, 1, -1 do
         local item = items[i]
         -- 检查该物品是否是材料之一
@@ -235,7 +242,7 @@ function M.compose_item(user_id, target_id)
         end
     end
     
-    -- 7. 添加剩余材料回背包
+    -- 8. 添加剩余材料回背包
     for _, remain_item in ipairs(remain_items or {}) do
         -- 创建新物品
         local new_remain_item = item_model.new({
@@ -249,7 +256,7 @@ function M.compose_item(user_id, target_id)
         table.insert(items, new_remain_item)
     end
     
-    -- 8. 如果合成成功，添加新物品到背包
+    -- 9. 如果合成成功，添加新物品到背包
     local created_item = nil
     if result == enum.ComposeResult.SUCCESS and new_item_data then
         -- 找一个空格子
@@ -272,7 +279,7 @@ function M.compose_item(user_id, target_id)
         table.insert(items, created_item)
     end
     
-    -- 9. 保存更新
+    -- 10. 保存更新
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
         return false, "save item failed"
@@ -300,6 +307,9 @@ function M.compose_item(user_id, target_id)
                 })
             end
         end
+        
+        logger.info("Item compose result - success:%s, new_item:%s, remain_items:%s",
+            tostring(ok), utils.table_to_string(new_item_info), utils.table_to_string(remain_items_info))
         
         return true, enum.ComposeResult.SUCCESS, new_item_info, remain_items_info
     end
@@ -376,6 +386,18 @@ function M.decompose_item(user_id, target_id)
         return false, "save items failed"
     end
     
+    -- 移除分解的物品时
+    item_dao.log_change(user_id, decompose_item.item_id, decompose_item.count,
+        enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_DECOMPOSE,
+        decompose_item.count, 0)
+
+    -- 添加分解获得的物品时
+    for _, result_item in ipairs(result_items) do
+        item_dao.log_change(user_id, result_item.item_id, result_item.count,
+            enum.ChangeType.CHANGE_TYPE_ADD, enum.ChangeSource.SOURCE_DECOMPOSE,
+            0, result_item.count)
+    end
+    
     return true, nil, result_items
 end
 
@@ -443,6 +465,14 @@ function M.move_item(user_id, src_bag_type, src_slot, dst_bag_type, dst_slot, co
                 -- 源物品也发生变化
                 table.insert(changed_items, src_item)
             end
+            
+            -- 需要添加:
+            item_dao.log_change(user_id, dst_item.item_id, stack_count,
+                enum.ChangeType.CHANGE_TYPE_ADD, enum.ChangeSource.SOURCE_MOVE,
+                dst_item.count - stack_count, dst_item.count)
+            item_dao.log_change(user_id, src_item.item_id, stack_count,
+                enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_MOVE,
+                src_item.count + stack_count, src_item.count)
         else
             -- 不能堆叠，交换位置
             if move_count < src_item.count and count > 0 then
@@ -494,6 +524,11 @@ function M.move_item(user_id, src_bag_type, src_slot, dst_bag_type, dst_slot, co
     if not ok then
         return false, "save item failed"
     end
+    
+    logger.info("Moving item - user:%d, from_bag:%d, from_slot:%d, to_bag:%d, to_slot:%d, count:%d",
+        user_id, src_bag_type, src_slot, dst_bag_type, dst_slot, count or 0)
+    logger.info("Item move result - success:%s, changed_items:%s", 
+        tostring(ok), utils.table_to_string(changed_items))
     
     return true, nil, changed_items
 end
@@ -632,6 +667,13 @@ function M.split_item(user_id, from_bag, from_slot, to_bag, to_slot, count)
     
     -- 6. 更新源物品数量
     from_item.count = from_item.count - count
+    -- 需要添加:
+    item_dao.log_change(user_id, from_item.item_id, count,
+        enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_SPLIT,
+        from_item.count + count, from_item.count)
+    item_dao.log_change(user_id, new_item.item_id, count,
+        enum.ChangeType.CHANGE_TYPE_ADD, enum.ChangeSource.SOURCE_SPLIT,
+        0, count)
     
     -- 7. 添加新物品
     table.insert(items, new_item)
@@ -641,6 +683,11 @@ function M.split_item(user_id, from_bag, from_slot, to_bag, to_slot, count)
     if not ok then
         return false, "save item failed"
     end
+    
+    logger.info("Splitting item - user:%d, from_bag:%d, from_slot:%d, to_bag:%d, to_slot:%d, count:%d",
+        user_id, from_bag, from_slot, to_bag, to_slot, count)
+    logger.info("Item split result - from_item:%s, new_item:%s",
+        utils.table_to_string(from_item), utils.table_to_string(new_item))
     
     return true
 end
@@ -726,6 +773,11 @@ function M.equip_item(user_id, from_bag, from_slot, equip_slot)
     -- 9. 重新计算属性
     local property_service = require "services.property_service"
     property_service.recalc_equip_property(user_id)
+    
+    logger.info("Equipping item - user:%d, from_bag:%d, from_slot:%d, equip_slot:%d",
+        user_id, from_bag, from_slot, equip_slot)
+    logger.info("Item equip result - success:%s, src_item:%s, curr_equip:%s",
+        tostring(ok), utils.table_to_string(src_item), utils.table_to_string(curr_equip))
     
     return true
 end
@@ -1012,6 +1064,20 @@ function M.clear_bag(user_id, bag_type)
     if not ok then
         return false, "save item failed"
     end
+    
+    -- 筛选出不在指定背包的物品时，需要记录被清除的物品
+    for _, item in ipairs(items) do
+        if item.bag_type == bag_type then
+            -- 需要添加:
+            item_dao.log_change(user_id, item.item_id, item.count,
+                enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_CLEAR_BAG,
+                item.count, 0)
+        end
+    end
+    
+    logger.info("Clearing bag - user:%d, bag_type:%d, original_items:%d, remaining_items:%d",
+        user_id, bag_type, #items, #filtered_items)
+    logger.info("Clear bag result - success:%s", tostring(ok))
     
     return true, "bag is cleared"
 end
