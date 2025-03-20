@@ -53,6 +53,7 @@ function M.handle(client_id, msg)
 
     -- 获取最新的背包信息
     local bags = bag_service.get_user_bags(user.user_id)
+    logger.debug("bags: %s", utils.table_to_string(bags))
     if not bags then
         logger.error("Failed to get bags for user: %d", user.user_id)
         return message_helper.create_error_response(
@@ -82,6 +83,18 @@ function M.handle(client_id, msg)
                     size = bag.size,
                     bag_type = bag.bag_type,
                     items = changed_items
+                })
+            else
+                table.insert(changed_bags, {
+                    size = bag.size,
+                    bag_type = bag.bag_type,
+                    items = {
+                        {
+                            slot = 0,
+                            item_id = unlocked_partner.fragment_item_id,
+                            count = 0
+                        }
+                    }
                 })
             end
         end
