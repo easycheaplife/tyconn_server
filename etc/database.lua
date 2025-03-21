@@ -72,7 +72,7 @@ M.mysql = {
 
     -- 查询配置
     query = {
-        max_retries = 3,     -- 最大重试次数
+        max_retries = 1,     -- 最大重试次数
         retry_delay = 1,     -- 重试延迟（秒）
         timeout = 1000,      -- 查询超时（毫秒）
     }

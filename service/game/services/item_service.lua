@@ -2474,4 +2474,27 @@ function M.consume_items(user_id, items, source)
     return true, consumed_items
 end
 
+-- 获取物品数量
+function M.get_item_count(user_id, item_id)
+    if not user_id or not item_id then
+        return 0
+    end
+    
+    -- 获取用户物品列表
+    local items = M.get_user_items(user_id)
+    if not items then
+        return 0
+    end
+    
+    -- 统计指定物品的总数量
+    local total_count = 0
+    for _, item in ipairs(items) do
+        if item.item_id == item_id then
+            total_count = total_count + item.count
+        end
+    end
+    
+    return total_count
+end
+
 return M 

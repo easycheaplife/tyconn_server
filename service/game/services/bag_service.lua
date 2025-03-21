@@ -1064,16 +1064,6 @@ function M.clear_bag(user_id, bag_type)
         return false, "save item failed"
     end
     
-    -- 筛选出不在指定背包的物品时，需要记录被清除的物品
-    for _, item in ipairs(items) do
-        if item.bag_type == bag_type then
-            -- 需要添加:
-            item_dao.log_change(user_id, item.item_id, item.count,
-                enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_CLEAR_BAG,
-                item.count, 0)
-        end
-    end
-    
     logger.info("Clearing bag - user:%d, bag_type:%d, original_items:%d, remaining_items:%d",
         user_id, bag_type, #items, #filtered_items)
     logger.info("Clear bag result - success:%s", tostring(ok))

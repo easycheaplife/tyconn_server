@@ -122,7 +122,6 @@ function M.query(sql, ...)
             res.err or "Query execution failed")
         
         -- 返回错误信息
-        logger.error("query sql:%s, query error: %s", sql, error_msg)
         return false, error_msg
     end
     

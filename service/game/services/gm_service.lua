@@ -3,6 +3,7 @@ local logger = require "logger"
 local item_service = require "services.item_service"
 local user_service = require "services.user_service"
 local mail_service = require "services.mail_service"
+local item_dao = require "dao.item_dao"
 local utils = require "utils"
 local enum = require "enum"
 local partner_service = require "services.partner_service"
@@ -24,6 +25,9 @@ local GM_HANDLERS = {
             return {false, nil, "invalid params"}
         end
         
+        -- 获取当前物品数量
+        local current_count = item_service.get_item_count(user_id, item_id)
+        
         -- 添加物品
         local ok, err = item_service.add_items_to_slot(user_id, {
             {
@@ -31,56 +35,116 @@ local GM_HANDLERS = {
                 count = count
             }
         }, enum.ChangeSource.SOURCE_GM)
-        logger.info("add_item - result: %s, err: %s", tostring(ok), tostring(err or "success"))
+        
+        logger.info("add_item - user_id: %d, item_id: %d, count: %d, result: %s, err: %s", 
+            user_id, item_id, count, tostring(ok), tostring(err or "success"))
         
         if not ok then
             return {false, nil, err or "Failed to add item"}
         end
+        
+        -- 记录物品变化
+        item_dao.log_change(user_id, item_id, count,
+            enum.ChangeType.CHANGE_TYPE_ADD, enum.ChangeSource.SOURCE_GM,
+            current_count, current_count + count)
         
         return {true, string.format("Item added: %d x %d", item_id, count), nil}
     end,
 
     -- 删除物品
     del_item = function(user_id, params)
-        if #params < 1 then
-            return false, "params not enough"
+        if not params or #params < 1 then
+            return {false, nil, "params not enough, usage: del_item <item_id> [count]"}
         end
 
         local item_id = tonumber(params[1])
         local count = tonumber(params[2] or 1)
         
-        if not item_id or count <= 0 then
-            return false, "invalid params"
+        if not item_id or item_id <= 0 or not count or count <= 0 then
+            return {false, nil, "invalid params"}
         end
         
-        return item_service.batch_remove_items(user_id, {
+        -- 获取当前物品数量
+        local current_count = item_service.get_item_count(user_id, item_id)
+        if current_count <= 0 then
+            return {false, nil, "item not found"}
+        end
+        
+        -- 检查数量是否足够
+        if current_count < count then
+            logger.warn("del_item - user_id: %d, item_id: %d, requested: %d, available: %d", 
+                user_id, item_id, count, current_count)
+            return {false, nil, string.format("not enough items (have: %d, need: %d)", current_count, count)}
+        end
+        
+        -- 删除物品
+        local ok, err = item_service.batch_remove_items(user_id, {
             {
                 item_id = item_id,
                 count = count
             }
-        })
+        }, enum.ChangeSource.SOURCE_GM)
+        
+        logger.info("del_item - user_id: %d, item_id: %d, count: %d, result: %s, err: %s", 
+            user_id, item_id, count, tostring(ok), tostring(err or "success"))
+        
+        if not ok then
+            return {false, nil, err or "Failed to delete item"}
+        end
+        
+        -- 记录物品变化
+        item_dao.log_change(user_id, item_id, count,
+            enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_GM,
+            current_count, current_count - count)
+        
+        return {true, string.format("Item removed: %d x %d", item_id, count), nil}
     end,
 
     -- 清空背包
-    clear_bag = function(user_id, args)
-        -- 参数检查
-        if not args[1] then
-            return false, "missing bag type param"
+    clear_bag = function(user_id, params)
+        if not params or #params < 1 then
+            return {false, nil, "missing bag type param"}
         end
         
-        local bag_type = tonumber(args[1])
+        local bag_type = tonumber(params[1])
         if not bag_type then
-            return false, "bag type must be a number"
+            return {false, nil, "bag type must be a number"}
         end
         
-        -- 调用背包服务清空背包
-        local bag_service = require "services.bag_service"
-        local ok, msg = bag_service.clear_bag(user_id, bag_type)
+        -- 获取背包中当前的物品列表（用于记录变化）
+        local items = item_dao.get_user_items(user_id)
+        if not items then
+            logger.error("Failed to get user items - user_id: %d", user_id)
+            return {false, nil, "failed to get user items"}
+        end
+        
+        -- 筛选出指定背包中的物品
+        local bag_items = {}
+        for _, item in ipairs(items) do
+            if item.bag_type == bag_type then
+                table.insert(bag_items, item)
+            end
+        end
+        
+        -- 清空背包
+        local ok, err = require "services.bag_service".clear_bag(user_id, bag_type)
         if not ok then
-            return false, msg
+            logger.error("Failed to clear bag - user_id: %d, bag_type: %d, error: %s", 
+                user_id, bag_type, err)
+            return {false, nil, err or "Failed to clear bag"}
         end
         
-        return true, "背包已清空"
+        -- 记录所有物品的变化
+        for _, item in ipairs(bag_items) do
+            item_dao.log_change(user_id, item.item_id, item.count,
+                enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_GM,
+                item.count, 0)
+            
+            logger.info("Removed item from bag - user_id: %d, bag_type: %d, item_id: %d, count: %d", 
+                user_id, bag_type, item.item_id, item.count)
+        end
+        
+        return {true, string.format("Cleared bag: %d", bag_type), nil}
     end,
 
     -- 设置等级
