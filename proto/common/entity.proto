@@ -135,7 +135,7 @@ message PropertyInfo {
 // 属性变化
 message PropertyChange {
   PropType prop_id = 1;    // 属性ID
-  float value = 2;         // 变化值
+  float value = 2;         // 属性值
 }
 
 // 物品消耗
