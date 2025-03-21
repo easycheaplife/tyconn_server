@@ -299,27 +299,25 @@ function M.get_user_equip_odds_level(user_id)
 end
 
 -- 获取用户装备等级是否在升级中
-function M.is_user_equip_level_upgrading(user_id)
-    local redis = require "db.redis_client"
-    local key = "user:" .. user_id .. ":equip_level_upgrading"
-    
-    local expire_time = redis.get(key)
-    if not expire_time then
+function M.is_user_equip_odds_level_upgrading(user_id)
+    -- 从数据库获取升级信息，不使用Redis
+    local level_info = equipment_dao.get_equip_level_info(user_id)
+    if not level_info or not level_info.is_upgrading then
         return false, 0, 0
     end
     
     local now = os.time()
-    local remaining = tonumber(expire_time) - now
+    local end_time = level_info.upgrade_start_time + level_info.upgrade_duration
+    local remaining = end_time - now
     
     if remaining <= 0 then
-        -- 升级已完成，删除键并升级等级
-        redis.del(key)
-        M.complete_equip_level_upgrade(user_id)
+        -- 升级已完成，更新等级
+        M.complete_equip_odds_level_upgrade(user_id)
         return false, 0, 0
     end
     
     -- 返回正在升级，剩余时间，结束时间
-    return true, remaining, tonumber(expire_time)
+    return true, remaining, end_time
 end
 
 -- 开始升级装备等级
@@ -395,12 +393,27 @@ function M.start_upgrade_equip_odds_level(user_id, item_id, item_count)
     }
 end
 
--- 加速装备等级升级
+-- 加速装备等级升级 (保留原函数作为兼容性别名)
 function M.speedup_equip_level_upgrade(user_id, use_ad, use_item, speedup_item_id)
-    -- 检查是否在升级中
-    local is_upgrading, remaining, expire_time = M.is_user_equip_level_upgrading(user_id)
-    if not is_upgrading then
+    return M.speedup_equip_odds_level_upgrade(user_id, use_ad, use_item, speedup_item_id)
+end
+
+-- 加速装备概率等级升级
+function M.speedup_equip_odds_level_upgrade(user_id, use_ad, use_item, speedup_item_id)
+    -- 获取升级信息，不使用Redis
+    local level_info = equipment_dao.get_equip_level_info(user_id)
+    if not level_info or not level_info.is_upgrading then
         return false, "not upgrading"
+    end
+    
+    local now = os.time()
+    local end_time = level_info.upgrade_start_time + level_info.upgrade_duration
+    local remaining = end_time - now
+    
+    -- 如果已完成，直接返回
+    if remaining <= 0 then
+        M.complete_equip_odds_level_upgrade(user_id)
+        return false, "upgrade already completed"
     end
     
     local reduction_time = 0
@@ -429,19 +442,27 @@ function M.speedup_equip_level_upgrade(user_id, use_ad, use_item, speedup_item_i
     
     -- 更新升级时间
     if reduction_time > 0 then
-        local redis = require "db.redis_client"
-        local key = "user:" .. user_id .. ":equip_level_upgrading"
+        -- 计算新的剩余时间
+        local new_duration = math.max(1, level_info.upgrade_duration - reduction_time)
         
-        local new_expire_time = math.max(os.time() + 1, expire_time - reduction_time)
-        local new_remaining = new_expire_time - os.time()
+        -- 更新数据库中的升级信息
+        level_info.upgrade_duration = new_duration
+        equipment_dao.save_equip_level_info(user_id, level_info)
         
-        redis.set(key, new_expire_time)
-        redis.expire(key, new_remaining + 60)  -- 额外60秒确保过期
+        -- 计算新的结束时间和剩余时间
+        local new_end_time = level_info.upgrade_start_time + new_duration
+        local new_remaining = new_end_time - now
         
-        return true, nil, new_remaining, new_expire_time
+        -- 如果升级已完成，处理升级完成
+        if new_remaining <= 0 then
+            M.complete_equip_odds_level_upgrade(user_id)
+            return true, nil, 0, now
+        end
+        
+        return true, nil, new_remaining, new_end_time
     end
     
-    return true, nil, remaining, expire_time
+    return true, nil, remaining, end_time
 end
 
 -- 根据权重随机选择品质
@@ -787,7 +808,7 @@ function M.equip_random_item(user_id, item, is_replace)
 end
 
 -- 检查装备等级升级
-function M.check_equipment_level_upgrades()
+function M.check_equipment_odds_level_upgrades()
     local equipment_dao = require "dao.equipment_dao"
     local completed_upgrades = equipment_dao.get_completed_upgrades()
     
@@ -796,12 +817,12 @@ function M.check_equipment_level_upgrades()
     for _, upgrade in ipairs(completed_upgrades) do
         local ok, new_level = equipment_dao.complete_equip_level_upgrade(upgrade.user_id)
         if ok then
-            logger.info("User %d equipment level upgraded to %d", upgrade.user_id, new_level)
+            logger.info("User %d equipment odds level upgraded to %d", upgrade.user_id, new_level)
             
             -- 通知用户
             notify_service.notify_equipment_level_upgraded(upgrade.user_id, new_level)
         else
-            logger.error("Failed to complete equipment level upgrade for user %d", upgrade.user_id)
+            logger.error("Failed to complete equipment odds level upgrade for user %d", upgrade.user_id)
         end
     end
     
@@ -899,6 +920,27 @@ function M.get_equip_odds_level_info(user_id)
         current_odds = current_odds,
         next_odds = next_odds
     }
+end
+
+-- 完成装备概率等级升级
+function M.complete_equip_odds_level_upgrade(user_id)
+    -- 实现完成升级的逻辑
+    local equipment_dao = require "dao.equipment_dao"
+    local ok, new_level = equipment_dao.complete_equip_level_upgrade(user_id)
+    
+    if ok then
+        -- 触发升级完成事件
+        skynet.send(".event", "lua", "trigger_event", "on_equip_odds_level_upgrade_completed", {
+            user_id = user_id,
+            new_level = new_level
+        })
+        
+        logger.info("User %d equipment odds level upgraded to %d", user_id, new_level)
+    else
+        logger.error("Failed to complete equipment odds level upgrade for user %d", user_id)
+    end
+    
+    return ok, new_level
 end
 
 return M 

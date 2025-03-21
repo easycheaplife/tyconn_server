@@ -161,8 +161,8 @@ enum PropType {
   PROP_UNKNOWN = 0;
   
   // 基础属性 (100-199)
-  PROP_HP = 101;              // 生命值
-  PROP_MP = 102;              // 魔法值
+  PROP_MP = 101;              // 魔法值
+  PROP_HP = 102;              // 生命值
   PROP_ATTACK = 103;          // 攻击力
   PROP_DEFENSE = 104;         // 防御力
   PROP_SPEED = 105;           // 速度

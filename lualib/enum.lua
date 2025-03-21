@@ -1,5 +1,5 @@
 -- Generating enum.lua from proto/common/enum.proto
--- Generate time: 2025-03-20 03:26:52
+-- Generate time: 2025-03-21 08:25:25
 
 local M = {}
 
@@ -147,8 +147,8 @@ M.UseLimit = {
 -- 通用属性类型 (用于玩家、伙伴等所有实体)
 M.PropType = {
     PROP_UNKNOWN = 0,
-    PROP_HP = 101,    -- 生命值
-    PROP_MP = 102,    -- 魔法值
+    PROP_MP = 101,    -- 魔法值
+    PROP_HP = 102,    -- 生命值
     PROP_ATTACK = 103,    -- 攻击力
     PROP_DEFENSE = 104,    -- 防御力
     PROP_SPEED = 105,    -- 速度
