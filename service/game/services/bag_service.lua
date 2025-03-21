@@ -19,16 +19,6 @@ local BAG_CONFIG = {
         init_size = 20,    -- 初始格子数
         max_size = 100,    -- 最大格子数
         unlock_level = 1   -- 解锁等级
-    },
-    [enum.BagType.BAG_TYPE_STORAGE] = {
-        init_size = 50,
-        max_size = 200,
-        unlock_level = 10
-    },
-    [enum.BagType.BAG_TYPE_EQUIP] = {
-        init_size = 8,
-        max_size = 8,
-        unlock_level = 1
     }
 }
 
@@ -65,13 +55,16 @@ function M.init_user_bags(user_id)
     -- 1. 检查是否已初始化
     local bags = bag_dao.get_user_bags(user_id)
     if bags and #bags > 0 then
+        logger.debug("User %d bags already initialized", user_id)
         return true
     end
     
     -- 2. 开始初始化
+    logger.info("Initializing bags for user %d", user_id)
     for bag_type, config in pairs(BAG_CONFIG) do
         -- 检查等级限制
         local user_level = user_service.get_user_level(user_id)
+        logger.info("User %d level %d", user_id, user_level)
         if user_level >= config.unlock_level then
             -- 创建背包
             local bag = bag_dao.create_bag(user_id, bag_type, config.init_size)
@@ -79,9 +72,15 @@ function M.init_user_bags(user_id)
                 logger.error("Failed to create bag type %d for user %d", bag_type, user_id)
                 return false
             end
+            logger.debug("Created bag type %d with size %d for user %d", 
+                bag_type, config.init_size, user_id)
+        else
+            logger.debug("User %d level %d not meet requirement %d for bag type %d", 
+                user_id, user_level, config.unlock_level, bag_type)
         end
     end
     
+    logger.info("Successfully initialized bags for user %d", user_id)
     return true
 end
 
@@ -1091,6 +1090,7 @@ function M.get_user_bags(user_id)
     -- 获取用户所有背包
     local bags = bag_dao.get_user_all_bags(user_id)
     if not bags then
+        logger.error("get_user_bags: get bags failed")
         return nil, "get bags failed"
     end
     -- 获取用户所有物品

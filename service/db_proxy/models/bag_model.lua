@@ -40,29 +40,6 @@ function M.create_user_bag(params)
         return false
     end
     
-    -- 2. 创建格子
-    for i = 0, params.size - 1 do
-        query = string.format(sql.CREATE_BAG_SLOT,
-            params.slot_ids and params.slot_ids[i+1] or snowflake.next_id(snowflake.ID_TYPE.SLOT),  -- 使用传入的 ID 或生成新 ID
-            params.user_id,
-            params.bag_type,
-            i,  -- slot_index 从0开始
-            0,  -- 初始状态为空
-            params.create_time,
-            params.create_time
-        )
-        
-        ok = db_util.query(query)
-        if not ok then
-            -- 回滚背包创建
-            db_util.query(string.format(
-                "DELETE FROM user_bags WHERE user_id = %d AND bag_type = %d",
-                params.user_id, params.bag_type
-            ))
-            return false
-        end
-    end
-    
     return true
 end
 

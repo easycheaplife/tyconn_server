@@ -294,6 +294,7 @@ function M.check_gm_permission(user_id)
 end
 
 function M.init_new_user(user_id)
+    logger.info("Initializing new user: %d", user_id)
     -- 1. 初始化卡牌
     local ok = card_service.init_user_cards(user_id)
     if not ok then
@@ -301,14 +302,24 @@ function M.init_new_user(user_id)
         -- 继续处理，不影响流程
     end
 
-    -- 2. 初始化物品
+    logger.info("Initializing bags for new user: %d", user_id)
+    -- 2. 初始化背包
+    local ok = require "services.bag_service".init_user_bags(user_id)
+    if not ok then
+        logger.error("Failed to initialize bags for new user: %d", user_id)
+        -- 继续处理，不影响流程
+    end
+
+    logger.info("Initializing items for new user: %d", user_id)
+    -- 3. 初始化物品
     local ok = item_service.init_user_items(user_id)
     if not ok then
         logger.error("Failed to initialize items for new user: %d", user_id)
         -- 继续处理，不影响流程
     end
 
-    -- 初始化用户装备槽和等级 调用equip_service
+    logger.info("Initializing equipment slots for new user: %d", user_id)
+    -- 4. 初始化用户装备槽和等级
     local equipment_service = require "services.equip_service"
     local ok = equipment_service.init_user_equip_slots(user_id)
     if not ok then

@@ -69,7 +69,8 @@ function M.get_user_bags(user_id)
     
     -- 2. 从数据库获取
     bags = db_client.get_user_bags(user_id)
-    if not bags then
+    
+    if not bags or #bags == 0 then
         return nil
     end
     
@@ -192,25 +193,26 @@ function M.update_bag_size(user_id, bag_type, new_size)
     
     -- 3. 初始化新增格子
     local slots = cache.get_bag_slots(user_id, bag_type) or {}
+    local old_size = #slots
+    slots = {}
     local now = os.time()
-    
-    -- 添加新格子
-    for i = (#slots + 1), new_size do
+   
+    for i = old_size + 1, new_size do
+        local slot_index = i-1
         table.insert(slots, bag_model.new_slot({
             user_id = user_id,
-            bag_type = bag_type,
-            slot_index = i-1,
+            bag_type = bag_type,    
+            slot_index = slot_index,
             state = enum.SlotState.SLOT_STATE_EMPTY,
             create_time = now,
             update_time = now
         }))
     end
-    
     -- 4. 保存新格子到数据库
     ok = db_client.batch_create_slots(slots)
     if not ok then
         -- 回滚背包大小
-        db_client.update_bag_size(user_id, bag_type, #slots)
+        db_client.update_bag_size(user_id, bag_type, old_size)
         return false
     end
     
@@ -242,34 +244,11 @@ function M.get_user_all_bags(user_id)
     -- 2. 从数据库获取所有背包
     bags = db_client.get_user_bags(user_id)
     if not bags then
-        -- 3. 如果没有背包记录,创建默认背包
-        -- 创建主背包(默认20格)
-        local main_bag = M.create_bag(user_id, enum.BagType.BAG_TYPE_MAIN, 20)
-        if not main_bag then
-            return nil
-        end
-        
-        -- 创建仓库背包(默认30格)
-        local storage_bag = M.create_bag(user_id, enum.BagType.BAG_TYPE_STORAGE, 30)
-        if not storage_bag then
-            return nil
-        end
-
-        -- 创建装备背包(默认12格)
-        local equip_bag = M.create_bag(user_id, enum.BagType.BAG_TYPE_EQUIP, 12)
-        if not equip_bag then
-            return nil
-        end
-
-        -- 重新获取所有背包
-        bags = db_client.get_user_bags(user_id)
-        if not bags then
-            logger.error("Failed to get bags after creation for user: %d", user_id)
-            return nil
-        end
+        logger.error("get_user_all_bags: get user bags failed")
+        return nil
     end
 
-    -- 4. 获取每个背包的格子信息
+    -- 3. 获取每个背包的格子信息
     for _, bag in ipairs(bags) do
         local slots = db_client.get_bag_slots(user_id, bag.bag_type)
         if slots then
@@ -279,7 +258,7 @@ function M.get_user_all_bags(user_id)
         end
     end
 
-    -- 5. 写入缓存
+    -- 4. 写入缓存
     cache.set_user_bags(user_id, bags)
     for _, bag in ipairs(bags) do
         if bag.slots then

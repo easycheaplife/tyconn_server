@@ -48,10 +48,7 @@ function M.init_user_items(user_id)
     -- 1. 创建主背包
     local bag = bag_dao.get_user_bag(user_id, enum.BagType.BAG_TYPE_MAIN)
     if not bag then
-        bag = bag_dao.create_bag(user_id, enum.BagType.BAG_TYPE_MAIN, 20)  -- 默认20格
-        if not bag then
-            return false, "create bag failed"
-        end
+        return false, "get bag failed"
     end
 
     -- 2. 添加默认物品
