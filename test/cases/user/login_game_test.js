@@ -51,6 +51,23 @@ class LoginGameTest extends BaseTest {
                 assert('type' in resource, 'Resource should have type');
                 assert('amount' in resource, 'Resource should have amount');
             }
+
+            // 验证属性信息
+            assert(Array.isArray(response.property_info), 'Property info should be an array');
+            if (response.property_info.length > 0) {
+                // 检查至少有一个属性值
+                assert(response.property_info.length >= 1, 'Should have at least one property');
+                
+                // 验证每个属性都有必要的字段
+                for (const prop of response.property_info) {
+                    assert('value' in prop, 'Property should have value field');
+                    assert(typeof prop.value === 'number', 'Property value should be a number');
+                }
+                
+                // 打印值以便查看
+                const propValues = response.property_info.map(p => p.value);
+                console.log('Property values:', propValues);
+            }
             
             // 验证服务器时间
             assert(response.server_time && response.server_time.low > 0, 'Server time should be valid');

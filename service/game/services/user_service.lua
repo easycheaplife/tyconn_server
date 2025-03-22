@@ -9,9 +9,9 @@ local property_service = require "services.property_service"
 local item_service = require "services.item_service"
 local card_service = require "services.card_service"
 local mail_service = require "services.mail_service"
+local table_service = require "services.table_service"
 
 local M = {}
-local default_unit_id = 10001
 
 -- 初始化
 function M.init()
@@ -102,7 +102,7 @@ end
 
 -- 更新用户属性
 function M.update_user_property(user_info)
-    local property = property_service.get_unit_property(default_unit_id, user_info.level)
+    local property = property_service.get_unit_property(unit_id, user_info.level)
     if property then
         -- 更新属性
         user_info.hp = property.hp
@@ -229,7 +229,8 @@ function M.cache_user(user_info)
     if not user_info or not user_info.user_id then
         return false, "Invalid user info"
     end
-    local base_property = property_service.get_unit_property(default_unit_id, user_info.level)
+    local hero_unit_id = table_service.get_hero_unit_id()
+    local base_property = property_service.get_unit_property(hero_unit_id, user_info.level)
     -- 添加基础属性
     user_info.hp = base_property and base_property.hp or 0
     user_info.attack = base_property and base_property.attack or 0

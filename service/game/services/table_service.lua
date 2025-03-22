@@ -412,4 +412,24 @@ function M.get_equip_base_config()
     }
 end
 
+-- 获取主角单位ID
+function M.get_hero_unit_id()
+    local configs = M.get_unit_configs()
+    if not configs then
+        logger.error("Failed to get unit configs")
+        return 1  -- 默认返回ID为1作为主角ID
+    end
+    
+    -- 遍历所有单位配置，查找类型为UNIT_TYPE_HERO的单位
+    for id, config in pairs(configs) do
+        if config.type == enum.UnitType.UNIT_TYPE_HERO then
+            logger.info("Found hero unit with ID: %d", id)
+            return tonumber(id)
+        end
+    end
+    
+    logger.warn("No hero unit found in configuration, using default ID 1")
+    return 1  -- 如果没有找到，返回默认ID 1
+end
+
 return M 

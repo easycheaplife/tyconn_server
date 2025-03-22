@@ -22,7 +22,7 @@
  * - set_level <level>：设置角色等级
  *   参数说明：
  *   - level: 目标等级(1-99)
- *   示例：set_level 99
+ *   示例：set_level 10
  * 
  * 物品管理指令：
  * - add_item <item_id> <count>：添加物品
@@ -220,7 +220,7 @@ class GMCommandTest extends BaseTest {
         console.log('\nTesting set level command...');
         
         // 设置等级
-        const response = await this.client.gmCommand('set_level', ['99']);
+        const response = await this.client.gmCommand('set_level', ['10']);
         assert.strictEqual(response.result, 'success');
     }
 

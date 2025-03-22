@@ -943,4 +943,10 @@ function M.complete_equip_odds_level_upgrade(user_id)
     return ok, new_level
 end
 
+function M.check_equipment_level_upgrades()
+    logger.info("Checking equipment level upgrades")
+    local count = M.check_equipment_odds_level_upgrades()
+    logger.info("Completed %d equipment level upgrades", count)
+end
+
 return M 

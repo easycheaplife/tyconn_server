@@ -10,6 +10,8 @@ local name_generator = require "game.utils.name_generator"
 local handler_helper = require "game.handlers.handler_helper"
 local user_session_service = require "services.user_session_service"
 local message = require "message"
+local property_service = require "services.property_service"
+local table_service = require "services.table_service"
 
 local M = {}
 
@@ -98,6 +100,18 @@ function M.handle(client_id, msg, gate_node)
         resources = resources,
         server_time = os.time()
     }
+
+    -- Get user's unit ID and level (you might need to adjust how you get these values)
+    local unit_id = result.user.unit_id or table_service.get_hero_unit_id()  -- Get default hero unit ID
+    local level = result.user.level or 1  -- Default level if not set
+    
+    -- Get property info from property service
+    local property_info = property_service.get_unit_property(unit_id, level)
+    
+    -- Add property changes to response
+    if property_info then
+        response_data.property_info = property_info
+    end
 
     return message_helper.create_success_response(
         base_request,

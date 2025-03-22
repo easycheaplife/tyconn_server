@@ -4,7 +4,7 @@ local utils = require "utils"
 local item_dao = require "dao.item_dao"
 local bag_model = require "models.bag_model"
 local item_model = require "models.item_model"
-local config_service = require "services.config_service"
+local table_service = require "services.table_service"
 local enum = require "enum"
 
 local M = {}
@@ -18,8 +18,8 @@ local CALC_TYPE = {
 -- 查找属性配置
 local function find_property_list(property_id, level)
     logger.info("Finding property list for id: %s, level: %d", property_id, level)
-    -- 直接获取对应的属性配置
-    local config = config_service.get_property_config(property_id, level)
+    -- 使用table_service代替直接使用config_service
+    local config = table_service.get_property_config(property_id, level)
     if not config then
         logger.error("No property config found for id: %s, level: %d", property_id, level)
         return {}
@@ -69,8 +69,8 @@ end
 function M.get_unit_property(unit_id, level)
     logger.info("Getting unit property - unit_id: %d, level: %d", unit_id, level)
     
-    -- 1. 从unit配置中获取property_id
-    local target_unit = config_service.get_unit_config(unit_id)
+    -- 1. 从unit配置中获取property_id，使用table_service
+    local target_unit = table_service.get_unit_config(unit_id)
     if not target_unit then
         logger.error("Unit not found in config: %d", unit_id)
         return nil
@@ -90,15 +90,28 @@ function M.get_unit_property(unit_id, level)
         return nil
     end
 
-    -- 3. 计算各个属性的最终值
-    local result = {
-        hp = calculate_property(property_list, enum.PropType.PROP_HP),
-        attack = calculate_property(property_list, enum.PropType.PROP_ATTACK),
-        defense = calculate_property(property_list, enum.PropType.PROP_DEFENSE)
-    }
+    -- 3. 提取所有出现在配置中的属性类型
+    local property_types = {}
+    for _, prop in ipairs(property_list) do
+        local prop_type = prop[1]
+        if not property_types[prop_type] then
+            property_types[prop_type] = true
+        end
+    end
+    
+    -- 4. 计算每个属性类型的最终值并以PropertyChange格式返回
+    local property_changes = {}
+    for prop_type, _ in pairs(property_types) do
+        local value = calculate_property(property_list, prop_type)
+        table.insert(property_changes, {
+            prop_id = prop_type,
+            value = value
+        })
+        logger.info("Calculated unit property changes: %s", utils.table_to_string(property_changes))
+    end
 
-    logger.info("Calculated unit property: %s", utils.table_to_string(result))
-    return result
+    logger.info("Calculated unit property changes: %s", utils.table_to_string(property_changes))
+    return property_changes
 end
 
 return M

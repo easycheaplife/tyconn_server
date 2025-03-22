@@ -129,7 +129,6 @@ message PartnerInfo {
 message PropertyInfo {
   PropType prop_id = 1;    // 属性ID
   float value = 2;        // 基础值
-  float extra = 3;        // 额外值(装备、星级加成等)
 }
 
 // 属性变化

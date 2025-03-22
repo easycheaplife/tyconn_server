@@ -53,7 +53,8 @@ message G2CLoginGameResponse {
     bool is_new_user = 2;                  // 是否是新创建的用户
     repeated common.BagInfo bags = 3;      // 背包信息
     repeated common.ResourceInfo resources = 4;  // 资源信息
-    int64 server_time = 5;                 // 服务器时间（毫秒）
+    repeated common.PropertyInfo property_info = 5; // 属性信息
+    int64 server_time = 6;                 // 服务器时间（毫秒）
 }
 
 // 获取用户卡牌请求 {{Req:101}}
