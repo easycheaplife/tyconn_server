@@ -602,7 +602,7 @@ function M.unlock_partner(user_id, unit_id)
     -- 扣除碎片
     local consume_result = item_service.consume_item(user_id, fragment_item_id, fragment_need, enum.ChangeSource.SOURCE_UNLOCK_PARTNER)
     if not consume_result then
-        logger.error("Failed to consume fragments for unlock partner: unit_id=%d, fragment_id=%d", unit_id, fragment_item_id)
+        logger.error("Failed to consume fragments for unlock partner: unit_id=%d, fragment_id=%d, fragment_need=%d", unit_id, fragment_item_id, fragment_need)
         return false
     end
     
