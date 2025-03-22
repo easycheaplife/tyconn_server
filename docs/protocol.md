@@ -918,21 +918,29 @@ message G2CPartnerListResponse {
 }
 
 message PartnerInfo {
-    int64 partner_id = 1;   // 伙伴ID
-    int32 unit_id = 2;      // 单位ID
-    int32 level = 3;        // 等级
-    int32 star = 4;         // 星级
-    int32 exp = 5;          // 经验值
-    int32 state = 6;        // 状态(1:已解锁 2:可解锁 3:未解锁)
-    int32 fragment_count = 7; // 碎片数量
-    int64 create_time = 8;  // 创建时间
-    int64 update_time = 9;  // 更新时间
-    repeated AttributeInfo attributes = 10; // 属性列表
+    PartnerBaseInfo base_info = 1;   // 伙伴基本信息
+    int32 state = 2;                 // 伙伴状态，参见PartnerState枚举
+    int32 fragment_count = 3;        // 拥有的碎片数量
+    int32 fragment_need = 4;         // 升级所需碎片
+    int32 fragment_item_id = 5;      // 碎片物品ID
+    bool can_level_up = 6;           // 是否可以升级
+    bool can_star_up = 7;            // 是否可以升星
+    repeated ItemInfo level_up_cost = 8;   // 升级消耗
+    repeated ItemInfo star_up_cost = 9;    // 升星消耗
+    int32 power = 10;                // 伙伴战力
 }
 
-message AttributeInfo {
-    int32 type = 1;         // 属性类型
-    int32 value = 2;        // 属性值
+message PartnerBaseInfo {
+    int64 partner_id = 1;            // 伙伴ID
+    int32 unit_id = 2;               // 单位ID
+    int32 level = 3;                 // 等级
+    int32 exp = 4;                   // 经验值
+    int32 quality = 5;               // 品质，参见Quality枚举
+    int32 star = 6;                  // 星级
+    int64 create_time = 7;           // 创建时间
+    int32 race = 8;                  // 种族
+    int32 forte = 9;                 // 职业
+    repeated PropertyInfo properties = 10; // 属性列表
 }
 ```
 
@@ -957,7 +965,7 @@ message C2GPartnerLevelUpRequest {
 ```protobuf
 message G2CPartnerLevelUpResponse {
     PartnerInfo partner = 1;  // 更新后的伙伴信息
-    repeated PropertyChange property_gains = 2;  // 属性增益
+    repeated PropertyInfo property_changes = 2;  // 变化属性
     repeated BagInfo bags = 3;  // 变化的物品列表
 }
 ```
@@ -986,7 +994,7 @@ message C2GPartnerStarUpRequest {
 ```protobuf
 message G2CPartnerStarUpResponse {
     PartnerInfo partner = 1;  // 更新后的伙伴信息
-    repeated PropertyChange property_gains = 2;  // 属性增益
+    repeated PropertyInfo property_changes = 2;  // 变化属性
     repeated BagInfo bags = 3;  // 变化的物品列表
 }
 ```
@@ -1016,6 +1024,7 @@ message C2GPartnerUnlockRequest {
 message G2CPartnerUnlockResponse {
     PartnerInfo partner = 1;  // 新解锁的伙伴信息
     repeated BagInfo bags = 2;  // 变化的物品列表
+    repeated PropertyInfo property_changes = 3;  // 伙伴初始属性
 }
 ```
 
@@ -1025,7 +1034,6 @@ message G2CPartnerUnlockResponse {
 - ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
 - ERROR_CODE_PARTNER_ALREADY_EXISTS: 伙伴已存在
 - ERROR_CODE_FRAGMENT_NOT_ENOUGH: 碎片不足
-- ERROR_CODE_LEVEL_NOT_ENOUGH: 等级不足
 
 #### 3.9.5 伙伴属性变化推送
 **连接类型:** `WebSocket`
@@ -1035,13 +1043,13 @@ message G2CPartnerUnlockResponse {
 ```protobuf
 message G2CPartnerPropertyChangedPush {
     int64 partner_id = 1;            // 伙伴ID
-    repeated PropertyChange property_changes = 2;  // 属性变化
+    repeated PropertyInfo property_changes = 2;  // 变化属性
     string reason = 3;               // 变化原因
 }
 
-message PropertyChange {
-    int32 type = 1;   // 属性类型
-    int32 value = 2;  // 变化值
+message PropertyInfo {
+    int32 prop_id = 1;   // 属性ID，参见PropType枚举
+    int32 value = 2;     // 属性值
 }
 ```
 
