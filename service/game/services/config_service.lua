@@ -148,7 +148,9 @@ function M.load_unit_config()
                 skill_dfw = unit_data.skill_dfw or {},
                 shards = unit_data.Shards or {},
                 disassemble = unit_data.Disassemble or {},
-                star_id = tonumber(unit_data.Star_id) or 0
+                star_id = tonumber(unit_data.Star_id) or 0,
+                race = tonumber(unit_data.Race) or 0,
+                forte = tonumber(unit_data.Forte) or 0
             }
         end
     end

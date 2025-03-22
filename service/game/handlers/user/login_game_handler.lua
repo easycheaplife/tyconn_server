@@ -106,7 +106,7 @@ function M.handle(client_id, msg, gate_node)
     local level = result.user.level or 1  -- Default level if not set
     
     -- Get property info from property service
-    local property_info = property_service.get_unit_property(unit_id, level)
+    local property_info = property_service.get_unit_level_property(unit_id, level)
     
     -- Add property changes to response
     if property_info then

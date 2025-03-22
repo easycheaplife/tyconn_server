@@ -7,6 +7,7 @@ local item_service = require "services.item_service"
 local user_service = require "services.user_service"
 local table_service = require "services.table_service"
 local enum = require "enum"
+local property_service = require "services.property_service"
 
 local M = {}
 
@@ -264,6 +265,13 @@ function M.get_user_partners(user_id)
             local state = enum.PartnerState.PARTNER_STATE_UNLOCKED
             logger.info("Setting unlocked partner state: unit_id=%d, state=%d", unit_id, state)
             
+            -- For unlocked partners, calculate properties using property_service
+            local properties = property_service.get_unit_properties(
+                unit_id,
+                partner.level,
+                partner.star
+            )
+            
             partner_info = {
                 base_info = {
                     partner_id = partner.id,
@@ -274,7 +282,8 @@ function M.get_user_partners(user_id)
                     star = partner_star,
                     create_time = partner.create_time,
                     race = unit_config.race or 0,
-                    forte = unit_config.forte or 0
+                    forte = unit_config.forte or 0,
+                    properties = properties  -- Use the properly calculated properties
                 },
                 state = state,
                 fragment_count = fragment_map[unit_id] or 0,
@@ -284,6 +293,10 @@ function M.get_user_partners(user_id)
                 level_up_cost = level_up_cost,
                 star_up_cost = star_up_cost
             }
+            
+            -- Recalculate power with new properties if needed
+            partner_info.power = calculate_power(partner_info.base_info)
+            
             logger.info("Created partner_info: unit_id=%d, state=%d, can_star_up=%s", 
                 unit_id, partner_info.state, tostring(partner_info.can_star_up))
         else
@@ -300,17 +313,20 @@ function M.get_user_partners(user_id)
             logger.info("Setting locked partner state: unit_id=%d, state=%d, fragment_count=%d, fragment_need=%d", 
                 unit_id, state, fragment_count, fragment_need)
             
+            local init_star = 0
+            local init_level = 1
             partner_info = {
                 base_info = {
                     partner_id = 0, -- 未解锁
                     unit_id = unit_id,
-                    level = 1,
+                    level = init_level,
                     exp = 0,
                     quality = unit_config.quality or enum.Quality.QUALITY_WHITE,
-                    star = 0,
+                    star = init_star,
                     create_time = 0,
                     race = unit_config.race or 0,
-                    forte = unit_config.forte or 0
+                    forte = unit_config.forte or 0,
+                    properties = {}
                 },
                 state = state,
                 fragment_count = fragment_count,
@@ -442,6 +458,13 @@ function M.level_up_partner(user_id, partner_id)
                       table_service.get_partner_star_up_cost(partner.unit_id, partner.star) or {}
     }
     
+    -- Get the final properties after leveling up
+    local property_changes = property_service.get_unit_properties(
+        partner.unit_id,
+        partner.level,  -- Updated level
+        partner.star
+    )
+    
     return true, updated_partner, property_changes, consumed_items
 end
 
@@ -540,6 +563,13 @@ function M.star_up_partner(user_id, partner_id)
         star_up_cost = partner.star < max_star and 
                       table_service.get_partner_star_up_cost(partner.unit_id, partner.star) or {}
     }
+    
+    -- Get the final properties after starring up
+    local property_changes = property_service.get_unit_properties(
+        partner.unit_id,
+        partner.level,
+        partner.star  -- Updated star level
+    )
     
     return true, updated_partner, property_changes, consumed_items
 end
@@ -650,8 +680,15 @@ function M.unlock_partner(user_id, unit_id)
         star_up_cost = table_service.get_partner_star_up_cost(unit_id, 1)
     }
     
+    -- Get the initial properties for the new partner
+    local property_changes = property_service.get_unit_properties(
+        unit_id,
+        1,  -- Initial level
+        0   -- Initial star
+    )
+    
     -- 返回消耗的碎片数量
-    return true, unlocked_partner
+    return true, unlocked_partner, property_changes
 end
 
 -- GM指令：直接添加伙伴

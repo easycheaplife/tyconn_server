@@ -102,7 +102,7 @@ end
 
 -- 更新用户属性
 function M.update_user_property(user_info)
-    local property = property_service.get_unit_property(unit_id, user_info.level)
+    local property = property_service.get_unit_level_property(unit_id, user_info.level)
     if property then
         -- 更新属性
         user_info.hp = property.hp
@@ -230,7 +230,7 @@ function M.cache_user(user_info)
         return false, "Invalid user info"
     end
     local hero_unit_id = table_service.get_hero_unit_id()
-    local base_property = property_service.get_unit_property(hero_unit_id, user_info.level)
+    local base_property = property_service.get_unit_level_property(hero_unit_id, user_info.level)
     -- 添加基础属性
     user_info.hp = base_property and base_property.hp or 0
     user_info.attack = base_property and base_property.attack or 0

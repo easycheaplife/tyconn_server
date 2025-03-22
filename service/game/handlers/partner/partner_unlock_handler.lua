@@ -39,7 +39,7 @@ function M.handle(client_id, msg)
     end
 
     -- 解锁伙伴
-    local result, unlocked_partner = partner_service.unlock_partner(user.user_id, request.unit_id)
+    local result, unlocked_partner, property_changes = partner_service.unlock_partner(user.user_id, request.unit_id)
     logger.debug("unlocked_partner: %s", utils.table_to_string(unlocked_partner))
     if not result then
         logger.error("Failed to unlock partner for user: %d, unit_id: %d", user.user_id, request.unit_id)
@@ -103,7 +103,8 @@ function M.handle(client_id, msg)
     -- 构造响应数据
     local response_data = {
         partner = unlocked_partner,
-        bags = changed_bags
+        bags = changed_bags,
+        property_changes = property_changes
     }
 
     logger.debug("Sending partner unlock response: %s", utils.table_to_string(response_data))
