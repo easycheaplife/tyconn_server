@@ -43,7 +43,8 @@ function M.update_user_items(user_id, items)
         local values = {}
         for _, item in ipairs(items) do
             table.insert(values, string.format(
-                "(%d, %d, %d, %d, %d, %d, %d)",
+                "(%d, %d, %d, %d, %d, %d, %d, %d)",
+                item.id,
                 user_id,
                 item.item_id,
                 item.count,

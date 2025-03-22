@@ -23,7 +23,7 @@ M.GET_USER_ITEMS = {
 M.INSERT_ITEMS = {
     sql = [[
         INSERT INTO user_items (
-            user_id, item_id, count, bag_type, slot_index,
+            id, user_id, item_id, count, bag_type, slot_index,
             create_time, update_time
         ) VALUES %s
     ]],

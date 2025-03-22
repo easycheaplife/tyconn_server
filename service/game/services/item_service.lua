@@ -213,23 +213,21 @@ function M.add_items_to_slot(user_id, items, source, bag_type)
                     break
                 end
                 
-                -- 检查指定槽位是否已有物品(但可能是不同ID的同类物品)
+                -- 检查指定槽位是否已有物品
                 local existing_item = slot_item_map[empty_slot]
-                local item_id_to_use = nil
                 
-                if existing_item and existing_item.item_id == item_id then
-                    -- 如果槽位已存在相同类型的物品，使用现有ID
-                    item_id_to_use = existing_item.id
-                    -- 从现有物品列表中移除，后面会用新的替换
+                -- 始终为新物品生成新ID
+                local item_id_to_use = snowflake.next_id(snowflake.ID_TYPE.ITEM)
+                
+                -- 如果槽位已有物品，需要先处理
+                if existing_item then
+                    -- 从现有物品列表中移除
                     for i, item in ipairs(existing_items) do
-                        if item.id == item_id_to_use then
+                        if item.id == existing_item.id then
                             table.remove(existing_items, i)
                             break
                         end
                     end
-                else
-                    -- 如果是新格子或不同物品，生成新ID
-                    item_id_to_use = snowflake.next_id(snowflake.ID_TYPE.ITEM)
                 end
                 
                 -- 创建新物品
@@ -291,23 +289,21 @@ function M.add_items_to_slot(user_id, items, source, bag_type)
                 -- 每个格子放最大数量
                 local slot_count = math.min(remaining_count, max_per_slot)
                 
-                -- 检查指定槽位是否已有物品(但可能是不同ID的同类物品)
+                -- 检查指定槽位是否已有物品
                 local existing_item = slot_item_map[empty_slot]
-                local item_id_to_use = nil
                 
-                if existing_item and existing_item.item_id == item_id then
-                    -- 如果槽位已存在相同类型的物品，使用现有ID
-                    item_id_to_use = existing_item.id
-                    -- 从现有物品列表中移除，后面会用新的替换
+                -- 始终为新物品生成新ID
+                local item_id_to_use = snowflake.next_id(snowflake.ID_TYPE.ITEM)
+                
+                -- 如果槽位已有物品，需要先处理
+                if existing_item then
+                    -- 从现有物品列表中移除
                     for i, item in ipairs(existing_items) do
-                        if item.id == item_id_to_use then
+                        if item.id == existing_item.id then
                             table.remove(existing_items, i)
                             break
                         end
                     end
-                else
-                    -- 如果是新格子或不同物品，生成新ID
-                    item_id_to_use = snowflake.next_id(snowflake.ID_TYPE.ITEM)
                 end
                 
                 -- 创建新物品
