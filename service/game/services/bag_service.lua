@@ -245,33 +245,39 @@ function M.compose_item(user_id, target_id)
         table.insert(items, new_remain_item)
     end
     
-    -- 9. 如果合成成功，添加新物品到背包
-    local created_item = nil
-    if result == enum.ComposeResult.SUCCESS and new_item_data then
-        -- 找一个空格子
-        local empty_slot = M.find_empty_slot(user_id, enum.BagType.BAG_TYPE_MAIN, items)
-        if not empty_slot then
-            return false, "bag is full"
-        end
-        
-        -- 创建新物品
-        created_item = item_model.new({
-            id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
-            user_id = user_id,
-            item_id = new_item_data.item_id,
-            count = new_item_data.count,
-            bag_type = enum.BagType.BAG_TYPE_MAIN,
-            slot_index = empty_slot
-        })
-        
-        -- 添加到物品列表
-        table.insert(items, created_item)
-    end
-    
-    -- 10. 保存更新
+    -- 9. 保存当前物品状态（移除材料和添加剩余材料）
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
-        return false, "save item failed"
+        return false, "update items failed"
+    end
+    
+    local created_item = nil
+    
+    -- 10. 如果合成成功，添加新物品到背包（使用add_items_to_slot）
+    if result == enum.ComposeResult.SUCCESS and new_item_data then
+        -- 使用add_items_to_slot添加新物品
+        local add_ok, err, bag = item_service.add_items_to_slot(
+            user_id,
+            {
+                item_id = new_item_data.item_id,
+                count = new_item_data.count
+            },
+            enum.ChangeSource.SOURCE_COMPOSE
+        )
+        
+        if not add_ok then
+            logger.error("Failed to add composed item: %s", err)
+            return false, "add item failed"
+        end
+        
+        -- 找到新添加的物品
+        local updated_items = item_dao.get_user_items(user_id)
+        for _, item in ipairs(updated_items) do
+            if item.item_id == new_item_data.item_id then
+                created_item = item
+                break
+            end
+        end
     end
     
     -- 修改：返回新创建的物品对象作为第三个返回值
