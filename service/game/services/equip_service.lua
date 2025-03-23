@@ -945,7 +945,7 @@ end
 
 function M.check_equipment_level_upgrades()
     logger.info("Checking equipment level upgrades")
-    local count = M.check_equipment_odds_level_upgrades()
+    return M.check_equipment_odds_level_upgrades()
 end
 
 return M 

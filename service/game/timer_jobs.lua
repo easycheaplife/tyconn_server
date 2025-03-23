@@ -33,7 +33,7 @@ function M.check_equipment_level_upgrades()
     local equip_service = require "services.equip_service"
     local count = equip_service.check_equipment_level_upgrades()
     
-    logger.info("Completed %d equipment level upgrades", count)
+    logger.info("Completed %d equipment level upgrades", count or 0)
     
     -- 设置下一次检查
     skynet.timeout(60 * 100, M.check_equipment_level_upgrades)  -- 1分钟检查一次
