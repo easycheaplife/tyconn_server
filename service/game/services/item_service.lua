@@ -146,10 +146,17 @@ function M.add_items_to_slot(user_id, items, source, bag_type)
     -- 3. 找到已使用的槽位和已存在的物品
     local used_slots = {}
     local slot_item_map = {} -- 用于存储slot_index对应的物品
+    local used_ids = {}      -- 用于跟踪已使用的ID
+    
     for _, item in ipairs(existing_items) do
         if item.bag_type == bag_type then
             used_slots[item.slot_index] = true
             slot_item_map[item.slot_index] = item
+        end
+        
+        -- 记录已存在的物品ID
+        if item.id then
+            used_ids[item.id] = true
         end
     end
     
@@ -176,173 +183,125 @@ function M.add_items_to_slot(user_id, items, source, bag_type)
         -- 5. 处理堆叠逻辑
         local remaining_count = count
         
-        -- 如果物品可无限堆叠 (max_stack = 0)
-        if config.max_stack == 0 then
-            -- 尝试找已有的同类物品并堆叠
-            for _, item in ipairs(existing_items) do
-                if item.item_id == item_id and item.bag_type == bag_type then
-                    item.count = item.count + remaining_count
-                    remaining_count = 0
-                    break
-                end
+        -- 堆叠策略:
+        -- a. 先找相同物品的格子，尝试堆叠
+        -- b. 如果有剩余，就找空格子放入
+        
+        -- 5.1 尝试堆叠到已有物品
+        for j, existing_item in ipairs(existing_items) do
+            if remaining_count <= 0 then
+                break
             end
             
-            -- 如果没有找到已有物品，创建新物品
-            if remaining_count > 0 then
-                -- 找一个空槽位
-                local empty_slot = nil
-                if slot_index and not used_slots[slot_index] then
-                    -- 如果指定了槽位并且该槽位为空
-                    empty_slot = slot_index
-                    used_slots[slot_index] = true
-                else
-                    -- 没有指定槽位，自动查找空槽位
-                    for i = 0, bag.size - 1 do
-                        if not used_slots[i] then
-                            empty_slot = i
-                            used_slots[i] = true  -- 标记为已使用
-                            break
-                        end
-                    end
-                end
+            if existing_item.bag_type == bag_type and existing_item.item_id == item_id then
+                -- 堆叠物品
+                local old_count = existing_item.count
                 
-                if not empty_slot then
-                    logger.error("No empty slot found for infinite stack item")
-                    all_successful = false
-                    error_message = "bag is full"
-                    break
-                end
+                -- 检查是否有堆叠限制
+                local stack_limit = config.stack_limit or 999999
+                local can_add = math.min(remaining_count, stack_limit - existing_item.count)
                 
-                -- 检查指定槽位是否已有物品
-                local existing_item = slot_item_map[empty_slot]
-                
-                -- 始终为新物品生成新ID
-                local item_id_to_use = snowflake.next_id(snowflake.ID_TYPE.ITEM)
-                
-                -- 如果槽位已有物品，需要先处理
-                if existing_item then
-                    -- 从现有物品列表中移除
-                    for i, item in ipairs(existing_items) do
-                        if item.id == existing_item.id then
-                            table.remove(existing_items, i)
-                            break
-                        end
-                    end
-                end
-                
-                -- 创建新物品
-                local new_item = item_model.new({
-                    id = item_id_to_use,
-                    user_id = user_id,
-                    item_id = item_id,
-                    count = remaining_count,
-                    bag_type = bag_type,
-                    slot_index = empty_slot
-                })
-                
-                table.insert(existing_items, new_item)
-                remaining_count = 0
-            end
-        else
-            -- 物品有堆叠上限或不可堆叠
-            local max_per_slot = config.max_stack > 0 and config.max_stack or 1
-            
-            -- 尝试堆叠到已有物品
-            for _, item in ipairs(existing_items) do
-                if item.item_id == item_id and item.bag_type == bag_type and item.count < max_per_slot then
-                    local can_add = math.min(remaining_count, max_per_slot - item.count)
-                    item.count = item.count + can_add
+                if can_add > 0 then
+                    existing_item.count = existing_item.count + can_add
                     remaining_count = remaining_count - can_add
                     
-                    if remaining_count <= 0 then
+                    -- 更新物品时间戳
+                    existing_item.update_time = os.time()
+                    
+                    -- 记录物品增加日志
+                    item_dao.log_change(user_id, item_id, can_add,
+                        enum.ChangeType.CHANGE_TYPE_ADD, source,
+                        old_count, existing_item.count)
+                end
+            end
+        end
+        
+        -- 5.2 如果还有剩余，创建新物品
+        while remaining_count > 0 do
+            -- 找一个空格子
+            local available_slot = nil
+            if slot_index and not used_slots[slot_index] then
+                -- 如果指定了格子且未被使用
+                available_slot = slot_index
+            else
+                -- 自动寻找空格子
+                for i = 0, bag.size - 1 do
+                    if not used_slots[i] then
+                        available_slot = i
                         break
                     end
                 end
             end
             
-            -- 如果还有剩余物品，创建新物品堆
-            while remaining_count > 0 do
-                -- 找一个空槽位
-                local empty_slot = nil
-                if slot_index and not used_slots[slot_index] then
-                    -- 如果指定了槽位并且该槽位为空
-                    empty_slot = slot_index
-                    used_slots[slot_index] = true
-                else
-                    -- 没有指定槽位，自动查找空槽位
-                    for i = 0, bag.size - 1 do
-                        if not used_slots[i] then
-                            empty_slot = i
-                            used_slots[i] = true  -- 标记为已使用
-                            break
-                        end
-                    end
-                end
-                
-                if not empty_slot then
-                    logger.error("No empty slot found for remaining items")
-                    all_successful = false
-                    error_message = "bag is full"
-                    break
-                end
-                
-                -- 每个格子放最大数量
-                local slot_count = math.min(remaining_count, max_per_slot)
-                
-                -- 检查指定槽位是否已有物品
-                local existing_item = slot_item_map[empty_slot]
-                
-                -- 始终为新物品生成新ID
-                local item_id_to_use = snowflake.next_id(snowflake.ID_TYPE.ITEM)
-                
-                -- 如果槽位已有物品，需要先处理
-                if existing_item then
-                    -- 从现有物品列表中移除
-                    for i, item in ipairs(existing_items) do
-                        if item.id == existing_item.id then
-                            table.remove(existing_items, i)
-                            break
-                        end
-                    end
-                end
-                
-                -- 创建新物品
-                local new_item = item_model.new({
-                    id = item_id_to_use,
-                    user_id = user_id,
-                    item_id = item_id,
-                    count = slot_count,
-                    bag_type = bag_type,
-                    slot_index = empty_slot
-                })
-                
-                table.insert(existing_items, new_item)
-                remaining_count = remaining_count - slot_count
+            if not available_slot then
+                -- 背包已满
+                logger.error("No available slot in bag for user %d", user_id)
+                all_successful = false
+                error_message = "bag is full"
+                break
             end
-        end
-        
-        -- 如果因为背包满导致还有剩余物品，则添加失败
-        if remaining_count > 0 then
-            all_successful = false
-            error_message = "bag is full"
-            break
+            
+            -- 计算放入当前格子的数量
+            local stack_limit = config.stack_limit or 999999
+            local add_count = math.min(remaining_count, stack_limit)
+            
+            -- 生成唯一的物品ID
+            local new_item_id = snowflake.next_id(snowflake.ID_TYPE.ITEM)
+            
+            -- 确保ID唯一性
+            while used_ids[new_item_id] do
+                new_item_id = snowflake.next_id(snowflake.ID_TYPE.ITEM)
+                logger.debug("Generated new ID for duplicate: %d", new_item_id)
+            end
+            used_ids[new_item_id] = true
+            
+            -- 创建新物品
+            local new_item = {
+                id = new_item_id,
+                user_id = user_id,
+                item_id = item_id,
+                count = add_count,
+                bag_type = bag_type,
+                slot_index = available_slot,
+                create_time = os.time(),
+                update_time = os.time()
+            }
+            
+            -- 添加到物品列表
+            table.insert(existing_items, new_item)
+            
+            -- 标记格子已使用
+            used_slots[available_slot] = true
+            
+            -- 更新剩余数量
+            remaining_count = remaining_count - add_count
+            
+            -- 记录物品新增日志
+            item_dao.log_change(user_id, item_id, add_count,
+                enum.ChangeType.CHANGE_TYPE_ADD, source,
+                0, add_count)
         end
     end
     
-    -- 6. 保存更新
-    if all_successful then
-        local ok = item_dao.update_user_items(user_id, existing_items)
-        if not ok then
-            logger.error("Failed to save updated items")
-            return false, "save failed"
-        end
-        
-        logger.info("Successfully added all items")
-        return true, "success"
-    else
-        logger.error("Failed to add some items: %s", error_message)
+    -- 如果操作失败，返回错误
+    if not all_successful then
         return false, error_message
     end
+    
+    -- 6. 保存更新后的物品列表
+    local save_ok = item_dao.update_user_items(user_id, existing_items)
+    if not save_ok then
+        logger.error("Failed to update items after adding for user %d", user_id)
+        return false, "save items failed"
+    end
+    
+    -- 7. 重新获取背包
+    bag = bag_dao.get_user_bag(user_id, bag_type)
+    if not bag then
+        return false, "get bag failed"
+    end
+    
+    return true, nil, bag
 end
 
 -- 检查物品是否被锁定
