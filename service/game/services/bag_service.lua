@@ -10,6 +10,7 @@ local snowflake = require "utils.snowflake"
 local user_service = require "services.user_service"
 local enum = require "enum"
 local utils = require "utils"
+local table_service = require "services.table_service"
 
 local M = {}
 
@@ -24,7 +25,7 @@ local BAG_CONFIG = {
 
 -- 检查物品是否可堆叠
 local function can_stack(item_id)
-    local config = config_service.get_item_config(item_id)
+    local config = table_service.get_item_config(item_id)
     if not config then
         return false
     end
@@ -33,7 +34,7 @@ end
 
 -- 获取物品堆叠上限
 local function get_stack_limit(item_id)
-    local config = config_service.get_item_config(item_id)
+    local config = table_service.get_item_config(item_id)
     if not config or not config.max_stack then
         return 1
     end
@@ -172,7 +173,7 @@ function M.compose_item(user_id, target_id)
     
     -- 3. 获取合成配置
     logger.debug("Getting compose config for target_id: %s", tostring(target_id))
-    local compose_config = config_service.get_compose_config(target_id)
+    local compose_config = table_service.get_compose_config(target_id)
     if not compose_config then
         logger.error("Compose config not found for target_id: %s", tostring(target_id))
         return false, "compose config not found"
@@ -434,9 +435,9 @@ function M.move_item(user_id, src_bag_type, src_slot, dst_bag_type, dst_slot, co
     if dst_item then
         -- 如果目标格子有物品
         if src_item.item_id == dst_item.item_id and 
-           config_service.get_item_config(src_item.item_id).max_stack > dst_item.count then
+           table_service.get_item_config(src_item.item_id).max_stack > dst_item.count then
             -- 相同物品且可以堆叠，执行堆叠
-            local stack_limit = config_service.get_item_config(src_item.item_id).max_stack
+            local stack_limit = table_service.get_item_config(src_item.item_id).max_stack
             local stack_count = math.min(move_count, stack_limit - dst_item.count)
             
             -- 堆叠到目标物品
@@ -547,8 +548,8 @@ function M.sort_bag(user_id, bag_type)
     -- 3. 按规则排序
     table.sort(bag_items, function(a, b)
         -- 按物品类型、品质、等级排序
-        local config_a = config_service.get_item_config(a.item_id)
-        local config_b = config_service.get_item_config(b.item_id)
+        local config_a = table_service.get_item_config(a.item_id)
+        local config_b = table_service.get_item_config(b.item_id)
         
         if not config_a or not config_b then
             return a.item_id < b.item_id

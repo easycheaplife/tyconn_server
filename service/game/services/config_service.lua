@@ -185,138 +185,6 @@ function M.load_property_config()
     return true
 end
 
--- 获取物品配置
-function M.get_item_config(item_id)
-    if not CONFIG_CACHE.items then
-        M.load_item_config()
-    end
-    
-    return CONFIG_CACHE.items[tonumber(item_id)]
-end
-
--- 获取初始物品配置
-function M.get_initial_items()
-    return CONFIG_CACHE.initial_items
-end
-
--- 获取单位配置
-function M.get_unit_config(unit_id)
-    return CONFIG_CACHE.units[unit_id]
-end
-
--- 获取属性配置
-function M.get_property_config(property_id, level)
-    local key = string.format("%d_%d", property_id, level)
-    return CONFIG_CACHE.properties[key]
-end
-
--- 抽取共用的物品和单位配置获取逻辑
-local function get_partner_unit_config(target_id)
-    -- 1. 获取物品配置
-    local item_config = M.get_item_config(target_id)
-    if not item_config then
-        logger.debug("Item config not found for target_id: %s", tostring(target_id))
-        return nil
-    end
-
-    -- 2. 验证物品类型
-    if not item_config.type or item_config.type ~= enum.ItemType.ITEM_TYPE_PARTNER then
-        logger.debug("Item type is not PARTNER: %s", tostring(item_config.type))
-        return nil
-    end
-
-    -- 3. 获取unit_id
-    if not item_config.param or not item_config.param[1] then
-        logger.debug("Item param is nil or invalid")
-        return nil
-    end
-    
-    local unit_id = item_config.param[1][1]
-    if not unit_id then
-        logger.debug("Unit ID not found in param")
-        return nil
-    end
-
-    -- 4. 获取单位配置
-    local unit_config = M.get_unit_config(unit_id)
-    if not unit_config then
-        logger.debug("Unit config not found for unit_id: %s", tostring(unit_id))
-        return nil
-    end
-
-    return unit_config
-end
-
--- 获取合成配置
-function M.get_compose_config(target_id)
-    logger.debug("Getting compose config for target_id: %s", tostring(target_id))
-    
-    -- 获取单位配置
-    local unit_config = get_partner_unit_config(target_id)
-    if not unit_config then
-        return nil
-    end
-
-    -- 获取碎片信息
-    if not unit_config.shards then
-        logger.debug("Unit Shards data not found")
-        return nil
-    end
-    
-    local shard_id = unit_config.shards[1]
-    local shard_count = unit_config.shards[2]
-    if not shard_id or not shard_count then
-        logger.debug("Shard ID or count not found in unit config")
-        return nil
-    end
-
-    -- 构造合成配置
-    return {
-        target_id = target_id,
-        materials = {
-            {
-                item_id = shard_id,
-                count = shard_count
-            }
-        }
-    }
-end
-
--- 获取分解配置
-function M.get_decompose_config(target_id)
-    logger.debug("Getting decompose config for target_id: %s", tostring(target_id))
-    
-    -- 获取单位配置
-    local unit_config = get_partner_unit_config(target_id)
-    if not unit_config then
-        return nil
-    end
-
-    -- 获取分解信息
-    if not unit_config.disassemble then
-        logger.debug("Unit disassemble data not found")
-        return nil
-    end
-
-    local result_id = unit_config.disassemble[1]
-    local result_count = unit_config.disassemble[2]
-    if not result_id or not result_count then
-        logger.debug("Result ID or count not found in unit disassemble config")
-        return nil
-    end
-
-    -- 构造分解配置
-    return {
-        target_id = target_id,
-        result_items = {
-            {
-                item_id = result_id,
-                count = result_count
-            }
-        }
-    }
-end
-
 -- 加载装备配置
 function M.load_equipment_configs()
     local data = config_loader.get_config("Dfw_equip")
@@ -345,22 +213,6 @@ function M.load_equipment_configs()
     CONFIG_CACHE.equips = equips
     logger.info("Loaded %d equipment configs", count_pairs(equips))
     return equips
-end
-
--- 获取装备配置
-function M.get_equipment_config(equip_id)
-    if not CONFIG_CACHE.equips then
-        M.load_equipment_configs()
-    end
-    return CONFIG_CACHE.equips and CONFIG_CACHE.equips[equip_id]
-end
-
--- 获取所有装备配置
-function M.get_all_equipment_configs()
-    if not CONFIG_CACHE.equips then
-        M.load_equipment_configs()
-    end
-    return CONFIG_CACHE.equips
 end
 
 -- 加载装备等级配置
@@ -394,48 +246,6 @@ function M.load_equipment_level_configs()
     return levels
 end
 
--- 获取装备等级配置
-function M.get_equipment_level_config(level)
-    if not CONFIG_CACHE.equip_levels then
-        M.load_equipment_level_configs()
-    end
-    return CONFIG_CACHE.equip_levels and CONFIG_CACHE.equip_levels[level]
-end
-
--- 获取所有装备等级配置
-function M.get_all_equipment_level_configs()
-    -- 如果没有从配置文件加载，提供一个默认配置
-    if not CONFIG_CACHE.equip_levels or next(CONFIG_CACHE.equip_levels) == nil then
-        -- 创建默认的装备等级配置
-        CONFIG_CACHE.equip_levels = {}
-        
-        -- 添加10个等级的配置
-        for level = 1, 10 do
-            CONFIG_CACHE.equip_levels[level] = {
-                level = level,
-                upgrade_time = level * 30,  -- 每级升级时间递增
-                item_id = 1005,  -- 升级所需道具ID
-                item_count = level * 5,  -- 每级所需道具数量递增
-                quality_odds = {
-                    60 - level * 2,  -- 白色品质概率
-                    25 + level,      -- 绿色品质概率
-                    10 + level * 0.5, -- 蓝色品质概率
-                    4 + level * 0.3,  -- 紫色品质概率
-                    1 + level * 0.2   -- 橙色品质概率
-                }
-            }
-        end
-    end
-    
-    return CONFIG_CACHE.equip_levels
-end
-
--- 获取指定等级的装备配置
-function M.get_equipment_level_config(level)
-    local configs = M.get_all_equipment_level_configs()
-    return configs and configs[level]
-end
-
 -- 加载装备概率配置
 function M.load_equipment_odds_configs()
     local data = config_loader.get_config("Dfw_equip_odds")
@@ -466,22 +276,6 @@ function M.load_equipment_odds_configs()
     CONFIG_CACHE.equip_odds = odds
     logger.info("Loaded %d equipment odds configs", count_pairs(odds))
     return odds
-end
-
--- 获取装备概率配置
-function M.get_equipment_odds_config(level)
-    if not CONFIG_CACHE.equip_odds then
-        M.load_equipment_odds_configs()
-    end
-    return CONFIG_CACHE.equip_odds and CONFIG_CACHE.equip_odds[level]
-end
-
--- 获取所有装备概率配置
-function M.get_all_equipment_odds_configs()
-    if not CONFIG_CACHE.equip_odds then
-        M.load_equipment_odds_configs()
-    end
-    return CONFIG_CACHE.equip_odds
 end
 
 -- 加载经验配置
@@ -526,22 +320,6 @@ function M.load_exp_configs()
     return true
 end
 
--- 获取经验配置
-function M.get_exp_config(level)
-    if not CONFIG_CACHE.exps then
-        M.load_exp_configs()
-    end
-    return CONFIG_CACHE.exps and CONFIG_CACHE.exps[level]
-end
-
--- 获取所有经验配置
-function M.get_all_exp_configs()
-    if not CONFIG_CACHE.exps then
-        M.load_exp_configs()
-    end
-    return CONFIG_CACHE.exps
-end
-
 -- 加载伙伴星级配置
 function M.load_companion_star_configs()
     local data = config_loader.get_config("Dfw_companion_star")
@@ -571,40 +349,6 @@ function M.load_companion_star_configs()
     return stars
 end
 
--- 获取伙伴星级配置
-function M.get_companion_star_config(star_id, level)
-    if not CONFIG_CACHE.companion_stars then
-        M.load_companion_star_configs()
-    end
-    local key = string.format("%d_%d", star_id, level)
-    return CONFIG_CACHE.companion_stars and CONFIG_CACHE.companion_stars[key]
-end
-
--- 获取所有伙伴星级配置
-function M.get_all_companion_star_configs()
-    if not CONFIG_CACHE.companion_stars then
-        M.load_companion_star_configs()
-    end
-    return CONFIG_CACHE.companion_stars
-end
-
--- 获取配置值
-function M.get_config_value(config_name, key, default_value)
-    local config = M.get_config(config_name)
-    if not config then
-        logger.warn("Config '%s' not found", config_name)
-        return default_value
-    end
-    
-    local value = config[key]
-    if value == nil then
-        logger.warn("Key '%s' not found in config '%s'", key, config_name)
-        return default_value
-    end
-    
-    return value
-end
-
 -- 添加通用的get_config方法，用于提供给table_service调用
 function M.get_config(config_name)
     if not config_name then
@@ -615,6 +359,8 @@ function M.get_config(config_name)
     -- 首先查找CONFIG_CACHE中是否已有对应配置
     if config_name == "units" and next(CONFIG_CACHE.units) then
         return CONFIG_CACHE.units
+    elseif config_name == "initial_items" and next(CONFIG_CACHE.initial_items) then
+        return CONFIG_CACHE.initial_items
     elseif config_name == "items" and next(CONFIG_CACHE.items) then
         return CONFIG_CACHE.items
     elseif config_name == "properties" and next(CONFIG_CACHE.properties) then

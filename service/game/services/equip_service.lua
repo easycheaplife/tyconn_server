@@ -43,7 +43,7 @@ function M.check_can_equip(user_id, from_bag, from_slot, equip_slot)
     end
     
     -- 3. 检查物品类型
-    local config = config_service.get_item_config(item.item_id)
+    local config = table_service.get_item_config(item.item_id)
     if not config or config.type ~= enum.ItemType.ITEM_TYPE_EQUIPMENT then
         return false, "item is not equipment"
     end
@@ -125,14 +125,14 @@ function M.equip_item(user_id, from_bag, from_slot, equip_slot)
     local power_change = 0
     
     -- 获取新装备提供的战力
-    local from_config = config_service.get_equipment_config(from_item.item_id)
+    local from_config = table_service.get_equipment_config(from_item.item_id)
     if from_config and from_config.power then
         power_change = power_change + from_config.power
     end
     
     -- 减去旧装备的战力(如果有)
     if curr_equip then
-        local curr_config = config_service.get_equipment_config(curr_equip.item_id)
+        local curr_config = table_service.get_equipment_config(curr_equip.item_id)
         if curr_config and curr_config.power then
             power_change = power_change - curr_config.power
         end
@@ -188,7 +188,7 @@ function M.unequip_item(user_id, equip_slot)
     local power_change = 0
     
     -- 减去卸下装备的战力
-    local equip_config = config_service.get_equipment_config(equip.item_id)
+    local equip_config = table_service.get_equipment_config(equip.item_id)
     if equip_config and equip_config.power then
         power_change = -equip_config.power
     end
@@ -338,9 +338,9 @@ function M.start_upgrade_equip_odds_level(user_id, item_id, item_count)
         return false, "already upgrading"
     end
     
-    -- 获取下一等级配置
+    -- 获取下一级配置
     local next_level = level_info.current_level + 1
-    local next_level_config = config_service.get_equipment_level_config(next_level)
+    local next_level_config = table_service.get_equipment_level_config(next_level)
     
     if not next_level_config then
         logger.error("No configuration found for equipment level %d", next_level)
@@ -421,14 +421,14 @@ function M.speedup_equip_odds_level_upgrade(user_id, use_ad, use_item, speedup_i
     -- 广告加速
     if use_ad then
         -- 获取广告加速配置
-        local ad_speedup = config_service.get_config_value("equip_level_ad_speedup") or 300
+        local ad_speedup = table_service.get_config_value("equip_level_ad_speedup", "value", 300)
         reduction_time = reduction_time + ad_speedup
     end
     
     -- 道具加速
     if use_item and speedup_item_id then
         -- 获取道具加速配置
-        local item_speedup = config_service.get_config_value("equip_level_item_speedup_" .. speedup_item_id) or 600
+        local item_speedup = table_service.get_config_value("equip_level_item_speedup_" .. speedup_item_id, "value", 600)
         
         -- 消耗道具
         local item_service = get_item_service()
@@ -489,7 +489,7 @@ end
 -- 生成随机装备属性
 local function generate_random_attributes(equip_level, quality, equip_config)
     local config_service = require "services.config_service"
-    local level_config = config_service.get_equipment_level_config(equip_level)
+    local level_config = table_service.get_equipment_level_config(equip_level)
     if not level_config then
         return {}
     end
@@ -618,7 +618,7 @@ function M.random_equipment(user_id, part)
     end
     
     -- 计算装备配置
-    local equip_config = config_service.get_item_config(equip.item_id)
+    local equip_config = table_service.get_item_config(equip.item_id)
     
     return equip, nil, equip_config
 end
@@ -635,13 +635,13 @@ function M.decompose_equipment(user_id, item_id)
     end
     
     -- 检查是否为装备
-    local item_config = config_service.get_item_config(item.item_id)
+    local item_config = table_service.get_item_config(item.item_id)
     if not item_config or item_config.type ~= enum.ItemType.ITEM_TYPE_EQUIPMENT then
         return false, "item is not equipment"
     end
     
     -- 获取装备配置
-    local equip_config = config_service.get_equipment_config(item.item_id)
+    local equip_config = table_service.get_equipment_config(item.item_id)
     if not equip_config then
         return false, "equip config not found"
     end
@@ -688,7 +688,7 @@ end
 function M.equip_random_item(user_id, item, is_replace)
     -- 检查物品是否为装备
     local config_service = require "services.config_service"
-    local equip_config = config_service.get_equipment_config(item.item_id)
+    local equip_config = table_service.get_equipment_config(item.item_id)
     if not equip_config then
         return false, "not an equipment"
     end
@@ -757,7 +757,7 @@ function M.equip_random_item(user_id, item, is_replace)
     end
     
     -- 对比新旧装备战力
-    local current_config = config_service.get_equipment_config(current_equip.item_id)
+    local current_config = table_service.get_equipment_config(current_equip.item_id)
     local power_diff = 0
     
     if equip_config.power and current_config.power then
@@ -855,7 +855,7 @@ function M.get_equip_odds_level_info(user_id)
     end
     
     -- 获取装备等级配置
-    local equip_level_configs = config_service.get_all_equipment_level_configs()
+    local equip_level_configs = table_service.get_all_equipment_level_configs()
     local current_level_config = equip_level_configs[equipment_level_info.current_level] or {}
     local next_level_config = equip_level_configs[equipment_level_info.current_level + 1] or {}
     
@@ -946,6 +946,60 @@ end
 function M.check_equipment_level_upgrades()
     logger.info("Checking equipment level upgrades")
     return M.check_equipment_odds_level_upgrades()
+end
+
+-- 检查装备匹配规则
+function M.check_equip_match(user_id, from_item, curr_equip)
+    if not user_id or not from_item then
+        return false
+    end
+    
+    -- 检查移动物品是否为装备
+    local from_config = table_service.get_equipment_config(from_item.item_id)
+    if not from_config then
+        return false
+    end
+    
+    -- 如果装备槽为空，检查部位是否匹配
+    if not curr_equip then
+        return true
+    end
+    
+    -- 检查已装备物品是否为装备
+    local curr_config = table_service.get_equipment_config(curr_equip.item_id)
+    if not curr_config then
+        return false
+    end
+    
+    -- 检查部位是否匹配
+    return from_config.part == curr_config.part
+end
+
+-- 获取装备的部位信息
+function M.get_equip_part(equip)
+    if not equip then
+        return nil
+    end
+    
+    -- 获取装备配置
+    local equip_config = table_service.get_equipment_config(equip.item_id)
+    
+    return equip_config and equip_config.part
+end
+
+-- 获取装备属性
+function M.get_equip_properties(equip)
+    if not equip then
+        return {}
+    end
+    
+    -- 获取装备配置
+    local item_config = table_service.get_equipment_config(equip.item_id)
+    if not item_config then
+        return {}
+    end
+    
+    -- ... existing code ...
 end
 
 return M 

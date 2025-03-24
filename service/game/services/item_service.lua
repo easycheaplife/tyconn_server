@@ -29,7 +29,7 @@ function M.init_user_items(user_id)
     end
 
     -- 2. 添加默认物品
-    local default_items = config_service.get_initial_items()
+    local default_items = table_service.get_initial_items()
     if #default_items > 0 then
         -- 记录每个物品的变化
         for _, item in ipairs(default_items) do
@@ -52,7 +52,7 @@ end
 local function apply_item_effect(user_id, item_id, count, source)
     logger.debug("Applying item effect - user_id: %d, item_id: %d, count: %d", 
         user_id, item_id, count)
-    local config = config_service.get_item_config(item_id)
+    local config = table_service.get_item_config(item_id)
     if not config then
         return false, "item config is not exist", nil
     end
@@ -172,7 +172,7 @@ function M.add_items_to_slot(user_id, items, source, bag_type)
         logger.info("Processing item_id: %d, count: %d", item_id, count)
         
         -- 4. 获取物品配置
-        local config = config_service.get_item_config(item_id)
+        local config = table_service.get_item_config(item_id)
         if not config then
             logger.error("Item config not found for item_id: %d", item_id)
             all_successful = false
@@ -438,7 +438,7 @@ local function validate_item(item)
     end
     
     -- 2. 检查物品配置
-    local config = config_service.get_item_config(item.item_id)
+    local config = table_service.get_item_config(item.item_id)
     if not config then
         return false, "item config is not exist"
     end
@@ -612,7 +612,7 @@ function M.trade_items(from_user, to_user, item_list)
         end
         
         -- 获取物品配置
-        local config = config_service.get_item_config(item_info.item_id)
+        local config = table_service.get_item_config(item_info.item_id)
         if not config then
             return false, string.format("item %d config is not exist", item_info.item_id)
         end
@@ -751,7 +751,7 @@ end
 
 -- 获取物品最大堆叠数
 local function get_max_stack(item_id)
-    local config = config_service.get_item_config(item_id)   
+    local config = table_service.get_item_config(item_id)   
     if not config then
         return 1
     end
@@ -871,7 +871,7 @@ end
 
 -- 获取物品分类
 local function get_item_category(item)
-    local config = config_service.get_item_config(item.item_id)  
+    local config = table_service.get_item_config(item.item_id)  
     if not config then
         return enum.ItemCategory.OTHER
     end
@@ -881,7 +881,7 @@ end
 -- 【核心功能】处理物品合成逻辑（不涉及背包）
 function M.process_compose(target_id, material_items)
     -- 1. 获取合成配置
-    local compose_config = config_service.get_compose_config(target_id)
+    local compose_config = table_service.get_compose_config(target_id)
     if not compose_config then
         return false, "compose config is not exist", nil, nil
     end
@@ -988,7 +988,7 @@ function M.process_decompose(decompose_items)
     end
 
     -- 3. 获取分解配置
-    local decompose_config = config_service.get_decompose_config(item.item_id)
+    local decompose_config = table_service.get_decompose_config(item.item_id)
     if not decompose_config then
         return false, "item is not decomposable", nil
     end
@@ -1331,6 +1331,17 @@ function M.get_item_count(user_id, item_id)
     end
     
     return total_count
+end
+
+-- 获取物品信息
+function M.get_item_info(item_id)
+    -- 从配置中获取物品基本信息
+    local config = table_service.get_item_config(item_id)
+    if not config then
+        return nil
+    end
+    
+    -- ... existing code ...
 end
 
 return M 

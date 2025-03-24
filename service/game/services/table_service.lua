@@ -107,7 +107,7 @@ function M.get_partner_level_up_cost(unit_id, level)
         return nil
     end
 
-    local exp_config = config_service.get_exp_config(level)
+    local exp_config = M.get_exp_config(level)
     if not exp_config then
         logger.error("Failed to get exp config for level: %d", level)
         return nil
@@ -430,6 +430,237 @@ function M.get_hero_unit_id()
     
     logger.warn("No hero unit found in configuration, using default ID 1")
     return 1  -- 如果没有找到，返回默认ID 1
+end
+
+-- 抽取共用的物品和单位配置获取逻辑
+local function get_partner_unit_config(target_id)
+    -- 1. 获取物品配置
+    local item_config = M.get_item_config(target_id)
+    if not item_config then
+        logger.debug("Item config not found for target_id: %s", tostring(target_id))
+        return nil
+    end
+
+    -- 2. 验证物品类型
+    if not item_config.type or item_config.type ~= enum.ItemType.ITEM_TYPE_PARTNER then
+        logger.debug("Item type is not PARTNER: %s", tostring(item_config.type))
+        return nil
+    end
+
+    -- 3. 获取unit_id
+    if not item_config.param or not item_config.param[1] then
+        logger.debug("Item param is nil or invalid")
+        return nil
+    end
+    
+    local unit_id = item_config.param[1][1]
+    if not unit_id then
+        logger.debug("Unit ID not found in param")
+        return nil
+    end
+
+    -- 4. 获取单位配置
+    local unit_config = M.get_unit_config(unit_id)
+    if not unit_config then
+        logger.debug("Unit config not found for unit_id: %s", tostring(unit_id))
+        return nil
+    end
+
+    return unit_config
+end
+
+-- 获取合成配置
+function M.get_compose_config(target_id)
+    logger.debug("Getting compose config for target_id: %s", tostring(target_id))
+    
+    -- 获取单位配置
+    local unit_config = get_partner_unit_config(target_id)
+    if not unit_config then
+        return nil
+    end
+
+    -- 获取碎片信息
+    if not unit_config.shards then
+        logger.debug("Unit Shards data not found")
+        return nil
+    end
+    
+    local shard_id = unit_config.shards[1]
+    local shard_count = unit_config.shards[2]
+    if not shard_id or not shard_count then
+        logger.debug("Shard ID or count not found in unit config")
+        return nil
+    end
+
+    -- 构造合成配置
+    return {
+        target_id = target_id,
+        materials = {
+            {
+                item_id = shard_id,
+                count = shard_count
+            }
+        }
+    }
+end
+
+-- 获取分解配置
+function M.get_decompose_config(target_id)
+    logger.debug("Getting decompose config for target_id: %s", tostring(target_id))
+    
+    -- 获取单位配置
+    local unit_config = get_partner_unit_config(target_id)
+    if not unit_config then
+        return nil
+    end
+
+    -- 获取分解信息
+    if not unit_config.disassemble then
+        logger.debug("Unit disassemble data not found")
+        return nil
+    end
+
+    local result_id = unit_config.disassemble[1]
+    local result_count = unit_config.disassemble[2]
+    if not result_id or not result_count then
+        logger.debug("Result ID or count not found in unit disassemble config")
+        return nil
+    end
+
+    -- 构造分解配置
+    return {
+        target_id = target_id,
+        result_items = {
+            {
+                item_id = result_id,
+                count = result_count
+            }
+        }
+    }
+end
+
+-- 获取所有装备等级配置
+function M.get_all_equipment_level_configs() 
+    -- 从配置服务获取装备等级配置
+    local configs = config_service.get_config("equip_levels")
+    
+    -- 如果配置不存在，提供一个默认配置
+    if not configs or next(configs) == nil then
+        -- 创建默认的装备等级配置
+        configs = {}
+        
+        -- 添加10个等级的配置
+        for level = 1, 10 do
+            configs[level] = {
+                level = level,
+                upgrade_time = level * 30,  -- 每级升级时间递增
+                item_id = 1005,  -- 升级所需道具ID
+                item_count = level * 5,  -- 每级所需道具数量递增
+                quality_odds = {
+                    60 - level * 2,  -- 白色品质概率
+                    25 + level,      -- 绿色品质概率
+                    10 + level * 0.5, -- 蓝色品质概率
+                    4 + level * 0.3,  -- 紫色品质概率
+                    1 + level * 0.2   -- 橙色品质概率
+                }
+            }
+        end
+        
+        logger.info("Using default equipment level configs")
+    end
+    
+    return configs
+end
+
+-- 获取指定等级的装备配置
+function M.get_equipment_level_config(level)
+    local configs = M.get_all_equipment_level_configs()
+    return configs and configs[level]
+end
+
+-- 获取初始物品配置
+function M.get_initial_items()
+    -- 从config_service获取初始物品配置
+    local initial_items = config_service.get_config("initial_items")
+    if initial_items and next(initial_items) then
+        return initial_items
+    end
+    
+    return {}
+end
+
+-- 获取装备配置
+function M.get_equipment_config(equip_id)
+    local configs = M.get_all_equipment_configs()
+    if not configs then
+        return nil
+    end
+    return configs[equip_id]
+end
+
+-- 获取所有装备配置
+function M.get_all_equipment_configs()
+    local configs = config_service.get_config("equips")
+    if not configs then
+        logger.error("Failed to get equipment configs")
+        return nil
+    end
+    return configs
+end
+
+-- 获取装备概率配置
+function M.get_equipment_odds_config(level)
+    local configs = M.get_all_equipment_odds_configs()
+    if not configs then
+        return nil
+    end
+    return configs[level]
+end
+
+-- 获取所有装备概率配置
+function M.get_all_equipment_odds_configs()
+    local configs = config_service.get_config("equip_odds")
+    if not configs then
+        logger.error("Failed to get equipment odds configs")
+        return nil
+    end
+    return configs
+end
+
+-- 获取经验配置
+function M.get_exp_config(level)
+    local configs = M.get_all_exp_configs()
+    if not configs then
+        return nil
+    end
+    return configs[level]
+end
+
+-- 获取所有经验配置
+function M.get_all_exp_configs()
+    local configs = config_service.get_config("experience")
+    if not configs then
+        logger.error("Failed to get experience configs")
+        return nil
+    end
+    return configs
+end
+
+-- 获取配置值
+function M.get_config_value(config_name, key, default_value)
+    local config = config_service.get_config(config_name)
+    if not config then
+        logger.warn("Config '%s' not found", config_name)
+        return default_value
+    end
+    
+    local value = config[key]
+    if value == nil then
+        logger.warn("Key '%s' not found in config '%s'", key, config_name)
+        return default_value
+    end
+    
+    return value
 end
 
 return M 
