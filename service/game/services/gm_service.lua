@@ -43,11 +43,6 @@ local GM_HANDLERS = {
             return {false, nil, err or "Failed to add item"}
         end
         
-        -- 记录物品变化
-        item_dao.log_change(user_id, item_id, count,
-            enum.ChangeType.CHANGE_TYPE_ADD, enum.ChangeSource.SOURCE_GM,
-            current_count, current_count + count)
-        
         return {true, string.format("Item added: %d x %d", item_id, count), nil}
     end,
 

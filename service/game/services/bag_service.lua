@@ -356,47 +356,52 @@ function M.decompose_item(user_id, target_id)
         end
     end
     
-    -- 6. 为分解结果物品找空格子并添加到物品列表
+    -- 记录移除分解的物品
+    item_dao.log_change(user_id, decompose_item.item_id, decompose_item.count,
+        enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_DECOMPOSE,
+        decompose_item.count, 0)
+    
+    -- 6. 使用add_items_to_slot添加分解结果物品，但跳过保存到数据库
     local result_items = {}
-    for _, result_data in ipairs(result_items_data) do
-        -- 寻找空格子
-        local empty_slot = M.find_empty_slot(user_id, enum.BagType.BAG_TYPE_MAIN, items)
-        if not empty_slot then
-            return false, "bag is full"
+    if #result_items_data > 0 then
+        -- 构造要添加的物品列表
+        local items_to_add = {}
+        for _, result_data in ipairs(result_items_data) do
+            table.insert(items_to_add, {
+                item_id = result_data.item_id,
+                count = result_data.count
+            })
         end
         
-        -- 创建新物品
-        local new_item = item_model.new({
-            id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
-            user_id = user_id,
-            item_id = result_data.item_id,
-            count = result_data.count,
-            bag_type = enum.BagType.BAG_TYPE_MAIN,
-            slot_index = empty_slot
-        })
+        -- 调用add_items_to_slot添加物品，跳过保存，使用当前内存中的物品列表
+        local add_ok, err, added_items, updated_items = item_service.add_items_to_slot(
+            user_id, 
+            items_to_add, 
+            enum.ChangeSource.SOURCE_DECOMPOSE,
+            enum.BagType.BAG_TYPE_MAIN,
+            true,  -- 跳过保存
+            items  -- 传入当前内存中的物品列表
+        )
         
-        table.insert(items, new_item)
-        table.insert(result_items, new_item)
+        if not add_ok then
+            logger.error("Failed to add decomposed items: %s", err)
+            return false, "add items failed"
+        end
+        
+        -- 更新内存中的物品列表
+        items = updated_items
+        
+        -- 获取添加的新物品
+        result_items = added_items
     end
     
-    -- 7. 保存更新
+    -- 7. 一次性保存所有物品状态
     local ok = item_dao.update_user_items(user_id, items)
     if not ok then
         return false, "save items failed"
     end
     
-    -- 移除分解的物品时
-    item_dao.log_change(user_id, decompose_item.item_id, decompose_item.count,
-        enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_DECOMPOSE,
-        decompose_item.count, 0)
-
-    -- 添加分解获得的物品时
-    for _, result_item in ipairs(result_items) do
-        item_dao.log_change(user_id, result_item.item_id, result_item.count,
-            enum.ChangeType.CHANGE_TYPE_ADD, enum.ChangeSource.SOURCE_DECOMPOSE,
-            0, result_item.count)
-    end
-    
+    -- 返回成功与分解结果物品
     return true, nil, result_items
 end
 
