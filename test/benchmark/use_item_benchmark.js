@@ -10,8 +10,14 @@ class UseItemBenchmark extends BaseBenchmark {
         // 先使用GM命令添加测试物品
         await this.client.sendRequest(this.client.protoHelper.MessageID.C2G_GM_COMMAND_REQUEST, {
             token: loginResult.token,
+            command: "clear_bag",
+            params: ["1"]  
+        });
+
+        await this.client.sendRequest(this.client.protoHelper.MessageID.C2G_GM_COMMAND_REQUEST, {
+            token: loginResult.token,
             command: "add_item",
-            params: ["1001", "10"]  // 参数列表：物品ID和数量
+            params: ["2011", "1000000"]  // 参数列表：物品ID和数量
         });
 
         // 获取背包信息
