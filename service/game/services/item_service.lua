@@ -113,9 +113,10 @@ local function apply_item_effect(user_id, item_id, count, source)
 end
 
 -- 添加物品到指定格子
-function M.add_items_to_slot(user_id, items, source, bag_type)
+function M.add_items_to_slot(user_id, items, source, bag_type, skip_save, existing_items)
     -- 设置默认值
     bag_type = bag_type or enum.BagType.BAG_TYPE_MAIN
+    skip_save = skip_save or false
 
     -- 支持单个物品对象或物品对象数组
     local items_array = {}
@@ -130,8 +131,8 @@ function M.add_items_to_slot(user_id, items, source, bag_type)
         items_array = items
     end
     
-    logger.info("add_items_to_slot - user_id: %d, items: %s, source: %d", 
-        user_id, utils.table_to_string(items_array), source)
+    logger.info("add_items_to_slot - user_id: %d, items: %s, source: %d, skip_save: %s", 
+        user_id, utils.table_to_string(items_array), source, tostring(skip_save))
     
     -- 1. 获取背包
     local bag = bag_dao.get_user_bag(user_id, bag_type)
@@ -140,15 +141,15 @@ function M.add_items_to_slot(user_id, items, source, bag_type)
         return false, "get bag failed"
     end
     
-    -- 2. 获取物品列表
-    local existing_items = item_dao.get_user_items(user_id) or {}
+    -- 2. 获取物品列表 (使用传入的列表或从数据库查询)
+    local current_items = existing_items or item_dao.get_user_items(user_id) or {}
     
     -- 3. 找到已使用的槽位和已存在的物品
     local used_slots = {}
     local slot_item_map = {} -- 用于存储slot_index对应的物品
     local used_ids = {}      -- 用于跟踪已使用的ID
     
-    for _, item in ipairs(existing_items) do
+    for _, item in ipairs(current_items) do
         if item.bag_type == bag_type then
             used_slots[item.slot_index] = true
             slot_item_map[item.slot_index] = item
@@ -163,6 +164,7 @@ function M.add_items_to_slot(user_id, items, source, bag_type)
     -- 处理每个物品
     local all_successful = true
     local error_message = nil
+    local added_items = {} -- 记录新添加的物品
     
     for _, item_data in ipairs(items_array) do
         local item_id = item_data.item_id
@@ -188,7 +190,7 @@ function M.add_items_to_slot(user_id, items, source, bag_type)
         -- b. 如果有剩余，就找空格子放入
         
         -- 5.1 尝试堆叠到已有物品
-        for j, existing_item in ipairs(existing_items) do
+        for j, existing_item in ipairs(current_items) do
             if remaining_count <= 0 then
                 break
             end
@@ -212,6 +214,9 @@ function M.add_items_to_slot(user_id, items, source, bag_type)
                     item_dao.log_change(user_id, item_id, can_add,
                         enum.ChangeType.CHANGE_TYPE_ADD, source,
                         old_count, existing_item.count)
+                        
+                    -- 记录更新的物品
+                    table.insert(added_items, existing_item)
                 end
             end
         end
@@ -268,7 +273,10 @@ function M.add_items_to_slot(user_id, items, source, bag_type)
             }
             
             -- 添加到物品列表
-            table.insert(existing_items, new_item)
+            table.insert(current_items, new_item)
+            
+            -- 记录新添加的物品
+            table.insert(added_items, new_item)
             
             -- 标记格子已使用
             used_slots[available_slot] = true
@@ -288,20 +296,17 @@ function M.add_items_to_slot(user_id, items, source, bag_type)
         return false, error_message
     end
     
-    -- 6. 保存更新后的物品列表
-    local save_ok = item_dao.update_user_items(user_id, existing_items)
-    if not save_ok then
-        logger.error("Failed to update items after adding for user %d", user_id)
-        return false, "save items failed"
+    -- 6. 如果不跳过保存，则保存更新后的物品列表
+    if not skip_save then
+        local save_ok = item_dao.update_user_items(user_id, current_items)
+        if not save_ok then
+            logger.error("Failed to update items after adding for user %d", user_id)
+            return false, "save items failed"
+        end
     end
     
-    -- 7. 重新获取背包
-    bag = bag_dao.get_user_bag(user_id, bag_type)
-    if not bag then
-        return false, "get bag failed"
-    end
-    
-    return true, nil, bag
+    -- 7. 返回成功与更新后的物品列表
+    return true, nil, added_items, current_items
 end
 
 -- 检查物品是否被锁定
@@ -1331,17 +1336,6 @@ function M.get_item_count(user_id, item_id)
     end
     
     return total_count
-end
-
--- 获取物品信息
-function M.get_item_info(item_id)
-    -- 从配置中获取物品基本信息
-    local config = table_service.get_item_config(item_id)
-    if not config then
-        return nil
-    end
-    
-    -- ... existing code ...
 end
 
 return M 

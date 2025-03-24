@@ -246,24 +246,22 @@ function M.compose_item(user_id, target_id)
         table.insert(items, new_remain_item)
     end
     
-    -- 9. 保存当前物品状态（移除材料和添加剩余材料）
-    local ok = item_dao.update_user_items(user_id, items)
-    if not ok then
-        return false, "update items failed"
-    end
-    
     local created_item = nil
+    local updated_items = items
     
     -- 10. 如果合成成功，添加新物品到背包（使用add_items_to_slot）
     if result == enum.ComposeResult.SUCCESS and new_item_data then
-        -- 使用add_items_to_slot添加新物品
-        local add_ok, err, bag = item_service.add_items_to_slot(
+        -- 使用add_items_to_slot添加新物品，但跳过保存到数据库
+        local add_ok, err, added_items, all_items = item_service.add_items_to_slot(
             user_id,
             {
                 item_id = new_item_data.item_id,
                 count = new_item_data.count
             },
-            enum.ChangeSource.SOURCE_COMPOSE
+            enum.ChangeSource.SOURCE_COMPOSE,
+            enum.BagType.BAG_TYPE_MAIN,
+            true,  -- 跳过保存
+            items  -- 传入当前内存中的物品列表
         )
         
         if not add_ok then
@@ -271,14 +269,19 @@ function M.compose_item(user_id, target_id)
             return false, "add item failed"
         end
         
+        -- 更新内存中的物品列表
+        updated_items = all_items
+        
         -- 找到新添加的物品
-        local updated_items = item_dao.get_user_items(user_id)
-        for _, item in ipairs(updated_items) do
-            if item.item_id == new_item_data.item_id then
-                created_item = item
-                break
-            end
+        if #added_items > 0 then
+            created_item = added_items[1]
         end
+    end
+    
+    -- 保存所有物品状态（一次性保存所有修改）
+    local ok = item_dao.update_user_items(user_id, updated_items)
+    if not ok then
+        return false, "update items failed"
     end
     
     -- 修改：返回新创建的物品对象作为第三个返回值
@@ -293,7 +296,7 @@ function M.compose_item(user_id, target_id)
         
         -- 构造剩余材料信息
         local remain_items_info = {}
-        for _, item in ipairs(items) do
+        for _, item in ipairs(updated_items) do
             if item.item_id == compose_config.materials[1].item_id then
                 table.insert(remain_items_info, {
                     item_id = item.item_id,
