@@ -29,42 +29,46 @@ function M.update_user_items(user_id, items)
         return false, "Invalid parameters"
     end
 
-    -- 先删除旧数据
-    local ok = db_util.execute(sql.DELETE_USER_ITEMS, {
-        user_id = user_id
-    })
-    if not ok then
-        logger.error("Failed to delete old items for user: %d", user_id)
-        return false, "Database error"
-    end
-
-    -- 如果有新数据，批量插入
-    if #items > 0 then
-        local values = {}
-        for _, item in ipairs(items) do
-            table.insert(values, string.format(
-                "(%d, %d, %d, %d, %d, %d, %d, %d)",
-                item.id,
-                user_id,
-                item.item_id,
-                item.count,
-                item.bag_type or 1,  -- 默认主背包
-                item.slot_index or 0, -- 默认0号位
-                item.create_time,
-                item.update_time
-            ))
-        end
-
-        ok = db_util.execute(sql.INSERT_ITEMS, {
-            values = table.concat(values, ",")
+    -- 使用事务确保原子性操作
+    return db_util.transaction(function()
+        -- 先删除旧数据
+        local ok = db_util.execute(sql.DELETE_USER_ITEMS, {
+            user_id = user_id
         })
         if not ok then
-            logger.error("Failed to insert new items for user: %d", user_id)
-            return false, "Database error"
+            logger.error("Failed to delete old items for user: %d", user_id)
+            return false, "Database error - failed to delete old items"
         end
-    end
 
-    return true
+        -- 如果有新数据，批量插入
+        if #items > 0 then
+            local values = {}
+            for _, item in ipairs(items) do
+                table.insert(values, string.format(
+                    "(%d, %d, %d, %d, %d, %d, %d, %d)",
+                    item.id,
+                    user_id,
+                    item.item_id,
+                    item.count,
+                    item.bag_type or 1,  -- 默认主背包
+                    item.slot_index or 0, -- 默认0号位
+                    item.create_time,
+                    item.update_time
+                ))
+            end
+
+            ok = db_util.execute(sql.INSERT_ITEMS, {
+                values = table.concat(values, ",")
+            })
+            if not ok then
+                logger.error("Failed to insert new items for user: %d", user_id)
+                return false, "Database error - failed to insert new items"
+            end
+        end
+
+        logger.info("Successfully updated %d items for user %d", #items, user_id)
+        return true
+    end)
 end
 
 -- 记录物品变化
