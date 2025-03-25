@@ -607,7 +607,7 @@ function M.random_equipment(user_id, part)
     
     -- 添加到物品列表
     local item_service = get_item_service()
-    local ok, err = item_service.add_items_to_slot(user_id, {
+    local ok, err = item_service.add_items_to_slot_new(user_id, {
         item_id = equip.item_id,
         count = equip.count
     }, enum.ChangeSource.SOURCE_RANDOM, bag_type)

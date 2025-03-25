@@ -105,203 +105,6 @@ local function apply_item_effect(user_id, item_id, count, source)
     return true, nil, effect_items
 end
 
--- 添加物品到指定格子
-function M.add_items_to_slot(user_id, items, source, bag_type, skip_save, existing_items)
-    -- 设置默认值
-    bag_type = bag_type or enum.BagType.BAG_TYPE_MAIN
-    skip_save = skip_save or false
-
-    -- 支持单个物品对象或物品对象数组
-    local items_array = {}
-    if items.item_id then
-        -- 单个物品对象
-        table.insert(items_array, {
-            item_id = items.item_id,
-            count = items.count or 1
-        })
-    else
-        -- 物品对象数组
-        items_array = items
-    end
-    
-    logger.info("add_items_to_slot - user_id: %d, items: %s, source: %d, skip_save: %s", 
-        user_id, utils.table_to_string(items_array), source, tostring(skip_save))
-    
-    -- 1. 获取背包
-    local bag = bag_dao.get_user_bag(user_id, bag_type)
-    if not bag then
-        logger.error("Failed to get bag for user %d, bag_type %d", user_id, bag_type)
-        return false, "get bag failed"
-    end
-    
-    -- 2. 获取物品列表 (使用传入的列表或从数据库查询)
-    local current_items = existing_items or item_dao.get_user_items(user_id) or {}
-    
-    -- 3. 找到已使用的槽位和已存在的物品
-    local used_slots = {}
-    local slot_item_map = {} -- 用于存储slot_index对应的物品
-    local used_ids = {}      -- 用于跟踪已使用的ID
-    
-    for _, item in ipairs(current_items) do
-        if item.bag_type == bag_type then
-            used_slots[item.slot_index] = true
-            slot_item_map[item.slot_index] = item
-        end
-        
-        -- 记录已存在的物品ID
-        if item.id then
-            used_ids[item.id] = true
-        end
-    end
-    
-    -- 处理每个物品
-    local all_successful = true
-    local error_message = nil
-    local added_items = {} -- 记录新添加的物品
-    
-    for _, item_data in ipairs(items_array) do
-        local item_id = item_data.item_id
-        local count = item_data.count or 1
-        local slot_index = item_data.slot_index -- 如果指定了格子
-        
-        logger.info("Processing item_id: %d, count: %d", item_id, count)
-        
-        -- 4. 获取物品配置
-        local config = table_service.get_item_config(item_id)
-        if not config then
-            logger.error("Item config not found for item_id: %d", item_id)
-            all_successful = false
-            error_message = "item config not found"
-            break
-        end
-        
-        -- 5. 处理堆叠逻辑
-        local remaining_count = count
-        
-        -- 堆叠策略:
-        -- a. 先找相同物品的格子，尝试堆叠
-        -- b. 如果有剩余，就找空格子放入
-        
-        -- 5.1 尝试堆叠到已有物品
-        for j, existing_item in ipairs(current_items) do
-            if remaining_count <= 0 then
-                break
-            end
-            
-            if existing_item.bag_type == bag_type and existing_item.item_id == item_id then
-                -- 堆叠物品
-                local old_count = existing_item.count
-                
-                -- 检查是否有堆叠限制
-                local stack_limit = config.max_stack or 999999
-                local can_add = math.min(remaining_count, stack_limit - existing_item.count)
-                
-                if can_add > 0 then
-                    existing_item.count = existing_item.count + can_add
-                    remaining_count = remaining_count - can_add
-                    
-                    -- 更新物品时间戳
-                    existing_item.update_time = os.time()
-                    
-                    -- 记录物品增加日志
-                    item_dao.log_change(user_id, item_id, can_add,
-                        enum.ChangeType.CHANGE_TYPE_ADD, source,
-                        old_count, existing_item.count)
-                        
-                    -- 记录更新的物品
-                    table.insert(added_items, existing_item)
-                end
-            end
-        end
-        
-        -- 5.2 如果还有剩余，创建新物品
-        while remaining_count > 0 do
-            -- 找一个空格子
-            local available_slot = nil
-            if slot_index and not used_slots[slot_index] then
-                -- 如果指定了格子且未被使用
-                available_slot = slot_index
-            else
-                -- 自动寻找空格子
-                for i = 0, bag.size - 1 do
-                    if not used_slots[i] then
-                        available_slot = i
-                        break
-                    end
-                end
-            end
-            
-            if not available_slot then
-                -- 背包已满
-                logger.error("No available slot in bag for user %d", user_id)
-                all_successful = false
-                error_message = "bag is full"
-                break
-            end
-            
-            -- 计算放入当前格子的数量
-            local stack_limit = config.max_stack or 999999
-            local add_count = math.min(remaining_count, stack_limit)
-            
-            -- 生成唯一的物品ID
-            local new_item_id = snowflake.next_id(snowflake.ID_TYPE.ITEM)
-            
-            -- 确保ID唯一性
-            while used_ids[new_item_id] do
-                new_item_id = snowflake.next_id(snowflake.ID_TYPE.ITEM)
-                logger.debug("Generated new ID for duplicate: %d", new_item_id)
-            end
-            used_ids[new_item_id] = true
-            
-            -- 创建新物品
-            local new_item = {
-                id = new_item_id,
-                user_id = user_id,
-                item_id = item_id,
-                count = add_count,
-                bag_type = bag_type,
-                slot_index = available_slot,
-                create_time = os.time(),
-                update_time = os.time()
-            }
-            
-            -- 添加到物品列表
-            table.insert(current_items, new_item)
-            
-            -- 记录新添加的物品
-            table.insert(added_items, new_item)
-            
-            -- 标记格子已使用
-            used_slots[available_slot] = true
-            
-            -- 更新剩余数量
-            remaining_count = remaining_count - add_count
-            
-            -- 记录物品新增日志
-            item_dao.log_change(user_id, item_id, add_count,
-                enum.ChangeType.CHANGE_TYPE_ADD, source,
-                0, add_count)
-        end
-    end
-    
-    -- 如果操作失败，返回错误
-    if not all_successful then
-        return false, error_message
-    end
-    
-    -- 6. 如果不跳过保存，则保存更新后的物品列表
-    if not skip_save then
-        local save_ok = item_dao.update_user_items(user_id, current_items)
-        if not save_ok then
-            logger.error("Failed to update items after adding for user %d", user_id)
-            return false, "save items failed"
-        end
-    end
-    
-    -- 7. 返回成功与更新后的物品列表
-    return true, nil, added_items, current_items
-end
-
 -- 添加物品到指定格子（新方法 - 单条记录操作版本）
 function M.add_items_to_slot_new(user_id, items, source, bag_type, existing_items)
     -- 设置默认值
@@ -737,36 +540,22 @@ function M.batch_remove_items(user_id, item_list)
         end
     end
     
-    -- 4. 批量移除
-    for item_id, need_count in pairs(need_count) do
-        local remain_count = need_count
-        for i = #current_items, 1, -1 do
-            if current_items[i].item_id == item_id then
-                local remove_count = math.min(remain_count, current_items[i].count)
-                current_items[i].count = current_items[i].count - remove_count
-                remain_count = remain_count - remove_count
-                
-                -- 记录变化
-                item_dao.log_change(user_id, item_id, remove_count,
-                    enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_BATCH_REMOVE,
-                    current_items[i].count + remove_count, current_items[i].count)
-                
-                -- 如果数量为0则移除
-                if current_items[i].count <= 0 then
-                    table.remove(current_items, i)
-                end
-                
-                if remain_count <= 0 then
-                    break
+    -- 4. 逐个移除物品
+    for _, item_info in ipairs(item_list) do
+        local ok, err = M.consume_item(user_id, item_info.item_id, item_info.count, enum.ChangeSource.SOURCE_BATCH_REMOVE)
+        if not ok then
+            -- 如果移除失败，需要回滚已移除的物品
+            for i = 1, #item_list do
+                if i < #item_list then
+                    -- 对于已移除的物品，重新添加回去
+                    M.add_items_to_slot_new(user_id, {
+                        item_id = item_list[i].item_id,
+                        count = item_list[i].count
+                    }, enum.ChangeSource.SOURCE_BATCH_REMOVE_ROLLBACK)
                 end
             end
+            return false, err
         end
-    end
-    
-    -- 5. 保存更新
-    local ok = item_dao.update_user_items(user_id, current_items)
-    if not ok then
-        return false, "save item failed"
     end
     
     return true
@@ -805,18 +594,47 @@ function M.trade_items(from_user, to_user, item_list)
         end
     end
     
-    -- 3. 从源用户移除物品
-    local ok, err = M.batch_remove_items(from_user, item_list)
-    if not ok then
-        return false, err
+    -- 3. 从源用户移除物品（逐个移除）
+    for _, item_info in ipairs(item_list) do
+        local ok, err = M.consume_item(from_user, item_info.item_id, item_info.count, enum.ChangeSource.SOURCE_TRADE)
+        if not ok then
+            -- 如果移除失败，需要回滚已移除的物品
+            for i = 1, #item_list do
+                if i < #item_list then
+                    -- 对于已移除的物品，重新添加回去
+                    M.add_items_to_slot_new(from_user, {
+                        item_id = item_list[i].item_id,
+                        count = item_list[i].count
+                    }, enum.ChangeSource.SOURCE_TRADE_ROLLBACK)
+                end
+            end
+            return false, err
+        end
     end
     
-    -- 4. 添加物品到目标用户
-    ok, err = M.add_items_to_slot(to_user, item_list, enum.ChangeSource.SOURCE_TRADE)
-    if not ok then
-        -- 交易失败，回滚源用户物品
-        M.add_items_to_slot(from_user, item_list)
-        return false, err
+    -- 4. 添加物品到目标用户（逐个添加）
+    for _, item_info in ipairs(item_list) do
+        local ok, err = M.add_items_to_slot_new(to_user, {
+            item_id = item_info.item_id,
+            count = item_info.count
+        }, enum.ChangeSource.SOURCE_TRADE)
+        if not ok then
+            -- 如果添加失败，需要回滚源用户的物品
+            for i = 1, #item_list do
+                if i < #item_list then
+                    -- 对于已添加的物品，从目标用户移除
+                    M.consume_item(to_user, item_list[i].item_id, item_list[i].count, enum.ChangeSource.SOURCE_TRADE_ROLLBACK)
+                end
+            end
+            -- 重新添加物品给源用户
+            for _, rollback_item in ipairs(item_list) do
+                M.add_items_to_slot_new(from_user, {
+                    item_id = rollback_item.item_id,
+                    count = rollback_item.count
+                }, enum.ChangeSource.SOURCE_TRADE_ROLLBACK)
+            end
+            return false, err
+        end
     end
     
     -- 5. 记录交易日志

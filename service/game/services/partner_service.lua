@@ -746,7 +746,7 @@ function M.gm_add_fragments(user_id, fragment_id, count)
     end
     
     -- 添加碎片到背包
-    local result, err = item_service.add_items_to_slot(user_id, {
+    local result, err = item_service.add_items_to_slot_new(user_id, {
         {
             item_id = fragment_id,
             count = count
