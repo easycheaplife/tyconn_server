@@ -92,6 +92,7 @@ function M.equip_item(user_id, from_bag, from_slot, equip_slot)
         end
     end
     logger.info("equip_item curr_equip ok")
+    
     -- 4. 更新物品装备状态
     -- 4.1 更新要装备的物品
     from_item.equip_slot = equip_slot  -- 设置装备槽位
@@ -102,11 +103,22 @@ function M.equip_item(user_id, from_bag, from_slot, equip_slot)
         curr_equip.equip_slot = nil    -- 清除装备槽位
         curr_equip.is_equipped = false -- 标记为未装备
     end
-    logger.info("equip_item curr_equip ok")
-    -- 5. 保存更新
-    local ok = item_dao.update_user_items(user_id, items)
+    
+    -- 5. 保存更新（只更新变化的记录）
+    local ok = item_dao.update_single_item(from_item)
     if not ok then
-        return false, "save item failed"
+        logger.error("Failed to update from_item - user_id: %d, item_id: %d, id: %s",
+            user_id, from_item.item_id, tostring(from_item.id))
+        return false, "update from_item failed"
+    end
+    
+    if curr_equip then
+        ok = item_dao.update_single_item(curr_equip)
+        if not ok then
+            logger.error("Failed to update curr_equip - user_id: %d, item_id: %d, id: %s",
+                user_id, curr_equip.item_id, tostring(curr_equip.id))
+            return false, "update curr_equip failed"
+        end
     end
     
     -- 6. 更新角色属性
@@ -166,10 +178,12 @@ function M.unequip_item(user_id, equip_slot)
     equip.equip_slot = nil    -- 清除装备槽位
     equip.is_equipped = false -- 标记为未装备
     
-    -- 4. 保存更新
-    local ok = item_dao.update_user_items(user_id, items)
+    -- 4. 保存更新（只更新变化的记录）
+    local ok = item_dao.update_single_item(equip)
     if not ok then
-        return false, "save item failed"
+        logger.error("Failed to update equip - user_id: %d, item_id: %d, id: %s",
+            user_id, equip.item_id, tostring(equip.id))
+        return false, "update equip failed"
     end
     
     -- 5. 更新角色属性
@@ -260,7 +274,7 @@ function M.check_equipment_expire(user_id)
     
     local now = os.time()
     local expired_items = {}
-    local need_update = false
+    local changed_items = {}
     
     for i, item in ipairs(items) do
         -- 检查是否是已装备且已过期的物品
@@ -271,13 +285,19 @@ function M.check_equipment_expire(user_id)
             -- 清除装备状态
             item.is_equipped = false
             item.equip_slot = nil
-            need_update = true
+            table.insert(changed_items, item)
         end
     end
     
     -- 如果有过期装备，更新数据库
-    if need_update then
-        item_dao.update_user_items(user_id, items)
+    if #changed_items > 0 then
+        for _, item in ipairs(changed_items) do
+            local ok = item_dao.update_single_item(item)
+            if not ok then
+                logger.error("Failed to update expired equip - user_id: %d, item_id: %d, id: %s",
+                    user_id, item.item_id, tostring(item.id))
+            end
+        end
     end
     
     -- 如果有过期装备，重新计算战力
@@ -715,32 +735,11 @@ function M.equip_random_item(user_id, item, is_replace)
         item.equip_slot = part
         
         -- 保存更新
-        local item_dao = require "dao.item_dao"
-        local items = item_dao.get_user_items(user_id)
-        if not items then
-            items = {}
-        end
-        
-        -- 找到对应物品并更新
-        local found = false
-        for _, it in ipairs(items) do
-            if it.id == item.id then
-                it.is_equipped = true
-                it.equip_slot = part
-                found = true
-                break
-            end
-        end
-        
-        -- 如果没找到，添加到列表
-        if not found then
-            table.insert(items, item)
-        end
-        
-        -- 保存更新
-        local ok = item_dao.update_user_items(user_id, items)
+        local ok = item_dao.update_single_item(item)
         if not ok then
-            return false, "save item failed"
+            logger.error("Failed to update new equip - user_id: %d, item_id: %d, id: %s",
+                user_id, item.item_id, tostring(item.id))
+            return false, "update item failed"
         end
         
         -- 更新属性
@@ -773,27 +772,18 @@ function M.equip_random_item(user_id, item, is_replace)
         current_equip.equip_slot = nil
         
         -- 保存更新
-        local item_dao = require "dao.item_dao"
-        local items = item_dao.get_user_items(user_id)
-        if not items then
-            items = {}
-        end
-        
-        -- 更新物品状态
-        for _, it in ipairs(items) do
-            if it.id == item.id then
-                it.is_equipped = true
-                it.equip_slot = part
-            elseif it.id == current_equip.id then
-                it.is_equipped = false
-                it.equip_slot = nil
-            end
-        end
-        
-        -- 保存更新
-        local ok = item_dao.update_user_items(user_id, items)
+        local ok = item_dao.update_single_item(item)
         if not ok then
-            return false, "save item failed"
+            logger.error("Failed to update new equip - user_id: %d, item_id: %d, id: %s",
+                user_id, item.item_id, tostring(item.id))
+            return false, "update new equip failed"
+        end
+        
+        ok = item_dao.update_single_item(current_equip)
+        if not ok then
+            logger.error("Failed to update old equip - user_id: %d, item_id: %d, id: %s",
+                user_id, current_equip.item_id, tostring(current_equip.id))
+            return false, "update old equip failed"
         end
         
         -- 更新属性

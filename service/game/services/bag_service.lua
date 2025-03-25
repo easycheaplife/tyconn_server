@@ -493,16 +493,30 @@ function M.move_item(user_id, src_bag_type, src_slot, dst_bag_type, dst_slot, co
         end
     end
     
-    -- 6. 保存更新
-    local ok = item_dao.update_user_items(user_id, items)
-    if not ok then
-        return false, "save item failed"
+    -- 6. 保存更新（只更新变化的记录）
+    for _, item in ipairs(changed_items) do
+        if item.count <= 0 then
+            -- 如果物品数量为0，删除记录
+            local ok = item_dao.delete_single_item(item.id, user_id)
+            if not ok then
+                logger.error("Failed to delete item - user_id: %d, item_id: %d, id: %s",
+                    user_id, item.item_id, tostring(item.id))
+                return false, "delete item failed"
+            end
+        else
+            -- 更新物品记录
+            local ok = item_dao.update_single_item(item)
+            if not ok then
+                logger.error("Failed to update item - user_id: %d, item_id: %d, id: %s",
+                    user_id, item.item_id, tostring(item.id))
+                return false, "update item failed"
+            end
+        end
     end
     
     logger.info("Moving item - user:%d, from_bag:%d, from_slot:%d, to_bag:%d, to_slot:%d, count:%d",
         user_id, src_bag_type, src_slot, dst_bag_type, dst_slot, count or 0)
-    logger.info("Item move result - success:%s, changed_items:%s", 
-        tostring(ok), utils.table_to_string(changed_items))
+    logger.info("Item move result - changed_items:%s", utils.table_to_string(changed_items))
     
     return true, nil, changed_items
 end

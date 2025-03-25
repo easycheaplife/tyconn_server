@@ -51,13 +51,13 @@ end
 -- 更新用户物品
 function M.update_user_items(user_id, items)
     if not user_id or not items then
-        return false, "参数无效"
+        return false, "invalid params"
     end
 
     -- 1. 更新数据库
     local ok = db_client.update_user_items(user_id, items)
     if not ok then
-        return false, "更新失败"
+        return false, "update failed"
     end
 
     -- 2. 更新缓存

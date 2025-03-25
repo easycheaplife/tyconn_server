@@ -436,37 +436,6 @@ local function validate_item(item)
     return true
 end
 
--- 修复物品数据
-function M.repair_user_items(user_id)
-    -- 1. 获取物品列表
-    local items = item_dao.get_user_items(user_id)
-    if not items then
-        return true
-    end
-    
-    -- 2. 检查并修复每个物品
-    local valid_items = {}
-    for _, item in ipairs(items) do
-        local ok, err = validate_item(item)
-        if ok then
-            table.insert(valid_items, item)
-        else
-            logger.error("Invalid item found for user %d: %s", 
-                user_id, utils.table_to_string(item))
-        end
-    end
-    
-    -- 3. 保存修复后的数据
-    if #valid_items < #items then
-        local ok = item_dao.update_user_items(user_id, valid_items)
-        if not ok then
-            return false, "save item data failed"
-        end
-    end
-    
-    return true
-end
-
 -- 获取物品合成配置
 local function get_compose_config(item_id)
     local config = require("config.compose_config")[item_id]
@@ -659,7 +628,7 @@ function M.lock_item(user_id, item_id, lock_type, reason)
     end
     
     -- 3. 查找并锁定物品
-    local found = false
+    local target_item = nil
     for _, item in ipairs(items) do
         if item.item_id == item_id then
             -- 检查是否已锁定
@@ -679,17 +648,17 @@ function M.lock_item(user_id, item_id, lock_type, reason)
                 enum.ChangeType.CHANGE_TYPE_LOCK, enum.ChangeSource.SOURCE_LOCK,
                 item.count, item.count)
             
-            found = true
+            target_item = item
             break
         end
     end
     
-    if not found then
+    if not target_item then
         return false, "item is not exist"
     end
     
-    -- 4. 保存更新
-    local ok = item_dao.update_user_items(user_id, items)
+    -- 4. 保存单条记录更新
+    local ok = item_dao.update_single_item(target_item)
     if not ok then
         return false, "save item failed"
     end
@@ -711,7 +680,7 @@ function M.unlock_item(user_id, item_id)
     end
     
     -- 3. 查找并解锁物品
-    local found = false
+    local target_item = nil
     for _, item in ipairs(items) do
         if item.item_id == item_id then
             -- 检查是否已锁定
@@ -731,17 +700,17 @@ function M.unlock_item(user_id, item_id)
                 enum.ChangeType.CHANGE_TYPE_UNLOCK, enum.ChangeSource.SOURCE_UNLOCK,
                 item.count, item.count)
             
-            found = true
+            target_item = item
             break
         end
     end
     
-    if not found then
+    if not target_item then
         return false, "item is not exist"
     end
     
-    -- 4. 保存更新
-    local ok = item_dao.update_user_items(user_id, items)
+    -- 4. 保存单条记录更新
+    local ok = item_dao.update_single_item(target_item)
     if not ok then
         return false, "save item failed"
     end
