@@ -60,6 +60,58 @@ function M.update_user_items(user_id, items)
     return call_db("update_user_items", user_id, items)
 end
 
+-- 更新单个物品
+function M.update_single_item(item)
+    if not item or not item.id or not item.user_id then
+        logger.error("update_single_item: invalid item data")
+        return false
+    end
+    
+    local update_data = {
+        id = item.id,
+        user_id = item.user_id,
+        item_id = item.item_id,
+        count = item.count,
+        bag_type = item.bag_type,
+        slot_index = item.slot_index,
+        update_time = os.time()
+    }
+    
+    local ok, result = pcall(call_db, "update_single_item", update_data)
+    if not ok then
+        logger.error("Failed to update single item: %s, error: %s", 
+            utils.table_to_string(update_data), result)
+        return false
+    end
+    
+    return result
+end
+
+-- 添加单个物品
+function M.add_single_item(item)
+    if not item or not item.id or not item.user_id or not item.item_id then
+        logger.error("add_single_item: invalid item data")
+        return false
+    end
+    
+    -- 确保有创建和更新时间
+    if not item.create_time then 
+        item.create_time = os.time()
+    end
+    if not item.update_time then
+        item.update_time = os.time()
+    end
+    
+    local ok, result = pcall(call_db, "add_single_item", item)
+    if not ok then
+        logger.error("Failed to add single item: %s, error: %s", 
+            utils.table_to_string(item), result)
+        return false
+    end
+    
+    return result
+end
+
 -- 记录物品变化
 function M.log_item_change(user_id, item_id, count, type, source, before_count, after_count)
     -- 添加参数检查

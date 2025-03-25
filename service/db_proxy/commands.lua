@@ -100,6 +100,26 @@ function CMD.log_item_change(log)
     return wrap_call(item_model.log_item_change, log)
 end
 
+-- 更新单个物品
+function CMD.update_single_item(item)
+    -- 验证物品数据的完整性
+    if not item or not item.id or not item.user_id or not item.count then
+        logger.error("Invalid item data for update_single_item")
+        return false, "Invalid item data"
+    end
+    return wrap_call(item_model.update_single_item, item)
+end
+
+-- 添加单个物品
+function CMD.add_single_item(item)
+    -- 验证物品数据的完整性
+    if not item or not item.id or not item.user_id or not item.item_id or not item.count then
+        logger.error("Invalid item data for add_single_item")
+        return false, "Invalid item data"
+    end
+    return wrap_call(item_model.add_single_item, item)
+end
+
 -- 背包相关命令
 function CMD.get_user_bag(user_id, bag_type)
     return wrap_call(bag_model.get_user_bag, user_id, bag_type)

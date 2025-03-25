@@ -162,4 +162,71 @@ function M.log_trade(from_user, to_user, item_id, count)
     })
 end
 
+-- 更新单个物品
+function M.update_single_item(item)
+    if not item or not item.id or not item.user_id then
+        logger.error("Invalid item for update_single_item: %s", utils.table_to_string(item or {}))
+        return false, "参数无效"
+    end
+    
+    -- 1. 更新数据库中的单条记录
+    local ok = db_client.update_single_item(item)
+    if not ok then
+        logger.error("Failed to update single item in DB: user_id=%d, item_id=%d, id=%s",
+            item.user_id, item.item_id, tostring(item.id))
+        return false, "更新失败"
+    end
+    
+    -- 2. 更新缓存（需要先获取完整的物品列表）
+    local items = M.get_user_items(item.user_id)
+    if items then
+        for i, existing_item in ipairs(items) do
+            if existing_item.id == item.id then
+                -- 替换物品
+                items[i] = item
+                break
+            end
+        end
+        
+        -- 更新缓存
+        cache.set_user_items(item.user_id, items)
+    end
+    
+    return true
+end
+
+-- 添加单个物品
+function M.add_single_item(item)
+    if not item or not item.user_id or not item.item_id then
+        logger.error("Invalid item for add_single_item: %s", utils.table_to_string(item or {}))
+        return false, "参数无效"
+    end
+    
+    -- 确保物品有ID
+    if not item.id then
+        logger.error("Item must have an ID for add_single_item")
+        return false, "物品缺少ID"
+    end
+    
+    -- 1. 添加到数据库
+    local ok = db_client.add_single_item(item)
+    if not ok then
+        logger.error("Failed to add single item to DB: user_id=%d, item_id=%d",
+            item.user_id, item.item_id)
+        return false, "添加失败"
+    end
+    
+    -- 2. 更新缓存（需要先获取完整的物品列表）
+    local items = M.get_user_items(item.user_id)
+    if items then
+        -- 添加新物品到缓存列表
+        table.insert(items, item)
+        
+        -- 更新缓存
+        cache.set_user_items(item.user_id, items)
+    end
+    
+    return true
+end
+
 return M 

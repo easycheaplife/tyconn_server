@@ -97,4 +97,59 @@ function M.log_item_change(log)
     return true
 end
 
+-- 更新单个物品
+function M.update_single_item(item)
+    if not item or not item.id or not item.user_id then
+        return false, "Invalid parameters"
+    end
+
+    local ok = db_util.execute(sql.UPDATE_SINGLE_ITEM, {
+        id = item.id,
+        user_id = item.user_id,
+        item_id = item.item_id,
+        count = item.count,
+        bag_type = item.bag_type,
+        slot_index = item.slot_index,
+        update_time = item.update_time or os.time()
+    })
+
+    if not ok then
+        logger.error("Failed to update single item for user: %d, item_id: %d, id: %d",
+            item.user_id, item.item_id, item.id)
+        return false, "Database error"
+    end
+
+    logger.info("Successfully updated single item for user %d, item_id %d, id %d",
+        item.user_id, item.item_id, item.id)
+    return true
+end
+
+-- 添加单个物品
+function M.add_single_item(item)
+    if not item or not item.id or not item.user_id or not item.item_id then
+        return false, "Invalid parameters"
+    end
+
+    local ok = db_util.execute(sql.INSERT_SINGLE_ITEM, {
+        id = item.id,
+        user_id = item.user_id,
+        item_id = item.item_id,
+        count = item.count,
+        bag_type = item.bag_type or 1,  -- 默认主背包
+        slot_index = item.slot_index or 0, -- 默认0号位
+        create_time = item.create_time or os.time(),
+        update_time = item.update_time or os.time()
+    })
+
+    if not ok then
+        logger.error("Failed to add single item for user: %d, item_id: %d",
+            item.user_id, item.item_id)
+        return false, "Database error"
+    end
+
+    logger.info("Successfully added single item for user %d, item_id %d, id %d",
+        item.user_id, item.item_id, item.id)
+    return true
+end
+
 return M 
