@@ -16,7 +16,7 @@ class ComposeItemTest extends BaseTest {
             await this.client.gmCommand('clear_bag', ['1']) // 清空主背包
             
             // 3. 添加测试物品（不指定格子，让服务器决定）
-            await this.client.gmCommand('add_item', ['5301', '25'])  // 添加5个碎片
+            await this.client.gmCommand('add_item', ['5301', '25'])  // 添加25个碎片
 
             // 4. 执行物品合成，使用找到的物品格子
             const composeResp = await this.client.composeItem(4301)

@@ -206,62 +206,39 @@ function M.compose_item(user_id, target_id)
     
     table.insert(material_items, found_item)
     
-    -- 5. 消耗材料时
-    for _, material in ipairs(material_items) do
-        item_dao.log_change(user_id, material.item_id, material.count,
-            enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_COMPOSE,
-            material.count, 0)
-    end
-    
-    -- 6. 调用item_service处理合成逻辑
-    local ok, result, new_item_data, remain_items = item_service.process_compose(target_id, material_items)
+    -- 5. 调用item_service处理合成逻辑
+    local ok, result, new_item_data = item_service.process_compose(target_id, material_items)
     if not ok then
         return false, result
     end
     
-    -- 7. 从背包中移除被消耗的材料物品
-    for i = #items, 1, -1 do
-        local item = items[i]
-        -- 检查该物品是否是材料之一
-        for _, material in ipairs(material_items) do
-            if item.id == material.id then
-                -- 完全移除该物品
-                table.remove(items, i)
-                break
-            end
-        end
-    end
+    -- 6. 使用consume_items消耗材料物品 (consume_items内部会记录物品变更)
+    -- 只消耗实际需要的材料数量
+    local consume_ok, consume_result = item_service.consume_items(user_id, {
+        {
+            item_id = compose_config.materials[1].item_id,
+            count = compose_config.materials[1].count
+        }
+    }, enum.ChangeSource.SOURCE_COMPOSE)
     
-    -- 8. 添加剩余材料回背包
-    for _, remain_item in ipairs(remain_items or {}) do
-        -- 创建新物品
-        local new_remain_item = item_model.new({
-            id = remain_item.id,  -- 保持相同ID
-            user_id = user_id,
-            item_id = remain_item.item_id,
-            count = remain_item.count,
-            bag_type = remain_item.bag_type,
-            slot_index = remain_item.slot_index
-        })
-        table.insert(items, new_remain_item)
+    if not consume_ok then
+        logger.error("Failed to consume materials - user_id: %d, material_id: %d, count: %d", 
+            user_id, compose_config.materials[1].item_id, compose_config.materials[1].count)
+        return false, "consume materials failed"
     end
     
     local created_item = nil
-    local updated_items = items
     
-    -- 10. 如果合成成功，添加新物品到背包（使用add_items_to_slot）
+    -- 7. 如果合成成功，添加新物品到背包（使用add_items_to_slot_new）
     if result == enum.ComposeResult.SUCCESS and new_item_data then
-        -- 使用add_items_to_slot添加新物品，但跳过保存到数据库
-        local add_ok, err, added_items, all_items = item_service.add_items_to_slot(
+        -- 使用add_items_to_slot_new添加新物品
+        local add_ok, err, added_items = item_service.add_items_to_slot_new(
             user_id,
             {
                 item_id = new_item_data.item_id,
                 count = new_item_data.count
             },
-            enum.ChangeSource.SOURCE_COMPOSE,
-            enum.BagType.BAG_TYPE_MAIN,
-            true,  -- 跳过保存
-            items  -- 传入当前内存中的物品列表
+            enum.ChangeSource.SOURCE_COMPOSE
         )
         
         if not add_ok then
@@ -269,22 +246,13 @@ function M.compose_item(user_id, target_id)
             return false, "add item failed"
         end
         
-        -- 更新内存中的物品列表
-        updated_items = all_items
-        
         -- 找到新添加的物品
-        if #added_items > 0 then
+        if added_items and #added_items > 0 then
             created_item = added_items[1]
         end
     end
     
-    -- 保存所有物品状态（一次性保存所有修改）
-    local ok = item_dao.update_user_items(user_id, updated_items)
-    if not ok then
-        return false, "update items failed"
-    end
-    
-    -- 修改：返回新创建的物品对象作为第三个返回值
+    -- 8. 返回合成结果
     if created_item then
         -- 确保返回的物品信息格式符合 proto 定义
         local new_item_info = {
@@ -293,6 +261,9 @@ function M.compose_item(user_id, target_id)
             slot = created_item.slot_index,
             bag_type = created_item.bag_type
         }
+        
+        -- 获取最新的物品列表以构造剩余材料信息
+        local updated_items = item_dao.get_user_items(user_id)
         
         -- 构造剩余材料信息
         local remain_items_info = {}
@@ -348,22 +319,23 @@ function M.decompose_item(user_id, target_id)
         return false, err
     end
     
-    -- 5. 从背包中移除要分解的物品
-    for i = #items, 1, -1 do
-        if items[i].id == decompose_item.id then
-            table.remove(items, i)
-            break
-        end
+    -- 5. 消耗被分解的物品 (consume_items内部会记录物品变更)
+    local consume_ok, consume_err = item_service.consume_items(user_id, {
+        {
+            item_id = target_id,
+            count = decompose_item.count
+        }
+    }, enum.ChangeSource.SOURCE_DECOMPOSE)
+    
+    if not consume_ok then
+        logger.error("Failed to consume item for decompose - user_id: %d, item_id: %d", 
+            user_id, target_id)
+        return false, "consume item failed"
     end
     
-    -- 记录移除分解的物品
-    item_dao.log_change(user_id, decompose_item.item_id, decompose_item.count,
-        enum.ChangeType.CHANGE_TYPE_REDUCE, enum.ChangeSource.SOURCE_DECOMPOSE,
-        decompose_item.count, 0)
-    
-    -- 6. 使用add_items_to_slot添加分解结果物品，但跳过保存到数据库
+    -- 6. 添加分解结果物品
     local result_items = {}
-    if #result_items_data > 0 then
+    if result_items_data and #result_items_data > 0 then
         -- 构造要添加的物品列表
         local items_to_add = {}
         for _, result_data in ipairs(result_items_data) do
@@ -373,32 +345,30 @@ function M.decompose_item(user_id, target_id)
             })
         end
         
-        -- 调用add_items_to_slot添加物品，跳过保存，使用当前内存中的物品列表
-        local add_ok, err, added_items, updated_items = item_service.add_items_to_slot(
-            user_id, 
-            items_to_add, 
-            enum.ChangeSource.SOURCE_DECOMPOSE,
-            enum.BagType.BAG_TYPE_MAIN,
-            true,  -- 跳过保存
-            items  -- 传入当前内存中的物品列表
-        )
-        
-        if not add_ok then
-            logger.error("Failed to add decomposed items: %s", err)
-            return false, "add items failed"
+        -- 使用add_items_to_slot_new添加分解得到的物品
+        for _, item_to_add in ipairs(items_to_add) do
+            local add_ok, add_err, added_items = item_service.add_items_to_slot_new(
+                user_id, 
+                item_to_add, 
+                enum.ChangeSource.SOURCE_DECOMPOSE
+            )
+            
+            if not add_ok then
+                logger.error("Failed to add decomposed item - user_id: %d, item_id: %d, count: %d, error: %s",
+                    user_id, item_to_add.item_id, item_to_add.count, add_err)
+            else
+                -- 将添加成功的物品加入结果列表
+                for _, added_item in ipairs(added_items or {}) do
+                    table.insert(result_items, added_item)
+                end
+            end
         end
-        
-        -- 更新内存中的物品列表
-        items = updated_items
-        
-        -- 获取添加的新物品
-        result_items = added_items
     end
     
-    -- 7. 一次性保存所有物品状态
-    local ok = item_dao.update_user_items(user_id, items)
-    if not ok then
-        return false, "save items failed"
+    -- 如果没有成功添加任何分解结果物品，但分解过程本身成功了
+    if #result_items == 0 and #result_items_data > 0 then
+        logger.warn("Decompose succeeded but no result items were added - user_id: %d, target_id: %d",
+            user_id, target_id)
     end
     
     -- 返回成功与分解结果物品

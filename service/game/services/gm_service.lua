@@ -15,7 +15,7 @@ local GM_HANDLERS = {
     -- 使用新方法添加物品（单记录版本）
     add_item = function(user_id, params)
         if not params or #params < 2 then
-            return {false, nil, "params not enough, usage: add_item_new <item_id> <count>"}
+            return {false, nil, "params not enough, usage: add_item <item_id> <count>"}
         end
         
         local item_id = tonumber(params[1])
