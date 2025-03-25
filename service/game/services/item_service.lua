@@ -38,7 +38,7 @@ function M.init_user_items(user_id)
                 0, item.count)  -- 从0增加到指定数量
         end
 
-        local ok, err = M.add_items_to_slot(user_id, default_items, enum.ChangeSource.SOURCE_INIT)
+        local ok, err = M.add_items_to_slot_new(user_id, default_items, enum.ChangeSource.SOURCE_INIT)
         if not ok then
             logger.error("Failed to add default items for user %d: %s", user_id, err)
             return false, err
@@ -616,6 +616,108 @@ function M.use_item(user_id, item_id, count)
 
     -- 记录操作日志
     logger.info("Used item - user_id: %d, item_id: %d, count: %d, remain: %d",
+        user_id, item_id, count, target_item.count)
+
+    -- 返回变化的物品列表和效果物品
+    return true, 'success', {result_item, effect_items = effect_items or {}}
+end
+
+-- 使用物品（单记录操作版本）
+function M.use_item_new(user_id, item_id, count)
+    -- 1. 检查参数
+    if not user_id or not item_id or not count or count <= 0 then
+        return false, 'invalid params', {}            
+    end
+    
+    -- 2. 获取物品列表
+    local items = item_dao.get_user_items(user_id)
+    if not items then
+        return false, 'get item failed', {}
+    end
+    
+    -- 3. 查找物品
+    local target_item = nil
+    for _, item in ipairs(items) do
+        if item.item_id == item_id then
+            target_item = item
+            break
+        end
+    end
+    
+    if not target_item then
+        return false, 'item not found', {}
+    end
+    
+    -- 4. 检查物品是否被锁定
+    if check_item_locked(target_item) then
+        -- 添加详细的错误日志
+        logger.error("Item is locked - user_id: %d, item_id: %d, count: %d, state: %s",
+            user_id, item_id, count, target_item.state or "nil")
+        return false, 'item locked', {}
+    end
+    
+    -- 检查物品数量是否足够
+    if target_item.count < count then
+        logger.error("item not enough - user_id: %d, item_id: %d, count: %d, have: %d", 
+            user_id, item_id, count, target_item.count)
+        return false, 'item not enough', {}
+    end
+    
+    -- 记录变更前数量
+    local before_count = target_item.count
+    
+    -- 更新数量
+    target_item.count = target_item.count - count
+    target_item.update_time = os.time()
+    
+    -- 记录物品变化
+    item_dao.log_change(user_id, item_id, count,
+        enum.ChangeType.CHANGE_TYPE_USE, enum.ChangeSource.SOURCE_USE,
+        before_count, target_item.count)
+
+    -- 备份target_item 并返回
+    local result_item = target_item
+    
+    -- 使用单记录操作更新物品
+    local ok
+    if target_item.count <= 0 then
+        -- 如果物品数量为0，从数据库中删除记录
+        -- 这里需要实现删除单条记录的功能，我们先保存所需信息
+        local bag_type = target_item.bag_type
+        local slot_index = target_item.slot_index
+        
+        -- 删除物品记录
+        local delete_ok = item_dao.delete_single_item(target_item.id, user_id)
+        if not delete_ok then
+            logger.error("Failed to delete item - user_id: %d, item_id: %d, id: %s",
+                user_id, item_id, tostring(target_item.id))
+            return false, 'db error', {}
+        end
+        
+        -- 更新格子状态为空
+        if bag_type and slot_index then
+            bag_dao.update_slot_state(user_id, bag_type, slot_index, enum.SlotState.SLOT_STATE_EMPTY)
+        end
+    else
+        -- 如果物品还有剩余，更新单条记录
+        ok = item_dao.update_single_item(target_item)
+        if not ok then
+            logger.error("Failed to update item - user_id: %d, item_id: %d, id: %s",
+                user_id, item_id, tostring(target_item.id))
+            return false, 'db error', {}
+        end
+    end
+
+    -- 应用物品效果
+    local effect_ok, err, effect_items = apply_item_effect(user_id, item_id, count, enum.ChangeSource.SOURCE_USE)
+    if not effect_ok then
+        logger.error("Failed to apply item effect - user_id: %d, item_id: %d, error: %s",
+            user_id, item_id, err)
+        return false, 'item effect failed', {}
+    end
+
+    -- 记录操作日志
+    logger.info("Used item (new method) - user_id: %d, item_id: %d, count: %d, remain: %d",
         user_id, item_id, count, target_item.count)
 
     -- 返回变化的物品列表和效果物品
@@ -1267,7 +1369,7 @@ function M.add_special_item(user_id, item_id, count, source)
         user_id, item_id, count)
 
     -- Use add_items_to_slot with proper parameter structure
-    local ok, err = M.add_items_to_slot(user_id, {
+    local ok, err = M.add_items_to_slot_new(user_id, {
         item_id = item_id,
         count = count
     }, source)

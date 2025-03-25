@@ -53,7 +53,7 @@ function M.handle(client_id, msg)
     -- 使用物品
     logger.info("Use item - user_id: %d, item_id: %d, count: %d", 
         user.user_id, request.item_id, request.count)
-    local ok, err, result = item_service.use_item(user.user_id, request.item_id, request.count)
+    local ok, err, result = item_service.use_item_new(user.user_id, request.item_id, request.count)
     if not ok then
         return message_helper.create_error_response(
             base_request,

@@ -112,6 +112,27 @@ function M.add_single_item(item)
     return result
 end
 
+-- 删除单个物品
+function M.delete_single_item(item_id, user_id)
+    if not item_id or not user_id then
+        logger.error("delete_single_item: invalid item_id or user_id")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "delete_single_item", {
+        id = item_id,
+        user_id = user_id
+    })
+    
+    if not ok then
+        logger.error("Failed to delete single item: id=%s, user_id=%d, error: %s", 
+            tostring(item_id), user_id, result)
+        return false
+    end
+    
+    return result
+end
+
 -- 记录物品变化
 function M.log_item_change(user_id, item_id, count, type, source, before_count, after_count)
     -- 添加参数检查

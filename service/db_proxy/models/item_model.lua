@@ -152,4 +152,28 @@ function M.add_single_item(item)
     return true
 end
 
+-- 删除单个物品
+function M.delete_single_item(params)
+    if not params or not params.id or not params.user_id then
+        logger.error("Invalid parameters for delete_single_item: %s", 
+            utils.table_to_string(params or {}))
+        return false, "Invalid parameters"
+    end
+
+    local ok = db_util.execute(sql.DELETE_SINGLE_ITEM, {
+        id = params.id,
+        user_id = params.user_id
+    })
+
+    if not ok then
+        logger.error("Failed to delete single item: id=%s, user_id=%d",
+            tostring(params.id), params.user_id)
+        return false, "Database error"
+    end
+
+    logger.info("Successfully deleted single item: id=%s, user_id=%d",
+        tostring(params.id), params.user_id)
+    return true
+end
+
 return M 

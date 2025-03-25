@@ -12,42 +12,8 @@ local M = {}
 
 -- GM指令处理函数表
 local GM_HANDLERS = {
-    -- 添加物品
-    add_item = function(user_id, params)
-        if not params or #params < 2 then
-            return {false, nil, "params not enough, usage: add_item <item_id> <count>"}
-        end
-        
-        local item_id = tonumber(params[1])
-        local count = tonumber(params[2])
-        
-        if not item_id or item_id <= 0 or not count or count <= 0 then
-            return {false, nil, "invalid params"}
-        end
-        
-        -- 获取当前物品数量
-        local current_count = item_service.get_item_count(user_id, item_id)
-        
-        -- 添加物品
-        local ok, err = item_service.add_items_to_slot_new(user_id, {
-            {
-                item_id = item_id,
-                count = count
-            }
-        }, enum.ChangeSource.SOURCE_GM)
-        
-        logger.info("add_item - user_id: %d, item_id: %d, count: %d, result: %s, err: %s", 
-            user_id, item_id, count, tostring(ok), tostring(err or "success"))
-        
-        if not ok then
-            return {false, nil, err or "Failed to add item"}
-        end
-        
-        return {true, string.format("Item added: %d x %d", item_id, count), nil}
-    end,
-
     -- 使用新方法添加物品（单记录版本）
-    add_item_new = function(user_id, params)
+    add_item = function(user_id, params)
         if not params or #params < 2 then
             return {false, nil, "params not enough, usage: add_item_new <item_id> <count>"}
         end
@@ -78,6 +44,32 @@ local GM_HANDLERS = {
         end
         
         return {true, string.format("Item added (new method): %d x %d", item_id, count), nil}
+    end,
+
+    -- 使用物品（单记录版本）
+    use_item = function(user_id, params)
+        if not params or #params < 2 then
+            return {false, nil, "params not enough, usage: use_item <item_id> <count>"}
+        end
+        
+        local item_id = tonumber(params[1])
+        local count = tonumber(params[2])
+        
+        if not item_id or item_id <= 0 or not count or count <= 0 then
+            return {false, nil, "invalid params"}
+        end
+        
+        -- 使用新方法消耗物品
+        local ok, err, result = item_service.use_item_new(user_id, item_id, count)
+        
+        logger.info("use_item_new - user_id: %d, item_id: %d, count: %d, result: %s, err: %s", 
+            user_id, item_id, count, tostring(ok), tostring(err or "success"))
+        
+        if not ok then
+            return {false, nil, err or "Failed to use item"}
+        end
+        
+        return {true, string.format("Item used (new method): %d x %d", item_id, count), nil}
     end,
 
     -- 删除物品

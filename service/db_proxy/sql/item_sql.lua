@@ -97,4 +97,13 @@ M.INSERT_SINGLE_ITEM = {
     }
 }
 
+-- 删除单个物品
+M.DELETE_SINGLE_ITEM = {
+    sql = [[
+        DELETE FROM user_items 
+        WHERE id = %d AND user_id = %d
+    ]],
+    params = {"id", "user_id"}
+}
+
 return M 

@@ -120,6 +120,16 @@ function CMD.add_single_item(item)
     return wrap_call(item_model.add_single_item, item)
 end
 
+-- 删除单个物品
+function CMD.delete_single_item(params)
+    -- 验证参数完整性
+    if not params or not params.id or not params.user_id then
+        logger.error("Invalid params for delete_single_item")
+        return false, "Invalid parameters"
+    end
+    return wrap_call(item_model.delete_single_item, params)
+end
+
 -- 背包相关命令
 function CMD.get_user_bag(user_id, bag_type)
     return wrap_call(bag_model.get_user_bag, user_id, bag_type)

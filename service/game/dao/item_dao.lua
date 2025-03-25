@@ -229,4 +229,37 @@ function M.add_single_item(item)
     return true
 end
 
+-- 删除单个物品
+function M.delete_single_item(item_id, user_id)
+    if not item_id or not user_id then
+        logger.error("Invalid params for delete_single_item")
+        return false, "参数无效"
+    end
+    
+    -- 1. 从数据库删除
+    local ok = db_client.delete_single_item(item_id, user_id)
+    if not ok then
+        logger.error("Failed to delete single item from DB: user_id=%d, item_id=%s",
+            user_id, tostring(item_id))
+        return false, "删除失败"
+    end
+    
+    -- 2. 更新缓存（需要先获取完整的物品列表）
+    local items = M.get_user_items(user_id)
+    if items then
+        -- 过滤掉被删除的物品
+        local new_items = {}
+        for _, item in ipairs(items) do
+            if item.id ~= item_id then
+                table.insert(new_items, item)
+            end
+        end
+        
+        -- 更新缓存
+        cache.set_user_items(user_id, new_items)
+    end
+    
+    return true
+end
+
 return M 
