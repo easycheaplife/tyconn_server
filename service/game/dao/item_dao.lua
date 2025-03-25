@@ -177,20 +177,8 @@ function M.update_single_item(item)
         return false, "更新失败"
     end
     
-    -- 2. 更新缓存（需要先获取完整的物品列表）
-    local items = M.get_user_items(item.user_id)
-    if items then
-        for i, existing_item in ipairs(items) do
-            if existing_item.id == item.id then
-                -- 替换物品
-                items[i] = item
-                break
-            end
-        end
-        
-        -- 更新缓存
-        cache.set_user_items(item.user_id, items)
-    end
+    -- 2. 清除缓存，强制下次获取时从数据库读取最新数据
+    M.clear_user_items_cache(item.user_id)
     
     return true
 end
@@ -216,15 +204,8 @@ function M.add_single_item(item)
         return false, "添加失败"
     end
     
-    -- 2. 更新缓存（需要先获取完整的物品列表）
-    local items = M.get_user_items(item.user_id)
-    if items then
-        -- 添加新物品到缓存列表
-        table.insert(items, item)
-        
-        -- 更新缓存
-        cache.set_user_items(item.user_id, items)
-    end
+    -- 2. 清除缓存，强制下次获取时从数据库读取最新数据
+    M.clear_user_items_cache(item.user_id)
     
     return true
 end
@@ -244,20 +225,8 @@ function M.delete_single_item(item_id, user_id)
         return false, "删除失败"
     end
     
-    -- 2. 更新缓存（需要先获取完整的物品列表）
-    local items = M.get_user_items(user_id)
-    if items then
-        -- 过滤掉被删除的物品
-        local new_items = {}
-        for _, item in ipairs(items) do
-            if item.id ~= item_id then
-                table.insert(new_items, item)
-            end
-        end
-        
-        -- 更新缓存
-        cache.set_user_items(user_id, new_items)
-    end
+    -- 2. 清除缓存，强制下次获取时从数据库读取最新数据
+    M.clear_user_items_cache(user_id)
     
     return true
 end

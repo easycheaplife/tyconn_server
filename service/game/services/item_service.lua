@@ -31,13 +31,6 @@ function M.init_user_items(user_id)
     -- 2. 添加默认物品
     local default_items = table_service.get_initial_items()
     if #default_items > 0 then
-        -- 记录每个物品的变化
-        for _, item in ipairs(default_items) do
-            item_dao.log_change(user_id, item.item_id, item.count,
-                enum.ChangeType.CHANGE_TYPE_ADD, enum.ChangeSource.SOURCE_INIT,
-                0, item.count)  -- 从0增加到指定数量
-        end
-
         local ok, err = M.add_items_to_slot_new(user_id, default_items, enum.ChangeSource.SOURCE_INIT)
         if not ok then
             logger.error("Failed to add default items for user %d: %s", user_id, err)
@@ -339,7 +332,6 @@ function M.add_items_to_slot_new(user_id, items, source, bag_type, existing_item
     
     -- 2. 获取物品列表 (使用传入的列表或从数据库查询)
     local current_items = existing_items or item_dao.get_user_items(user_id) or {}
-    
     -- 3. 找到已使用的槽位和已存在的物品
     local used_slots = {}
     local slot_item_map = {} -- 用于存储slot_index对应的物品

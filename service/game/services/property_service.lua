@@ -76,7 +76,6 @@ function M.get_unit_level_property(unit_id, level)
         return nil
     end
     
-    logger.info("Found target unit: %s", utils.table_to_string(target_unit))
     local property_id = target_unit.property_id
     if not property_id then
         logger.error("Property_id not found for unit: %d", unit_id)
