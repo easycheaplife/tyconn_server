@@ -31,7 +31,7 @@ function M.init_user_items(user_id)
     -- 2. 添加默认物品
     local default_items = table_service.get_initial_items()
     if #default_items > 0 then
-        local ok, err = M.add_items_to_slot_new(user_id, default_items, enum.ChangeSource.SOURCE_INIT)
+        local ok, err = M.add_items_to_slot(user_id, default_items, enum.ChangeSource.SOURCE_INIT)
         if not ok then
             logger.error("Failed to add default items for user %d: %s", user_id, err)
             return false, err
@@ -106,7 +106,7 @@ local function apply_item_effect(user_id, item_id, count, source)
 end
 
 -- 添加物品到指定格子（新方法 - 单条记录操作版本）
-function M.add_items_to_slot_new(user_id, items, source, bag_type, existing_items)
+function M.add_items_to_slot(user_id, items, source, bag_type)
     -- 设置默认值
     bag_type = bag_type or enum.BagType.BAG_TYPE_MAIN
 
@@ -123,7 +123,7 @@ function M.add_items_to_slot_new(user_id, items, source, bag_type, existing_item
         items_array = items
     end
     
-    logger.info("add_items_to_slot_new - user_id: %d, items: %s, source: %d", 
+    logger.info("add_items_to_slot - user_id: %d, items: %s, source: %d", 
         user_id, utils.table_to_string(items_array), source)
     
     -- 1. 获取背包
@@ -134,7 +134,7 @@ function M.add_items_to_slot_new(user_id, items, source, bag_type, existing_item
     end
     
     -- 2. 获取物品列表 (使用传入的列表或从数据库查询)
-    local current_items = existing_items or item_dao.get_user_items(user_id) or {}
+    local current_items = item_dao.get_user_items(user_id) or {}
     -- 3. 找到已使用的槽位和已存在的物品
     local used_slots = {}
     local slot_item_map = {} -- 用于存储slot_index对应的物品
@@ -548,7 +548,7 @@ function M.batch_remove_items(user_id, item_list)
             for i = 1, #item_list do
                 if i < #item_list then
                     -- 对于已移除的物品，重新添加回去
-                    M.add_items_to_slot_new(user_id, {
+                    M.add_items_to_slot(user_id, {
                         item_id = item_list[i].item_id,
                         count = item_list[i].count
                     }, enum.ChangeSource.SOURCE_BATCH_REMOVE_ROLLBACK)
@@ -602,7 +602,7 @@ function M.trade_items(from_user, to_user, item_list)
             for i = 1, #item_list do
                 if i < #item_list then
                     -- 对于已移除的物品，重新添加回去
-                    M.add_items_to_slot_new(from_user, {
+                    M.add_items_to_slot(from_user, {
                         item_id = item_list[i].item_id,
                         count = item_list[i].count
                     }, enum.ChangeSource.SOURCE_TRADE_ROLLBACK)
@@ -614,7 +614,7 @@ function M.trade_items(from_user, to_user, item_list)
     
     -- 4. 添加物品到目标用户（逐个添加）
     for _, item_info in ipairs(item_list) do
-        local ok, err = M.add_items_to_slot_new(to_user, {
+        local ok, err = M.add_items_to_slot(to_user, {
             item_id = item_info.item_id,
             count = item_info.count
         }, enum.ChangeSource.SOURCE_TRADE)
@@ -628,7 +628,7 @@ function M.trade_items(from_user, to_user, item_list)
             end
             -- 重新添加物品给源用户
             for _, rollback_item in ipairs(item_list) do
-                M.add_items_to_slot_new(from_user, {
+                M.add_items_to_slot(from_user, {
                     item_id = rollback_item.item_id,
                     count = rollback_item.count
                 }, enum.ChangeSource.SOURCE_TRADE_ROLLBACK)
@@ -1059,7 +1059,7 @@ function M.add_special_item(user_id, item_id, count, source)
         user_id, item_id, count)
 
     -- Use add_items_to_slot with proper parameter structure
-    local ok, err = M.add_items_to_slot_new(user_id, {
+    local ok, err = M.add_items_to_slot(user_id, {
         item_id = item_id,
         count = count
     }, source)

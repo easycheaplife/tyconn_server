@@ -229,10 +229,10 @@ function M.compose_item(user_id, target_id)
     
     local created_item = nil
     
-    -- 7. 如果合成成功，添加新物品到背包（使用add_items_to_slot_new）
+    -- 7. 如果合成成功，添加新物品到背包（使用add_items_to_slot）
     if result == enum.ComposeResult.SUCCESS and new_item_data then
-        -- 使用add_items_to_slot_new添加新物品
-        local add_ok, err, added_items = item_service.add_items_to_slot_new(
+        -- 使用add_items_to_slot添加新物品
+        local add_ok, err, added_items = item_service.add_items_to_slot(
             user_id,
             {
                 item_id = new_item_data.item_id,
@@ -345,9 +345,9 @@ function M.decompose_item(user_id, target_id)
             })
         end
         
-        -- 使用add_items_to_slot_new添加分解得到的物品
+        -- 使用add_items_to_slot添加分解得到的物品
         for _, item_to_add in ipairs(items_to_add) do
-            local add_ok, add_err, added_items = item_service.add_items_to_slot_new(
+            local add_ok, add_err, added_items = item_service.add_items_to_slot(
                 user_id, 
                 item_to_add, 
                 enum.ChangeSource.SOURCE_DECOMPOSE

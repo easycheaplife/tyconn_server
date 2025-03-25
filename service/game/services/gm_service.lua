@@ -29,7 +29,7 @@ local GM_HANDLERS = {
         local current_count = item_service.get_item_count(user_id, item_id)
         
         -- 使用新方法添加物品
-        local ok, err = item_service.add_items_to_slot_new(user_id, {
+        local ok, err = item_service.add_items_to_slot(user_id, {
             {
                 item_id = item_id,
                 count = count
