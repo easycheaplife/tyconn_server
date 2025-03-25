@@ -527,103 +527,8 @@ local function check_item_locked(item)
            item.state == enum.ItemState.ITEM_STATE_AUCTIONING
 end
 
--- 使用物品
-function M.use_item(user_id, item_id, count)
-    -- 1. 检查参数
-    if not user_id or not item_id or not count or count <= 0 then
-        return false, 'invalid params', {}            
-    end
-    
-    -- 2. 获取物品列表
-    local items = item_dao.get_user_items(user_id)
-    if not items then
-        return false, 'get item failed', {}
-    end
-    
-    -- 3. 查找物品
-    local target_item = nil
-    local target_index = nil
-    for i, item in ipairs(items) do
-        if item.item_id == item_id then
-            target_item = item
-            target_index = i
-            break
-        end
-    end
-    
-    if not target_item then
-        return false, 'item not found', {}
-    end
-    
-    -- 4. 检查物品是否被锁定
-    if check_item_locked(target_item) then
-        -- 添加详细的错误日志
-        logger.error("Item is locked - user_id: %d, item_id: %d, count: %d, state: %s",
-            user_id, item_id, count, target_item.state or "nil")
-        return false, 'item locked', {}
-    end
-    
-    -- 检查物品数量是否足够
-    if target_item.count < count then
-        logger.error("item not enough - user_id: %d, item_id: %d, count: %d, have: %d", 
-            user_id, item_id, count, target_item.count)
-        return false, 'item not enough', {}
-    end
-    
-    -- 记录变更前数量
-    local before_count = target_item.count
-    
-    -- 更新数量
-    target_item.count = target_item.count - count
-    target_item.update_time = os.time()
-    
-    -- 记录物品变化
-    item_dao.log_change(user_id, item_id, count,
-        enum.ChangeType.CHANGE_TYPE_USE, enum.ChangeSource.SOURCE_USE,
-        before_count, target_item.count)
-
-    -- 备份target_item 并返回
-    local result_item = target_item
-
-    -- 如果物品数量为0，从列表中删除并清空格子
-    if target_item.count <= 0 then
-        -- 保存格子信息
-        local bag_type = target_item.bag_type
-        local slot_index = target_item.slot_index
-        
-        -- 从列表中删除
-        table.remove(items, target_index)
-        
-        -- 更新格子状态为空
-        if bag_type and slot_index then
-            bag_dao.update_slot_state(user_id, bag_type, slot_index, enum.SlotState.SLOT_STATE_EMPTY)
-        end
-    end
-
-    -- 更新数据库和缓存
-    local ok = item_dao.update_user_items(user_id, items)
-    if not ok then
-        return false, 'db error', {}
-    end
-
-    -- 应用物品效果
-    local ok, err, effect_items = apply_item_effect(user_id, item_id, count, enum.ChangeSource.SOURCE_USE)
-    if not ok then
-        logger.error("Failed to apply item effect - user_id: %d, item_id: %d, error: %s",
-            user_id, item_id, err)
-        return false, 'item effect failed', {}
-    end
-
-    -- 记录操作日志
-    logger.info("Used item - user_id: %d, item_id: %d, count: %d, remain: %d",
-        user_id, item_id, count, target_item.count)
-
-    -- 返回变化的物品列表和效果物品
-    return true, 'success', {result_item, effect_items = effect_items or {}}
-end
-
 -- 使用物品（单记录操作版本）
-function M.use_item_new(user_id, item_id, count)
+function M.use_item(user_id, item_id, count)
     -- 1. 检查参数
     if not user_id or not item_id or not count or count <= 0 then
         return false, 'invalid params', {}            
@@ -663,50 +568,25 @@ function M.use_item_new(user_id, item_id, count)
         return false, 'item not enough', {}
     end
     
-    -- 记录变更前数量
-    local before_count = target_item.count
+    -- 使用consume_items接口消耗物品
+    local ok, consumed_items = M.consume_items(user_id, {
+        {
+            item_id = item_id,
+            count = count
+        }
+    }, enum.ChangeSource.SOURCE_USE)
     
-    -- 更新数量
-    target_item.count = target_item.count - count
-    target_item.update_time = os.time()
-    
-    -- 记录物品变化
-    item_dao.log_change(user_id, item_id, count,
-        enum.ChangeType.CHANGE_TYPE_USE, enum.ChangeSource.SOURCE_USE,
-        before_count, target_item.count)
-
-    -- 备份target_item 并返回
-    local result_item = target_item
-    
-    -- 使用单记录操作更新物品
-    local ok
-    if target_item.count <= 0 then
-        -- 如果物品数量为0，从数据库中删除记录
-        -- 这里需要实现删除单条记录的功能，我们先保存所需信息
-        local bag_type = target_item.bag_type
-        local slot_index = target_item.slot_index
-        
-        -- 删除物品记录
-        local delete_ok = item_dao.delete_single_item(target_item.id, user_id)
-        if not delete_ok then
-            logger.error("Failed to delete item - user_id: %d, item_id: %d, id: %s",
-                user_id, item_id, tostring(target_item.id))
-            return false, 'db error', {}
-        end
-        
-        -- 更新格子状态为空
-        if bag_type and slot_index then
-            bag_dao.update_slot_state(user_id, bag_type, slot_index, enum.SlotState.SLOT_STATE_EMPTY)
-        end
-    else
-        -- 如果物品还有剩余，更新单条记录
-        ok = item_dao.update_single_item(target_item)
-        if not ok then
-            logger.error("Failed to update item - user_id: %d, item_id: %d, id: %s",
-                user_id, item_id, tostring(target_item.id))
-            return false, 'db error', {}
-        end
+    if not ok then
+        logger.error("Failed to consume item - user_id: %d, item_id: %d, count: %d", 
+            user_id, item_id, count)
+        return false, 'consume item failed', {}
     end
+
+    -- 备份物品信息用于返回
+    local result_item = {
+        item_id = item_id,
+        count = target_item.count - count
+    }
 
     -- 应用物品效果
     local effect_ok, err, effect_items = apply_item_effect(user_id, item_id, count, enum.ChangeSource.SOURCE_USE)
@@ -718,7 +598,7 @@ function M.use_item_new(user_id, item_id, count)
 
     -- 记录操作日志
     logger.info("Used item (new method) - user_id: %d, item_id: %d, count: %d, remain: %d",
-        user_id, item_id, count, target_item.count)
+        user_id, item_id, count, target_item.count - count)
 
     -- 返回变化的物品列表和效果物品
     return true, 'success', {result_item, effect_items = effect_items or {}}
@@ -1400,81 +1280,145 @@ function M.consume_item(user_id, item_id, count, source)
     -- 设置默认来源
     source = source or enum.ChangeSource.SOURCE_CONSUME
     
-    -- 获取用户物品
-    local items = item_dao.get_user_items(user_id)
-    if not items then
-        logger.error("Failed to get items for user %d", user_id)
-        return false, "failed to get items"
+    -- 调用consume_items函数处理单个物品消耗
+    local ok, result = M.consume_items(user_id, {
+        {
+            item_id = item_id,
+            count = count
+        }
+    }, source)
+    
+    return ok, result
+end
+
+-- 消耗物品（单记录操作版本）
+function M.consume_items(user_id, items, source)
+    if not user_id or not items then
+        return false, "invalid params"
     end
     
-    -- 计算用户拥有的物品总数
-    local owned_count = 0
-    local target_items = {}
+    -- 设置默认来源
+    source = source or enum.ChangeSource.SOURCE_CONSUME
     
-    for _, item in ipairs(items) do
-        if item.item_id == item_id then
-            owned_count = owned_count + item.count
-            table.insert(target_items, item)
-        end
+    -- 获取用户物品列表
+    local user_items = M.get_user_items(user_id)
+    if not user_items then
+        return false, "get items failed"
     end
     
-    -- 检查数量是否足够
-    if owned_count < count then
-        logger.warn("User %d doesn't have enough items. Required: %d, Owned: %d",
-                   user_id, count, owned_count)
+    -- 检查物品是否足够
+    local has_enough, items_info = M.check_items_enough(user_id, items)
+    if not has_enough then
         return false, "not enough items"
     end
     
-    -- 扣除物品
-    local remaining = count
+    -- 记录消耗的物品
+    local consumed_items = {}
     
-    for _, item in ipairs(target_items) do
-        if remaining <= 0 then
-            break
+    -- 消耗物品
+    for _, need_item in ipairs(items) do
+        local item_id = need_item.item_id
+        local need_count = need_item.count or 1
+        local remain_count = need_count
+        local total_before = 0 -- 记录总的原始数量
+        
+        -- 首先计算总的原始数量
+        for _, item in ipairs(user_items) do
+            if item.item_id == item_id then
+                total_before = total_before + item.count
+            end
         end
         
-        if item.count <= remaining then
-            -- 完全消耗这个堆叠物品
-            remaining = remaining - item.count
-            item.count = 0
-        else
-            -- 部分消耗
-            item.count = item.count - remaining
-            remaining = 0
+        -- 遍历用户物品列表，扣除物品
+        for _, item in ipairs(user_items) do
+            if item.item_id == item_id and remain_count > 0 then
+                local before_count = item.count
+                local consume_count = math.min(remain_count, item.count)
+                
+                -- 记录这个物品被消耗的数量
+                table.insert(consumed_items, {
+                    item_id = item_id,
+                    count = consume_count
+                })
+                
+                remain_count = remain_count - consume_count
+                item.count = item.count - consume_count
+                
+                -- 使用单记录操作更新物品
+                if item.count <= 0 then
+                    -- 如果物品数量为0，从数据库中删除记录
+                    local bag_type = item.bag_type
+                    local slot_index = item.slot_index
+                    
+                    -- 删除物品记录
+                    local delete_ok = item_dao.delete_single_item(item.id, user_id)
+                    if not delete_ok then
+                        logger.error("Failed to delete item - user_id: %d, item_id: %d, id: %s",
+                            user_id, item_id, tostring(item.id))
+                        return false, "db error - delete failed"
+                    end
+                    
+                    -- 更新格子状态为空
+                    if bag_type and slot_index then
+                        bag_dao.update_slot_state(user_id, bag_type, slot_index, enum.SlotState.SLOT_STATE_EMPTY)
+                    end
+                else
+                    -- 如果物品还有剩余，更新单条记录
+                    local ok = item_dao.update_single_item(item)
+                    if not ok then
+                        logger.error("Failed to update item - user_id: %d, item_id: %d, id: %s",
+                            user_id, item_id, tostring(item.id))
+                        return false, "db error - update failed"
+                    end
+                end
+                
+                -- 记录物品变化
+                item_dao.log_change(user_id, item_id, consume_count,
+                    enum.ChangeType.CHANGE_TYPE_REDUCE, source,
+                    before_count, item.count)
+                
+                -- 如果已经消耗完需要的数量，跳出循环
+                if remain_count <= 0 then
+                    break
+                end
+            end
         end
+        
+        -- 触发物品消耗事件
+        local event = init.get_service("event")
+        skynet.send(event, "lua", "trigger_event", "on_item_consumed", {
+            user_id = user_id,
+            item_id = item_id,
+            count = need_count,
+            remain_count = total_before - need_count,
+            source = source
+        })
     end
     
-    -- 清理count为0的物品
-    local updated_items = {}
+    return true, consumed_items
+end
+
+-- 获取物品数量
+function M.get_item_count(user_id, item_id)
+    if not user_id or not item_id then
+        return 0
+    end
+    
+    -- 获取用户物品列表
+    local items = M.get_user_items(user_id)
+    if not items then
+        return 0
+    end
+    
+    -- 统计指定物品的总数量
+    local total_count = 0
     for _, item in ipairs(items) do
-        if item.count > 0 then
-            table.insert(updated_items, item)
+        if item.item_id == item_id then
+            total_count = total_count + item.count
         end
     end
     
-    -- 保存更新后的物品列表
-    local ok = item_dao.update_user_items(user_id, updated_items)
-    if not ok then
-        logger.error("Failed to update items after consuming for user %d", user_id)
-        return false, "failed to update items"
-    end
-    
-    -- 记录物品变化
-    item_dao.log_change(user_id, item_id, count,
-        enum.ChangeType.CHANGE_TYPE_REDUCE, source,
-        owned_count, owned_count - count)
-    
-    -- 触发物品消耗事件
-    local event = init.get_service("event")
-    skynet.send(event, "lua", "trigger_event", "on_item_consumed", {
-        user_id = user_id,
-        item_id = item_id,
-        count = count,
-        remain_count = owned_count - count,
-        source = source
-    })
-    
-    return true
+    return total_count
 end
 
 -- 按类型获取用户物品
@@ -1549,98 +1493,6 @@ function M.check_items_enough(user_id, items)
     end
     
     return true, items_info
-end
-
--- 消耗物品
-function M.consume_items(user_id, items, source)
-    if not user_id or not items then
-        return false, "invalid params"
-    end
-    
-    -- 获取用户物品列表
-    local user_items = M.get_user_items(user_id)
-    if not user_items then
-        return false, "get items failed"
-    end
-    
-    -- 检查物品是否足够
-    local has_enough, items_info = M.check_items_enough(user_id, items)
-    if not has_enough then
-        return false, "not enough items"
-    end
-    
-    -- 记录消耗的物品
-    local consumed_items = {}
-    
-    -- 消耗物品
-    for _, need_item in ipairs(items) do
-        local item_id = need_item.item_id
-        local need_count = need_item.count or 1
-        local remain_count = need_count
-        
-        -- 遍历用户物品列表，扣除物品
-        for i = #user_items, 1, -1 do
-            local item = user_items[i]
-            if item.item_id == item_id and remain_count > 0 then
-                local before_count = item.count
-                local consume_count = math.min(remain_count, item.count)
-                
-                item.count = item.count - consume_count
-                remain_count = remain_count - consume_count
-                
-                -- 记录物品变化
-                item_dao.log_change(user_id, item_id, consume_count,
-                    enum.ChangeType.CHANGE_TYPE_REDUCE, source,
-                    before_count, item.count)
-                
-                -- 记录消耗的物品
-                table.insert(consumed_items, {
-                    item_id = item_id,
-                    count = consume_count
-                })
-                
-                -- 如果物品数量为0，从列表中移除
-                if item.count <= 0 then
-                    table.remove(user_items, i)
-                end
-                
-                if remain_count <= 0 then
-                    break
-                end
-            end
-        end
-    end
-    
-    -- 保存更新后的物品列表
-    local ok = item_dao.update_user_items(user_id, user_items)
-    if not ok then
-        return false, "save items failed"
-    end
-    
-    return true, consumed_items
-end
-
--- 获取物品数量
-function M.get_item_count(user_id, item_id)
-    if not user_id or not item_id then
-        return 0
-    end
-    
-    -- 获取用户物品列表
-    local items = M.get_user_items(user_id)
-    if not items then
-        return 0
-    end
-    
-    -- 统计指定物品的总数量
-    local total_count = 0
-    for _, item in ipairs(items) do
-        if item.item_id == item_id then
-            total_count = total_count + item.count
-        end
-    end
-    
-    return total_count
 end
 
 return M 

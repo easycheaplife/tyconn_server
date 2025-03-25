@@ -60,9 +60,9 @@ local GM_HANDLERS = {
         end
         
         -- 使用新方法消耗物品
-        local ok, err, result = item_service.use_item_new(user_id, item_id, count)
+        local ok, err, result = item_service.use_item(user_id, item_id, count)
         
-        logger.info("use_item_new - user_id: %d, item_id: %d, count: %d, result: %s, err: %s", 
+        logger.info("use_item - user_id: %d, item_id: %d, count: %d, result: %s, err: %s", 
             user_id, item_id, count, tostring(ok), tostring(err or "success"))
         
         if not ok then
