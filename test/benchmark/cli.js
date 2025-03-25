@@ -5,6 +5,15 @@ const bagBenchmark = require('./bag_benchmark');
 const useItemBenchmark = require('./use_item_benchmark');
 const stackItemBenchmark = require('./stack_item_benchmark');
 
+// 定义可用的基准测试
+const benchmarks = {
+    login: loginBenchmark,
+    heartbeat: heartbeatBenchmark,
+    bag: bagBenchmark,
+    use_item: useItemBenchmark,
+    stack_item: stackItemBenchmark
+};
+
 program
     .name('benchmark')
     .description('Game server benchmark tool')
@@ -21,14 +30,6 @@ program
     .option('--account <string>', 'test account')
     .option('--password <string>', 'test password')
     .action(async (benchmark, options) => {
-        const benchmarks = {
-            login: loginBenchmark,
-            heartbeat: heartbeatBenchmark,
-            bag: bagBenchmark,
-            useItem: useItemBenchmark,
-            stackItem: stackItemBenchmark  // 添加新的堆叠测试
-        };
-
         if (!benchmarks[benchmark]) {
             console.error(`Unknown benchmark: ${benchmark}`);
             console.log('Available benchmarks:');
