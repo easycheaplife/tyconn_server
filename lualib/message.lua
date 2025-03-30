@@ -1,5 +1,5 @@
 -- Generating message.lua from proto/common/message.proto
--- Generate time: 2025-03-21 08:25:25
+-- Generate time: 2025-03-30 08:51:04
 
 local M = {}
 
@@ -64,6 +64,15 @@ M.MessageID = {
     C2G_PARTNER_UNLOCK_REQUEST = 607,    -- 伙伴解锁请求
     G2C_PARTNER_UNLOCK_RESPONSE = 608,    -- 伙伴解锁响应
     G2C_PARTNER_PROPERTY_CHANGED_PUSH = 651,    -- 伙伴属性变化推送
+    C2G_MAP_INFO_REQUEST = 701,    -- 获取地图信息请求
+    G2C_MAP_INFO_RESPONSE = 702,    -- 获取地图信息响应
+    C2G_ROLL_DICE_REQUEST = 703,    -- 掷骰子请求
+    G2C_ROLL_DICE_RESPONSE = 704,    -- 掷骰子响应
+    C2G_HANDLE_CELL_EVENT_REQUEST = 705,    -- 处理格子事件请求
+    G2C_HANDLE_CELL_EVENT_RESPONSE = 706,    -- 处理格子事件响应
+    C2G_CLAIM_REWARD_REQUEST = 707,    -- 领取通关奖励请求
+    G2C_CLAIM_REWARD_RESPONSE = 718,    -- 领取通关奖励响应
+    G2C_CHAPTER_COMPLETED_PUSH = 751,    -- 章节完成推送
 }
 
 return M

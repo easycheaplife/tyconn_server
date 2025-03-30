@@ -369,3 +369,55 @@ message G2CPartnerPropertyChangedPush {
     repeated common.PropertyInfo property_changes = 2;  // 变化属性
     string reason = 3;               // 变化原因
 }
+
+// 获取地图信息请求 {{Req:701}}
+message C2GMapInfoRequest {
+    string token = 1;      // JWT令牌
+}
+
+// 获取地图信息响应 {{Res:702}}
+message G2CMapInfoResponse {
+    int32 chapter_id = 1;                    // 章节ID
+    int32 current_position = 2;              // 当前位置（对应格子ID）
+    int32 direction = 3;                     // 移动朝向(1:正向, -1:反向)
+}
+
+// 掷骰子请求 {{Req:703}}
+message C2GRollDiceRequest {
+    string token = 1;      // JWT令牌
+}
+
+// 掷骰子响应 {{Res:704}}
+message G2CRollDiceResponse {
+    int32 dice_value = 1;                    // 骰子点数
+    int32 from_position = 2;                 // 起始位置
+    int32 to_position = 3;                   // 目标位置
+    repeated int32 event_ids = 4;            // 触发的事件ID列表（客户端可从Dfw_cell_events查事件详情）
+}
+
+// 处理格子事件请求 {{Req:705}}
+message C2GHandleCellEventRequest {
+    string token = 1;           // JWT令牌
+    int32 event_id = 2;         // 当前处理的事件ID
+}
+
+// 处理格子事件响应 {{Res:706}}
+message G2CHandleCellEventResponse {
+    int32 event_id = 1;                      // 当前处理的事件ID
+    bool success = 2;                        // 是否成功处理
+    repeated common.BagInfo bags = 3;        // 背包变化信息
+    int32 next_event_id = 4;                 // 下一个需要处理的事件ID (0表示所有事件已处理完)
+    repeated int32 remaining_events = 5;     // 剩余未处理的事件列表
+}
+
+// 领取通关奖励请求 {{Req:707}}
+message C2GClaimRewardRequest {
+    string token = 1;      // JWT令牌
+}
+
+// 领取通关奖励响应 {{Res:718}}
+message G2CClaimRewardResponse {
+    bool success = 1;                      // 是否成功
+    repeated common.BagInfo bags = 2;      // 背包变化信息
+    int32 next_chapter = 3;                // 下一章节ID
+}

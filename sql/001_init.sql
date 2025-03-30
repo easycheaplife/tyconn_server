@@ -270,4 +270,65 @@ CREATE TABLE IF NOT EXISTS partner_unlock_logs (
     
     INDEX idx_partner_id (partner_id),   -- 伙伴ID索引
     INDEX idx_user_id (user_id)          -- 用户ID索引
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 用户大富翁状态表
+CREATE TABLE IF NOT EXISTS user_monopoly_state (
+    user_id BIGINT PRIMARY KEY,                -- 用户ID
+    chapter_id INT NOT NULL DEFAULT 1,         -- 当前章节ID
+    current_position INT NOT NULL DEFAULT 0,   -- 当前位置(对应格子ID)
+    direction INT NOT NULL DEFAULT 1,          -- 移动方向(1:正向，-1:反向)
+    create_time BIGINT NOT NULL,               -- 创建时间
+    update_time BIGINT NOT NULL,               -- 更新时间
+    
+    INDEX idx_chapter (chapter_id)             -- 章节索引，用于查询特定章节的玩家
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 大富翁事件处理表
+CREATE TABLE IF NOT EXISTS monopoly_events (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,                   -- 用户ID
+    chapter_id INT NOT NULL,                   -- 章节ID
+    event_id INT NOT NULL,                     -- 事件ID
+    cell_id INT NOT NULL,                      -- 格子ID
+    status TINYINT NOT NULL DEFAULT 0,         -- 处理状态(0:未处理,1:处理中,2:已处理)
+    trigger_time BIGINT NOT NULL,              -- 触发时间
+    complete_time BIGINT DEFAULT 0,            -- 完成时间
+    
+    INDEX idx_user_status (user_id, status),   -- 用户状态索引，查询用户未处理事件
+    INDEX idx_event (event_id),                -- 事件索引
+    INDEX idx_trigger (trigger_time)           -- 触发时间索引，用于清理过期事件
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 用户章节进度表
+CREATE TABLE IF NOT EXISTS user_chapter_progress (
+    user_id BIGINT NOT NULL,                   -- 用户ID
+    chapter_id INT NOT NULL,                   -- 章节ID
+    is_passed TINYINT NOT NULL DEFAULT 0,      -- 是否通关(0:未通关,1:已通关)
+    reward_claimed TINYINT NOT NULL DEFAULT 0, -- 奖励是否已领取(0:未领取,1:已领取)
+    pass_time BIGINT DEFAULT 0,                -- 通关时间
+    reward_time BIGINT DEFAULT 0,              -- 领取奖励时间
+    steps_count INT DEFAULT 0,                 -- 移动步数
+    create_time BIGINT NOT NULL,               -- 创建时间
+    update_time BIGINT NOT NULL,               -- 更新时间
+    
+    PRIMARY KEY (user_id, chapter_id),         -- 复合主键
+    INDEX idx_passed (is_passed, reward_claimed) -- 通关状态索引，用于查询已通关未领奖的记录
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 大富翁操作日志表
+CREATE TABLE IF NOT EXISTS monopoly_logs (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,                   -- 用户ID
+    chapter_id INT NOT NULL,                   -- 章节ID
+    operation_type TINYINT NOT NULL,           -- 操作类型(1:掷骰子,2:处理事件,3:领取奖励)
+    dice_value INT DEFAULT 0,                  -- 骰子点数(如果是掷骰子操作)
+    from_position INT DEFAULT 0,               -- 起始位置(如果是移动操作)
+    to_position INT DEFAULT 0,                 -- 目标位置(如果是移动操作)
+    event_id INT DEFAULT 0,                    -- 事件ID(如果是事件操作)
+    reward_items TEXT,                         -- 奖励物品JSON(如果是领奖操作)
+    operation_time BIGINT NOT NULL,            -- 操作时间
+    
+    INDEX idx_user_time (user_id, operation_time), -- 用户操作时间索引
+    INDEX idx_chapter (chapter_id)                -- 章节索引，用于统计分析
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4; 

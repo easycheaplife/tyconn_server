@@ -1,5 +1,5 @@
 -- Generating enum.lua from proto/common/enum.proto
--- Generate time: 2025-03-21 08:25:25
+-- Generate time: 2025-03-30 08:51:04
 
 local M = {}
 
@@ -372,7 +372,7 @@ M.ResourceType = {
 
 -- 伙伴状态
 M.PartnerState = {
-    PARTNER_STATE_UNKNOWN = 0,
+    PARTNER_STATE_NONE = 0,
     PARTNER_STATE_AVAILABLE = 1,    -- 可解锁
     PARTNER_STATE_UNLOCKED = 2,    -- 已解锁
     PARTNER_STATE_LOCKED = 3,    -- 未解锁
@@ -380,7 +380,7 @@ M.PartnerState = {
 
 -- 伙伴种族
 M.PartnerRace = {
-    PARTNER_RACE_UNKNOWN = 0,
+    PARTNER_RACE_NONE = 0,
     PARTNER_RACE_HUMAN = 1,    -- 人类
     PARTNER_RACE_ELF = 2,    -- 精灵
     PARTNER_RACE_DWARF = 3,    -- 矮人
@@ -393,7 +393,7 @@ M.PartnerRace = {
 
 -- 伙伴特长/职业
 M.PartnerForte = {
-    PARTNER_FORTE_UNKNOWN = 0,
+    PARTNER_FORTE_NONE = 0,
     PARTNER_FORTE_WARRIOR = 1,    -- 战士
     PARTNER_FORTE_MAGE = 2,    -- 法师
     PARTNER_FORTE_PRIEST = 3,    -- 牧师
@@ -403,6 +403,52 @@ M.PartnerForte = {
     PARTNER_FORTE_SHAMAN = 7,    -- 萨满
     PARTNER_FORTE_DRUID = 8,    -- 德鲁伊
     PARTNER_FORTE_WARLOCK = 9,    -- 术士
+}
+
+-- 格子类型
+M.CellType = {
+    CELL_TYPE_NONE = 0,    -- 未知类型
+    CELL_TYPE_START = 1,    -- 起点
+    CELL_TYPE_NORMAL = 2,    -- 普通格子
+    CELL_TYPE_CHANCE = 3,    -- 机会格子
+    CELL_TYPE_TREASURE = 4,    -- 宝藏格子
+    CELL_TYPE_TRAP = 5,    -- 陷阱格子
+    CELL_TYPE_SHOP = 6,    -- 商店格子
+    CELL_TYPE_REST = 7,    -- 休息格子
+    CELL_TYPE_TELEPORT = 8,    -- 传送格子
+    CELL_TYPE_BATTLE = 9,    -- 战斗格子
+    CELL_TYPE_PROPERTY = 10,    -- 地产格子
+    CELL_TYPE_CHECKPOINT = 11,    -- 检查点
+    CELL_TYPE_BOSS = 12,    -- Boss格子
+    CELL_TYPE_MYSTERY = 13,    -- 神秘格子
+}
+
+-- 格子事件类型
+M.CellEventType = {
+    EVENT_TYPE_NONE = 0,    -- 未知事件
+    EVENT_TYPE_ITEM = 1,    -- 获得物品
+    EVENT_TYPE_RESOURCE = 2,    -- 获得资源
+    EVENT_TYPE_BATTLE = 3,    -- 战斗
+    EVENT_TYPE_CHOICE = 4,    -- 选择题
+    EVENT_TYPE_TELEPORT = 5,    -- 传送
+    EVENT_TYPE_BUFF = 6,    -- 状态效果
+    EVENT_TYPE_SHOP = 7,    -- 商店
+    EVENT_TYPE_RANDOM = 8,    -- 随机事件
+    EVENT_TYPE_DIALOG = 9,    -- 对话
+    EVENT_TYPE_MINIGAME = 10,    -- 小游戏
+    EVENT_TYPE_PROPERTY = 11,    -- 地产相关
+    EVENT_TYPE_SPECIAL = 12,    -- 特殊事件
+}
+
+-- 章节通关条件类型
+M.ChapterConditionType = {
+    CONDITION_TYPE_NONE = 0,    -- 未知条件
+    CONDITION_TYPE_REACH_END = 1,    -- 到达终点
+    CONDITION_TYPE_PLAYER_LEVEL = 2,    -- 玩家等级达到
+    CONDITION_TYPE_PASS_STAGES = 3,    -- 通过指定关卡数
+    CONDITION_TYPE_COLLECT_ITEMS = 4,    -- 收集特定物品
+    CONDITION_TYPE_DEFEAT_ENEMIES = 5,    -- 击败特定敌人
+    CONDITION_TYPE_CUSTOM = 99,    -- 自定义条件
 }
 
 return M
