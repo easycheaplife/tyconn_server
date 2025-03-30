@@ -16,7 +16,10 @@ local CONFIG_CACHE = {
     equip_levels = {},   -- 装备等级配置
     equip_odds = {},     -- 装备概率配置
     exps = {},           -- 经验配置
-    companion_stars = {} -- 伙伴星级配置
+    companion_stars = {}, -- 伙伴星级配置
+    cell_data = {},      -- 大富翁格子数据
+    cell_events = {},    -- 大富翁格子事件
+    monopoly = {}        -- 大富翁章节配置
 }
 
 -- 计算table中的键值对数量
@@ -39,7 +42,10 @@ function M.init()
         {name = "equipment level configs", loader = M.load_equipment_level_configs},
         {name = "equipment odds configs", loader = M.load_equipment_odds_configs},
         {name = "exp configs", loader = M.load_exp_configs},
-        {name = "companion star configs", loader = M.load_companion_star_configs}
+        {name = "companion star configs", loader = M.load_companion_star_configs},
+        {name = "monopoly cell data", loader = M.load_cell_data_config},
+        {name = "monopoly cell events", loader = M.load_cell_events_config},
+        {name = "monopoly chapter config", loader = M.load_monopoly_config}
     }
 
     for _, config in ipairs(configs_to_load) do
@@ -349,6 +355,100 @@ function M.load_companion_star_configs()
     return stars
 end
 
+-- 加载大富翁格子数据配置
+function M.load_cell_data_config()
+    local data = config_loader.get_config("Dfw_cell_data")
+    if not data then
+        return false
+    end
+
+    -- 转换配置格式
+    for _, cell_data in pairs(data) do
+        local cell_id = tonumber(cell_data.Cell_id)
+        if cell_id then
+            CONFIG_CACHE.cell_data[cell_id] = {
+                id = cell_id,
+                map_id = tonumber(cell_data.Map_id) or 1,
+                cell_type = tonumber(cell_data.Cell_type) or 0,
+                cell_icon = cell_data.Cell_icon,
+                cell_model = cell_data.Cell_model,
+                cell_events = cell_data.Cell_events or {},
+                cell_objects = cell_data.Cell_objects or {},
+                land_buy = tonumber(cell_data.Land_buy) or 0,
+                land_sell = tonumber(cell_data.Land_sell) or 0,
+                land_cost = tonumber(cell_data.Land_cost) or 0,
+                land_unit = tonumber(cell_data.Land_unit) or 0,
+                next_cell = tonumber(cell_data.Next_cell) or 0
+            }
+        end
+    end
+
+    logger.info("Cell data config loaded: %d cells", count_pairs(CONFIG_CACHE.cell_data))
+    return true
+end
+
+-- 加载大富翁格子事件配置
+function M.load_cell_events_config()
+    local data = config_loader.get_config("Dfw_cell_events")
+    if not data then
+        return false
+    end
+
+    -- 转换配置格式
+    for _, event_data in pairs(data) do
+        local event_id = tonumber(event_data.Event_id)
+        if event_id then
+            CONFIG_CACHE.cell_events[event_id] = {
+                id = event_id,
+                event_type = tonumber(event_data.Event_type) or 0,
+                event_name = event_data.L_event_name,
+                event_desc = event_data.L_event_desc,
+                event_icon = event_data.Event_icon,
+                event_model = event_data.Event_model,
+                event_effect = event_data.Event_effect or {},
+                event_condition = event_data.Event_condition or {},
+                event_choices = event_data.Event_choices or {},
+                event_priority = tonumber(event_data.Event_priority) or 0
+            }
+        end
+    end
+
+    logger.info("Cell events config loaded: %d events", count_pairs(CONFIG_CACHE.cell_events))
+    return true
+end
+
+-- 加载大富翁章节配置
+function M.load_monopoly_config()
+    local data = config_loader.get_config("Dfw_monopoly")
+    if not data then
+        return false
+    end
+
+    -- 转换配置格式
+    for _, chapter_data in pairs(data) do
+        local chapter_id = tonumber(chapter_data.Chapter_id)
+        if chapter_id then
+            CONFIG_CACHE.monopoly[chapter_id] = {
+                id = chapter_id,
+                chapter_name = chapter_data.L_chapter_name,
+                chapter_desc = chapter_data.L_chapter_desc,
+                map_id = tonumber(chapter_data.Map_id) or 1,
+                start_cell = tonumber(chapter_data.Start_cell) or 1,
+                victory_condition = chapter_data.Victory_condition or {},
+                chapter_reward = chapter_data.Reward or {},
+                next_chapter = tonumber(chapter_data.Next_chapter) or 0,
+                unlock_condition = chapter_data.Unlock_condition or {},
+                chapter_difficulty = tonumber(chapter_data.Difficulty) or 1,
+                chapter_index = tonumber(chapter_data.Index) or 0,
+                chapter_icon = chapter_data.Icon
+            }
+        end
+    end
+
+    logger.info("Monopoly config loaded: %d chapters", count_pairs(CONFIG_CACHE.monopoly))
+    return true
+end
+
 -- 添加通用的get_config方法，用于提供给table_service调用
 function M.get_config(config_name)
     if not config_name then
@@ -375,6 +475,12 @@ function M.get_config(config_name)
         return CONFIG_CACHE.exps
     elseif config_name == "companion_stars" and next(CONFIG_CACHE.companion_stars) then
         return CONFIG_CACHE.companion_stars
+    elseif config_name == "cell_data" and next(CONFIG_CACHE.cell_data) then
+        return CONFIG_CACHE.cell_data
+    elseif config_name == "cell_events" and next(CONFIG_CACHE.cell_events) then
+        return CONFIG_CACHE.cell_events
+    elseif config_name == "monopoly" and next(CONFIG_CACHE.monopoly) then
+        return CONFIG_CACHE.monopoly
     end
     
     return nil
