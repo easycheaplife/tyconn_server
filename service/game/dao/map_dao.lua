@@ -6,7 +6,6 @@ local db_client = require "game.db_client"
 local map_model = require "game.models.map_model"
 local table_service = require "game.services.table_service"
 local json = require "cjson"
-local monopoly_model = require "game.models.monopoly_model"
 
 local M = {}
 
@@ -228,11 +227,14 @@ function M.create_monopoly_event(event_data)
         return false, "Invalid event data"
     end
     
-    -- 调用模型创建事件
-    local ok, err = monopoly_model.create_monopoly_event(event_data)
+    -- 调用数据库代理创建事件
+    local ok, result = pcall(function()
+        return db_client.create_monopoly_event(event_data)
+    end)
+    
     if not ok then
-        logger.error("Failed to create monopoly event: %s", tostring(err))
-        return false, err
+        logger.error("Failed to create monopoly event: %s", tostring(result))
+        return false, result
     end
     
     -- 清除相关缓存
