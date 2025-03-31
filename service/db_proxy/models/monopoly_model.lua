@@ -164,12 +164,14 @@ function M.update_chapter_progress(progress_data)
     local data = {
         user_id = progress_data.user_id,
         chapter_id = progress_data.chapter_id,
-        is_passed = progress_data.is_passed,
-        pass_time = progress_data.pass_time,
-        reward_claimed = progress_data.reward_claimed,
-        reward_time = progress_data.reward_time,
+        is_passed = progress_data.is_passed or 0,
+        pass_time = progress_data.pass_time or os.time(),
+        reward_claimed = progress_data.reward_claimed or 0,
+        reward_time = progress_data.reward_time or os.time(),
         update_time = progress_data.update_time or os.time()
     }
+    
+    logger.info("update_chapter_progress: %s", utils.table_to_string(data))
     
     local query = string.format(sql.UPDATE_CHAPTER_PROGRESS,
         data.is_passed,

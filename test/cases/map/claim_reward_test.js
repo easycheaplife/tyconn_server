@@ -21,11 +21,6 @@ class ClaimRewardTest extends BaseTest {
                 
             console.log(`Current chapter: ${chapterId}, position: ${currentPosition}`);
             
-            // 使用GM命令将玩家设置为可以领取奖励的状态
-            console.log('\nSetting up chapter completion for testing...');
-            const gmResponse = await this.client.gmCommand('complete_chapter', [String(chapterId)]);
-            assert(gmResponse.result === 'success', 'GM command should succeed');
-            
             // 获取奖励前的背包状态
             console.log('\nGetting bag info before claiming reward...');
             const bagBefore = await this.client.getBagInfo();

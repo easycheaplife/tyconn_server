@@ -27,7 +27,7 @@ function M.handle(client_id, msg)
     end
 
     -- 领取章节奖励
-    local result = map_service.claim_chapter_reward(user.user_id)
+    local result = map_service.claim_reward(user.user_id)
     if not result then
         logger.error("Failed to claim chapter reward for user: %d", user.user_id)
         return message_helper.create_error_response(
