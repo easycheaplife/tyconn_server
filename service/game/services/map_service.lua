@@ -377,7 +377,7 @@ function M.handle_cell_event(user_id, event_id)
 end
 
 -- 领取章节奖励
-function M.claim_chapter_reward(user_id)
+function M.claim_reward(user_id)
     if not user_id then
         logger.error("Invalid user_id")
         return nil
@@ -420,14 +420,29 @@ function M.claim_chapter_reward(user_id)
             is_passed = true
             
             -- 创建章节进度记录
-            progress = map_model.new_chapter_progress({
+            local ok = map_dao.create_chapter_progress({
                 user_id = user_id,
                 chapter_id = map_info.chapter_id,
                 is_passed = 1,
-                pass_time = os.time()
+                pass_time = os.time(),
+                reward_claimed = 0,
+                reward_time = 0
             })
             
-            map_dao.update_chapter_progress(progress)
+            if not ok then
+                logger.error("Failed to create chapter progress for user %d, chapter %d", 
+                    user_id, map_info.chapter_id)
+                return nil
+            end
+            
+            progress = {
+                user_id = user_id,
+                chapter_id = map_info.chapter_id,
+                is_passed = 1,
+                pass_time = os.time(),
+                reward_claimed = 0,
+                reward_time = 0
+            }
         else
             logger.warn("Chapter %d not completed by user %d, position=%d, total=%d", 
                 map_info.chapter_id, user_id, map_info.current_position, chapter_config.total_cells)
@@ -474,10 +489,20 @@ function M.claim_chapter_reward(user_id)
     end
     
     -- 更新章节进度，标记奖励已领取
-    progress.reward_claimed = 1
-    progress.reward_time = os.time()
-    progress.update_time = os.time()
-    map_dao.update_chapter_progress(progress)
+    local ok = map_dao.update_chapter_progress({
+        user_id = user_id,
+        chapter_id = map_info.chapter_id,
+        is_passed = 1,
+        pass_time = progress.pass_time,
+        reward_claimed = 1,
+        reward_time = os.time()
+    })
+    
+    if not ok then
+        logger.error("Failed to update chapter progress for user %d, chapter %d", 
+            user_id, map_info.chapter_id)
+        return nil
+    end
     
     -- 如果当前章节已完成，进入下一章节
     local next_chapter_id = map_info.chapter_id + 1
@@ -491,7 +516,11 @@ function M.claim_chapter_reward(user_id)
         map_info.direction = 1  -- 初始方向（正向）
         map_info.update_time = os.time()
         
-        map_dao.update_map_info(map_info)
+        local ok = map_dao.update_map_info(map_info)
+        if not ok then
+            logger.error("Failed to update map info for user %d", user_id)
+            return nil
+        end
     end
     
     -- 记录操作日志
