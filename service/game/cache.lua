@@ -748,23 +748,74 @@ end
 
 -- 设置地图事件缓存
 function M.set_map_events(chapter_id, cell_id, events)
-    if not chapter_id or not cell_id or not events then
-        logger.error("Invalid parameters for set_map_events")
+    if not chapter_id or not cell_id then
+        logger.error("Invalid parameters for set_map_events: chapter_id=%s, cell_id=%s", 
+            tostring(chapter_id), tostring(cell_id))
         return false
     end
-
-    local key = string.format("%s%d:%d", PREFIX.map_events, chapter_id, cell_id)
-    local value = cjson.encode(events)
     
-    local ok, err = pcall(function()
-        return redis.setex(key, EXPIRE.map_events, value)
-    end)
+    -- 构建缓存key
+    local key = string.format("%s%d:%d", PREFIX.map_events, chapter_id, cell_id)
+    
+    -- 将事件数据转换为JSON字符串
+    local value = utils.encode_json(events)
+    
+    -- 使用Redis设置缓存
+    local ok = redis.set(key, value)
+    if ok then
+        redis.expire(key, EXPIRE.map_events)
+    end
+    return ok
+end
 
+-- 获取地图事件数据从缓存
+function M.get_map_events(chapter_id, cell_id)
+    if not chapter_id or not cell_id then
+        logger.error("Invalid parameters for get_map_events: chapter_id=%s, cell_id=%s", 
+            tostring(chapter_id), tostring(cell_id))
+        return nil
+    end
+    
+    -- 构建缓存key
+    local key = string.format("%s%d:%d", PREFIX.map_events, chapter_id, cell_id)
+    
+    -- 从Redis获取缓存
+    local value, err = redis.get(key)
+    if not value then
+        if err then
+            logger.error("Failed to get map events cache: %s", tostring(err))
+        end
+        return nil
+    end
+    
+    -- 解析JSON数据
+    local ok, events = pcall(utils.decode_json, value)
     if not ok then
-        logger.error("Failed to set map events cache: %s", tostring(err))
+        logger.error("Failed to decode map events cache: %s", tostring(events))
+        return nil
+    end
+    
+    return events
+end
+
+-- 删除地图事件缓存
+function M.remove_map_events(chapter_id, cell_id)
+    if not chapter_id or not cell_id then
+        logger.error("Invalid parameters for remove_map_events: chapter_id=%s, cell_id=%s", 
+            tostring(chapter_id), tostring(cell_id))
         return false
     end
-
+    
+    -- 构建缓存key
+    local key = string.format("%s%d:%d", PREFIX.map_events, chapter_id, cell_id)
+    
+    -- 从Redis删除缓存
+    local ok, err = redis.del(key)
+    if not ok then
+        logger.error("Failed to remove map events cache: %s", tostring(err))
+        return false
+    end
+    
     return true
 end
 
