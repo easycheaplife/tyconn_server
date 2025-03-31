@@ -520,4 +520,252 @@ function M.remove_partner(partner_id)
     return redis.del(key) > 0
 end
 
+-- 地图相关缓存操作
+
+-- 获取用户大富翁状态
+function M.get_user_map_info(user_id)
+    if not user_id then
+        logger.error("cache.get_user_map_info: invalid user_id")
+        return nil
+    end
+    
+    local key = make_key(PREFIX.map_info, user_id)
+    local data = redis.get(key)
+    if data then
+        local map_info = utils.decode_json(data)
+        if map_info then
+            return map_info
+        end
+        logger.error("Failed to decode map info data: %s", data)
+    end
+    return nil
+end
+
+-- 设置用户大富翁状态
+function M.set_user_map_info(user_id, map_info)
+    if not user_id or not map_info then
+        logger.error("cache.set_user_map_info: invalid parameters")
+        return false
+    end
+    
+    local key = make_key(PREFIX.map_info, user_id)
+    local data = utils.encode_json(map_info)
+    if not data then
+        logger.error("Failed to encode map info data")
+        return false
+    end
+    
+    local ok = redis.set(key, data)
+    if ok then
+        redis.expire(key, EXPIRE.map_info)
+    end
+    return ok
+end
+
+-- 删除用户大富翁状态缓存
+function M.remove_user_map_info(user_id)
+    if not user_id then
+        logger.error("cache.remove_user_map_info: invalid user_id")
+        return false
+    end
+    
+    local key = make_key(PREFIX.map_info, user_id)
+    return redis.del(key) > 0
+end
+
+-- 获取章节进度
+function M.get_chapter_progress(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("cache.get_chapter_progress: invalid parameters")
+        return nil
+    end
+    
+    local key = make_key(PREFIX.map_chapter, string.format("%d:%d", user_id, chapter_id))
+    local data = redis.get(key)
+    if data then
+        local progress = utils.decode_json(data)
+        if progress then
+            return progress
+        end
+        logger.error("Failed to decode chapter progress data: %s", data)
+    end
+    return nil
+end
+
+-- 设置章节进度
+function M.set_chapter_progress(user_id, chapter_id, progress)
+    if not user_id or not chapter_id or not progress then
+        logger.error("cache.set_chapter_progress: invalid parameters")
+        return false
+    end
+    
+    local key = make_key(PREFIX.map_chapter, string.format("%d:%d", user_id, chapter_id))
+    local data = utils.encode_json(progress)
+    if not data then
+        logger.error("Failed to encode chapter progress data")
+        return false
+    end
+    
+    local ok = redis.set(key, data)
+    if ok then
+        redis.expire(key, EXPIRE.map_chapter)
+    end
+    return ok
+end
+
+-- 删除章节进度缓存
+function M.remove_chapter_progress(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("cache.remove_chapter_progress: invalid parameters")
+        return false
+    end
+    
+    local key = make_key(PREFIX.map_chapter, string.format("%d:%d", user_id, chapter_id))
+    return redis.del(key) > 0
+end
+
+-- 获取格子事件
+function M.get_cell_events(chapter_id, cell_id)
+    if not chapter_id or not cell_id then
+        logger.error("cache.get_cell_events: invalid parameters")
+        return nil
+    end
+    
+    local key = make_key(PREFIX.map_events, string.format("%d:%d", chapter_id, cell_id))
+    local data = redis.get(key)
+    if data then
+        local events = utils.decode_json(data)
+        if events then
+            return events
+        end
+        logger.error("Failed to decode cell events data: %s", data)
+    end
+    return nil
+end
+
+-- 设置格子事件
+function M.set_cell_events(chapter_id, cell_id, events)
+    if not chapter_id or not cell_id or not events then
+        logger.error("cache.set_cell_events: invalid parameters")
+        return false
+    end
+    
+    local key = make_key(PREFIX.map_events, string.format("%d:%d", chapter_id, cell_id))
+    local data = utils.encode_json(events)
+    if not data then
+        logger.error("Failed to encode cell events data")
+        return false
+    end
+    
+    local ok = redis.set(key, data)
+    if ok then
+        redis.expire(key, EXPIRE.map_events)
+    end
+    return ok
+end
+
+-- 删除格子事件缓存
+function M.remove_cell_events(chapter_id, cell_id)
+    if not chapter_id or not cell_id then
+        logger.error("cache.remove_cell_events: invalid parameters")
+        return false
+    end
+    
+    local key = make_key(PREFIX.map_events, string.format("%d:%d", chapter_id, cell_id))
+    return redis.del(key) > 0
+end
+
+-- 清除用户所有大富翁相关缓存
+function M.clear_map_cache(user_id, chapter_id)
+    if not user_id then
+        logger.error("cache.clear_map_cache: invalid user_id")
+        return false
+    end
+    
+    -- 清除用户大富翁状态
+    M.remove_user_map_info(user_id)
+    
+    -- 如果指定了章节ID，只清除该章节的缓存
+    if chapter_id then
+        M.remove_chapter_progress(user_id, chapter_id)
+    else
+        -- TODO: 如果需要清除所有章节进度，这里需要知道用户有哪些章节
+        -- 暂时不实现
+    end
+    
+    return true
+end
+
+-- 清除地图事件缓存
+function M.remove_map_events(chapter_id, cell_id)
+    if not chapter_id or not cell_id then
+        logger.error("Invalid parameters for remove_map_events")
+        return false
+    end
+
+    local key = string.format("%s%d:%d", PREFIX.map_events, chapter_id, cell_id)
+    local ok, err = pcall(function()
+        return redis.del(key)
+    end)
+
+    if not ok then
+        logger.error("Failed to remove map events cache: %s", tostring(err))
+        return false
+    end
+
+    return true
+end
+
+-- 获取地图事件缓存
+function M.get_map_events(chapter_id, cell_id)
+    if not chapter_id or not cell_id then
+        logger.error("Invalid parameters for get_map_events")
+        return nil
+    end
+
+    local key = string.format("%s%d:%d", PREFIX.map_events, chapter_id, cell_id)
+    local ok, result = pcall(function()
+        return redis.get(key)
+    end)
+
+    if not ok then
+        logger.error("Failed to get map events cache: %s", tostring(result))
+        return nil
+    end
+
+    if not result then
+        return nil
+    end
+
+    local success, data = pcall(cjson.decode, result)
+    if not success then
+        logger.error("Failed to decode map events cache: %s", tostring(data))
+        return nil
+    end
+
+    return data
+end
+
+-- 设置地图事件缓存
+function M.set_map_events(chapter_id, cell_id, events)
+    if not chapter_id or not cell_id or not events then
+        logger.error("Invalid parameters for set_map_events")
+        return false
+    end
+
+    local key = string.format("%s%d:%d", PREFIX.map_events, chapter_id, cell_id)
+    local value = cjson.encode(events)
+    
+    local ok, err = pcall(function()
+        return redis.setex(key, EXPIRE.map_events, value)
+    end)
+
+    if not ok then
+        logger.error("Failed to set map events cache: %s", tostring(err))
+        return false
+    end
+
+    return true
+end
+
 return M

@@ -25,6 +25,9 @@ M.redis = {
         equip_level = "equip:level:",
         user_partners = "user_partners:",  -- 用户伙伴列表缓存前缀
         partner = "partner:",  -- 伙伴信息缓存前缀
+        map_info = "map:user:",
+        map_chapter = "map:chapter:",
+        map_events = "map:events:"
     },
 
     -- 缓存过期时间(秒)
@@ -43,6 +46,9 @@ M.redis = {
         equip_level = 3600,  -- 1小时
         user_partners = 3600 * 12,  -- 用户伙伴列表 12小时
         partner = 3600 * 6,  -- 伙伴信息 6小时
+        map_info = 3600,       -- 地图信息 1小时
+        map_chapter = 3600,    -- 章节进度 1小时
+        map_events = 3600      -- 格子事件 1小时
     }
 }
 

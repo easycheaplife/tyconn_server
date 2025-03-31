@@ -663,4 +663,9 @@ function M.get_config_value(config_name, key, default_value)
     return value
 end
 
+-- 获取配置值
+function M.get_config_values(config_name)
+    return config_service.get_config(config_name)
+end
+
 return M 

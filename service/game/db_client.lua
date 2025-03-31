@@ -790,4 +790,189 @@ function M.log_partner_change(log_data)
     return result
 end
 
+-- 地图相关数据库操作
+-- 获取用户大富翁状态
+function M.get_user_monopoly_state(user_id)
+    if not user_id then
+        logger.error("db_client.get_user_monopoly_state: missing user_id")
+        return nil
+    end
+    
+    local ok, result = pcall(call_db, "get_user_monopoly_state", user_id)
+    if not ok then
+        logger.error("Failed to get monopoly state: %s", result)
+        return nil
+    end
+    
+    return result
+end
+
+-- 创建用户大富翁状态
+function M.create_monopoly_state(state_data)
+    if not state_data or not state_data.user_id then
+        logger.error("db_client.create_monopoly_state: invalid state data")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "create_monopoly_state", state_data)
+    if not ok then
+        logger.error("Failed to create monopoly state: %s", result)
+        return false
+    end
+    
+    return true
+end
+
+-- 更新用户大富翁状态
+function M.update_monopoly_state(state_data)
+    if not state_data or not state_data.user_id then
+        logger.error("db_client.update_monopoly_state: invalid state data")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "update_monopoly_state", state_data)
+    if not ok then
+        logger.error("Failed to update monopoly state: %s", result)
+        return false
+    end
+    
+    return true
+end
+
+-- 获取章节进度
+function M.get_chapter_progress(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("db_client.get_chapter_progress: invalid params")
+        return nil
+    end
+    
+    local ok, result = pcall(call_db, "get_chapter_progress", {
+        user_id = user_id,
+        chapter_id = chapter_id
+    })
+    if not ok then
+        logger.error("Failed to get chapter progress: %s", result)
+        return nil
+    end
+    
+    return result
+end
+
+-- 创建章节进度
+function M.create_chapter_progress(progress_data)
+    if not progress_data or not progress_data.user_id or not progress_data.chapter_id then
+        logger.error("db_client.create_chapter_progress: invalid progress data")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "create_chapter_progress", progress_data)
+    if not ok then
+        logger.error("Failed to create chapter progress: %s", result)
+        return false
+    end
+    
+    return true
+end
+
+-- 更新章节进度
+function M.update_chapter_progress(progress_data)
+    if not progress_data or not progress_data.user_id or not progress_data.chapter_id then
+        logger.error("db_client.update_chapter_progress: invalid progress data")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "update_chapter_progress", progress_data)
+    if not ok then
+        logger.error("Failed to update chapter progress: %s", result)
+        return false
+    end
+    
+    return true
+end
+
+-- 获取大富翁事件
+function M.get_monopoly_events(params)
+    if not params or not params.chapter_id or not params.cell_id then
+        logger.error("db_client.get_monopoly_events: invalid params")
+        return nil
+    end
+    
+    local ok, result = pcall(call_db, "get_monopoly_events", params)
+    if not ok then
+        logger.error("Failed to get monopoly events: %s", result)
+        return nil
+    end
+    
+    return result
+end
+
+-- 创建大富翁事件
+function M.create_monopoly_event(event_data)
+    if not event_data or not event_data.chapter_id or
+       not event_data.cell_id or not event_data.event_type then
+        logger.error("db_client.create_monopoly_event: invalid event data")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "create_monopoly_event", event_data)
+    if not ok then
+        logger.error("Failed to create monopoly event: %s", result)
+        return false
+    end
+    
+    return true
+end
+
+-- 更新大富翁事件状态
+function M.update_monopoly_event_status(event_id, status, complete_time)
+    if not event_id then
+        logger.error("db_client.update_monopoly_event_status: invalid event_id")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "update_monopoly_event_status", {
+        id = event_id,
+        status = status,
+        complete_time = complete_time or 0
+    })
+    if not ok then
+        logger.error("Failed to update monopoly event status: %s", result)
+        return false
+    end
+    
+    return true
+end
+
+-- 记录大富翁操作日志
+function M.create_monopoly_log(log_data)
+    if not log_data or not log_data.user_id or not log_data.chapter_id or not log_data.operation_type then
+        logger.error("db_client.create_monopoly_log: invalid log data")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "create_monopoly_log", log_data)
+    if not ok then
+        logger.error("Failed to create monopoly log: %s", result)
+        return false
+    end
+    
+    return true
+end
+
+-- 获取大富翁事件详情
+function M.get_monopoly_event(event_id)
+    if not event_id then
+        logger.error("db_client.get_monopoly_event: invalid event_id")
+        return nil
+    end
+    
+    local ok, result = pcall(call_db, "get_monopoly_event", event_id)
+    if not ok then
+        logger.error("Failed to get monopoly event: %s", result)
+        return nil
+    end
+    
+    return result
+end
+
 return M 

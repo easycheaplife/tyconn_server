@@ -31,6 +31,12 @@ const levelUpPartner = require('./partner/level_up_partner');
 const starUpPartner = require('./partner/star_up_partner');
 const unlockPartner = require('./partner/unlock_partner');
 
+// 导入地图处理器
+const getMapInfo = require('./map/get_map_info');
+const rollDice = require('./map/roll_dice');
+const handleCellEvent = require('./map/handle_cell_event');
+const claimReward = require('./map/claim_reward');
+
 module.exports = {
     // 背包相关
     getBagInfo,
@@ -74,5 +80,11 @@ module.exports = {
     getPartnerList,
     levelUpPartner,
     starUpPartner,
-    unlockPartner
+    unlockPartner,
+    
+    // 地图相关处理器
+    getMapInfo,
+    rollDice,
+    handleCellEvent,
+    claimReward
 }; 

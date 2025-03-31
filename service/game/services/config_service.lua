@@ -362,28 +362,36 @@ function M.load_cell_data_config()
         return false
     end
 
-    -- 转换配置格式
-    for _, cell_data in pairs(data) do
-        local cell_id = tonumber(cell_data.Cell_id)
+    -- 转换配置格式为二维数组 [map_id][cell_id]
+    for cell_id, cell_data in pairs(data) do
+        cell_id = tonumber(cell_id)
         if cell_id then
-            CONFIG_CACHE.cell_data[cell_id] = {
+            local map_id = tonumber(cell_data.Map_id) or 1
+            -- 确保map_id对应的表存在
+            if not CONFIG_CACHE.cell_data[map_id] then
+                CONFIG_CACHE.cell_data[map_id] = {}
+            end
+            
+            -- 存储格子数据
+            CONFIG_CACHE.cell_data[map_id][cell_data.Cell_id] = {
                 id = cell_id,
-                map_id = tonumber(cell_data.Map_id) or 1,
-                cell_type = tonumber(cell_data.Cell_type) or 0,
-                cell_icon = cell_data.Cell_icon,
-                cell_model = cell_data.Cell_model,
-                cell_events = cell_data.Cell_events or {},
-                cell_objects = cell_data.Cell_objects or {},
+                map_id = map_id,
+                cell = tonumber(cell_data.Cell) or 0,
+                cell_icon = tonumber(cell_data.Cell_icon) or 0,
+                cell_id = tonumber(cell_data.Cell_id) or 0,
+                cell_land = tonumber(cell_data.Cell_land) or 0,
                 land_buy = tonumber(cell_data.Land_buy) or 0,
-                land_sell = tonumber(cell_data.Land_sell) or 0,
-                land_cost = tonumber(cell_data.Land_cost) or 0,
                 land_unit = tonumber(cell_data.Land_unit) or 0,
-                next_cell = tonumber(cell_data.Next_cell) or 0
+                cell_events = cell_data.Cell_events or {},
+                cell_objects_events = cell_data.Cell_Objects_events or {}
             }
         end
     end
 
-    logger.info("Cell data config loaded: %d cells", count_pairs(CONFIG_CACHE.cell_data))
+    logger.info("Cell data config loaded: %d maps", count_pairs(CONFIG_CACHE.cell_data))
+    for map_id, cells in pairs(CONFIG_CACHE.cell_data) do
+        logger.info("Map %d has %d cells", map_id, count_pairs(cells))
+    end
     return true
 end
 
@@ -425,22 +433,19 @@ function M.load_monopoly_config()
     end
 
     -- 转换配置格式
-    for _, chapter_data in pairs(data) do
-        local chapter_id = tonumber(chapter_data.Chapter_id)
+    for chapter_id, chapter_data in pairs(data) do
+        chapter_id = tonumber(chapter_id)
         if chapter_id then
             CONFIG_CACHE.monopoly[chapter_id] = {
                 id = chapter_id,
-                chapter_name = chapter_data.L_chapter_name,
-                chapter_desc = chapter_data.L_chapter_desc,
-                map_id = tonumber(chapter_data.Map_id) or 1,
-                start_cell = tonumber(chapter_data.Start_cell) or 1,
-                victory_condition = chapter_data.Victory_condition or {},
-                chapter_reward = chapter_data.Reward or {},
-                next_chapter = tonumber(chapter_data.Next_chapter) or 0,
-                unlock_condition = chapter_data.Unlock_condition or {},
-                chapter_difficulty = tonumber(chapter_data.Difficulty) or 1,
-                chapter_index = tonumber(chapter_data.Index) or 0,
-                chapter_icon = chapter_data.Icon
+                map_id = tonumber(chapter_data.Customs) or 1,
+                bg_pic = chapter_data.Bg_pic,
+                l_drama = chapter_data.L_drama,
+                l_name = chapter_data.L_name,
+                l_name_explain = chapter_data.L_name_explain,
+                reward = chapter_data.Reward or {},
+                unlock = tonumber(chapter_data.Unlock) or 0,
+                victory_condition = chapter_data.Victory_condition or {}
             }
         end
     end

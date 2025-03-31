@@ -8,6 +8,7 @@ local ping_handler = require "db_proxy.handlers.ping_handler"
 local equipment_model = require "db_proxy.models.equipment_model"
 local mail_model = require "db_proxy.models.mail_model"
 local partner_model = require "db_proxy.models.partner_model"
+local monopoly_model = require "db_proxy.models.monopoly_model"
 
 local CMD = {}
 
@@ -272,6 +273,51 @@ end
 
 function CMD.log_partner_change(log)
     return wrap_call(partner_model.log_partner_change, log)
+end
+
+-- 大富翁相关命令
+function CMD.get_user_monopoly_state(user_id)
+    return wrap_call(monopoly_model.get_user_monopoly_state, user_id)
+end
+
+function CMD.create_monopoly_state(state_data)
+    return wrap_call(monopoly_model.create_monopoly_state, state_data)
+end
+
+function CMD.update_monopoly_state(state_data)
+    return wrap_call(monopoly_model.update_monopoly_state, state_data)
+end
+
+function CMD.get_chapter_progress(params)
+    return wrap_call(monopoly_model.get_chapter_progress, params)
+end
+
+function CMD.create_chapter_progress(progress_data)
+    return wrap_call(monopoly_model.create_chapter_progress, progress_data)
+end
+
+function CMD.update_chapter_progress(progress_data)
+    return wrap_call(monopoly_model.update_chapter_progress, progress_data)
+end
+
+function CMD.get_monopoly_events(params)
+    return wrap_call(monopoly_model.get_monopoly_events, params)
+end
+
+function CMD.get_monopoly_event(event_id)
+    return wrap_call(monopoly_model.get_monopoly_event, event_id)
+end
+
+function CMD.create_monopoly_event(event_data)
+    return wrap_call(monopoly_model.create_monopoly_event, event_data)
+end
+
+function CMD.update_monopoly_event_status(params)
+    return wrap_call(monopoly_model.update_monopoly_event_status, params)
+end
+
+function CMD.create_monopoly_log(log_data)
+    return wrap_call(monopoly_model.create_monopoly_log, log_data)
 end
 
 return CMD

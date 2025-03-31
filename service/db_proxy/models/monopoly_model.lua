@@ -1,0 +1,368 @@
+local skynet = require "skynet"
+local logger = require "logger"
+local sql = require "db_proxy.sql.monopoly_sql"
+local db_util = require "db_proxy.utils.db_util"
+local utils = require "utils"
+
+local M = {}
+
+-- 获取用户大富翁状态
+function M.get_user_monopoly_state(user_id)
+    if not user_id then
+        return nil, "Invalid user id"
+    end
+    
+    local query = string.format(sql.GET_USER_MONOPOLY_STATE, user_id)
+    local results = db_util.query(query)
+    
+    if not results then
+        logger.error("Failed to get monopoly state for user: %d", user_id)
+        return nil, "Database error"
+    end
+    
+    if #results == 0 then
+        return nil, "record not found"
+    end
+    
+    return results[1]
+end
+
+-- 创建用户大富翁状态
+function M.create_monopoly_state(state_data)
+    if not state_data or not state_data.user_id then
+        return false, "Invalid state data"
+    end
+    
+    -- 确保所有字段都有合适的默认值
+    local data = {
+        user_id = state_data.user_id,
+        chapter_id = state_data.chapter_id or 1,
+        current_position = state_data.current_position or 0,
+        direction = state_data.direction or 1,
+        create_time = state_data.create_time or os.time(),
+        update_time = state_data.update_time or os.time()
+    }
+    
+    local query = string.format(sql.CREATE_MONOPOLY_STATE,
+        data.user_id,
+        data.chapter_id,
+        data.current_position,
+        data.direction,
+        data.create_time,
+        data.update_time
+    )
+    
+    local ok = db_util.query(query)
+    if not ok then
+        logger.error("Failed to create monopoly state for user: %d", data.user_id)
+        return false, "Database error"
+    end
+    
+    return true
+end
+
+-- 更新用户大富翁状态
+function M.update_monopoly_state(state_data)
+    if not state_data or not state_data.user_id then
+        return false, "Invalid state data"
+    end
+    
+    -- 确保所有字段都有合适的默认值
+    local data = {
+        user_id = state_data.user_id,
+        chapter_id = state_data.chapter_id,
+        current_position = state_data.current_position,
+        direction = state_data.direction,
+        update_time = state_data.update_time or os.time()
+    }
+    
+    local query = string.format(sql.UPDATE_MONOPOLY_STATE,
+        data.chapter_id,
+        data.current_position,
+        data.direction,
+        data.update_time,
+        data.user_id
+    )
+    
+    local ok = db_util.query(query)
+    if not ok then
+        logger.error("Failed to update monopoly state for user: %d", data.user_id)
+        return false, "Database error"
+    end
+    
+    return true
+end
+
+-- 获取用户章节进度
+function M.get_chapter_progress(params)
+    if not params or not params.user_id or not params.chapter_id then
+        return nil, "Invalid parameters"
+    end
+    
+    local query = string.format(sql.GET_CHAPTER_PROGRESS, params.user_id, params.chapter_id)
+    local results = db_util.query(query)
+    
+    if not results then
+        logger.error("Failed to get chapter progress for user: %d, chapter: %d", 
+            params.user_id, params.chapter_id)
+        return nil, "Database error"
+    end
+    
+    if #results == 0 then
+        return nil, "record not found"
+    end
+    
+    return results[1]
+end
+
+-- 创建用户章节进度
+function M.create_chapter_progress(progress_data)
+    if not progress_data or not progress_data.user_id or not progress_data.chapter_id then
+        return false, "Invalid progress data"
+    end
+    
+    -- 确保所有字段都有合适的默认值
+    local data = {
+        user_id = progress_data.user_id,
+        chapter_id = progress_data.chapter_id,
+        is_passed = progress_data.is_passed or 0,
+        pass_time = progress_data.pass_time or 0,
+        reward_claimed = progress_data.reward_claimed or 0,
+        reward_time = progress_data.reward_time or 0,
+        create_time = progress_data.create_time or os.time(),
+        update_time = progress_data.update_time or os.time()
+    }
+    
+    local query = string.format(sql.CREATE_CHAPTER_PROGRESS,
+        data.user_id,
+        data.chapter_id,
+        data.is_passed,
+        data.pass_time,
+        data.reward_claimed,
+        data.reward_time,
+        data.create_time,
+        data.update_time
+    )
+    
+    local ok = db_util.query(query)
+    if not ok then
+        logger.error("Failed to create chapter progress for user: %d, chapter: %d", 
+            data.user_id, data.chapter_id)
+        return false, "Database error"
+    end
+    
+    return true
+end
+
+-- 更新用户章节进度
+function M.update_chapter_progress(progress_data)
+    if not progress_data or not progress_data.user_id or not progress_data.chapter_id then
+        return false, "Invalid progress data"
+    end
+    
+    -- 确保所有字段都有合适的默认值
+    local data = {
+        user_id = progress_data.user_id,
+        chapter_id = progress_data.chapter_id,
+        is_passed = progress_data.is_passed,
+        pass_time = progress_data.pass_time,
+        reward_claimed = progress_data.reward_claimed,
+        reward_time = progress_data.reward_time,
+        update_time = progress_data.update_time or os.time()
+    }
+    
+    local query = string.format(sql.UPDATE_CHAPTER_PROGRESS,
+        data.is_passed,
+        data.pass_time,
+        data.reward_claimed,
+        data.reward_time,
+        data.update_time,
+        data.user_id,
+        data.chapter_id
+    )
+    
+    local ok = db_util.query(query)
+    if not ok then
+        logger.error("Failed to update chapter progress for user: %d, chapter: %d", 
+            data.user_id, data.chapter_id)
+        return false, "Database error"
+    end
+    
+    return true
+end
+
+-- 获取大富翁事件
+function M.get_monopoly_events(params)
+    if not params or not params.chapter_id or not params.cell_id then
+        return nil, "Invalid parameters"
+    end
+    
+    local query = string.format(sql.GET_MONOPOLY_EVENTS, params.chapter_id, params.cell_id)
+    
+    -- 添加状态过滤条件
+    if params.status ~= nil then
+        query = query .. string.format(" AND status = %d", params.status)
+    end
+    
+    -- 添加排序
+    query = query .. " ORDER BY id ASC"
+    
+    local results = db_util.query(query)
+    
+    if not results then
+        logger.error("Failed to get monopoly events for chapter: %d, cell: %d", 
+            params.chapter_id, params.cell_id)
+        return nil, "Database error"
+    end
+    
+    return results
+end
+
+-- 获取单个大富翁事件
+function M.get_monopoly_event(event_id)
+    if not event_id then
+        return nil, "Invalid event id"
+    end
+    
+    local query = string.format(sql.GET_MONOPOLY_EVENT, event_id)
+    local results = db_util.query(query)
+    
+    if not results then
+        logger.error("Failed to get monopoly event: %d", event_id)
+        return nil, "Database error"
+    end
+    
+    if #results == 0 then
+        return nil, "Event not found"
+    end
+    
+    return results[1]
+end
+
+-- 创建大富翁事件
+function M.create_monopoly_event(event_data)
+    if not event_data or not event_data.chapter_id or not event_data.cell_id or not event_data.event_type then
+        return false, "Invalid event data"
+    end
+    
+    -- 确保所有字段都有合适的默认值
+    local data = {
+        event_id = event_data.event_id or "",
+        chapter_id = event_data.chapter_id,
+        cell_id = event_data.cell_id,
+        event_type = event_data.event_type,
+        item_id = event_data.item_id or 0,
+        count = event_data.count or 0,
+        currency_type = event_data.currency_type or 0,
+        amount = event_data.amount or 0,
+        target_position = event_data.target_position or 0,
+        status = event_data.status or 0,
+        create_time = event_data.create_time or os.time(),
+        update_time = event_data.update_time or os.time()
+    }
+    
+    local query = string.format(sql.CREATE_MONOPOLY_EVENT,
+        db_util.escape_string(data.event_id),
+        data.chapter_id,
+        data.cell_id,
+        db_util.escape_string(data.event_type),
+        data.item_id,
+        data.count,
+        data.currency_type,
+        data.amount,
+        data.target_position,
+        data.status,
+        data.create_time,
+        data.update_time
+    )
+    
+    local ok = db_util.query(query)
+    if not ok then
+        logger.error("Failed to create monopoly event for chapter: %d, cell: %d", 
+            data.chapter_id, data.cell_id)
+        return false, "Database error"
+    end
+    
+    return true
+end
+
+-- 更新大富翁事件状态
+function M.update_monopoly_event_status(params)
+    if not params or not params.id then
+        return false, "Invalid parameters"
+    end
+    
+    -- 确保所有字段都有合适的默认值
+    local data = {
+        id = params.id,
+        status = params.status or 0,
+        update_time = params.update_time or os.time()
+    }
+    
+    local query = string.format(sql.UPDATE_MONOPOLY_EVENT_STATUS,
+        data.status,
+        data.update_time,
+        data.id
+    )
+    
+    local ok = db_util.query(query)
+    if not ok then
+        logger.error("Failed to update monopoly event status: %d", data.id)
+        return false, "Database error"
+    end
+    
+    return true
+end
+
+-- 记录大富翁操作日志
+function M.create_monopoly_log(log_data)
+    if not log_data or not log_data.user_id or not log_data.chapter_id or not log_data.operation_type then
+        return false, "Invalid log data"
+    end
+    
+    -- 确保所有字段都有合适的默认值
+    local data = {
+        user_id = log_data.user_id,
+        chapter_id = log_data.chapter_id,
+        operation_type = log_data.operation_type,
+        dice_value = log_data.dice_value or 0,
+        from_position = log_data.from_position or 0,
+        to_position = log_data.to_position or 0,
+        event_id = log_data.event_id or 0,
+        reward_items = log_data.reward_items or "[]",
+        operation_time = log_data.operation_time or os.time(),
+        create_time = log_data.create_time or os.time()
+    }
+    
+    -- 处理 reward_items，确保是字符串
+    if type(data.reward_items) == "table" then
+        data.reward_items = utils.encode_json(data.reward_items)
+    end
+    
+    -- 使用 db_util.escape_string 来安全处理 JSON 字符串
+    local reward_items_escaped = db_util.escape_string(data.reward_items)
+    
+    local query = string.format(sql.CREATE_MONOPOLY_LOG,
+        data.user_id,
+        data.chapter_id,
+        data.operation_type,
+        data.dice_value,
+        data.from_position,
+        data.to_position,
+        data.event_id,
+        reward_items_escaped,
+        data.operation_time,
+        data.create_time
+    )
+    
+    local ok = db_util.query(query)
+    if not ok then
+        logger.error("Failed to create monopoly log for user: %d, operation_type: %d", 
+            data.user_id, data.operation_type)
+        return false, "Database error"
+    end
+    
+    return true
+end
+
+return M 

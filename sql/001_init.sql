@@ -274,13 +274,14 @@ CREATE TABLE IF NOT EXISTS partner_unlock_logs (
 
 -- 用户大富翁状态表
 CREATE TABLE IF NOT EXISTS user_monopoly_state (
-    user_id BIGINT PRIMARY KEY,                -- 用户ID
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,                -- 用户ID
     chapter_id INT NOT NULL DEFAULT 1,         -- 当前章节ID
     current_position INT NOT NULL DEFAULT 0,   -- 当前位置(对应格子ID)
     direction INT NOT NULL DEFAULT 1,          -- 移动方向(1:正向，-1:反向)
     create_time BIGINT NOT NULL,               -- 创建时间
     update_time BIGINT NOT NULL,               -- 更新时间
-    
+    INDEX idx_user_id (user_id),
     INDEX idx_chapter (chapter_id)             -- 章节索引，用于查询特定章节的玩家
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -302,6 +303,7 @@ CREATE TABLE IF NOT EXISTS monopoly_events (
 
 -- 用户章节进度表
 CREATE TABLE IF NOT EXISTS user_chapter_progress (
+    id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,                   -- 用户ID
     chapter_id INT NOT NULL,                   -- 章节ID
     is_passed TINYINT NOT NULL DEFAULT 0,      -- 是否通关(0:未通关,1:已通关)
@@ -312,7 +314,7 @@ CREATE TABLE IF NOT EXISTS user_chapter_progress (
     create_time BIGINT NOT NULL,               -- 创建时间
     update_time BIGINT NOT NULL,               -- 更新时间
     
-    PRIMARY KEY (user_id, chapter_id),         -- 复合主键
+    KEY (user_id, chapter_id),         -- 复合主键
     INDEX idx_passed (is_passed, reward_claimed) -- 通关状态索引，用于查询已通关未领奖的记录
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 

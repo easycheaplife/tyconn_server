@@ -44,6 +44,12 @@ const LevelUpPartnerTest = require('./cases/partner/level_up_partner_test');
 const StarUpPartnerTest = require('./cases/partner/star_up_partner_test');
 const UnlockPartnerTest = require('./cases/partner/unlock_partner_test');
 
+// Map tests
+const GetMapInfoTest = require('./cases/map/get_map_info_test');
+const RollDiceTest = require('./cases/map/roll_dice_test');
+const HandleCellEventTest = require('./cases/map/handle_cell_event_test');
+const ClaimRewardTest = require('./cases/map/claim_reward_test');
+
 // GM tests
 const GMCommandTest = require('./cases/gm/gm_command_test');
 
@@ -90,6 +96,12 @@ const ALL_TESTS = {
     level_up_partner: LevelUpPartnerTest,
     star_up_partner: StarUpPartnerTest,
     unlock_partner: UnlockPartnerTest,
+    
+    // Map tests
+    get_map_info: GetMapInfoTest,
+    roll_dice: RollDiceTest,
+    handle_cell_event: HandleCellEventTest,
+    claim_reward: ClaimRewardTest,
 
     // GM tests
     gm_command: GMCommandTest,
