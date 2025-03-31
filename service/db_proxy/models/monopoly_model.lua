@@ -239,47 +239,38 @@ function M.get_monopoly_event(event_id)
     return results[1]
 end
 
--- 创建大富翁事件
-function M.create_monopoly_event(event_data)
-    if not event_data or not event_data.chapter_id or not event_data.cell_id or not event_data.event_type then
+-- 创建大富翁事件记录
+function M.create_monopoly_event(data)
+    if not data or not data.user_id or not data.chapter_id or not data.cell_id or not data.event_id then
+        logger.error("Invalid event data: %s", utils.table_to_string(data))
         return false, "Invalid event data"
     end
     
     -- 确保所有字段都有合适的默认值
-    local data = {
-        event_id = event_data.event_id or "",
-        chapter_id = event_data.chapter_id,
-        cell_id = event_data.cell_id,
-        event_type = event_data.event_type,
-        item_id = event_data.item_id or 0,
-        count = event_data.count or 0,
-        currency_type = event_data.currency_type or 0,
-        amount = event_data.amount or 0,
-        target_position = event_data.target_position or 0,
-        status = event_data.status or 0,
-        create_time = event_data.create_time or os.time(),
-        update_time = event_data.update_time or os.time()
+    local event_data = {
+        user_id = data.user_id,
+        chapter_id = data.chapter_id,
+        cell_id = data.cell_id,
+        event_id = data.event_id,
+        status = data.status or 0,
+        trigger_time = data.trigger_time or os.time(),
+        complete_time = data.complete_time or 0
     }
     
     local query = string.format(sql.CREATE_MONOPOLY_EVENT,
-        db_util.escape_string(data.event_id),
-        data.chapter_id,
-        data.cell_id,
-        db_util.escape_string(data.event_type),
-        data.item_id,
-        data.count,
-        data.currency_type,
-        data.amount,
-        data.target_position,
-        data.status,
-        data.create_time,
-        data.update_time
+        event_data.user_id,
+        event_data.chapter_id,
+        event_data.event_id,
+        event_data.cell_id,
+        event_data.status,
+        event_data.trigger_time,
+        event_data.complete_time
     )
     
     local ok = db_util.query(query)
     if not ok then
         logger.error("Failed to create monopoly event for chapter: %d, cell: %d", 
-            data.chapter_id, data.cell_id)
+            event_data.chapter_id, event_data.cell_id)
         return false, "Database error"
     end
     
@@ -330,8 +321,7 @@ function M.create_monopoly_log(log_data)
         to_position = log_data.to_position or 0,
         event_id = log_data.event_id or 0,
         reward_items = log_data.reward_items or "[]",
-        operation_time = log_data.operation_time or os.time(),
-        create_time = log_data.create_time or os.time()
+        operation_time = log_data.operation_time or os.time()
     }
     
     -- 处理 reward_items，确保是字符串
@@ -351,8 +341,7 @@ function M.create_monopoly_log(log_data)
         data.to_position,
         data.event_id,
         reward_items_escaped,
-        data.operation_time,
-        data.create_time
+        data.operation_time
     )
     
     local ok = db_util.query(query)

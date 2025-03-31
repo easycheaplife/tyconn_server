@@ -909,7 +909,7 @@ end
 -- 创建大富翁事件
 function M.create_monopoly_event(event_data)
     if not event_data or not event_data.chapter_id or
-       not event_data.cell_id or not event_data.event_type then
+       not event_data.cell_id then
         logger.error("db_client.create_monopoly_event: invalid event data")
         return false
     end

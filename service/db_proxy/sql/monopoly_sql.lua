@@ -73,18 +73,13 @@ M.UPDATE_CHAPTER_PROGRESS = [[
 M.GET_MONOPOLY_EVENTS = [[
     SELECT 
         id,
-        event_id,
+        user_id,
         chapter_id,
+        event_id,
         cell_id,
-        event_type,
-        item_id,
-        count,
-        currency_type,
-        amount,
-        target_position,
         status,
-        create_time,
-        update_time
+        trigger_time,
+        complete_time
     FROM monopoly_events 
     WHERE chapter_id = %d AND cell_id = %d
 ]]
@@ -93,18 +88,13 @@ M.GET_MONOPOLY_EVENTS = [[
 M.GET_MONOPOLY_EVENT = [[
     SELECT 
         id,
-        event_id,
+        user_id,
         chapter_id,
+        event_id,
         cell_id,
-        event_type,
-        item_id,
-        count,
-        currency_type,
-        amount,
-        target_position,
         status,
-        create_time,
-        update_time
+        trigger_time,
+        complete_time
     FROM monopoly_events 
     WHERE id = %d
 ]]
@@ -112,11 +102,15 @@ M.GET_MONOPOLY_EVENT = [[
 -- 创建大富翁事件
 M.CREATE_MONOPOLY_EVENT = [[
     INSERT INTO monopoly_events (
-        event_id, chapter_id, cell_id, event_type, item_id, count,
-        currency_type, amount, target_position, status, create_time, update_time
+        user_id,
+        chapter_id,
+        event_id,
+        cell_id,
+        status,
+        trigger_time,
+        complete_time
     ) VALUES (
-        '%s', %d, %d, '%s', %d, %d,
-        %d, %d, %d, %d, %d, %d
+        %d, %d, %d, %d, %d, %d, %d
     )
 ]]
 
@@ -124,18 +118,25 @@ M.CREATE_MONOPOLY_EVENT = [[
 M.UPDATE_MONOPOLY_EVENT_STATUS = [[
     UPDATE monopoly_events SET
         status = %d,
-        update_time = %d
+        complete_time = %d
     WHERE id = %d
 ]]
 
 -- 记录大富翁操作日志
 M.CREATE_MONOPOLY_LOG = [[
     INSERT INTO monopoly_logs (
-        user_id, chapter_id, operation_type, dice_value, from_position, to_position,
-        event_id, reward_items, operation_time, create_time
+        user_id,
+        chapter_id,
+        operation_type,
+        dice_value,
+        from_position,
+        to_position,
+        event_id,
+        reward_items,
+        operation_time
     ) VALUES (
         %d, %d, %d, %d, %d, %d,
-        %d, '%s', %d, %d
+        %d, '%s', %d
     )
 ]]
 

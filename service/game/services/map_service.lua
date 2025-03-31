@@ -173,36 +173,40 @@ function M.roll_dice(user_id)
             logger.error("Failed to get cell_data config for map_id %d, position %d", map_id, pos)
             return nil
         end
-        logger.info("cell_data: %s", utils.table_to_string(cell_data))
+        logger.debug("cell_data for position %d: %s", pos, utils.table_to_string(cell_data))
+        
         -- 合并两种事件
         if cell_data.cell_events and #cell_data.cell_events > 0 then
+            logger.debug("Found %d cell_events at position %d", #cell_data.cell_events, pos)
             for _, event_id in ipairs(cell_data.cell_events) do
                 table.insert(event_ids, event_id)
             end
         end
             
         if cell_data.cell_objects_events and #cell_data.cell_objects_events > 0 then
+            logger.debug("Found %d cell_objects_events at position %d", #cell_data.cell_objects_events, pos)
             for _, event_id in ipairs(cell_data.cell_objects_events) do
                 table.insert(event_ids, event_id)
             end
         end
     end
     
-    -- 如果找到了事件，将它们存储起来（可以在此处添加事件存储逻辑）
+    -- 如果找到了事件，将它们存储起来
     if #event_ids > 0 then
         logger.info("Found %d events on path for user %d", #event_ids, user_id)
+        logger.debug("Event IDs: %s", utils.table_to_string(event_ids))
         
         -- 存储事件到数据库
         for _, event_id in ipairs(event_ids) do
             -- 创建事件记录
             local event_data = {
+                user_id = user_id,
                 chapter_id = map_info.chapter_id,
                 cell_id = to_position,
                 event_id = event_id,
-                event_type = "unknown", -- 这里可能需要根据事件ID获取事件类型
                 status = 0, -- 未处理
-                create_time = os.time(),
-                update_time = os.time()
+                trigger_time = os.time(),
+                complete_time = 0
             }
             
             -- 调用DAO存储事件
@@ -215,6 +219,8 @@ function M.roll_dice(user_id)
                     event_id, map_info.chapter_id, to_position)
             end
         end
+    else
+        logger.debug("No events found on path from position %d to %d", from_position, to_position)
     end
     
     -- 记录操作日志

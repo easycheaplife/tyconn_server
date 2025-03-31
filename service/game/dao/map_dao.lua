@@ -6,6 +6,7 @@ local db_client = require "game.db_client"
 local map_model = require "game.models.map_model"
 local table_service = require "game.services.table_service"
 local json = require "cjson"
+local monopoly_model = require "game.models.monopoly_model"
 
 local M = {}
 
@@ -220,36 +221,22 @@ function M.log_monopoly_operation(log_data)
     return true
 end
 
--- 创建大富翁事件记录
+-- 创建大富翁事件
 function M.create_monopoly_event(event_data)
-    if not event_data or not event_data.chapter_id or not event_data.cell_id or not event_data.event_id then
+    if not event_data then
         logger.error("Invalid event data")
         return false, "Invalid event data"
     end
-
-    -- 构建事件数据
-    local event = {
-        chapter_id = event_data.chapter_id,
-        cell_id = event_data.cell_id,
-        event_id = event_data.event_id,
-        event_type = event_data.event_type or "unknown",
-        status = event_data.status or 0,
-        create_time = event_data.create_time or os.time(),
-        update_time = event_data.update_time or os.time()
-    }
-
-    -- 调用数据库代理创建事件
-    local ok, result = pcall(function()
-        return db_client.create_monopoly_event(event)
-    end)
-
+    
+    -- 调用模型创建事件
+    local ok, err = monopoly_model.create_monopoly_event(event_data)
     if not ok then
-        logger.error("Failed to create monopoly event: %s", tostring(result))
-        return false, result
+        logger.error("Failed to create monopoly event: %s", tostring(err))
+        return false, err
     end
-
+    
     -- 清除相关缓存
-    cache.remove_map_events(event.chapter_id, event.cell_id)
+    cache.remove_map_events(event_data.chapter_id, event_data.cell_id)
     
     return true
 end
