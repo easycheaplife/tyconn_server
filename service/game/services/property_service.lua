@@ -38,7 +38,7 @@ local function find_level_property_list(property_id, level)
     return result
 end
 
--- 计算单个属性的最终值
+-- 计算单个属性类型的最终值
 local function calculate_property(property_list, property_type)
     local base_value = 0
     local percent = 0
@@ -48,6 +48,19 @@ local function calculate_property(property_list, property_type)
         local prop_type = prop[1]
         local calc_type = prop[2]
         local value = prop[3]
+        
+        -- 确保value是数值类型
+        if type(value) == "table" then
+            -- 如果是表类型，尝试获取第一个数值
+            value = value[1] or 0
+        elseif type(value) == "string" then
+            -- 如果是字符串，尝试转换为数值
+            value = tonumber(value) or 0
+        elseif type(value) ~= "number" then
+            -- 其他类型都转为0
+            value = 0
+        end
+        
         -- 找到匹配的属性类型
         if prop_type == property_type then
             if calc_type == CALC_TYPE.VALUE then
