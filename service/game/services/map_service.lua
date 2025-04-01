@@ -6,6 +6,7 @@ local map_model = require "game.models.map_model"
 local table_service = require "game.services.table_service"
 local bag_service = require "game.services.bag_service"
 local error = require "error"
+local enum = require "enum"
 
 local M = {}
 
@@ -15,6 +16,110 @@ local OPERATION_TYPE = {
     HANDLE_EVENT = 2,  -- 处理事件
     CLAIM_REWARD = 3   -- 领取奖励
 }
+
+-- 事件处理器模块
+local event_handlers = {}
+
+-- 处理物品奖励事件
+function event_handlers.handle_item_reward(user_id, event)
+    local bags = {}
+    local success = true
+    
+    if event.item_id and event.count then
+        local ok, result = bag_service.add_item(user_id, event.item_id, event.count, enum.ChangeSource.SOURCE_REWARD)
+        if ok and result then
+            bags = result
+        else
+            success = false
+            logger.error("Failed to add item for user %d, item %d, count %d", 
+                user_id, event.item_id, event.count)
+        end
+    else
+        success = false
+        logger.error("Invalid item reward event data: missing item_id or count")
+    end
+    
+    return success, bags, nil
+end
+
+-- 处理传送事件
+function event_handlers.handle_teleport(user_id, event, map_info)
+    local success = true
+    local new_position = nil
+    
+    if event.target_position then
+        new_position = event.target_position
+        
+        -- 更新角色位置
+        map_info.current_position = new_position
+        map_info.update_time = os.time()
+        
+        local ok = map_dao.update_map_info(map_info)
+        if not ok then
+            success = false
+            logger.error("Failed to update position for user %d to position %d", 
+                user_id, new_position)
+        end
+    else
+        success = false
+        logger.error("Invalid teleport event data: missing target_position")
+    end
+    
+    return success, nil, new_position
+end
+
+-- 处理转向事件
+function event_handlers.handle_direction_change(user_id, event, map_info)
+    local success = true
+    
+    if event.direction then
+        -- 更新角色方向
+        map_info.direction = event.direction
+        map_info.update_time = os.time()
+        
+        local ok = map_dao.update_map_info(map_info)
+        if not ok then
+            success = false
+            logger.error("Failed to update direction for user %d to direction %d", 
+                user_id, event.direction)
+        end
+    else
+        success = false
+        logger.error("Invalid direction change event data: missing direction")
+    end
+    
+    return success, nil, nil
+end
+
+-- 处理一般性事件（不需要特殊处理的事件）
+function event_handlers.handle_generic_event(user_id, event)
+    logger.info("Handling generic event: user_id=%d, event_id=%d", user_id, event.event_id)
+    return true, nil, nil
+end
+
+-- 事件处理分发函数
+local function dispatch_event(user_id, event, map_info)
+    return true, nil, nil
+    local success = false
+    local bags = nil
+    local new_position = nil
+        
+    logger.debug("Dispatching event: user_id=%d, event_id=%d", user_id, event.event_id)
+    
+    -- 根据事件类型调用对应的处理函数
+    if event.event_id == enum.CellEventType.EVENT_TYPE_ITEM_REWARD then
+        success, bags, new_position = event_handlers.handle_item_reward(user_id, event)
+    elseif event.event_id == enum.CellEventType.EVENT_TYPE_JUMP then
+        success, bags, new_position = event_handlers.handle_teleport(user_id, event, map_info)
+    elseif event.event_id == enum.CellEventType.EVENT_TYPE_TURN then
+        success, bags, new_position = event_handlers.handle_direction_change(user_id, event, map_info)
+    else
+        -- 默认处理方式
+        success, bags, new_position = event_handlers.handle_generic_event(user_id, event)
+    end
+    
+    return success, bags, new_position
+end
 
 -- 获取章节配置
 function M.get_chapter_config(chapter_id)
@@ -301,51 +406,7 @@ function M.handle_cell_event(user_id, event_id)
     map_dao.update_event_status(target_event.id, 1)
     
     -- 处理事件
-    local success = true
-    local bags = {}
-    local new_position = nil
-    
-    if target_event.event_type == "item" then
-        -- 处理物品奖励
-        if target_event.item_id and target_event.count then
-            local ok, result = bag_service.add_item(user_id, target_event.item_id, target_event.count)
-            if ok and result then
-                bags = result
-            else
-                success = false
-                logger.error("Failed to add item for user %d, item %d, count %d", 
-                    user_id, target_event.item_id, target_event.count)
-            end
-        end
-    elseif target_event.event_type == "currency" then
-        -- 处理货币奖励
-        if target_event.currency_type and target_event.amount then
-            local ok, result = bag_service.add_currency(user_id, target_event.currency_type, target_event.amount)
-            if ok and result then
-                bags = result
-            else
-                success = false
-                logger.error("Failed to add currency for user %d, type %d, amount %d", 
-                    user_id, target_event.currency_type, target_event.amount)
-            end
-        end
-    elseif target_event.event_type == "teleport" then
-        -- 处理传送
-        if target_event.target_position then
-            -- 更新位置
-            map_info.current_position = target_event.target_position
-            map_info.update_time = os.time()
-            
-            -- 保存更新
-            local ok = map_dao.update_map_info(map_info)
-            if ok then
-                new_position = target_event.target_position
-            else
-                success = false
-                logger.error("Failed to update map info for teleport, user %d", user_id)
-            end
-        end
-    end
+    local success, bags, new_position = dispatch_event(user_id, target_event, map_info)
     
     -- 更新事件状态为已处理
     map_dao.update_event_status(target_event.id, 2)

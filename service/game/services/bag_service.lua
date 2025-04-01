@@ -825,4 +825,34 @@ function M.get_user_bags(user_id)
     return bag_info_list
 end
 
+-- 添加物品到背包
+function M.add_item(user_id, item_id, count, source)
+    if not user_id or not item_id or not count then
+        logger.error("Invalid parameters for add_item: user_id=%s, item_id=%s, count=%s",
+            tostring(user_id), tostring(item_id), tostring(count))
+        return false, nil
+    end
+    
+    logger.debug("Adding item to bag: user_id=%d, item_id=%d, count=%d", user_id, item_id, count)
+    
+    -- 调用item_service的add_items_to_slot函数，正确传递参数
+    local ok, err, added_items = item_service.add_items_to_slot(
+        user_id,
+        {  -- 物品对象
+            item_id = item_id,
+            count = count
+        },
+        source  -- 指定来源
+    )
+    
+    if not ok then
+        logger.error("Failed to add item to bag: user_id=%d, item_id=%d, count=%d, error: %s", 
+            user_id, item_id, count, err or "unknown error")
+        return false, nil
+    end
+    
+    logger.info("Successfully added item to bag: user_id=%d, item_id=%d, count=%d", user_id, item_id, count)
+    return true, added_items
+end
+
 return M 

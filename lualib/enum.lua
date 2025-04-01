@@ -1,5 +1,5 @@
 -- Generating enum.lua from proto/common/enum.proto
--- Generate time: 2025-03-30 08:51:04
+-- Generate time: 2025-04-01 03:06:18
 
 local M = {}
 
@@ -426,18 +426,20 @@ M.CellType = {
 -- 格子事件类型
 M.CellEventType = {
     EVENT_TYPE_NONE = 0,    -- 未知事件
-    EVENT_TYPE_ITEM = 1,    -- 获得物品
-    EVENT_TYPE_RESOURCE = 2,    -- 获得资源
-    EVENT_TYPE_BATTLE = 3,    -- 战斗
-    EVENT_TYPE_CHOICE = 4,    -- 选择题
-    EVENT_TYPE_TELEPORT = 5,    -- 传送
-    EVENT_TYPE_BUFF = 6,    -- 状态效果
-    EVENT_TYPE_SHOP = 7,    -- 商店
-    EVENT_TYPE_RANDOM = 8,    -- 随机事件
-    EVENT_TYPE_DIALOG = 9,    -- 对话
-    EVENT_TYPE_MINIGAME = 10,    -- 小游戏
-    EVENT_TYPE_PROPERTY = 11,    -- 地产相关
-    EVENT_TYPE_SPECIAL = 12,    -- 特殊事件
+    EVENT_TYPE_START = 101,    -- 起点
+    EVENT_TYPE_END = 102,    -- 终点
+    EVENT_TYPE_TURN = 103,    -- 转向
+    EVENT_TYPE_JUMP = 104,    -- 跳跃至格子ID
+    EVENT_TYPE_BATTLE = 200,    -- 触发战斗
+    EVENT_TYPE_TASK = 201,    -- 触发任务
+    EVENT_TYPE_ITEM_REWARD = 400,    -- 物品奖励
+    EVENT_TYPE_NPC_SHOP = 501,    -- NPC商店
+    EVENT_TYPE_WHEEL_SHOP = 502,    -- 轮盘商店
+    EVENT_TYPE_MODIFY_ATTR = 503,    -- 修改大富翁属性
+    EVENT_TYPE_MODIFY_BATTLE = 504,    -- 修改战斗属性
+    EVENT_TYPE_ADD_SCENE_BUFF = 505,    -- 添加场景BUFF
+    EVENT_TYPE_ADD_TRIGGER_BUFF = 506,    -- 添加触发者BUFF
+    EVENT_TYPE_ADD_PLAYER_BUFF = 507,    -- 添加玩主角BUFF
 }
 
 -- 章节通关条件类型
