@@ -37,10 +37,21 @@ function M.handle(client_id, msg)
             message.MessageID.G2C_HANDLE_CELL_EVENT_RESPONSE)
     end
 
+    if not request.cell_id then
+        logger.error("Missing cell_id in request from client: %d", client_id)
+        return message_helper.create_error_response(
+            base_request, 
+            "command.G2CHandleCellEventResponse",
+            error.ErrorCode.ERROR_CODE_INVALID_PARAM, 
+            "Missing cell ID", 
+            message.MessageID.G2C_HANDLE_CELL_EVENT_RESPONSE)
+    end
+
     -- 处理格子事件
-    local result = map_service.handle_cell_event(user.user_id, request.event_id)
+    local result = map_service.handle_cell_event(user.user_id, request.event_id, request.cell_id)
     if not result then
-        logger.error("Failed to handle cell event for user: %d, event_id: %d", user.user_id, request.event_id)
+        logger.error("Failed to handle cell event for user: %d, event_id: %d, cell_id: %d", 
+            user.user_id, request.event_id, request.cell_id)
         return message_helper.create_error_response(
             base_request, 
             "command.G2CHandleCellEventResponse",

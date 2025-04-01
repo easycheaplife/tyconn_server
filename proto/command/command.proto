@@ -392,13 +392,18 @@ message G2CRollDiceResponse {
     int32 dice_value = 1;                    // 骰子点数
     int32 from_position = 2;                 // 起始位置
     int32 to_position = 3;                   // 目标位置
-    repeated int32 event_ids = 4;            // 触发的事件ID列表（客户端可从Dfw_cell_events查事件详情）
+    message EventInfo {
+        int32 event_id = 1;                  // 事件ID
+        int32 cell_id = 2;                   // 事件所在格子ID
+    }
+    repeated EventInfo event_ids = 4;        // 触发的事件列表
 }
 
 // 处理格子事件请求 {{Req:705}}
 message C2GHandleCellEventRequest {
     string token = 1;           // JWT令牌
     int32 event_id = 2;         // 当前处理的事件ID
+    int32 cell_id = 3;          // 事件所在格子ID
 }
 
 // 处理格子事件响应 {{Res:706}}

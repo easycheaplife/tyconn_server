@@ -420,23 +420,27 @@ function M.roll_dice(user_id)
         -- 获取格子事件
         local cell_event_ids = get_cell_events(cell_data, pos)
         for _, event_id in ipairs(cell_event_ids) do
-            table.insert(event_ids, event_id)
+            -- 将事件ID和格子ID一起存储
+            table.insert(event_ids, {
+                event_id = event_id,
+                cell_id = pos
+            })
         end
     end
     
     -- 如果找到了事件，将它们存储起来
     if #event_ids > 0 then
         logger.info("Found %d events on path for user %d", #event_ids, user_id)
-        logger.debug("Event IDs: %s", utils.table_to_string(event_ids))
+        logger.debug("Events: %s", utils.table_to_string(event_ids))
         
         -- 存储事件到数据库
-        for _, event_id in ipairs(event_ids) do
+        for _, event_info in ipairs(event_ids) do
             -- 创建事件记录
             local event_data = {
                 user_id = user_id,
                 chapter_id = map_info.chapter_id,
-                cell_id = to_position,
-                event_id = event_id,
+                cell_id = event_info.cell_id,
+                event_id = event_info.event_id,
                 status = 0, -- 未处理
                 trigger_time = os.time(),
                 complete_time = 0
@@ -446,10 +450,10 @@ function M.roll_dice(user_id)
             local ok, err = map_dao.create_monopoly_event(event_data)
             if not ok then
                 logger.error("Failed to create event record for event_id=%d, chapter_id=%d, cell_id=%d: %s", 
-                    event_id, map_info.chapter_id, to_position, tostring(err))
+                    event_info.event_id, map_info.chapter_id, event_info.cell_id, tostring(err))
             else
                 logger.debug("Created event record for event_id=%d, chapter_id=%d, cell_id=%d", 
-                    event_id, map_info.chapter_id, to_position)
+                    event_info.event_id, map_info.chapter_id, event_info.cell_id)
             end
         end
     else
@@ -476,10 +480,10 @@ function M.roll_dice(user_id)
 end
 
 -- 处理格子事件
-function M.handle_cell_event(user_id, event_id)
-    if not user_id or not event_id then
-        logger.error("Invalid parameters: user_id=%s, event_id=%s", 
-            tostring(user_id), tostring(event_id))
+function M.handle_cell_event(user_id, event_id, cell_id)
+    if not user_id or not event_id or not cell_id then
+        logger.error("Invalid parameters: user_id=%s, event_id=%s, cell_id=%s", 
+            tostring(user_id), tostring(event_id), tostring(cell_id))
         return nil
     end
     
@@ -493,12 +497,12 @@ function M.handle_cell_event(user_id, event_id)
     -- 获取当前格子的所有事件
     local events = map_dao.get_cell_events({
         chapter_id = map_info.chapter_id,
-        cell_id = map_info.current_position
+        cell_id = cell_id
     })
     
     if not events or #events == 0 then
-        logger.warn("No events found for chapter %d, position %d", 
-            map_info.chapter_id, map_info.current_position)
+        logger.warn("No events found for chapter %d, cell_id %d", 
+            map_info.chapter_id, cell_id)
         return {
             success = false,
             event_id = event_id,
@@ -512,7 +516,7 @@ function M.handle_cell_event(user_id, event_id)
     local remaining_events = {}
     
     for _, event in ipairs(events) do
-        if event.event_id == event_id then
+        if event.event_id == event_id and event.cell_id == cell_id then
             target_event = event
         else
             table.insert(remaining_events, event.event_id)
@@ -520,8 +524,8 @@ function M.handle_cell_event(user_id, event_id)
     end
     
     if not target_event then
-        logger.error("Event %s not found for user %d at position %d", 
-            event_id, user_id, map_info.current_position)
+        logger.error("Event %s not found for user %d at cell_id %d", 
+            event_id, user_id, cell_id)
         return {
             success = false,
             event_id = event_id,
@@ -545,6 +549,7 @@ function M.handle_cell_event(user_id, event_id)
         chapter_id = map_info.chapter_id,
         operation_type = OPERATION_TYPE.HANDLE_EVENT,
         event_id = event_id,
+        cell_id = cell_id,
         operation_time = os.time()
     })
     

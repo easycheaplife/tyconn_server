@@ -14,26 +14,26 @@ class HandleCellEventTest extends BaseTest {
             assert(rollResponse, 'Roll response should not be null');
             console.log('Roll response keys:', Object.keys(rollResponse));
             
-            // 获取事件ID
-            const eventIds = rollResponse.event_ids || rollResponse.eventIds || [];
+            // 获取事件列表
+            const events = rollResponse.event_ids || rollResponse.eventIds || [];
             
             // 检查是否触发了事件
-            if (!eventIds || eventIds.length === 0) {
+            if (!events || events.length === 0) {
                 console.log('No events triggered from roll, trying again...');
                 // 再尝试一次
                 const secondRoll = await this.client.rollDice();
-                const secondEventIds = secondRoll.event_ids || secondRoll.eventIds || [];
+                const secondEvents = secondRoll.event_ids || secondRoll.eventIds || [];
                 
-                if (!secondEventIds || secondEventIds.length === 0) {
+                if (!secondEvents || secondEvents.length === 0) {
                     console.log('No events triggered after two attempts, test skipped');
                     return true; // 跳过测试，但不视为失败
                 } else {
                     // 使用第二次掷骰子的结果
-                    return this.testHandleEvent(secondEventIds);
+                    return this.testHandleEvent(secondEvents);
                 }
             } else {
                 // 使用第一次掷骰子的结果
-                return this.testHandleEvent(eventIds);
+                return this.testHandleEvent(events);
             }
         } catch (error) {
             console.error('Handle cell event test failed:', error);
@@ -42,20 +42,23 @@ class HandleCellEventTest extends BaseTest {
         }
     }
     
-    async testHandleEvent(eventIds) {
+    async testHandleEvent(events) {
         try {
-            console.log(`\nGot events: ${eventIds.join(', ')}`);
+            console.log(`\nGot ${events.length} events:`);
+            events.forEach(event => {
+                console.log(`  Event ID: ${event.event_id}, Cell ID: ${event.cell_id}`);
+            });
             
             // 记录背包状态，用于验证奖励是否正确
             console.log('\nGetting bag info before handling events...');
             const bagBefore = await this.client.getBagInfo();
             
             // 循环处理所有事件
-            for (let i = 0; i < eventIds.length; i++) {
-                const currentEventId = eventIds[i];
-                console.log(`\nHandling event ${i + 1}/${eventIds.length} (ID: ${currentEventId})...`);
+            for (let i = 0; i < events.length; i++) {
+                const currentEvent = events[i];
+                console.log(`\nHandling event ${i + 1}/${events.length} (ID: ${currentEvent.event_id}, Cell: ${currentEvent.cell_id})...`);
                 
-                const response = await this.client.handleCellEvent(currentEventId);
+                const response = await this.client.handleCellEvent(currentEvent.event_id, currentEvent.cell_id);
                 
                 // 验证响应
                 assert(response, 'Response should not be null');
@@ -78,8 +81,8 @@ class HandleCellEventTest extends BaseTest {
                 
                 // 检查事件处理是否成功
                 assert(success, 'Event handling should succeed');
-                assert(responseEventId === currentEventId, 
-                    `Event ID in response should match requested ID: ${responseEventId} vs ${currentEventId}`);
+                assert(responseEventId === currentEvent.event_id, 
+                    `Event ID in response should match requested ID: ${responseEventId} vs ${currentEvent.event_id}`);
                 
                 // 检查剩余事件
                 console.log(`Next event ID: ${nextEventId}`);

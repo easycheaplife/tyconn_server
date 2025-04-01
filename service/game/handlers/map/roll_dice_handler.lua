@@ -43,8 +43,16 @@ function M.handle(client_id, msg)
         dice_value = roll_result.dice_value,
         from_position = roll_result.from_position,
         to_position = roll_result.to_position,
-        event_ids = roll_result.event_ids
+        event_ids = {}  -- 初始化空数组
     }
+
+    -- 转换事件数据为新的格式
+    for _, event_info in ipairs(roll_result.event_ids) do
+        table.insert(response_data.event_ids, {
+            event_id = event_info.event_id,
+            cell_id = event_info.cell_id
+        })
+    end
 
     -- 返回成功响应
     return message_helper.create_success_response(

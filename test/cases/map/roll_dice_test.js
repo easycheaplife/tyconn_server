@@ -58,8 +58,14 @@ class RollDiceTest extends BaseTest {
             console.log(`Rolled ${diceValue}, moved from ${fromPosition} to ${toPosition}`);
             console.log(`Direction: ${direction}, Expected position: ${expectedPosition}`);
             
+            // 检查事件数据格式
             if (eventIds.length > 0) {
-                console.log(`Triggered events: ${eventIds.join(', ')}`);
+                console.log('Triggered events:');
+                eventIds.forEach(event => {
+                    assert(event.hasOwnProperty('event_id'), 'Event should have event_id');
+                    assert(event.hasOwnProperty('cell_id'), 'Event should have cell_id');
+                    console.log(`  Event ID: ${event.event_id}, Cell ID: ${event.cell_id}`);
+                });
             } else {
                 console.log('No events triggered');
             }
@@ -75,13 +81,14 @@ class RollDiceTest extends BaseTest {
             // 如果有事件，验证处理事件的逻辑
             if (eventIds.length > 0) {
                 console.log('\nTesting handle first event...');
-                const eventResponse = await this.client.handleCellEvent(eventIds[0]);
+                const firstEvent = eventIds[0];
+                const eventResponse = await this.client.handleCellEvent(firstEvent.event_id, firstEvent.cell_id);
                 assert(eventResponse, 'Event response should not be null');
                 
                 const responseEventId = eventResponse.event_id !== undefined ? 
                     eventResponse.event_id : eventResponse.eventId;
                     
-                assert(responseEventId === eventIds[0], 
+                assert(responseEventId === firstEvent.event_id, 
                     'Event ID in response should match requested event ID');
             }
             
