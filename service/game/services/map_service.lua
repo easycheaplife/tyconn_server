@@ -25,18 +25,28 @@ function event_handlers.handle_item_reward(user_id, event)
     local bags = {}
     local success = true
     
-    if event.item_id and event.count then
-        local ok, result = bag_service.add_item(user_id, event.item_id, event.count, enum.ChangeSource.SOURCE_REWARD)
-        if ok and result then
-            bags = result
+    -- 从事件数据中获取物品信息
+    if event.cell_events and #event.cell_events > 0 then
+        local event_data = event.cell_events[1]
+        if #event_data >= 3 then
+            local item_id = event_data[2]
+            local count = event_data[3]
+            
+            local ok, result = bag_service.add_item(user_id, item_id, count, enum.ChangeSource.SOURCE_REWARD)
+            if ok and result then
+                bags = result
+            else
+                success = false
+                logger.error("Failed to add item for user %d, item %d, count %d", 
+                    user_id, item_id, count)
+            end
         else
             success = false
-            logger.error("Failed to add item for user %d, item %d, count %d", 
-                user_id, event.item_id, event.count)
+            logger.error("Invalid item reward event data format")
         end
     else
         success = false
-        logger.error("Invalid item reward event data: missing item_id or count")
+        logger.error("Invalid item reward event data: missing cell_events")
     end
     
     return success, bags, nil
@@ -47,22 +57,29 @@ function event_handlers.handle_teleport(user_id, event, map_info)
     local success = true
     local new_position = nil
     
-    if event.target_position then
-        new_position = event.target_position
-        
-        -- 更新角色位置
-        map_info.current_position = new_position
-        map_info.update_time = os.time()
-        
-        local ok = map_dao.update_map_info(map_info)
-        if not ok then
+    -- 从事件数据中获取目标位置
+    if event.cell_events and #event.cell_events > 0 then
+        local event_data = event.cell_events[1]
+        if #event_data >= 2 then
+            new_position = event_data[2]
+            
+            -- 更新角色位置
+            map_info.current_position = new_position
+            map_info.update_time = os.time()
+            
+            local ok = map_dao.update_map_info(map_info)
+            if not ok then
+                success = false
+                logger.error("Failed to update position for user %d to position %d", 
+                    user_id, new_position)
+            end
+        else
             success = false
-            logger.error("Failed to update position for user %d to position %d", 
-                user_id, new_position)
+            logger.error("Invalid teleport event data format")
         end
     else
         success = false
-        logger.error("Invalid teleport event data: missing target_position")
+        logger.error("Invalid teleport event data: missing cell_events")
     end
     
     return success, nil, new_position
@@ -72,20 +89,29 @@ end
 function event_handlers.handle_direction_change(user_id, event, map_info)
     local success = true
     
-    if event.direction then
-        -- 更新角色方向
-        map_info.direction = event.direction
-        map_info.update_time = os.time()
-        
-        local ok = map_dao.update_map_info(map_info)
-        if not ok then
+    -- 从事件数据中获取方向
+    if event.cell_events and #event.cell_events > 0 then
+        local event_data = event.cell_events[1]
+        if #event_data >= 2 then
+            local direction = event_data[2]
+            
+            -- 更新角色方向
+            map_info.direction = direction
+            map_info.update_time = os.time()
+            
+            local ok = map_dao.update_map_info(map_info)
+            if not ok then
+                success = false
+                logger.error("Failed to update direction for user %d to direction %d", 
+                    user_id, direction)
+            end
+        else
             success = false
-            logger.error("Failed to update direction for user %d to direction %d", 
-                user_id, event.direction)
+            logger.error("Invalid direction change event data format")
         end
     else
         success = false
-        logger.error("Invalid direction change event data: missing direction")
+        logger.error("Invalid direction change event data: missing cell_events")
     end
     
     return success, nil, nil
@@ -93,29 +119,63 @@ end
 
 -- 处理一般性事件（不需要特殊处理的事件）
 function event_handlers.handle_generic_event(user_id, event)
-    logger.info("Handling generic event: user_id=%d, event_id=%d", user_id, event.event_id)
+    logger.info("Handling generic event: user_id=%d, event_id=%d, cell_events=%s", 
+        user_id, event.event_id, utils.table_to_string(event.cell_events))
     return true, nil, nil
+end
+
+-- 通过章节ID和格子ID获取格子数据
+local function get_cell_data_by_chapter(chapter_id, cell_id)
+    if not chapter_id or not cell_id then
+        logger.error("Invalid parameters: chapter_id=%s, cell_id=%s", 
+            tostring(chapter_id), tostring(cell_id))
+        return nil
+    end
+
+    -- 获取章节配置以获取地图ID
+    local chapter_config = M.get_chapter_config(chapter_id)
+    if not chapter_config then
+        logger.error("Failed to get chapter config for chapter %d", chapter_id)
+        return nil
+    end
+
+    -- 获取格子数据
+    return get_cell_data(chapter_config.map_id, cell_id)
 end
 
 -- 事件处理分发函数
 local function dispatch_event(user_id, event, map_info)
-    return true, nil, nil
     local success = false
     local bags = nil
     local new_position = nil
         
     logger.debug("Dispatching event: user_id=%d, event_id=%d", user_id, event.event_id)
     
+    -- 获取格子数据
+    local cell_data = get_cell_data_by_chapter(event.chapter_id, event.cell_id)
+    if not cell_data then
+        logger.error("Failed to get cell data for chapter %d, cell %d", 
+            event.chapter_id, event.cell_id)
+        return false, nil, nil
+    end
+    
+    -- 合并事件配置和事件数据
+    local complete_event = {
+        event_id = event.event_id,
+        cell_events = cell_data.cell_events,
+        cell_objects_events = cell_data.cell_objects_events
+    }
+    
     -- 根据事件类型调用对应的处理函数
     if event.event_id == enum.CellEventType.EVENT_TYPE_ITEM_REWARD then
-        success, bags, new_position = event_handlers.handle_item_reward(user_id, event)
+        success, bags, new_position = event_handlers.handle_item_reward(user_id, complete_event)
     elseif event.event_id == enum.CellEventType.EVENT_TYPE_JUMP then
-        success, bags, new_position = event_handlers.handle_teleport(user_id, event, map_info)
+        success, bags, new_position = event_handlers.handle_teleport(user_id, complete_event, map_info)
     elseif event.event_id == enum.CellEventType.EVENT_TYPE_TURN then
-        success, bags, new_position = event_handlers.handle_direction_change(user_id, event, map_info)
+        success, bags, new_position = event_handlers.handle_direction_change(user_id, complete_event, map_info)
     else
         -- 默认处理方式
-        success, bags, new_position = event_handlers.handle_generic_event(user_id, event)
+        success, bags, new_position = event_handlers.handle_generic_event(user_id, complete_event)
     end
     
     return success, bags, new_position
@@ -198,6 +258,65 @@ function M.get_map_info(user_id)
     return map_info
 end
 
+-- 获取格子数据
+local function get_cell_data(map_id, position)
+    if not map_id or not position then
+        logger.error("Invalid parameters: map_id=%s, position=%s", 
+            tostring(map_id), tostring(position))
+        return nil
+    end
+
+    local cell_configs = table_service.get_config_values("cell_data")
+    if not cell_configs then
+        logger.error("Failed to get cell_data config")
+        return nil
+    end
+    if not cell_configs[map_id] then
+        logger.error("Failed to get cell_data config for map_id %d", map_id)
+        return nil
+    end
+   
+    local cell_data = cell_configs[map_id][position]
+    if not cell_data then
+        logger.error("Failed to get cell_data config for map_id %d, position %d", map_id, position)
+        return nil
+    end
+    
+    logger.debug("cell_data for position %d: %s", position, utils.table_to_string(cell_data))
+    return cell_data
+end
+
+-- 获取格子事件
+local function get_cell_events(cell_data, position)
+    if not cell_data then
+        return {}
+    end
+
+    local event_ids = {}
+    
+    -- 处理格子事件
+    if cell_data.cell_events and #cell_data.cell_events > 0 then
+        logger.debug("Found %d cell_events at position %d", #cell_data.cell_events, position)
+        for _, event_data in ipairs(cell_data.cell_events) do
+            if type(event_data) == "table" and #event_data > 0 then
+                table.insert(event_ids, event_data[1])
+            end
+        end
+    end
+        
+    -- 处理格子对象事件
+    if cell_data.cell_objects_events and #cell_data.cell_objects_events > 0 then
+        logger.debug("Found %d cell_objects_events at position %d", #cell_data.cell_objects_events, position)
+        for _, event_data in ipairs(cell_data.cell_objects_events) do
+            if type(event_data) == "table" and #event_data > 0 then
+                table.insert(event_ids, event_data[1])
+            end
+        end
+    end
+    
+    return event_ids
+end
+
 -- 掷骰子
 function M.roll_dice(user_id)
     if not user_id then
@@ -261,38 +380,16 @@ function M.roll_dice(user_id)
     for pos = start_pos + step, end_pos, step do
         logger.debug("Checking events for position %d", pos)
         
-        -- 查找地图数据
-        local cell_data = nil
-        local cell_configs = table_service.get_config_values("cell_data")
-        if not cell_configs then
-            logger.error("Failed to get cell_data config")
-            return nil
-        end
-        if not cell_configs[map_id] then
-            logger.error("Failed to get cell_data config for map_id %d", map_id)
-            return nil
-        end
-       
-        local cell_data = cell_configs[map_id][pos]
+        -- 获取格子数据
+        local cell_data = get_cell_data(map_id, pos)
         if not cell_data then
-            logger.error("Failed to get cell_data config for map_id %d, position %d", map_id, pos)
             return nil
         end
-        logger.debug("cell_data for position %d: %s", pos, utils.table_to_string(cell_data))
         
-        -- 合并两种事件
-        if cell_data.cell_events and #cell_data.cell_events > 0 then
-            logger.debug("Found %d cell_events at position %d", #cell_data.cell_events, pos)
-            for _, event_id in ipairs(cell_data.cell_events) do
-                table.insert(event_ids, event_id)
-            end
-        end
-            
-        if cell_data.cell_objects_events and #cell_data.cell_objects_events > 0 then
-            logger.debug("Found %d cell_objects_events at position %d", #cell_data.cell_objects_events, pos)
-            for _, event_id in ipairs(cell_data.cell_objects_events) do
-                table.insert(event_ids, event_id)
-            end
+        -- 获取格子事件
+        local cell_event_ids = get_cell_events(cell_data, pos)
+        for _, event_id in ipairs(cell_event_ids) do
+            table.insert(event_ids, event_id)
         end
     end
     

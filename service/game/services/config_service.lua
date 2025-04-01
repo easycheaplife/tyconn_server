@@ -403,20 +403,14 @@ function M.load_cell_events_config()
     end
 
     -- 转换配置格式
-    for _, event_data in pairs(data) do
+    for id, event_data in pairs(data) do
         local event_id = tonumber(event_data.Event_id)
         if event_id then
             CONFIG_CACHE.cell_events[event_id] = {
-                id = event_id,
-                event_type = tonumber(event_data.Event_type) or 0,
-                event_name = event_data.L_event_name,
-                event_desc = event_data.L_event_desc,
-                event_icon = event_data.Event_icon,
-                event_model = event_data.Event_model,
-                event_effect = event_data.Event_effect or {},
-                event_condition = event_data.Event_condition or {},
-                event_choices = event_data.Event_choices or {},
-                event_priority = tonumber(event_data.Event_priority) or 0
+                id = tonumber(event_data.Id),
+                event_id = event_id,
+                event_type_id = tonumber(event_data.Event_type_id),
+                resource = event_data.resource
             }
         end
     end
