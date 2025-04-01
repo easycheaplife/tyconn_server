@@ -119,7 +119,6 @@ function M.get_unit_level_property(unit_id, level)
             prop_id = prop_type,
             value = value
         })
-        logger.info("Calculated unit property changes: %s", utils.table_to_string(property_changes))
     end
 
     logger.info("Calculated unit property changes: %s", utils.table_to_string(property_changes))

@@ -124,6 +124,30 @@ function event_handlers.handle_generic_event(user_id, event)
     return true, nil, nil
 end
 
+-- 获取事件类型ID
+function M.get_event_type_id(event_id)
+    if not event_id then
+        logger.error("Invalid event_id")
+        return nil
+    end
+    
+    -- 从配置获取事件信息
+    local event_configs = table_service.get_config_values("cell_events")
+    if not event_configs then
+        logger.error("Failed to get cell_events config")
+        return nil
+    end
+    
+    -- 获取特定事件的配置
+    local event_config = event_configs[event_id]
+    if not event_config then
+        logger.error("Event config not found for event_id %d", event_id)
+        return nil
+    end
+    
+    return event_config.event_type_id
+end
+
 -- 获取格子数据
 function M.get_cell_data(map_id, position)
     if not map_id or not position then
@@ -187,19 +211,27 @@ local function dispatch_event(user_id, event, map_info)
         return false, nil, nil
     end
     
+    -- 获取事件类型ID
+    local event_type_id = M.get_event_type_id(event.event_id)
+    if not event_type_id then
+        logger.error("Failed to get event type id for event_id %d", event.event_id)
+        return false, nil, nil
+    end
+
     -- 合并事件配置和事件数据
     local complete_event = {
         event_id = event.event_id,
+        event_type_id = event_type_id,
         cell_events = cell_data.cell_events,
         cell_objects_events = cell_data.cell_objects_events
     }
     
     -- 根据事件类型调用对应的处理函数
-    if event.event_id == enum.CellEventType.EVENT_TYPE_ITEM_REWARD then
+    if event.event_type_id == enum.CellEventType.EVENT_TYPE_ITEM_REWARD then
         success, bags, new_position = event_handlers.handle_item_reward(user_id, complete_event)
-    elseif event.event_id == enum.CellEventType.EVENT_TYPE_JUMP then
+    elseif event.event_type_id == enum.CellEventType.EVENT_TYPE_JUMP then
         success, bags, new_position = event_handlers.handle_teleport(user_id, complete_event, map_info)
-    elseif event.event_id == enum.CellEventType.EVENT_TYPE_TURN then
+    elseif event.event_type_id == enum.CellEventType.EVENT_TYPE_TURN then
         success, bags, new_position = event_handlers.handle_direction_change(user_id, complete_event, map_info)
     else
         -- 默认处理方式
