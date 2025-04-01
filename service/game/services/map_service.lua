@@ -124,6 +124,34 @@ function event_handlers.handle_generic_event(user_id, event)
     return true, nil, nil
 end
 
+-- 获取格子数据
+function M.get_cell_data(map_id, position)
+    if not map_id or not position then
+        logger.error("Invalid parameters: map_id=%s, position=%s", 
+            tostring(map_id), tostring(position))
+        return nil
+    end
+
+    local cell_configs = table_service.get_config_values("cell_data")
+    if not cell_configs then
+        logger.error("Failed to get cell_data config")
+        return nil
+    end
+    if not cell_configs[map_id] then
+        logger.error("Failed to get cell_data config for map_id %d", map_id)
+        return nil
+    end
+   
+    local cell_data = cell_configs[map_id][position]
+    if not cell_data then
+        logger.error("Failed to get cell_data config for map_id %d, position %d", map_id, position)
+        return nil
+    end
+    
+    logger.debug("cell_data for position %d: %s", position, utils.table_to_string(cell_data))
+    return cell_data
+end
+
 -- 通过章节ID和格子ID获取格子数据
 local function get_cell_data_by_chapter(chapter_id, cell_id)
     if not chapter_id or not cell_id then
@@ -140,7 +168,7 @@ local function get_cell_data_by_chapter(chapter_id, cell_id)
     end
 
     -- 获取格子数据
-    return get_cell_data(chapter_config.map_id, cell_id)
+    return M.get_cell_data(chapter_config.map_id, cell_id)
 end
 
 -- 事件处理分发函数
@@ -258,34 +286,6 @@ function M.get_map_info(user_id)
     return map_info
 end
 
--- 获取格子数据
-local function get_cell_data(map_id, position)
-    if not map_id or not position then
-        logger.error("Invalid parameters: map_id=%s, position=%s", 
-            tostring(map_id), tostring(position))
-        return nil
-    end
-
-    local cell_configs = table_service.get_config_values("cell_data")
-    if not cell_configs then
-        logger.error("Failed to get cell_data config")
-        return nil
-    end
-    if not cell_configs[map_id] then
-        logger.error("Failed to get cell_data config for map_id %d", map_id)
-        return nil
-    end
-   
-    local cell_data = cell_configs[map_id][position]
-    if not cell_data then
-        logger.error("Failed to get cell_data config for map_id %d, position %d", map_id, position)
-        return nil
-    end
-    
-    logger.debug("cell_data for position %d: %s", position, utils.table_to_string(cell_data))
-    return cell_data
-end
-
 -- 获取格子事件
 local function get_cell_events(cell_data, position)
     if not cell_data then
@@ -297,10 +297,9 @@ local function get_cell_events(cell_data, position)
     -- 处理格子事件
     if cell_data.cell_events and #cell_data.cell_events > 0 then
         logger.debug("Found %d cell_events at position %d", #cell_data.cell_events, position)
-        for _, event_data in ipairs(cell_data.cell_events) do
-            if type(event_data) == "table" and #event_data > 0 then
-                table.insert(event_ids, event_data[1])
-            end
+        -- 只取第一个参数作为事件ID
+        if type(cell_data.cell_events[1]) == "number" then
+            table.insert(event_ids, cell_data.cell_events[1])
         end
     end
         
@@ -308,7 +307,7 @@ local function get_cell_events(cell_data, position)
     if cell_data.cell_objects_events and #cell_data.cell_objects_events > 0 then
         logger.debug("Found %d cell_objects_events at position %d", #cell_data.cell_objects_events, position)
         for _, event_data in ipairs(cell_data.cell_objects_events) do
-            if type(event_data) == "table" and #event_data > 0 then
+            if type(event_data) == "table" and #event_data >= 1 then
                 table.insert(event_ids, event_data[1])
             end
         end
@@ -381,7 +380,7 @@ function M.roll_dice(user_id)
         logger.debug("Checking events for position %d", pos)
         
         -- 获取格子数据
-        local cell_data = get_cell_data(map_id, pos)
+        local cell_data = M.get_cell_data(map_id, pos)
         if not cell_data then
             return nil
         end
