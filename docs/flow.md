@@ -766,3 +766,283 @@ sequenceDiagram
 12. 数据库创建成功
 13. 游戏服务器返回解锁结果
 14. 网关将响应发送给客户端
+
+## 9. 装备系统流程
+
+### 9.1 获取装备信息流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 获取装备信息请求(token)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>DB: 5. 查询用户装备
+    DB-->>GM: 6. 返回装备数据
+    GM->>GM: 7. 处理装备属性
+    GM-->>G: 8. 返回装备信息
+    G-->>C: 9. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送获取装备信息请求
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器查询用户装备数据
+6. DB代理返回装备数据
+7. 游戏服务器处理装备属性（基础属性、加成属性等）
+8. 游戏服务器返回装备信息
+9. 网关将响应发送给客户端
+
+### 9.2 装备物品流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 装备物品请求(token, item_id)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>DB: 5. 获取物品信息
+    DB-->>GM: 6. 返回物品数据
+    GM->>GM: 7. 验证装备条件
+    GM->>DB: 8. 更新装备状态
+    DB-->>GM: 9. 更新成功
+    GM->>DB: 10. 更新角色属性
+    GM-->>G: 11. 返回装备结果
+    G-->>C: 12. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送装备物品请求
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器查询物品信息
+6. DB代理返回物品数据
+7. 游戏服务器验证装备条件（等级、职业等）
+8. 更新物品装备状态
+9. 数据库更新成功
+10. 更新角色属性
+11. 游戏服务器返回装备结果
+12. 网关将响应发送给客户端
+
+### 9.3 卸下装备流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 卸下装备请求(token, item_id)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>DB: 5. 获取装备信息
+    DB-->>GM: 6. 返回装备数据
+    GM->>GM: 7. 验证卸下条件
+    GM->>DB: 8. 更新装备状态
+    DB-->>GM: 9. 更新成功
+    GM->>DB: 10. 更新角色属性
+    GM-->>G: 11. 返回卸下结果
+    G-->>C: 12. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送卸下装备请求
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器查询装备信息
+6. DB代理返回装备数据
+7. 游戏服务器验证卸下条件
+8. 更新物品装备状态
+9. 数据库更新成功
+10. 更新角色属性
+11. 游戏服务器返回卸下结果
+12. 网关将响应发送给客户端
+
+### 9.4 装备升级流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 装备升级请求(token, item_id)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>DB: 5. 获取装备信息
+    DB-->>GM: 6. 返回装备数据
+    GM->>GM: 7. 验证升级条件
+    GM->>DB: 8. 扣除升级材料
+    DB-->>GM: 9. 扣除成功
+    GM->>DB: 10. 更新装备等级
+    DB-->>GM: 11. 更新成功
+    GM->>DB: 12. 更新装备属性
+    GM-->>G: 13. 返回升级结果
+    G-->>C: 14. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送装备升级请求
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器查询装备信息
+6. DB代理返回装备数据
+7. 游戏服务器验证升级条件（等级上限、材料是否足够）
+8. 扣除升级所需材料
+9. 材料扣除成功
+10. 更新装备等级
+11. 数据库更新成功
+12. 更新装备属性
+13. 游戏服务器返回升级结果
+14. 网关将响应发送给客户端
+
+## 10. 大富翁游戏流程
+
+### 10.1 获取地图信息流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 获取地图信息请求(token)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>DB: 5. 查询用户地图信息
+    DB-->>GM: 6. 返回地图数据
+    GM->>GM: 7. 处理地图状态
+    GM-->>G: 8. 返回地图信息
+    G-->>C: 9. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送获取地图信息请求
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器查询用户地图数据
+6. DB代理返回地图数据
+7. 游戏服务器处理地图状态（章节、位置、方向等）
+8. 游戏服务器返回地图信息
+9. 网关将响应发送给客户端
+
+### 10.2 掷骰子流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 掷骰子请求(token)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>GM: 5. 生成骰子点数
+    GM->>GM: 6. 计算移动位置
+    GM->>GM: 7. 触发格子事件
+    GM->>DB: 8. 更新位置信息
+    DB-->>GM: 9. 更新成功
+    GM-->>G: 10. 返回移动结果
+    G-->>C: 11. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送掷骰子请求
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器生成随机骰子点数
+6. 计算移动后的位置
+7. 触发经过的格子事件
+8. 更新用户位置信息
+9. 数据库更新成功
+10. 游戏服务器返回移动结果（点数、位置、事件等）
+11. 网关将响应发送给客户端
+
+### 10.3 处理格子事件流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 处理事件请求(token, event_id)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>GM: 5. 获取事件信息
+    GM->>GM: 6. 处理事件逻辑
+    GM->>DB: 7. 更新事件状态
+    DB-->>GM: 8. 更新成功
+    GM->>DB: 9. 更新奖励信息
+    GM-->>G: 10. 返回处理结果
+    G-->>C: 11. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送处理事件请求
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器获取事件信息
+6. 执行事件处理逻辑
+7. 更新事件状态
+8. 数据库更新成功
+9. 更新奖励信息
+10. 游戏服务器返回处理结果
+11. 网关将响应发送给客户端
+
+### 10.4 领取通关奖励流程
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant G as Gate Server
+    participant GM as Game Server
+    participant DB as DB Proxy
+    
+    C->>G: 1. 领取奖励请求(token)
+    G->>GM: 2. 转发请求
+    GM->>DB: 3. 验证Token
+    DB-->>GM: 4. Token有效
+    GM->>DB: 5. 获取章节信息
+    DB-->>GM: 6. 返回章节数据
+    GM->>GM: 7. 验证领取条件
+    GM->>DB: 8. 发放奖励
+    DB-->>GM: 9. 发放成功
+    GM->>DB: 10. 更新章节状态
+    GM-->>G: 11. 返回领取结果
+    G-->>C: 12. 返回响应
+```
+
+**流程说明:**
+1. 客户端发送领取奖励请求
+2. 网关转发请求到游戏服务器
+3. 游戏服务器通过DB代理验证Token
+4. Token验证通过
+5. 游戏服务器查询章节信息
+6. DB代理返回章节数据
+7. 游戏服务器验证领取条件（是否满足胜利条件）
+8. 发放章节奖励
+9. 奖励发放成功
+10. 更新章节状态
+11. 游戏服务器返回领取结果
+12. 网关将响应发送给客户端

@@ -1053,6 +1053,128 @@ message PropertyInfo {
 }
 ```
 
+### 3.10 大富翁游戏接口
+
+#### 3.10.1 获取地图信息
+**连接类型:** `WebSocket`
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf
+message C2GMapInfoRequest {
+    string token = 1;      // JWT令牌
+}
+```
+
+**响应格式:**
+```protobuf
+message G2CMapInfoResponse {
+    int32 chapter_id = 1;                    // 章节ID
+    int32 current_position = 2;              // 当前位置（对应格子ID）
+    int32 direction = 3;                     // 移动朝向(1:正向, -1:反向)
+}
+```
+
+**错误码说明:**
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+
+#### 3.10.2 掷骰子
+**连接类型:** `WebSocket`
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf
+message C2GRollDiceRequest {
+    string token = 1;      // JWT令牌
+}
+```
+
+**响应格式:**
+```protobuf
+message G2CRollDiceResponse {
+    int32 dice_value = 1;                    // 骰子点数
+    int32 from_position = 2;                 // 起始位置
+    int32 to_position = 3;                   // 目标位置
+    message EventInfo {
+        int32 event_id = 1;                  // 事件ID
+        int32 cell_id = 2;                   // 事件所在格子ID
+    }
+    repeated EventInfo event_ids = 4;        // 触发的事件列表
+}
+```
+
+**错误码说明:**
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+- ERROR_CODE_SYSTEM_ERROR: 系统错误
+
+#### 3.10.3 处理格子事件
+**连接类型:** `WebSocket`
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf
+message C2GHandleCellEventRequest {
+    string token = 1;           // JWT令牌
+    int32 event_id = 2;         // 当前处理的事件ID
+    int32 cell_id = 3;          // 事件所在格子ID
+}
+```
+
+**响应格式:**
+```protobuf
+message G2CHandleCellEventResponse {
+    int32 event_id = 1;                      // 当前处理的事件ID
+    bool success = 2;                        // 是否成功处理
+    repeated common.BagInfo bags = 3;        // 背包变化信息
+    int32 next_event_id = 4;                 // 下一个需要处理的事件ID (0表示所有事件已处理完)
+    repeated int32 remaining_events = 5;     // 剩余未处理的事件列表
+}
+```
+
+**错误码说明:**
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+- ERROR_CODE_SYSTEM_ERROR: 系统错误
+- ERROR_CODE_INVALID_PARAM: 无效参数
+
+#### 3.10.4 领取通关奖励
+**连接类型:** `WebSocket`
+**请求路径:** `/ws`
+
+**请求格式:**
+```protobuf
+message C2GClaimRewardRequest {
+    string token = 1;      // JWT令牌
+}
+```
+
+**响应格式:**
+```protobuf
+message G2CClaimRewardResponse {
+    bool success = 1;                      // 是否成功
+    repeated common.BagInfo bags = 2;      // 背包变化信息
+    int32 next_chapter = 3;                // 下一章节ID
+}
+```
+
+**错误码说明:**
+- ERROR_CODE_SUCCESS: 成功
+- ERROR_CODE_TOKEN_INVALID: 无效的令牌
+- ERROR_CODE_TOKEN_EXPIRED: 令牌已过期
+- ERROR_CODE_SYSTEM_ERROR: 系统错误
+- ERROR_CODE_INVALID_PARAM: 无效参数
+
+**特别说明:**
+1. 领取奖励需要满足章节的胜利条件
+2. 每个章节的奖励只能领取一次
+3. 领取奖励后会自动进入下一章节
+4. 如果已经是最后一个章节，next_chapter 将为 0
+
 ## 4. 系统配置
 
 ### 4.1 服务端口
