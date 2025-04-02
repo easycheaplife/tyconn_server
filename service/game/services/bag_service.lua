@@ -851,8 +851,40 @@ function M.add_item(user_id, item_id, count, source)
         return false, nil
     end
     
+    -- 构建完整的BagInfo结构
+    local bags = {}
+    for _, bag_change in ipairs(added_items) do
+        if bag_change.bag_type then
+            -- 查找或创建对应背包类型的BagInfo
+            local bag_info = nil
+            for _, bag in ipairs(bags) do
+                if bag.bag_type == bag_change.bag_type then
+                    bag_info = bag
+                    break
+                end
+            end
+            
+            if not bag_info then
+                bag_info = {
+                    bag_type = bag_change.bag_type,
+                    size = bag_change.size or 0,  -- 背包大小
+                    items = {}
+                }
+                table.insert(bags, bag_info)
+            end
+            
+            -- 添加物品信息
+            if bag_change.item_id and bag_change.count then
+                table.insert(bag_info.items, {
+                    item_id = bag_change.item_id,
+                    count = bag_change.count
+                })
+            end
+        end
+    end
+    
     logger.info("Successfully added item to bag: user_id=%d, item_id=%d, count=%d", user_id, item_id, count)
-    return true, added_items
+    return true, bags
 end
 
 return M 
