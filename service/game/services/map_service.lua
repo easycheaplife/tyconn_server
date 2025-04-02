@@ -649,6 +649,172 @@ function M.handle_cell_event(user_id, event_id, cell_id)
     }
 end
 
+-- 检查章节进度
+local function check_chapter_progress(progress, chapter_id, user_id)
+    if progress then
+        local is_passed = (progress.is_passed == 1)
+        
+        -- 检查是否已领取奖励
+        if progress.reward_claimed == 1 then
+            logger.warn("Chapter %d reward already claimed by user %d", chapter_id, user_id)
+            return {
+                success = false,
+                reason = "reward_already_claimed"
+            }
+        end
+        
+        return {
+            success = true,
+            is_passed = is_passed,
+            progress = progress
+        }
+    end
+    
+    return {
+        success = true,
+        is_passed = false,
+        progress = nil
+    }
+end
+
+-- 检查胜利条件
+local function check_victory_conditions(victory_conditions, map_info, user_id, chapter_config)
+    if not victory_conditions or #victory_conditions == 0 then
+        logger.error("No victory conditions defined for chapter %d", map_info.chapter_id)
+        return {
+            success = false,
+            reason = "no_victory_conditions"
+        }
+    end
+    
+    -- 检查每个胜利条件
+    for _, condition in ipairs(victory_conditions) do
+        local condition_type = condition[1]
+        local condition_value = condition[2]
+        
+        if condition_type == enum.ChapterConditionType.CONDITION_TYPE_REACH_END then
+            -- 检查是否到达终点
+            if map_info.current_position < chapter_config.total_cells then
+                return {
+                    success = false,
+                    reason = "not_reached_end"
+                }
+            end
+        elseif condition_type == enum.ChapterConditionType.CONDITION_TYPE_PLAYER_LEVEL then
+            -- 检查玩家等级
+            local user_level = user_service.get_user_level(user_id)
+            if user_level < condition_value then
+                return {
+                    success = false,
+                    reason = "level_not_enough"
+                }
+            end
+        elseif condition_type == enum.ChapterConditionType.CONDITION_TYPE_PASS_STAGES then
+            -- 检查通过的关卡数
+            local passed_stages = map_dao.get_user_passed_stages(user_id)
+            if not passed_stages or #passed_stages < condition_value then
+                return {
+                    success = false,
+                    reason = "stages_not_enough"
+                }
+            end
+        end
+    end
+    
+    return {
+        success = true,
+        is_passed = true
+    }
+end
+
+-- 创建章节进度记录
+local function create_chapter_progress(user_id, chapter_id)
+    local progress = {
+        user_id = user_id,
+        chapter_id = chapter_id,
+        is_passed = 1,
+        pass_time = os.time(),
+        reward_claimed = 0,
+        reward_time = 0
+    }
+    
+    local ok = map_dao.create_chapter_progress(progress)
+    if not ok then
+        logger.error("Failed to create chapter progress for user %d, chapter %d", 
+            user_id, chapter_id)
+        return nil
+    end
+    
+    return progress
+end
+
+-- 发放章节奖励
+local function grant_chapter_rewards(user_id, chapter_config)
+    local bags = {}
+    
+    if chapter_config.chapter_reward and #chapter_config.chapter_reward > 0 then
+        -- 物品奖励
+        for _, item in ipairs(chapter_config.chapter_reward) do
+            if type(item) == "table" and #item >= 2 then
+                local item_id = item[1]
+                local item_count = item[2]
+                local ok, result = bag_service.add_item(user_id, item_id, item_count, enum.ChangeSource.SOURCE_REWARD)
+                if ok and result then
+                    for _, bag_change in ipairs(result) do
+                        table.insert(bags, bag_change)
+                    end
+                else
+                    logger.error("Failed to add item for user %d, item=%d, count=%d", 
+                        user_id, item_id, item_count)
+                end
+            end
+        end
+    end
+    
+    return bags
+end
+
+-- 更新章节进度
+local function update_chapter_progress(progress, user_id, chapter_id)
+    local ok = map_dao.update_chapter_progress({
+        user_id = user_id,
+        chapter_id = chapter_id,
+        is_passed = 1,
+        pass_time = progress.pass_time,
+        reward_claimed = 1,
+        reward_time = os.time()
+    })
+    
+    if not ok then
+        logger.error("Failed to update chapter progress for user %d, chapter %d", 
+            user_id, chapter_id)
+        return false
+    end
+    
+    return true
+end
+
+-- 进入下一章节
+local function enter_next_chapter(map_info, next_chapter_id)
+    -- 检查下一章节是否存在
+    local next_chapter_config = M.get_chapter_config(next_chapter_id)
+    if next_chapter_config then
+        -- 更新到下一章节
+        map_info.chapter_id = next_chapter_id
+        map_info.current_position = 0  -- 初始位置
+        map_info.direction = 1  -- 初始方向（正向）
+        map_info.update_time = os.time()
+        
+        local ok = map_dao.update_map_info(map_info)
+        if not ok then
+            logger.error("Failed to update map info for user %d", map_info.user_id)
+            return false
+        end
+    end
+    
+    return true
+end
+
 -- 领取章节奖励
 function M.claim_reward(user_id)
     if not user_id then
@@ -671,152 +837,41 @@ function M.claim_reward(user_id)
     end
     
     logger.info("get_chapter_config %s", utils.table_to_string(chapter_config))
+    
     -- 获取章节进度
     local progress = map_dao.get_chapter_progress(user_id, map_info.chapter_id)
     
-    -- 检查是否已通关
-    local is_passed = false
+    -- 检查章节进度
+    local progress_check = check_chapter_progress(progress, map_info.chapter_id, user_id)
+    if not progress_check.success then
+        return progress_check
+    end
     
-    if progress then
-        is_passed = (progress.is_passed == 1)
-        
-        -- 检查是否已领取奖励
-        if progress.reward_claimed == 1 then
-            logger.warn("Chapter %d reward already claimed by user %d", map_info.chapter_id, user_id)
-            return {
-                success = false,
-                reason = "reward_already_claimed"
-            }
-        end
-    else
-        -- 检查胜利条件
-        local victory_conditions = chapter_config.victory_condition
-        if not victory_conditions or #victory_conditions == 0 then
-            logger.error("No victory conditions defined for chapter %d", map_info.chapter_id)
-            return {
-                success = false,
-                reason = "no_victory_conditions"
-            }
+    -- 如果没有进度记录，检查胜利条件
+    if not progress then
+        local victory_check = check_victory_conditions(chapter_config.victory_condition, map_info, user_id, chapter_config)
+        if not victory_check.success then
+            return victory_check
         end
         
-        -- 检查每个胜利条件
-        is_passed = true
-        for _, condition in ipairs(victory_conditions) do
-            local condition_type = condition[1]
-            local condition_value = condition[2]
-            
-            if condition_type == enum.ChapterConditionType.CONDITION_TYPE_REACH_END then
-                -- 检查是否到达终点
-                if map_info.current_position < chapter_config.total_cells then
-                    is_passed = false
-                    break
-                end
-            elseif condition_type == enum.ChapterConditionType.CONDITION_TYPE_PLAYER_LEVEL then
-                -- 检查玩家等级
-                local user_level = user_service.get_user_level(user_id)
-                if user_level < condition_value then
-                    is_passed = false
-                    break
-                end
-            elseif condition_type == enum.ChapterConditionType.CONDITION_TYPE_PASS_STAGES then
-                -- 检查通过的关卡数
-                local passed_stages = map_dao.get_user_passed_stages(user_id)
-                if not passed_stages or #passed_stages < condition_value then
-                    is_passed = false
-                    break
-                end
-            end
-        end
-        
-        if is_passed then
-            -- 创建章节进度记录
-            local ok = map_dao.create_chapter_progress({
-                user_id = user_id,
-                chapter_id = map_info.chapter_id,
-                is_passed = 1,
-                pass_time = os.time(),
-                reward_claimed = 0,
-                reward_time = 0
-            })
-            
-            if not ok then
-                logger.error("Failed to create chapter progress for user %d, chapter %d", 
-                    user_id, map_info.chapter_id)
-                return nil
-            end
-            
-            progress = {
-                user_id = user_id,
-                chapter_id = map_info.chapter_id,
-                is_passed = 1,
-                pass_time = os.time(),
-                reward_claimed = 0,
-                reward_time = 0
-            }
-        else
-            logger.warn("Chapter %d conditions not met by user %d", map_info.chapter_id, user_id)
-            return {
-                success = false,
-                reason = "conditions_not_met"
-            }
+        -- 创建章节进度记录
+        progress = create_chapter_progress(user_id, map_info.chapter_id)
+        if not progress then
+            return nil
         end
     end
     
     -- 发放奖励
-    local bags = {}
+    local bags = grant_chapter_rewards(user_id, chapter_config)
     
-    if chapter_config.chapter_reward and #chapter_config.chapter_reward > 0 then
-        -- 物品奖励
-        for _, item in ipairs(chapter_config.chapter_reward) do
-            if type(item) == "table" and #item >= 2 then
-                local item_id = item[1]
-                local item_count = item[2]
-                local ok, result = bag_service.add_item(user_id, item_id, item_count, enum.ChangeSource.SOURCE_REWARD)
-                if ok and result then
-                    for _, bag_change in ipairs(result) do
-                        table.insert(bags, bag_change)
-                    end
-                else
-                    logger.error("Failed to add item for user %d, item=%d, count=%d", 
-                        user_id, item_id, item_count)
-                end
-            end
-        end
-    end
-    
-    -- 更新章节进度，标记奖励已领取
-    local ok = map_dao.update_chapter_progress({
-        user_id = user_id,
-        chapter_id = map_info.chapter_id,
-        is_passed = 1,
-        pass_time = progress.pass_time,
-        reward_claimed = 1,
-        reward_time = os.time()
-    })
-    
-    if not ok then
-        logger.error("Failed to update chapter progress for user %d, chapter %d", 
-            user_id, map_info.chapter_id)
+    -- 更新章节进度
+    if not update_chapter_progress(progress, user_id, map_info.chapter_id) then
         return nil
     end
     
-    -- 如果当前章节已完成，进入下一章节
-    local next_chapter_id = chapter_config.next_chapter
-    
-    -- 检查下一章节是否存在
-    local next_chapter_config = M.get_chapter_config(next_chapter_id)
-    if next_chapter_config then
-        -- 更新到下一章节
-        map_info.chapter_id = next_chapter_id
-        map_info.current_position = 0  -- 初始位置
-        map_info.direction = 1  -- 初始方向（正向）
-        map_info.update_time = os.time()
-        
-        local ok = map_dao.update_map_info(map_info)
-        if not ok then
-            logger.error("Failed to update map info for user %d", user_id)
-            return nil
-        end
+    -- 进入下一章节
+    if not enter_next_chapter(map_info, chapter_config.next_chapter) then
+        return nil
     end
     
     -- 记录操作日志
