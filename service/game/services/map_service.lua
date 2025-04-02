@@ -21,13 +21,13 @@ local OPERATION_TYPE = {
 local event_handlers = {}
 
 -- 处理物品奖励事件
-function event_handlers.handle_item_reward(user_id, event)
+function event_handlers.handle_item_reward(user_id, complete_event)
     local bags = {}
     local success = true
     
     -- 从事件数据中获取物品信息
-    if event.cell_events and #event.cell_events > 0 then
-        local event_data = event.cell_events[1]
+    if complete_event.cell_events and #complete_event.cell_events > 0 then
+        local event_data = complete_event.cell_events
         if #event_data >= 3 then
             local item_id = event_data[2]
             local count = event_data[3]
@@ -195,6 +195,41 @@ local function get_cell_data_by_chapter(chapter_id, cell_id)
     return M.get_cell_data(chapter_config.map_id, cell_id)
 end
 
+-- 获取格子事件
+local function get_cell_events(cell_data, position, is_final_position)
+    if not cell_data then
+        return {}
+    end
+
+    local event_ids = {}
+    
+    -- 处理格子对象事件 (经过就触发)
+    if cell_data.cell_objects_events and #cell_data.cell_objects_events > 0 then
+        logger.debug("Found %d cell_objects_events at position %d", #cell_data.cell_objects_events, position)
+        -- 只取第一个参数作为事件ID
+        if type(cell_data.cell_objects_events[1]) == "number" then
+            table.insert(event_ids, {
+                event_id = cell_data.cell_objects_events[1],
+                cell_id = position
+            })
+        end
+    end
+    
+    -- 处理格子事件 (只在到达终点时触发)
+    if is_final_position and cell_data.cell_events and #cell_data.cell_events > 0 then
+        logger.debug("Found %d cell_events at final position %d", #cell_data.cell_events, position)
+        -- 只取第一个参数作为事件ID
+        if type(cell_data.cell_events[1]) == "number" then
+            table.insert(event_ids, {
+                event_id = cell_data.cell_events[1],
+                cell_id = position
+            })
+        end
+    end
+    
+    return event_ids
+end
+
 -- 事件处理分发函数
 local function dispatch_event(user_id, event, map_info)
     local success = false
@@ -217,7 +252,7 @@ local function dispatch_event(user_id, event, map_info)
         logger.error("Failed to get event type id for event_id %d", event.event_id)
         return false, nil, nil
     end
-
+    logger.debug("user_id: %d, event_id: %d, event_type_id: %d", user_id, event.event_id, event_type_id)
     -- 合并事件配置和事件数据
     local complete_event = {
         event_id = event.event_id,
@@ -227,11 +262,11 @@ local function dispatch_event(user_id, event, map_info)
     }
     
     -- 根据事件类型调用对应的处理函数
-    if event.event_type_id == enum.CellEventType.EVENT_TYPE_ITEM_REWARD then
+    if event_type_id == enum.CellEventType.EVENT_TYPE_ITEM_REWARD then
         success, bags, new_position = event_handlers.handle_item_reward(user_id, complete_event)
-    elseif event.event_type_id == enum.CellEventType.EVENT_TYPE_JUMP then
+    elseif event_type_id == enum.CellEventType.EVENT_TYPE_JUMP then
         success, bags, new_position = event_handlers.handle_teleport(user_id, complete_event, map_info)
-    elseif event.event_type_id == enum.CellEventType.EVENT_TYPE_TURN then
+    elseif event_type_id == enum.CellEventType.EVENT_TYPE_TURN then
         success, bags, new_position = event_handlers.handle_direction_change(user_id, complete_event, map_info)
     else
         -- 默认处理方式
@@ -318,36 +353,6 @@ function M.get_map_info(user_id)
     return map_info
 end
 
--- 获取格子事件
-local function get_cell_events(cell_data, position)
-    if not cell_data then
-        return {}
-    end
-
-    local event_ids = {}
-    
-    -- 处理格子事件
-    if cell_data.cell_events and #cell_data.cell_events > 0 then
-        logger.debug("Found %d cell_events at position %d", #cell_data.cell_events, position)
-        -- 只取第一个参数作为事件ID
-        if type(cell_data.cell_events[1]) == "number" then
-            table.insert(event_ids, cell_data.cell_events[1])
-        end
-    end
-        
-    -- 处理格子对象事件
-    if cell_data.cell_objects_events and #cell_data.cell_objects_events > 0 then
-        logger.debug("Found %d cell_objects_events at position %d", #cell_data.cell_objects_events, position)
-        for _, event_data in ipairs(cell_data.cell_objects_events) do
-            if type(event_data) == "table" and #event_data >= 1 then
-                table.insert(event_ids, event_data[1])
-            end
-        end
-    end
-    
-    return event_ids
-end
-
 -- 掷骰子
 function M.roll_dice(user_id)
     if not user_id then
@@ -417,14 +422,10 @@ function M.roll_dice(user_id)
             return nil
         end
         
-        -- 获取格子事件
-        local cell_event_ids = get_cell_events(cell_data, pos)
-        for _, event_id in ipairs(cell_event_ids) do
-            -- 将事件ID和格子ID一起存储
-            table.insert(event_ids, {
-                event_id = event_id,
-                cell_id = pos
-            })
+        -- 获取格子事件，传入是否是最终位置
+        local cell_event_ids = get_cell_events(cell_data, pos, pos == end_pos)
+        for _, event_info in ipairs(cell_event_ids) do
+            table.insert(event_ids, event_info)
         end
     end
     
