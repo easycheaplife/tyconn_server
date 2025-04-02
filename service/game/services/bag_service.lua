@@ -825,29 +825,42 @@ function M.get_user_bags(user_id)
     return bag_info_list
 end
 
--- 添加物品到背包
-function M.add_item(user_id, item_id, count, source)
-    if not user_id or not item_id or not count then
-        logger.error("Invalid parameters for add_item: user_id=%s, item_id=%s, count=%s",
-            tostring(user_id), tostring(item_id), tostring(count))
+-- 添加多个物品到背包
+function M.add_items(user_id, items, source)
+    if not user_id then
+        logger.error("Invalid parameters for add_items: user_id is nil")
         return false, nil
     end
     
-    logger.debug("Adding item to bag: user_id=%d, item_id=%d, count=%d", user_id, item_id, count)
+    -- 支持单个物品对象或物品对象数组
+    local items_array = {}
+    if type(items) == "table" and items.item_id then
+        -- 单个物品对象
+        table.insert(items_array, {
+            item_id = items.item_id,
+            count = items.count or 1
+        })
+    elseif type(items) == "table" then
+        -- 物品对象数组
+        items_array = items
+    else
+        logger.error("Invalid items parameter type: %s", type(items))
+        return false, nil
+    end
+    
+    logger.debug("Adding items to bag: user_id=%d, items=%s", user_id, utils.table_to_string(items_array))
     
     -- 调用item_service的add_items_to_slot函数，正确传递参数
+    local item_service = require "services.item_service"
     local ok, err, added_items = item_service.add_items_to_slot(
         user_id,
-        {  -- 物品对象
-            item_id = item_id,
-            count = count
-        },
+        items_array,
         source  -- 指定来源
     )
     
     if not ok then
-        logger.error("Failed to add item to bag: user_id=%d, item_id=%d, count=%d, error: %s", 
-            user_id, item_id, count, err or "unknown error")
+        logger.error("Failed to add items to bag: user_id=%d, error: %s", 
+            user_id, err or "unknown error")
         return false, nil
     end
     
@@ -883,8 +896,16 @@ function M.add_item(user_id, item_id, count, source)
         end
     end
     
-    logger.info("Successfully added item to bag: user_id=%d, item_id=%d, count=%d", user_id, item_id, count)
+    logger.info("Successfully added items to bag: user_id=%d, items=%s", 
+        user_id, utils.table_to_string(items_array))
     return true, bags
+end
+
+function M.add_item(user_id, item_id, count, source)
+    return M.add_items(user_id, {
+        item_id = item_id,
+        count = count
+    }, source)
 end
 
 return M 
