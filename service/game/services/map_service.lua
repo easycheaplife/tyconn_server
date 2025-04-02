@@ -25,43 +25,68 @@ function event_handlers.handle_item_reward(user_id, complete_event)
     local bags = {}
     local success = true
     
-    -- 从事件数据中获取物品信息
-    if complete_event.cell_events and #complete_event.cell_events > 0 then
-        local event_data = complete_event.cell_events
-        if #event_data >= 3 then
-            local item_id = event_data[2]
-            local count = event_data[3]
+    -- 从合并后的事件数据中获取物品信息
+    if complete_event.merged_events and #complete_event.merged_events > 0 then
+        -- 查找匹配的事件数据
+        local event_data = nil
+        for _, merged_event in ipairs(complete_event.merged_events) do
+            if merged_event.event_id == complete_event.event_id then
+                event_data = merged_event
+                break
+            end
+        end
+        -- 处理事件数据
+        if event_data then
+            local item_id, count
+            if event_data.params and #event_data.params >= 2 then
+                -- 如果是表格式的参数
+                item_id = event_data.params[1]
+                count = event_data.params[2]
+            end
             
-            local ok, result = bag_service.add_item(user_id, item_id, count, enum.ChangeSource.SOURCE_REWARD)
-            if ok and result then
-                bags = result
+            if item_id then
+                local ok, result = bag_service.add_item(user_id, item_id, count, enum.ChangeSource.SOURCE_REWARD)
+                if ok and result then
+                    bags = result
+                else
+                    success = false
+                    logger.error("Failed to add item for user %d, item %d, count %d", 
+                        user_id, item_id, count)
+                end
             else
                 success = false
-                logger.error("Failed to add item for user %d, item %d, count %d", 
-                    user_id, item_id, count)
+                logger.error("Invalid item reward event data format: missing item_id")
             end
         else
             success = false
-            logger.error("Invalid item reward event data format")
+            logger.error("Event not found in merged events")
         end
     else
         success = false
-        logger.error("Invalid item reward event data: missing cell_events")
+        logger.error("No merged events found")
     end
     
     return success, bags, nil
 end
 
 -- 处理传送事件
-function event_handlers.handle_teleport(user_id, event, map_info)
+function event_handlers.handle_teleport(user_id, complete_event, map_info)
     local success = true
     local new_position = nil
     
-    -- 从事件数据中获取目标位置
-    if event.cell_events and #event.cell_events > 0 then
-        local event_data = event.cell_events[1]
-        if #event_data >= 2 then
-            new_position = event_data[2]
+    -- 从合并后的事件数据中获取目标位置
+    if complete_event.merged_events and #complete_event.merged_events > 0 then
+        -- 查找匹配的事件数据
+        local event_data = nil
+        for _, merged_event in ipairs(complete_event.merged_events) do
+            if merged_event.event_id == complete_event.event_id then
+                event_data = merged_event
+                break
+            end
+        end
+        
+        if event_data and event_data.params and #event_data.params >= 1 then
+            new_position = event_data.params[1]
             
             -- 更新角色位置
             map_info.current_position = new_position
@@ -75,25 +100,33 @@ function event_handlers.handle_teleport(user_id, event, map_info)
             end
         else
             success = false
-            logger.error("Invalid teleport event data format")
+            logger.error("Invalid teleport event data format or event not found")
         end
     else
         success = false
-        logger.error("Invalid teleport event data: missing cell_events")
+        logger.error("No merged events found")
     end
     
     return success, nil, new_position
 end
 
 -- 处理转向事件
-function event_handlers.handle_direction_change(user_id, event, map_info)
+function event_handlers.handle_direction_change(user_id, complete_event, map_info)
     local success = true
     
-    -- 从事件数据中获取方向
-    if event.cell_events and #event.cell_events > 0 then
-        local event_data = event.cell_events[1]
-        if #event_data >= 2 then
-            local direction = event_data[2]
+    -- 从合并后的事件数据中获取方向
+    if complete_event.merged_events and #complete_event.merged_events > 0 then
+        -- 查找匹配的事件数据
+        local event_data = nil
+        for _, merged_event in ipairs(complete_event.merged_events) do
+            if merged_event.event_id == complete_event.event_id then
+                event_data = merged_event
+                break
+            end
+        end
+        
+        if event_data and event_data.params and #event_data.params >= 1 then
+            local direction = event_data.params[1]
             
             -- 更新角色方向
             map_info.direction = direction
@@ -107,20 +140,20 @@ function event_handlers.handle_direction_change(user_id, event, map_info)
             end
         else
             success = false
-            logger.error("Invalid direction change event data format")
+            logger.error("Invalid direction change event data format or event not found")
         end
     else
         success = false
-        logger.error("Invalid direction change event data: missing cell_events")
+        logger.error("No merged events found")
     end
     
     return success, nil, nil
 end
 
 -- 处理一般性事件（不需要特殊处理的事件）
-function event_handlers.handle_generic_event(user_id, event)
+function event_handlers.handle_generic_event(user_id, complete_event)
     logger.info("Handling generic event: user_id=%d, event_id=%d, cell_events=%s", 
-        user_id, event.event_id, utils.table_to_string(event.cell_events))
+        user_id, complete_event.event_id, utils.table_to_string(complete_event.cell_events))
     return true, nil, nil
 end
 
@@ -195,6 +228,51 @@ local function get_cell_data_by_chapter(chapter_id, cell_id)
     return M.get_cell_data(chapter_config.map_id, cell_id)
 end
 
+-- 合并格子事件和格子对象事件
+local function merge_cell_events(cell_events, cell_objects_events)
+    local merged_events = {}
+    
+    -- 处理格子对象事件
+    if cell_objects_events and #cell_objects_events > 0 then
+        if type(cell_objects_events[1]) == "number" then
+            -- 第一个元素是事件ID，其余是参数
+            local event_id = cell_objects_events[1]
+            local params = {}
+            for i = 2, #cell_objects_events do
+                table.insert(params, cell_objects_events[i])
+            end
+            
+            table.insert(merged_events, {
+                event_id = event_id,
+                params = params,
+                source = "cell_objects_events"
+            })
+        end
+    end
+    
+    -- 处理格子事件
+    if cell_events then
+        -- 处理数组格式的cell_events
+        if type(cell_events[1]) == "number" then
+            -- 如果是数字数组格式
+            local event_id = cell_events[1]
+            local params = {}
+            for i = 2, #cell_events do
+                table.insert(params, cell_events[i])
+            end
+                
+            table.insert(merged_events, {
+                event_id = event_id,
+                params = params,
+                source = "cell_events"
+            })
+        end
+    end
+    
+    logger.debug("merged_events: %s", utils.table_to_string(merged_events))
+    return merged_events
+end
+
 -- 获取格子事件
 local function get_cell_events(cell_data, position, is_final_position)
     if not cell_data then
@@ -253,12 +331,14 @@ local function dispatch_event(user_id, event, map_info)
         return false, nil, nil
     end
     logger.debug("user_id: %d, event_id: %d, event_type_id: %d", user_id, event.event_id, event_type_id)
+    
     -- 合并事件配置和事件数据
     local complete_event = {
         event_id = event.event_id,
         event_type_id = event_type_id,
         cell_events = cell_data.cell_events,
-        cell_objects_events = cell_data.cell_objects_events
+        cell_objects_events = cell_data.cell_objects_events,
+        merged_events = merge_cell_events(cell_data.cell_events, cell_data.cell_objects_events)
     }
     
     -- 根据事件类型调用对应的处理函数
