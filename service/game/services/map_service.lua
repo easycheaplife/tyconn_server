@@ -5,9 +5,9 @@ local map_dao = require "game.dao.map_dao"
 local map_model = require "game.models.map_model"
 local table_service = require "game.services.table_service"
 local bag_service = require "game.services.bag_service"
+local user_service = require "game.services.user_service"
 local error = require "error"
 local enum = require "enum"
-local user_service = require "game.services.user_service"
 
 local M = {}
 
@@ -431,6 +431,78 @@ function M.get_map_info(user_id)
     return map_info
 end
 
+-- 计算骰子移动后的位置
+local function calculate_new_position(from_position, dice_value, direction, total_cells)
+    local to_position = from_position + (dice_value * direction)
+    
+    -- 检查边界
+    if to_position >= total_cells then
+        to_position = total_cells  -- 到达终点
+    elseif to_position < 0 then
+        to_position = 0  -- 回到起点
+    end
+    
+    return to_position
+end
+
+-- 获取移动路径上的事件
+local function get_path_events(map_id, from_position, to_position, direction, chapter_id)
+    local event_ids = {}
+    local step = direction > 0 and 1 or -1
+    
+    -- 获取移动路径上每个格子的事件（不包括起始位置，包括最终位置）
+    for pos = from_position + step, to_position, step do
+        logger.debug("Checking events for position %d", pos)
+        
+        -- 获取格子数据
+        local cell_data = M.get_cell_data(map_id, pos)
+        if not cell_data then
+            return nil
+        end
+        
+        -- 获取格子事件，传入是否是最终位置
+        local cell_event_ids = get_cell_events(cell_data, pos, pos == to_position)
+        for _, event_info in ipairs(cell_event_ids) do
+            event_info.chapter_id = chapter_id
+            table.insert(event_ids, event_info)
+        end
+    end
+    
+    return event_ids
+end
+
+-- 保存事件到数据库
+local function save_path_events(user_id, chapter_id, event_ids)
+    if #event_ids > 0 then
+        logger.info("Found %d events on path for user %d", #event_ids, user_id)
+        logger.debug("Events: %s", utils.table_to_string(event_ids))
+        
+        -- 存储事件到数据库
+        for _, event_info in ipairs(event_ids) do
+            -- 创建事件记录
+            local event_data = {
+                user_id = user_id,
+                chapter_id = chapter_id,
+                cell_id = event_info.cell_id,
+                event_id = event_info.event_id,
+                status = 0, -- 未处理
+                trigger_time = os.time(),
+                complete_time = 0
+            }
+            
+            -- 调用DAO存储事件
+            local ok, err = map_dao.create_monopoly_event(event_data)
+            if not ok then
+                logger.error("Failed to create event record for event_id=%d, chapter_id=%d, cell_id=%d: %s", 
+                    event_info.event_id, chapter_id, event_info.cell_id, tostring(err))
+            else
+                logger.debug("Created event record for event_id=%d, chapter_id=%d, cell_id=%d", 
+                    event_info.event_id, chapter_id, event_info.cell_id)
+            end
+        end
+    end
+end
+
 -- 掷骰子
 function M.roll_dice(user_id)
     if not user_id then
@@ -458,16 +530,9 @@ function M.roll_dice(user_id)
         logger.error("Failed to get chapter config for chapter %d", map_info.chapter_id)
         return nil
     end
-    logger.info("chapter_config: %s", utils.table_to_string(chapter_config))
-    -- 计算目标位置
-    local to_position = from_position + (dice_value * map_info.direction)
     
-    -- 检查边界
-    if to_position >= chapter_config.total_cells then
-        to_position = chapter_config.total_cells  -- 到达终点
-    elseif to_position < 0 then
-        to_position = 0  -- 回到起点
-    end
+    -- 计算新位置
+    local to_position = calculate_new_position(from_position, dice_value, map_info.direction, chapter_config.total_cells)
     
     -- 更新位置
     map_info.current_position = to_position
@@ -480,64 +545,14 @@ function M.roll_dice(user_id)
         return nil
     end
     
-    -- 获取地图ID (Customs值)
-    local map_id = chapter_config.map_id
-    
-    -- 获取移动路径上所有格子的事件
-    local event_ids = {}
-    -- 确定移动的方向和范围
-    local start_pos = from_position
-    local end_pos = to_position
-    local step = map_info.direction > 0 and 1 or -1
-    
-    -- 获取移动路径上每个格子的事件（不包括起始位置，包括最终位置）
-    for pos = start_pos + step, end_pos, step do
-        logger.debug("Checking events for position %d", pos)
-        
-        -- 获取格子数据
-        local cell_data = M.get_cell_data(map_id, pos)
-        if not cell_data then
-            return nil
-        end
-        
-        -- 获取格子事件，传入是否是最终位置
-        local cell_event_ids = get_cell_events(cell_data, pos, pos == end_pos)
-        for _, event_info in ipairs(cell_event_ids) do
-            table.insert(event_ids, event_info)
-        end
+    -- 获取移动路径上的事件
+    local event_ids = get_path_events(chapter_config.map_id, from_position, to_position, map_info.direction, map_info.chapter_id)
+    if not event_ids then
+        return nil
     end
     
-    -- 如果找到了事件，将它们存储起来
-    if #event_ids > 0 then
-        logger.info("Found %d events on path for user %d", #event_ids, user_id)
-        logger.debug("Events: %s", utils.table_to_string(event_ids))
-        
-        -- 存储事件到数据库
-        for _, event_info in ipairs(event_ids) do
-            -- 创建事件记录
-            local event_data = {
-                user_id = user_id,
-                chapter_id = map_info.chapter_id,
-                cell_id = event_info.cell_id,
-                event_id = event_info.event_id,
-                status = 0, -- 未处理
-                trigger_time = os.time(),
-                complete_time = 0
-            }
-            
-            -- 调用DAO存储事件
-            local ok, err = map_dao.create_monopoly_event(event_data)
-            if not ok then
-                logger.error("Failed to create event record for event_id=%d, chapter_id=%d, cell_id=%d: %s", 
-                    event_info.event_id, map_info.chapter_id, event_info.cell_id, tostring(err))
-            else
-                logger.debug("Created event record for event_id=%d, chapter_id=%d, cell_id=%d", 
-                    event_info.event_id, map_info.chapter_id, event_info.cell_id)
-            end
-        end
-    else
-        logger.debug("No events found on path from position %d to %d", from_position, to_position)
-    end
+    -- 保存事件到数据库
+    save_path_events(user_id, map_info.chapter_id, event_ids)
     
     -- 记录操作日志
     map_dao.log_monopoly_operation({
@@ -556,6 +571,39 @@ function M.roll_dice(user_id)
         to_position = to_position,
         event_ids = event_ids
     }
+end
+
+-- 获取目标事件和剩余事件
+local function get_target_event(events, event_id, cell_id)
+    local target_event = nil
+    local remaining_events = {}
+    
+    for _, event in ipairs(events) do
+        if event.event_id == event_id and event.cell_id == cell_id then
+            target_event = event
+        else
+            table.insert(remaining_events, event.event_id)
+        end
+    end
+    
+    return target_event, remaining_events
+end
+
+-- 处理事件状态更新
+local function update_event_status(event_id, status)
+    map_dao.update_event_status(event_id, status)
+end
+
+-- 记录事件处理操作
+local function log_event_operation(user_id, chapter_id, event_id, cell_id)
+    map_dao.log_monopoly_operation({
+        user_id = user_id,
+        chapter_id = chapter_id,
+        operation_type = OPERATION_TYPE.HANDLE_EVENT,
+        event_id = event_id,
+        cell_id = cell_id,
+        operation_time = os.time()
+    })
 end
 
 -- 处理格子事件
@@ -590,17 +638,8 @@ function M.handle_cell_event(user_id, event_id, cell_id)
         }
     end
     
-    -- 查找目标事件
-    local target_event = nil
-    local remaining_events = {}
-    
-    for _, event in ipairs(events) do
-        if event.event_id == event_id and event.cell_id == cell_id then
-            target_event = event
-        else
-            table.insert(remaining_events, event.event_id)
-        end
-    end
+    -- 获取目标事件和剩余事件
+    local target_event, remaining_events = get_target_event(events, event_id, cell_id)
     
     if not target_event then
         logger.error("Event %s not found for user %d at cell_id %d", 
@@ -614,23 +653,16 @@ function M.handle_cell_event(user_id, event_id, cell_id)
     end
     
     -- 更新事件状态为处理中
-    map_dao.update_event_status(target_event.id, 1)
+    update_event_status(target_event.id, 1)
     
     -- 处理事件
     local success, bags, new_position = dispatch_event(user_id, target_event, map_info)
     
     -- 更新事件状态为已处理
-    map_dao.update_event_status(target_event.id, 2)
+    update_event_status(target_event.id, 2)
     
     -- 记录操作日志
-    map_dao.log_monopoly_operation({
-        user_id = user_id,
-        chapter_id = map_info.chapter_id,
-        operation_type = OPERATION_TYPE.HANDLE_EVENT,
-        event_id = event_id,
-        cell_id = cell_id,
-        operation_time = os.time()
-    })
+    log_event_operation(user_id, map_info.chapter_id, event_id, cell_id)
     
     -- 确定下一个要处理的事件
     local next_event_id = 0
