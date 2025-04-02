@@ -7,6 +7,7 @@ local table_service = require "game.services.table_service"
 local bag_service = require "game.services.bag_service"
 local error = require "error"
 local enum = require "enum"
+local user_service = require "game.services.user_service"
 
 local M = {}
 
@@ -391,12 +392,9 @@ function M.get_chapter_config(chapter_id)
         id = chapter_id,
         map_id = map_id,
         total_cells = total_cells,
-        victory_condition = chapter_config.Victory_condition or {},
-        chapter_reward = chapter_config.Reward or {},
-        next_chapter = chapter_config.Unlock or 0,
-        chapter_difficulty = 1,
-        chapter_index = chapter_id,
-        chapter_icon = chapter_config.Bg_pic
+        victory_condition = chapter_config.victory_condition or {},
+        chapter_reward = chapter_config.reward or {},
+        next_chapter = chapter_config.unlock or 0
     }
 end
 
@@ -672,6 +670,7 @@ function M.claim_reward(user_id)
         return nil
     end
     
+    logger.info("get_chapter_config %s", utils.table_to_string(chapter_config))
     -- 获取章节进度
     local progress = map_dao.get_chapter_progress(user_id, map_info.chapter_id)
     
@@ -690,10 +689,46 @@ function M.claim_reward(user_id)
             }
         end
     else
-        -- 检查是否达到终点
-        if map_info.current_position >= chapter_config.total_cells then
-            is_passed = true
+        -- 检查胜利条件
+        local victory_conditions = chapter_config.victory_condition
+        if not victory_conditions or #victory_conditions == 0 then
+            logger.error("No victory conditions defined for chapter %d", map_info.chapter_id)
+            return {
+                success = false,
+                reason = "no_victory_conditions"
+            }
+        end
+        
+        -- 检查每个胜利条件
+        is_passed = true
+        for _, condition in ipairs(victory_conditions) do
+            local condition_type = condition[1]
+            local condition_value = condition[2]
             
+            if condition_type == enum.ChapterConditionType.CONDITION_TYPE_REACH_END then
+                -- 检查是否到达终点
+                if map_info.current_position < chapter_config.total_cells then
+                    is_passed = false
+                    break
+                end
+            elseif condition_type == enum.ChapterConditionType.CONDITION_TYPE_PLAYER_LEVEL then
+                -- 检查玩家等级
+                local user_level = user_service.get_user_level(user_id)
+                if user_level < condition_value then
+                    is_passed = false
+                    break
+                end
+            elseif condition_type == enum.ChapterConditionType.CONDITION_TYPE_PASS_STAGES then
+                -- 检查通过的关卡数
+                local passed_stages = map_dao.get_user_passed_stages(user_id)
+                if not passed_stages or #passed_stages < condition_value then
+                    is_passed = false
+                    break
+                end
+            end
+        end
+        
+        if is_passed then
             -- 创建章节进度记录
             local ok = map_dao.create_chapter_progress({
                 user_id = user_id,
@@ -719,11 +754,10 @@ function M.claim_reward(user_id)
                 reward_time = 0
             }
         else
-            logger.warn("Chapter %d not completed by user %d, position=%d, total=%d", 
-                map_info.chapter_id, user_id, map_info.current_position, chapter_config.total_cells)
+            logger.warn("Chapter %d conditions not met by user %d", map_info.chapter_id, user_id)
             return {
                 success = false,
-                reason = "chapter_not_completed"
+                reason = "conditions_not_met"
             }
         end
     end
@@ -731,33 +765,20 @@ function M.claim_reward(user_id)
     -- 发放奖励
     local bags = {}
     
-    if chapter_config.reward then
+    if chapter_config.chapter_reward and #chapter_config.chapter_reward > 0 then
         -- 物品奖励
-        if chapter_config.reward.items then
-            for _, item in ipairs(chapter_config.reward.items) do
-                local ok, result = bag_service.add_item(user_id, item.item_id, item.count)
+        for _, item in ipairs(chapter_config.chapter_reward) do
+            if type(item) == "table" and #item >= 2 then
+                local item_id = item[1]
+                local item_count = item[2]
+                local ok, result = bag_service.add_item(user_id, item_id, item_count, enum.ChangeSource.SOURCE_REWARD)
                 if ok and result then
-                    for _, change in ipairs(result) do
-                        table.insert(bags, change)
+                    for _, bag_change in ipairs(result) do
+                        table.insert(bags, bag_change)
                     end
                 else
                     logger.error("Failed to add item for user %d, item=%d, count=%d", 
-                        user_id, item.item_id, item.count)
-                end
-            end
-        end
-        
-        -- 货币奖励
-        if chapter_config.reward.currency then
-            for _, currency in ipairs(chapter_config.reward.currency) do
-                local ok, result = bag_service.add_currency(user_id, currency.type, currency.amount)
-                if ok and result then
-                    for _, change in ipairs(result) do
-                        table.insert(bags, change)
-                    end
-                else
-                    logger.error("Failed to add currency for user %d, type=%d, amount=%d", 
-                        user_id, currency.type, currency.amount)
+                        user_id, item_id, item_count)
                 end
             end
         end
@@ -780,7 +801,7 @@ function M.claim_reward(user_id)
     end
     
     -- 如果当前章节已完成，进入下一章节
-    local next_chapter_id = map_info.chapter_id + 1
+    local next_chapter_id = chapter_config.next_chapter
     
     -- 检查下一章节是否存在
     local next_chapter_config = M.get_chapter_config(next_chapter_id)
