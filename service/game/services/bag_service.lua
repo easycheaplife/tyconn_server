@@ -104,29 +104,6 @@ local function check_slot_state(user_id, bag_type, slot_index)
     return true
 end
 
--- 检查物品移动是否合法
-local function check_move_valid(user_id, from_bag, from_slot, to_bag, to_slot)
-    -- 1. 检查源格子状态
-    local ok, err = check_slot_state(user_id, from_bag, from_slot)
-    if not ok then
-        return false, "source slot: " .. err
-    end
-    
-    -- 2. 检查目标格子状态
-    ok, err = check_slot_state(user_id, to_bag, to_slot)
-    if not ok then
-        return false, "target slot: " .. err
-    end
-    
-    -- 3. 检查背包类型
-    if to_bag == enum.BagType.BAG_TYPE_EQUIP then
-        -- 移动到装备栏需要特殊检查
-        return equip_service.check_can_equip(user_id, from_bag, from_slot, to_slot)
-    end
-    
-    return true
-end
-
 -- 查找背包中的空格子
 function M.find_empty_slot(user_id, bag_type, items)
     -- 获取物品列表（如果未提供）
