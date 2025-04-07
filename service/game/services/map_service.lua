@@ -394,7 +394,8 @@ function M.get_chapter_config(chapter_id)
         total_cells = total_cells,
         victory_condition = chapter_config.victory_condition or {},
         chapter_reward = chapter_config.reward or {},
-        next_chapter = chapter_config.unlock or 0
+        next_chapter = chapter_config.unlock or 0,
+        tile_map = chapter_config.tile_map or {}
     }
 end
 
@@ -415,7 +416,7 @@ function M.get_map_info(user_id)
         local new_map = map_model.new({
             user_id = user_id,
             chapter_id = 1,  -- 默认从第一章开始
-            current_position = 0, -- 初始位置为0
+            current_position = 1, -- 初始位置为1
             direction = 1    -- 初始方向（正向）
         })
         
@@ -432,17 +433,65 @@ function M.get_map_info(user_id)
 end
 
 -- 计算骰子移动后的位置
-local function calculate_new_position(from_position, dice_value, direction, total_cells)
-    local to_position = from_position + (dice_value * direction)
+local function calculate_new_position(from_position, dice_value, direction, chapter_config)
+    local current_position = from_position
+    local steps_remaining = dice_value
     
-    -- 检查边界
-    if to_position >= total_cells then
-        to_position = total_cells  -- 到达终点
-    elseif to_position < 0 then
-        to_position = 0  -- 回到起点
+    -- 获取地图配置
+    local tile_map = chapter_config.tile_map
+    if not tile_map then
+        logger.error("No tile map found for chapter %d", chapter_config.id)
+        return from_position
     end
     
-    return to_position
+    logger.debug("Starting movement from position %d, steps: %d, direction: %d", 
+        current_position, steps_remaining, direction)
+    
+    -- 根据方向移动
+    while steps_remaining > 0 do
+        local current_tile = tile_map[current_position]
+        if not current_tile then
+            logger.error("Invalid tile position %d in chapter %d", current_position, chapter_config.id)
+            return from_position
+        end
+        
+        -- 获取下一个位置
+        local next_positions = current_tile.next_ids
+        if not next_positions or #next_positions == 0 then
+            logger.error("No next positions for tile %d in chapter %d", current_position, chapter_config.id)
+            return from_position
+        end
+        
+        -- 根据方向选择下一个位置
+        local next_position
+        if direction > 0 then
+            -- 正向移动，选择第一个下一个位置
+            next_position = next_positions[1]
+        else
+            -- 反向移动，选择最后一个下一个位置
+            next_position = next_positions[#next_positions]
+        end
+        
+        if not next_position then
+            logger.error("Invalid next position for tile %d in chapter %d", current_position, chapter_config.id)
+            return from_position
+        end
+        
+        -- 更新位置
+        current_position = next_position
+        steps_remaining = steps_remaining - 1
+        
+        logger.debug("Moved to position %d, steps remaining: %d", current_position, steps_remaining)
+        
+        -- 检查是否到达终点
+        if current_position == chapter_config.total_cells then
+            logger.debug("Reached end position %d", current_position)
+            break
+        end
+    end
+    
+    logger.debug("Final position: %d", current_position)
+    return current_position
 end
 
 -- 获取移动路径上的事件
@@ -531,8 +580,10 @@ function M.roll_dice(user_id)
         return nil
     end
     
-    -- 计算新位置
-    local to_position = calculate_new_position(from_position, dice_value, map_info.direction, chapter_config.total_cells)
+    logger.debug("Chapter config: %s", utils.table_to_string(chapter_config))
+    
+    -- 计算新位置（使用tileMap配置）
+    local to_position = calculate_new_position(from_position, dice_value, map_info.direction, chapter_config)
     
     -- 更新位置
     map_info.current_position = to_position

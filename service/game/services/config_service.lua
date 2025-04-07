@@ -430,7 +430,8 @@ function M.load_monopoly_config()
     for chapter_id, chapter_data in pairs(data) do
         chapter_id = tonumber(chapter_id)
         if chapter_id then
-            CONFIG_CACHE.monopoly[chapter_id] = {
+            -- 构建章节配置
+            local chapter_config = {
                 id = chapter_id,
                 map_id = tonumber(chapter_data.Customs) or 1,
                 bg_pic = chapter_data.Bg_pic,
@@ -441,6 +442,40 @@ function M.load_monopoly_config()
                 unlock = tonumber(chapter_data.Unlock) or 0,
                 victory_condition = chapter_data.Victory_condition or {}
             }
+
+            -- 尝试加载地图配置
+            local map_config = config_loader.get_config(string.format("amap%d", chapter_config.map_id))
+            if map_config and map_config.tileMap then
+                -- 转换tileMap格式
+                local tile_map = {}
+                for tile_id, tile_data in pairs(map_config.tileMap) do
+                    -- 确保tile_id是数字
+                    local numeric_id = tonumber(tile_id)
+                    if numeric_id then
+                        -- 确保nextIds是数字数组
+                        local next_ids = {}
+                        if tile_data.nextIds then
+                            for _, next_id in ipairs(tile_data.nextIds) do
+                                table.insert(next_ids, tonumber(next_id))
+                            end
+                        end
+                        
+                        tile_map[numeric_id] = {
+                            id = numeric_id,
+                            next_ids = next_ids
+                        }
+                    end
+                end
+                chapter_config.tile_map = tile_map
+                logger.info("Loaded tile map for chapter %d, map_id: %d, tiles: %d", 
+                    chapter_id, chapter_config.map_id, count_pairs(tile_map))
+                logger.debug("Tile map for chapter %d: %s", chapter_id, utils.table_to_string(tile_map))
+            else
+                logger.info("No map config found for chapter %d, map_id: %d", 
+                    chapter_id, chapter_config.map_id)
+            end
+
+            CONFIG_CACHE.monopoly[chapter_id] = chapter_config
         end
     end
 
