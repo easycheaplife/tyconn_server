@@ -1027,6 +1027,30 @@ function M.get_item_count(user_id, item_id)
     return count
 end
 
+-- 初始化用户物品
+function M.init_user_items(user_id)
+    -- 参数验证
+    if not user_id then
+        logger.error("Invalid parameter for init_user_items: user_id is nil")
+        return false, "invalid user id"
+    end
+    
+    logger.debug("Initializing items for user: %d", user_id)
+    
+    -- 调用item_service初始化用户物品
+    local ok, err = item_service.init_user_items(user_id)
+    
+    if not ok then
+        logger.error("Failed to initialize items for user: %d, error: %s", 
+            user_id, err or "unknown error")
+        return false, err
+    end
+    
+    logger.info("Successfully initialized items for user: %d", user_id)
+    
+    return true, nil
+end
+
 -- 批量移除物品
 function M.batch_remove_items(user_id, item_list, source)
     -- 参数验证

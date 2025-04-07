@@ -6,7 +6,6 @@ local user_dao = require "dao.user_dao"
 local cache = require "cache"
 local enum = require "enum"
 local property_service = require "services.property_service"
-local item_service = require "services.item_service"
 local card_service = require "services.card_service"
 local mail_service = require "services.mail_service"
 local table_service = require "services.table_service"
@@ -235,8 +234,6 @@ function M.cache_user(user_info)
     user_info.hp = base_property and base_property.hp or 0
     user_info.attack = base_property and base_property.attack or 0
     user_info.defense = base_property and base_property.defense or 0
-    user_info.exp = item_service.get_special_item(user_info.user_id, enum.SpecialItemID.SPECIAL_ITEM_ID_EXP)
-    user_info.gold = item_service.get_special_item(user_info.user_id, enum.SpecialItemID.SPECIAL_ITEM_ID_GOLD)
     logger.debug("Caching user info: %s", utils.table_to_string({
         account = user_info.account,
         user_id = user_info.user_id,
@@ -313,7 +310,7 @@ function M.init_new_user(user_id)
 
     logger.info("Initializing items for new user: %d", user_id)
     -- 3. 初始化物品
-    local ok = item_service.init_user_items(user_id)
+    local ok = require "services.bag_service".init_user_items(user_id)
     if not ok then
         logger.error("Failed to initialize items for new user: %d", user_id)
         -- 继续处理，不影响流程
@@ -335,23 +332,6 @@ function M.get_user_level(user_id)
         return 1
     end
     return user.level
-end
-
--- 获取用户资源
-function M.get_user_resources(user_id)
-    logger.debug("Getting resources for user %d", user_id)
-    local resources = {}
-    local exp_info = {
-        type = enum.ResourceType.RESOURCE_TYPE_EXP,
-        amount = item_service.get_special_item(user_id, enum.SpecialItemID.SPECIAL_ITEM_ID_EXP)
-    }
-    local gold_info = {
-        type = enum.ResourceType.RESOURCE_TYPE_GOLD,
-        amount = item_service.get_special_item(user_id, enum.SpecialItemID.SPECIAL_ITEM_ID_GOLD)
-    }
-    resources[1] = exp_info
-    resources[2] = gold_info
-    return resources
 end
 
 -- 添加更新用户登录时间的函数

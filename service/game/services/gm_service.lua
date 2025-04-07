@@ -1,6 +1,5 @@
 local skynet = require "skynet"
 local logger = require "logger"
-local item_service = require "services.item_service"
 local user_service = require "services.user_service"
 local mail_service = require "services.mail_service"
 local item_dao = require "dao.item_dao"

@@ -77,7 +77,6 @@ function M.handle(client_id, msg, gate_node)
     
     -- 获取游戏数据
     local bags = bag_service.get_user_bags(result.user.user_id)
-    local resources = user_service.get_user_resources(result.user.user_id)
     
     -- 记录登录日志
     logger.info("User %s (ID: %d) logged in to game", result.user.username, result.user.user_id)
