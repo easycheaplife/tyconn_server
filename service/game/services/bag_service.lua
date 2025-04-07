@@ -1074,4 +1074,49 @@ function M.batch_remove_items(user_id, item_list, source)
     return true, nil
 end
 
+-- 检查物品是否足够
+function M.check_items_enough(user_id, item_list)
+    -- 参数验证
+    if not user_id or not item_list then
+        logger.error("Invalid parameters for check_items_enough: user_id=%s", tostring(user_id))
+        return false, "invalid params"
+    end
+    
+    logger.debug("Checking items enough: user_id=%d, items=%s", 
+        user_id, utils.table_to_string(item_list))
+    
+    -- 调用item_service检查物品是否足够
+    local ok, err = item_service.check_items_enough(user_id, item_list)
+    
+    if not ok then
+        logger.error("Items not enough: user_id=%d, error: %s", 
+            user_id, err or "unknown error")
+        return false, err
+    end
+    
+    logger.info("Items enough: user_id=%d", user_id)
+    
+    return true, nil
+end
+
+-- 获取指定类型的用户物品
+function M.get_user_items_by_type(user_id, item_type)
+    -- 参数验证
+    if not user_id or not item_type then
+        logger.error("Invalid parameters for get_user_items_by_type: user_id=%s, item_type=%s", 
+            tostring(user_id), tostring(item_type))
+        return nil, "invalid params"
+    end
+    
+    logger.debug("Getting items by type: user_id=%d, item_type=%d", user_id, item_type)
+    
+    -- 调用item_service获取指定类型的物品
+    local items = item_service.get_user_items_by_type(user_id, item_type)
+    
+    logger.info("Found %d items of type %d for user %d", 
+        #(items or {}), item_type, user_id)
+    
+    return items
+end
+
 return M

@@ -198,8 +198,7 @@ function M.claim_mail_items(user_id, mail_id)
     
     -- 将物品添加到用户背包
     if mail.items and #mail.items > 0 then
-        local item_service = require "services.item_service"
-        local ok, err = item_service.add_items_to_slot(user_id, mail.items, enum.ChangeSource.SOURCE_MAIL)
+        local ok, err = require "services.bag_service".add_items(user_id, mail.items, enum.ChangeSource.SOURCE_MAIL)
         if not ok then
             logger.error("Failed to add items to user bag - user_id: %d, error: %s", user_id, err)
             return false
@@ -308,8 +307,7 @@ function M.batch_claim_items(user_id, mail_ids)
     
     if #items_to_add > 0 then
         -- 添加物品到背包
-        local item_service = require "services.item_service"
-        local ok, err = item_service.add_items_to_slot(user_id, items_to_add, enum.ChangeSource.SOURCE_MAIL)
+        local ok, err = require "services.bag_service".add_items(user_id, items_to_add, enum.ChangeSource.SOURCE_MAIL)
         if not ok then
             return false, err
         end

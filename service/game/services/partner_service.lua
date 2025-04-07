@@ -3,7 +3,6 @@ local logger = require "logger"
 local partner_model = require "models.partner_model"
 local partner_dao = require "dao.partner_dao"
 local utils = require "utils"
-local item_service = require "services.item_service"
 local user_service = require "services.user_service"
 local table_service = require "services.table_service"
 local enum = require "enum"
@@ -196,7 +195,7 @@ function M.get_user_partners(user_id)
     logger.info("unlocked_partners: %s", utils.table_to_string(unlocked_partners))
     
     -- 获取伙伴碎片信息
-    local fragments = item_service.get_user_items_by_type(user_id, PARTNER_FRAGMENT_TYPE)
+    local fragments = require "services.bag_service".get_user_items_by_type(user_id, PARTNER_FRAGMENT_TYPE)
     local fragment_map = {}
     for _, fragment in ipairs(fragments or {}) do
         fragment_map[fragment.item_id] = fragment.count
@@ -405,14 +404,14 @@ function M.level_up_partner(user_id, partner_id)
     end
     
     -- 检查道具是否足够
-    local has_enough, items_info = item_service.check_items_enough(user_id, level_up_cost)
+    local has_enough, items_info = require "services.bag_service".check_items_enough(user_id, level_up_cost)
     if not has_enough then
         logger.error("Not enough items for level up partner_id: %d", partner_id)
         return false
     end
     
     -- 扣除物品
-    local consume_result, consumed_items = item_service.consume_items(user_id, level_up_cost, enum.ChangeSource.SOURCE_PARTNER_LEVEL_UP)
+    local consume_result, consumed_items = require "services.bag_service".consume_items(user_id, level_up_cost, enum.ChangeSource.SOURCE_PARTNER_LEVEL_UP)
     if not consume_result then
         logger.error("Failed to consume items for level up partner_id: %d", partner_id)
         return false
@@ -509,14 +508,14 @@ function M.star_up_partner(user_id, partner_id)
     end
     
     -- 检查道具是否足够
-    local has_enough, items_info = item_service.check_items_enough(user_id, star_up_cost)
+    local has_enough, items_info = require "services.bag_service".check_items_enough(user_id, star_up_cost)
     if not has_enough then
         logger.error("Not enough items for star up partner_id: %d", partner_id)
         return false
     end
     
     -- 扣除物品
-    local consume_result, consumed_items = item_service.consume_items(user_id, star_up_cost, enum.ChangeSource.SOURCE_PARTNER_STAR_UP)
+    local consume_result, consumed_items = require "services.bag_service".consume_items(user_id, star_up_cost, enum.ChangeSource.SOURCE_PARTNER_STAR_UP)
     if not consume_result then
         logger.error("Failed to consume items for star up partner_id: %d", partner_id)
         return false
@@ -612,7 +611,7 @@ function M.unlock_partner(user_id, unit_id)
         unit_id, fragment_item_id, fragment_need)
     
     -- 获取玩家拥有的该伙伴碎片
-    local items = item_service.get_user_items_by_type(user_id, enum.ItemType.ITEM_TYPE_PARTNER_FRAGMENT)
+    local items = require "services.bag_service".get_user_items_by_type(user_id, enum.ItemType.ITEM_TYPE_PARTNER_FRAGMENT)
     local fragment_count = 0
     logger.info("items: %s", utils.table_to_string(items))
     -- 查找指定的碎片
@@ -630,7 +629,7 @@ function M.unlock_partner(user_id, unit_id)
     end
     
     -- 扣除碎片
-    local consume_result = item_service.consume_item(user_id, fragment_item_id, fragment_need, enum.ChangeSource.SOURCE_UNLOCK_PARTNER)
+    local consume_result = require "services.bag_service".consume_item(user_id, fragment_item_id, fragment_need, enum.ChangeSource.SOURCE_UNLOCK_PARTNER)
     if not consume_result then
         logger.error("Failed to consume fragments for unlock partner: unit_id=%d, fragment_id=%d, fragment_need=%d", unit_id, fragment_item_id, fragment_need)
         return false
@@ -647,7 +646,7 @@ function M.unlock_partner(user_id, unit_id)
     partner_dao.log_partner_change(user_id, new_partner.id, unit_id, fragment_need, "UNLOCK", os.time())
     
     -- 获取伙伴的最新碎片数量
-    local items = item_service.get_user_items_by_type(user_id, enum.ItemType.ITEM_TYPE_PARTNER_FRAGMENT)
+    local items = require "services.bag_service".get_user_items_by_type(user_id, enum.ItemType.ITEM_TYPE_PARTNER_FRAGMENT)
     local updated_fragment_count = 0
     for _, item in ipairs(items or {}) do
         if item.item_id == fragment_item_id then
@@ -746,7 +745,7 @@ function M.gm_add_fragments(user_id, fragment_id, count)
     end
     
     -- 添加碎片到背包
-    local result, err = item_service.add_items_to_slot(user_id, {
+    local result, err = require "services.bag_service".add_items(user_id, {
         {
             item_id = fragment_id,
             count = count
