@@ -12,15 +12,6 @@ local table_service = require "services.table_service"
 
 local M = {}
 
--- 在函数内导入时使用局部变量缓存结果
-local item_service_cache
-local function get_item_service()
-    if not item_service_cache then
-        item_service_cache = require "services.item_service"
-    end
-    return item_service_cache
-end
-
 -- 检查物品是否可装备
 function M.check_can_equip(user_id, from_bag, from_slot, equip_slot)
     -- 1. 获取物品信息
@@ -372,8 +363,8 @@ function M.start_upgrade_equip_odds_level(user_id, item_id, item_count)
     local required_count = next_level_config.item_count or item_count
     
     -- 检查道具数量
-    local item_service = get_item_service()
-    if not item_service.consume_item(user_id, required_item_id, required_count) then
+    local bag_service = require "services.bag_service"
+    if not bag_service.consume_item(user_id, required_item_id, required_count) then
         logger.warn("Not enough items for user %d to upgrade equipment level", user_id)
         return false, "not enough items"
     end
@@ -386,7 +377,8 @@ function M.start_upgrade_equip_odds_level(user_id, item_id, item_count)
     -- 开始升级
     if not equipment_dao.start_equip_level_upgrade(user_id, now, end_time) then
         -- 升级失败，返还物品
-        item_service.add_item(user_id, required_item_id, required_count)
+        local bag_service = require "services.bag_service"
+        bag_service.add_item(user_id, required_item_id, required_count)
         logger.error("Failed to start equipment level upgrade for user %d", user_id)
         return false, "upgrade failed"
     end
@@ -451,8 +443,8 @@ function M.speedup_equip_odds_level_upgrade(user_id, use_ad, use_item, speedup_i
         local item_speedup = table_service.get_config_value("equip_level_item_speedup_" .. speedup_item_id, "value", 600)
         
         -- 消耗道具
-        local item_service = get_item_service()
-        local ok, err = item_service.consume_item(user_id, speedup_item_id, 1)
+        local bag_service = require "services.bag_service"
+        local ok, err = bag_service.consume_item(user_id, speedup_item_id, 1)
         if not ok then
             return false, err or "not enough items"
         end
@@ -626,8 +618,8 @@ function M.random_equipment(user_id, part)
     end
     
     -- 添加到物品列表
-    local item_service = get_item_service()
-    local ok, err = item_service.add_items_to_slot(user_id, {
+    local bag_service = require "services.bag_service"
+    local ok, err = bag_service.add_items(user_id, {
         item_id = equip.item_id,
         count = equip.count
     }, enum.ChangeSource.SOURCE_RANDOM, bag_type)
@@ -646,10 +638,10 @@ end
 -- 分解装备
 function M.decompose_equipment(user_id, item_id)
     local config_service = require "services.config_service"
-    local item_service = get_item_service()
     
     -- 获取物品信息
-    local item = item_service.get_item(user_id, item_id)
+    local bag_service = require "services.bag_service"
+    local item = bag_service.get_item(user_id, item_id)
     if not item then
         return false, "item not found"
     end
@@ -683,13 +675,14 @@ function M.decompose_equipment(user_id, item_id)
     local total_count = base_count + level_bonus
     
     -- 删除装备
-    local ok, err = item_service.remove_item(user_id, item_id, 1)
+    local bag_service = require "services.bag_service"
+    local ok, err = bag_service.remove_item(user_id, item_id, 1)
     if not ok then
         return false, err
     end
     
     -- 添加奖励道具
-    local reward_item, err = item_service.add_item(user_id, {
+    local reward_item, err = bag_service.add_item(user_id, {
         item_id = reward_item_id,
         count = total_count
     })
@@ -888,8 +881,8 @@ function M.get_equip_odds_level_info(user_id)
     
     -- 获取用户拥有的物品数量
     local owned_count = 0
-    local item_service = get_item_service()
-    local user_items = item_service.get_user_items(user_id)
+    local bag_service = require "services.bag_service"
+    local user_items = bag_service.get_user_items(user_id)
     for _, item in ipairs(user_items or {}) do
         if item.item_id == item_id then
             owned_count = owned_count + item.count

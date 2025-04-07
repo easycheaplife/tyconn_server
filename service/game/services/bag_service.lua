@@ -934,4 +934,51 @@ function M.use_item(user_id, item_id, count)
     return true, nil, result
 end
 
+-- 消耗物品
+function M.consume_item(user_id, item_id, count, source)
+    -- 验证基本参数
+    if not user_id or not item_id or not count or count <= 0 then
+        logger.error("Invalid parameters for consume_item: user_id=%s, item_id=%s, count=%s", 
+            tostring(user_id), tostring(item_id), tostring(count))
+        return false, "invalid params"
+    end
+    
+    logger.debug("Consuming item: user_id=%d, item_id=%d, count=%d", user_id, item_id, count)
+    
+    -- 构造items参数调用item_service的consume_items函数
+    local ok, consumed_items = item_service.consume_items(user_id, {
+        {
+            item_id = item_id,
+            count = count
+        }
+    }, source)
+    
+    if not ok then
+        logger.error("Failed to consume item: user_id=%d, item_id=%d, count=%d", 
+            user_id, item_id, count)
+        return false, consumed_items
+    end
+    
+    logger.info("Successfully consumed item: user_id=%d, item_id=%d, count=%d", 
+        user_id, item_id, count)
+    
+    return true, consumed_items
+end
+
+-- 获取用户物品列表
+function M.get_user_items(user_id)
+    -- 参数验证
+    if not user_id then
+        logger.error("Invalid parameter for get_user_items: user_id is nil")
+        return nil, "invalid user id"
+    end
+    
+    logger.debug("Getting items for user: %d", user_id)
+    
+    -- 调用item_service获取物品列表
+    local items = item_service.get_user_items(user_id)
+    
+    return items
+end
+
 return M 
