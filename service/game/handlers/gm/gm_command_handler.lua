@@ -8,9 +8,6 @@ local error = require "error"
 local message = require "message"
 local utils = require "utils"
 
--- 导入物品服务用于测试新功能
-local item_service = require "services.item_service"
-
 local M = {}
 
 local RESP_TYPE = "command.G2CGmCommandResponse"

@@ -1,7 +1,6 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
-local item_service = require "services.item_service"
 local bag_service = require "services.bag_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message_helper = require "message_helper"
@@ -53,7 +52,7 @@ function M.handle(client_id, msg)
     -- 使用物品
     logger.info("Use item - user_id: %d, item_id: %d, count: %d", 
         user.user_id, request.item_id, request.count)
-    local ok, err, result = item_service.use_item(user.user_id, request.item_id, request.count)
+    local ok, err, result = bag_service.use_item(user.user_id, request.item_id, request.count)
     if not ok then
         return message_helper.create_error_response(
             base_request,

@@ -908,4 +908,30 @@ function M.add_item(user_id, item_id, count, source)
     }, source)
 end
 
+-- 使用物品
+function M.use_item(user_id, item_id, count)
+    -- 1. 参数验证
+    if not user_id or not item_id or not count or count <= 0 then
+        logger.error("Invalid parameters for use_item: user_id=%s, item_id=%s, count=%s", 
+            tostring(user_id), tostring(item_id), tostring(count))
+        return false, "invalid params", {}
+    end
+    
+    logger.debug("Using item: user_id=%d, item_id=%d, count=%d", user_id, item_id, count)
+    
+    -- 2. 调用item_service的use_item函数
+    local ok, err, result = item_service.use_item(user_id, item_id, count)
+    
+    if not ok then
+        logger.error("Failed to use item: user_id=%d, item_id=%d, count=%d, error: %s", 
+            user_id, item_id, count, err or "unknown error")
+        return false, err, {}
+    end
+    
+    logger.info("Successfully used item: user_id=%d, item_id=%d, count=%d", 
+        user_id, item_id, count)
+    
+    return true, nil, result
+end
+
 return M 

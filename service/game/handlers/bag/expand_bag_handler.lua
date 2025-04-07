@@ -1,7 +1,6 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local pb = require "pb"
-local item_service = require "services.item_service"
 local bag_service = require "services.bag_service"
 local handler_helper = require "game.handlers.handler_helper"
 local message_helper = require "message_helper" 
