@@ -577,39 +577,6 @@ function M.sort_bag(user_id, bag_type)
     return true, nil, bag_items
 end
 
--- 整理所有背包
-function M.sort_all_bags(user_id, rule)
-    -- 1. 检查用户ID
-    if not user_id then
-        return false, "invalid user id"
-    end
-    
-    -- 2. 整理各类型背包
-    local bag_types = {
-        enum.BagType.BAG_TYPE_MAIN,
-        enum.BagType.BAG_TYPE_STORAGE
-    }
-    
-    for _, bag_type in ipairs(bag_types) do
-        local ok, err = M.sort_bag(user_id, bag_type, rule)
-        if not ok then
-            logger.error("Failed to sort bag %d for user %d: %s", 
-                bag_type, user_id, err)
-        end
-    end
-    
-    -- 3. 尝试堆叠
-    for _, bag_type in ipairs(bag_types) do
-        local ok, need_update = M.quick_stack(user_id, bag_type)
-        if ok and need_update then
-            -- 如果有堆叠，重新排序
-            M.sort_bag(user_id, bag_type, rule)
-        end
-    end
-    
-    return true
-end
-
 -- 获取空格子
 function M.find_empty_slots(user_id, bag_type, count)
     -- 1. 获取背包格子
