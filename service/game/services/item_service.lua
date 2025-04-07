@@ -480,7 +480,7 @@ local function check_item_expired(item)
 end
 
 -- 批量移除物品
-function M.batch_remove_items(user_id, item_list)
+function M.batch_remove_items(user_id, item_list, source)
     -- 1. 参数检查
     if not user_id or not item_list or #item_list == 0 then
         return false, "params error"
@@ -511,7 +511,7 @@ function M.batch_remove_items(user_id, item_list)
     
     -- 4. 逐个移除物品
     for _, item_info in ipairs(item_list) do
-        local ok, err = M.consume_item(user_id, item_info.item_id, item_info.count, enum.ChangeSource.SOURCE_BATCH_REMOVE)
+        local ok, err = M.consume_item(user_id, item_info.item_id, item_info.count, source)
         if not ok then
             -- 如果移除失败，需要回滚已移除的物品
             for i = 1, #item_list do
@@ -520,7 +520,7 @@ function M.batch_remove_items(user_id, item_list)
                     M.add_items_to_slot(user_id, {
                         item_id = item_list[i].item_id,
                         count = item_list[i].count
-                    }, enum.ChangeSource.SOURCE_BATCH_REMOVE_ROLLBACK)
+                    }, source)
                 end
             end
             return false, err

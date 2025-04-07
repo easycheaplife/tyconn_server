@@ -7,6 +7,7 @@ local item_dao = require "dao.item_dao"
 local utils = require "utils"
 local enum = require "enum"
 local partner_service = require "services.partner_service"
+local bag_service = require "services.bag_service"
 
 local M = {}
 
@@ -26,10 +27,10 @@ local GM_HANDLERS = {
         end
         
         -- 获取当前物品数量
-        local current_count = item_service.get_item_count(user_id, item_id)
+        local current_count = bag_service.get_item_count(user_id, item_id)
         
         -- 使用新方法添加物品
-        local ok, err = item_service.add_items_to_slot(user_id, {
+        local ok, err = bag_service.add_item(user_id, {
             {
                 item_id = item_id,
                 count = count
@@ -60,7 +61,7 @@ local GM_HANDLERS = {
         end
         
         -- 使用新方法消耗物品
-        local ok, err, result = item_service.use_item(user_id, item_id, count)
+        local ok, err, result = bag_service.use_item(user_id, item_id, count)
         
         logger.info("use_item - user_id: %d, item_id: %d, count: %d, result: %s, err: %s", 
             user_id, item_id, count, tostring(ok), tostring(err or "success"))
@@ -86,7 +87,7 @@ local GM_HANDLERS = {
         end
         
         -- 获取当前物品数量
-        local current_count = item_service.get_item_count(user_id, item_id)
+        local current_count = bag_service.get_item_count(user_id, item_id)
         if current_count <= 0 then
             return {false, nil, "item not found"}
         end
@@ -99,7 +100,7 @@ local GM_HANDLERS = {
         end
         
         -- 删除物品
-        local ok, err = item_service.batch_remove_items(user_id, {
+        local ok, err = bag_service.batch_remove_items(user_id, {
             {
                 item_id = item_id,
                 count = count

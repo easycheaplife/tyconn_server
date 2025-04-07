@@ -834,28 +834,55 @@ function M.add_items(user_id, items, source)
     
     -- 支持单个物品对象或物品对象数组
     local items_array = {}
-    if type(items) == "table" and items.item_id then
-        -- 单个物品对象
-        table.insert(items_array, {
-            item_id = items.item_id,
-            count = items.count or 1
-        })
-    elseif type(items) == "table" then
-        -- 物品对象数组
-        items_array = items
-    else
-        logger.error("Invalid items parameter type: %s", type(items))
+    if type(items) == "table" then
+        if items.item_id and type(items.item_id) ~= "table" then
+            -- 单个物品对象
+            table.insert(items_array, {
+                item_id = items.item_id,
+                count = items.count or 1
+            })
+        elseif items.item_id and type(items.item_id) == "table" then
+            -- 处理特殊的嵌套结构 {item_id = {[1] = {item_id=xx, count=xx}}}
+            for _, item in pairs(items.item_id) do
+                if type(item) == "table" and item.item_id then
+                    table.insert(items_array, {
+                        item_id = item.item_id,
+                        count = item.count or 1
+                    })
+                end
+            end
+        elseif items[1] and type(items[1]) == "table" then
+            if items[1].item_id then
+                -- 物品对象数组
+                items_array = items
+            else
+                -- 处理嵌套的items结构
+                for _, item in pairs(items[1]) do
+                    if type(item) == "table" and item.item_id then
+                        table.insert(items_array, {
+                            item_id = item.item_id,
+                            count = item.count or 1
+                        })
+                    end
+                end
+            end
+        end
+    end
+    
+    if #items_array == 0 then
+        logger.error("No valid items to add, input structure: %s", utils.table_to_string(items))
         return false, nil
     end
     
-    logger.debug("Adding items to bag: user_id=%d, items=%s", user_id, utils.table_to_string(items_array))
+    -- 确保日志输出的是处理后的标准格式
+    logger.debug("Adding items to bag (processed): user_id=%d, items=%s", 
+        user_id, utils.table_to_string(items_array))
     
-    -- 调用item_service的add_items_to_slot函数，正确传递参数
-    local item_service = require "services.item_service"
+    -- 调用item_service的add_items_to_slot函数
     local ok, err, added_items = item_service.add_items_to_slot(
         user_id,
         items_array,
-        source  -- 指定来源
+        source or enum.ChangeSource.SOURCE_SYSTEM
     )
     
     if not ok then
@@ -981,4 +1008,46 @@ function M.get_user_items(user_id)
     return items
 end
 
-return M 
+-- 获取物品数量
+function M.get_item_count(user_id, item_id)
+    -- 参数验证
+    if not user_id or not item_id then
+        logger.error("Invalid parameters for get_item_count: user_id=%s, item_id=%s", 
+            tostring(user_id), tostring(item_id))
+        return 0
+    end
+    
+    logger.debug("Getting item count: user_id=%d, item_id=%d", user_id, item_id)
+    
+    -- 调用item_service获取物品数量
+    local count = item_service.get_item_count(user_id, item_id)
+    
+    logger.info("Item count: user_id=%d, item_id=%d, count=%d", user_id, item_id, count)
+    
+    return count
+end
+
+-- 批量移除物品
+function M.batch_remove_items(user_id, item_list, source)
+    -- 参数验证
+    if not user_id or not item_list then
+        logger.error("Invalid parameters for batch_remove_items: user_id=%s", tostring(user_id))
+        return false, "invalid params"
+    end
+    
+    logger.debug("Removing items: user_id=%d", user_id)
+    
+    -- 调用item_service批量移除物品
+    local ok, err = item_service.batch_remove_items(user_id, item_list, source)
+    
+    if not ok then
+        logger.error("Failed to remove items: user_id=%d", user_id)
+        return false, err
+    end
+    
+    logger.info("Successfully removed items: user_id=%d", user_id)
+    
+    return true, nil
+end
+
+return M
