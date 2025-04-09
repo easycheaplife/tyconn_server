@@ -129,11 +129,38 @@ class MailNotifyClient {
         if (messageId === NEW_MAIL_PUSH) {
             const timestamp = new Date().toISOString();
             console.log('\n[%s] Received new mail notification:', timestamp);
-            console.log('Mail ID:', data.mail.id);
-            console.log('Title:', data.mail.title);
-            console.log('Type:', data.mail.mail_type === 1 ? 'System Mail' : 'Personal Mail');
-            console.log('Has Items:', data.mail.has_items ? 'Yes' : 'No');
-            console.log('----------------------------------------');
+            
+            // 检查data对象是否存在
+            if (!data) {
+                console.error('No data received in mail notification');
+                return;
+            }
+            
+            // 打印完整的消息数据以便调试
+            console.log('Raw message data:', JSON.stringify(data, null, 2));
+            
+            try {
+                // 使用ProtoHelper的decodeMessage方法
+                const decodedData = this.protoHelper.decodeMessage('command.G2CNewMailPush', data);
+                console.log('Decoded message data:', JSON.stringify(decodedData, null, 2));
+                
+                // 获取邮件信息
+                const mail = decodedData.mail;
+                if (!mail) {
+                    console.error('No mail information found in decoded message');
+                    return;
+                }
+                
+                // 安全地访问邮件属性
+                console.log('Mail ID:', mail.id || mail.mailId || 'Unknown');
+                console.log('Title:', mail.title || 'No title');
+                console.log('Type:', mail.mail_type === 1 ? 'System Mail' : 'Personal Mail');
+                console.log('Has Items:', mail.has_items ? 'Yes' : 'No');
+                console.log('----------------------------------------');
+            } catch (error) {
+                console.error('Error decoding mail message:', error);
+                console.error('Error details:', error.stack);
+            }
         } else {
             console.log('Received message ID:', messageId);
             if (data) {

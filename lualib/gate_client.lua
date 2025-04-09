@@ -27,7 +27,7 @@ function M.push_message(user_id, message_id, message_data)
         logger.warn("push_message: User %d not found in session", user_id)
         return false
     end
-    
+    logger.info("push_message: session: %s", utils.table_to_string(session))
     if not session.gate_node then
         logger.warn("push_message: User %d has no gate_node in session", user_id)
         return false
@@ -79,27 +79,16 @@ function M.push_message(user_id, message_id, message_data)
     local ok, err
     local current_node = skynet.getenv("node_name")
     
-    if node_name == current_node then
-        -- 本地节点，直接使用gate_manager服务
-        logger.debug("Sending to local gate manager for user %d", user_id)
-        local gate_manager = skynet.localname(".gate_manager")
-        if not gate_manager then
-            logger.error("Local gate manager not found")
-            return false
-        end
-        ok, err = pcall(skynet.send, gate_manager, "lua", "client_push", user_id, message_id, encoded_response)
-    else
-        -- 远程节点，使用集群通信
-        logger.debug("Sending to remote gate manager on node %s for user %d", node_name, user_id)
-        ok, err = pcall(cluster.send, node_name, ".gate_manager", "client_push", user_id, message_id, encoded_response)
-    end
+    -- 远程节点，使用集群通信
+    logger.debug("Sending to remote gate manager on node %s for client %d", node_name, session.client_id)
+    ok, err = pcall(cluster.send, node_name, "@" .. node_name, "client_push", session.client_id, message_id, encoded_response)
     
     if not ok then
-        logger.error("Failed to push message to user %d: %s", user_id, tostring(err))
+        logger.error("Failed to push message to client %d: %s", session.client_id, tostring(err))
         return false
     end
     
-    logger.info("Successfully pushed message to user %d", user_id)
+    logger.info("Successfully pushed message to client %d", session.client_id)
     return true
 end
 
