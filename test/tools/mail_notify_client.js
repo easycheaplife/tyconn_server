@@ -14,37 +14,53 @@ class MailNotifyClient {
         // 生成随机账号
         this.account = `test_${Math.floor(Math.random() * 10000)}`;
         this.password = '123456';
+        this.directConnect = false; // 是否直接连接到游戏服务器
     }
 
-    async start() {
+    async start(options = {}) {
         try {
             // 确保 proto 文件已加载
             await this.protoHelper.ensureInitialized();
             
             console.log('Connecting to server...');
-            console.log('Using account:', this.account);
             
-            // 使用随机账号登录
-            const loginResult = await this.loginClient.login(
-                this.account,
-                this.password
-            );
+            // 检查是否使用直接连接模式
+            this.directConnect = options.directConnect || false;
+            
+            if (this.directConnect) {
+                console.log('Using direct login to game server...');
+                if (options.account) {
+                    this.account = options.account;
+                }
+                console.log('Using account:', this.account);
+                
+                // 直接连接到游戏服务器
+                await this.loginGame(options.serverInfo || config.gameServer);
+            } else {
+                console.log('Using account:', this.account);
+                
+                // 使用随机账号登录
+                const loginResult = await this.loginClient.login(
+                    this.account,
+                    this.password
+                );
 
-            // 保存token
-            this.token = loginResult.token;
+                // 保存token
+                this.token = loginResult.token;
 
-            // 解析网关信息
-            const serverInfo = {
-                protocol: 'ws',
-                host: loginResult.gateInfo.host,
-                port: loginResult.gateInfo.port
-            };
-            
-            // 创建游戏客户端，直接传入认证信息
-            this.gameClient = new GameClient(loginResult.token, serverInfo);
-            
-            // 连接
-            await this.gameClient.connect();
+                // 解析网关信息
+                const serverInfo = {
+                    protocol: 'ws',
+                    host: loginResult.gateInfo.host,
+                    port: loginResult.gateInfo.port
+                };
+                
+                // 创建游戏客户端，直接传入认证信息
+                this.gameClient = new GameClient(loginResult.token, serverInfo);
+                
+                // 连接
+                await this.gameClient.connect();
+            }
             
             // 连接成功后设置消息处理器
             this.setupMessageHandler();
@@ -217,6 +233,44 @@ class MailNotifyClient {
             'command.G2CReadMailResponse'
         );
         return response;
+    }
+
+    // 直接登录到游戏服务器
+    async loginGame(serverInfo) {
+        try {
+            console.log('Direct login to game server...');
+            
+            // 创建游戏客户端，但不传入token
+            this.gameClient = new GameClient(null, serverInfo);
+            
+            // 连接到游戏服务器
+            await this.gameClient.connect();
+            
+            // 发送登录请求
+            const messageId = this.protoHelper.MessageID.C2G_LOGIN_GAME_REQUEST;
+            const response = await this.gameClient.sendGameRequest(
+                messageId,
+                {
+                    account: this.account,
+                    password: this.password
+                },
+                'command.G2CLoginGameResponse'
+            );
+            
+            if (!response || !response.token) {
+                throw new Error('Failed to login to game server: Invalid response');
+            }
+            
+            // 保存token
+            this.token = response.token;
+            this.gameClient.token = response.token;
+            
+            console.log('Successfully logged in to game server');
+            return true;
+        } catch (error) {
+            console.error('Failed to login to game server:', error);
+            throw error;
+        }
     }
 }
 
