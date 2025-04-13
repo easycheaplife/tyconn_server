@@ -70,6 +70,11 @@ function event_handlers.handle_item_reward(user_id, complete_event)
     return success, bags, nil
 end
 
+-- 处理物品装备奖励事件
+function event_handlers.handle_item_equip_reward(user_id, complete_event)
+    return event_handlers.handle_item_reward(user_id, complete_event)
+end
+
 -- 处理传送事件
 function event_handlers.handle_teleport(user_id, complete_event, map_info)
     local success = true
@@ -153,8 +158,8 @@ end
 
 -- 处理一般性事件（不需要特殊处理的事件）
 function event_handlers.handle_generic_event(user_id, complete_event)
-    logger.info("Handling generic event: user_id=%d, event_id=%d, cell_events=%s", 
-        user_id, complete_event.event_id, utils.table_to_string(complete_event.cell_events))
+    logger.info("Handling generic event: user_id=%d, event_id=%d, merged_events=%s", 
+        user_id, complete_event.event_id, utils.table_to_string(complete_event.merged_events))
     return true, nil, nil
 end
 
@@ -229,43 +234,37 @@ local function get_cell_data_by_chapter(chapter_id, cell_id)
     return M.get_cell_data(chapter_config.map_id, cell_id)
 end
 
--- 合并格子事件和格子对象事件
-local function merge_cell_events(cell_events, cell_objects_events)
+-- 合并格子事件
+local function merge_cell_events(cell_events1, cell_events2, cell_events3, direction)
     local merged_events = {}
-    
-    -- 处理格子对象事件
-    if cell_objects_events and #cell_objects_events > 0 then
-        if type(cell_objects_events[1]) == "number" then
-            -- 第一个元素是事件ID，其余是参数
-            local event_id = cell_objects_events[1]
-            local params = {}
-            for i = 2, #cell_objects_events do
-                table.insert(params, cell_objects_events[i])
-            end
-            
-            table.insert(merged_events, {
-                event_id = event_id,
-                params = params,
-                source = "cell_objects_events"
-            })
-        end
+    local cell_events_configs = table_service.get_config_values("cell_events")
+    if not cell_events_configs then
+        logger.error("Failed to get cell_events config")
+        return merged_events
     end
     
-    -- 处理格子事件
-    if cell_events then
-        -- 处理数组格式的cell_events
-        if type(cell_events[1]) == "number" then
-            -- 如果是数字数组格式
-            local event_id = cell_events[1]
+    -- 处理所有事件数组
+    local event_arrays = {
+        {events = cell_events1, source = "cell_events1"},
+        {events = cell_events2, source = "cell_events2"},
+        {events = cell_events3, source = "cell_events3"}
+    }
+    
+    for _, array_info in ipairs(event_arrays) do
+        local events = array_info.events
+        if events and #events > 0 and type(events[1]) == "number" then
+            -- 获取事件ID和参数
+            local event_id = events[1]
             local params = {}
-            for i = 2, #cell_events do
-                table.insert(params, cell_events[i])
+            for i = 2, #events do
+                table.insert(params, events[i])
             end
-                
+            
+            -- 添加事件，触发逻辑在后续根据activate判断
             table.insert(merged_events, {
                 event_id = event_id,
                 params = params,
-                source = "cell_events"
+                source = array_info.source
             })
         end
     end
@@ -281,28 +280,50 @@ local function get_cell_events(cell_data, position, is_final_position)
     end
 
     local event_ids = {}
-    
-    -- 处理格子对象事件 (经过就触发)
-    if cell_data.cell_objects_events and #cell_data.cell_objects_events > 0 then
-        logger.debug("Found %d cell_objects_events at position %d", #cell_data.cell_objects_events, position)
-        -- 只取第一个参数作为事件ID
-        if type(cell_data.cell_objects_events[1]) == "number" then
-            table.insert(event_ids, {
-                event_id = cell_data.cell_objects_events[1],
-                cell_id = position
-            })
-        end
+    local cell_events_configs = table_service.get_config_values("cell_events")
+    if not cell_events_configs then
+        logger.error("Failed to get cell_events config")
+        return {}
     end
     
-    -- 处理格子事件 (只在到达终点时触发)
-    if is_final_position and cell_data.cell_events and #cell_data.cell_events > 0 then
-        logger.debug("Found %d cell_events at final position %d", #cell_data.cell_events, position)
-        -- 只取第一个参数作为事件ID
-        if type(cell_data.cell_events[1]) == "number" then
-            table.insert(event_ids, {
-                event_id = cell_data.cell_events[1],
-                cell_id = position
-            })
+    -- 处理所有事件数组
+    local event_arrays = {
+        cell_data.cell_events1,
+        cell_data.cell_events2,
+        cell_data.cell_events3
+    }
+    
+    for _, events in ipairs(event_arrays) do
+        if events and #events > 0 and type(events[1]) == "number" then
+            local event_id = events[1]
+            
+            -- 获取事件配置中的Activate值
+            local event_config = cell_events_configs[event_id]
+            if not event_config then
+                logger.error("Event config not found for event_id %d", event_id)
+                goto continue
+            end
+            
+            local activate_type = event_config.activate or 0
+            local should_trigger = false
+            
+            -- 根据activate_type判断触发条件
+            if activate_type == 0 then  -- 调用主动
+                should_trigger = true
+            elseif activate_type == 1 then  -- 正向主动
+                should_trigger = is_final_position 
+            elseif activate_type == 2 then  -- 路过
+                should_trigger = true
+            end
+            
+            if should_trigger then
+                table.insert(event_ids, {
+                    event_id = event_id,
+                    cell_id = position
+                })
+            end
+            
+            ::continue::
         end
     end
     
@@ -337,9 +358,10 @@ local function dispatch_event(user_id, event, map_info)
     local complete_event = {
         event_id = event.event_id,
         event_type_id = event_type_id,
-        cell_events = cell_data.cell_events,
-        cell_objects_events = cell_data.cell_objects_events,
-        merged_events = merge_cell_events(cell_data.cell_events, cell_data.cell_objects_events)
+        cell_events1 = cell_data.cell_events1,
+        cell_events2 = cell_data.cell_events2,
+        cell_events3 = cell_data.cell_events3,
+        merged_events = merge_cell_events(cell_data.cell_events1, cell_data.cell_events2, cell_data.cell_events3, map_info.direction)
     }
     
     -- 根据事件类型调用对应的处理函数
@@ -349,6 +371,8 @@ local function dispatch_event(user_id, event, map_info)
         success, bags, new_position = event_handlers.handle_teleport(user_id, complete_event, map_info)
     elseif event_type_id == enum.CellEventType.EVENT_TYPE_TURN then
         success, bags, new_position = event_handlers.handle_direction_change(user_id, complete_event, map_info)
+    elseif event_type_id == enum.CellEventType.EVENT_TYPE_ITEM_EQUIP_REWARD then
+        success, bags, new_position = event_handlers.handle_item_equip_reward(user_id, complete_event)
     else
         -- 默认处理方式
         success, bags, new_position = event_handlers.handle_generic_event(user_id, complete_event)

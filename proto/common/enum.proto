@@ -455,6 +455,7 @@ enum CellEventType {
     EVENT_TYPE_BATTLE = 200;    // 触发战斗
     EVENT_TYPE_TASK = 201;      // 触发任务
     EVENT_TYPE_ITEM_REWARD = 400;     // 物品奖励
+    EVENT_TYPE_ITEM_EQUIP_REWARD = 410; // 物品奖励-装备 
     EVENT_TYPE_NPC_SHOP = 501;  // NPC商店
     EVENT_TYPE_WHEEL_SHOP = 502;// 轮盘商店
     EVENT_TYPE_MODIFY_ATTR = 503;// 修改大富翁属性

@@ -1,5 +1,5 @@
 -- Generating enum.lua from proto/common/enum.proto
--- Generate time: 2025-04-01 03:06:18
+-- Generate time: 2025-04-12 21:09:46
 
 local M = {}
 
@@ -433,6 +433,7 @@ M.CellEventType = {
     EVENT_TYPE_BATTLE = 200,    -- 触发战斗
     EVENT_TYPE_TASK = 201,    -- 触发任务
     EVENT_TYPE_ITEM_REWARD = 400,    -- 物品奖励
+    EVENT_TYPE_ITEM_EQUIP_REWARD = 410,    -- 物品奖励-装备
     EVENT_TYPE_NPC_SHOP = 501,    -- NPC商店
     EVENT_TYPE_WHEEL_SHOP = 502,    -- 轮盘商店
     EVENT_TYPE_MODIFY_ATTR = 503,    -- 修改大富翁属性
@@ -448,9 +449,6 @@ M.ChapterConditionType = {
     CONDITION_TYPE_REACH_END = 1,    -- 到达终点
     CONDITION_TYPE_PLAYER_LEVEL = 2,    -- 玩家等级达到
     CONDITION_TYPE_PASS_STAGES = 3,    -- 通过指定关卡数
-    CONDITION_TYPE_COLLECT_ITEMS = 4,    -- 收集特定物品
-    CONDITION_TYPE_DEFEAT_ENEMIES = 5,    -- 击败特定敌人
-    CONDITION_TYPE_CUSTOM = 99,    -- 自定义条件
 }
 
 return M

@@ -382,8 +382,9 @@ function M.load_cell_data_config()
                 cell_land = tonumber(cell_data.Cell_land) or 0,
                 land_buy = tonumber(cell_data.Land_buy) or 0,
                 land_unit = tonumber(cell_data.Land_unit) or 0,
-                cell_events = cell_data.Cell_events or {},
-                cell_objects_events = cell_data.Cell_Objects_events or {}
+                cell_events1 = cell_data.Cell_events1 or {},
+                cell_events2 = cell_data.Cell_events2 or {},
+                cell_events3 = cell_data.Cell_events3 or {}
             }
         end
     end
@@ -410,7 +411,8 @@ function M.load_cell_events_config()
                 id = tonumber(event_data.Id),
                 event_id = event_id,
                 event_type_id = tonumber(event_data.Event_type_id),
-                resource = event_data.resource
+                resource = event_data.resource,
+                activate = tonumber(event_data.Activate) or 0  -- 添加Activate字段: 0-调用主动, 1-正向主动, 2-路过
             }
         end
     end
