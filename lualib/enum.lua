@@ -1,5 +1,5 @@
 -- Generating enum.lua from proto/common/enum.proto
--- Generate time: 2025-04-12 21:09:46
+-- Generate time: 2025-04-13 12:20:38
 
 local M = {}
 
@@ -449,6 +449,13 @@ M.ChapterConditionType = {
     CONDITION_TYPE_REACH_END = 1,    -- 到达终点
     CONDITION_TYPE_PLAYER_LEVEL = 2,    -- 玩家等级达到
     CONDITION_TYPE_PASS_STAGES = 3,    -- 通过指定关卡数
+}
+
+-- 事件触发方式
+M.CellEventActivateType = {
+    ACTIVATE_TYPE_CALL = 0,    -- 调用主动
+    ACTIVATE_TYPE_LAND = 1,    -- 正向主动
+    ACTIVATE_TYPE_PASS = 2,    -- 路过/经过
 }
 
 return M

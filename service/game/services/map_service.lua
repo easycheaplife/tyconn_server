@@ -164,11 +164,11 @@ local function get_cell_events(cell_data, position, is_final_position)
             local should_trigger = false
             
             -- 根据activate_type判断触发条件
-            if activate_type == 0 then  -- 调用主动
+            if activate_type == enum.CellEventActivateType.ACTIVATE_TYPE_CALL then  -- 调用生效
                 should_trigger = true
-            elseif activate_type == 1 then  -- 正向主动
-                should_trigger = is_final_position 
-            elseif activate_type == 2 then  -- 路过
+            elseif activate_type == enum.CellEventActivateType.ACTIVATE_TYPE_LAND then  -- 踩中
+                should_trigger = is_final_position == true
+            elseif activate_type == enum.CellEventActivateType.ACTIVATE_TYPE_PASS then  -- 路过
                 should_trigger = true
             end
             

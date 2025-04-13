@@ -472,3 +472,10 @@ enum ChapterConditionType {
     CONDITION_TYPE_PLAYER_LEVEL = 2; // 玩家等级达到
     CONDITION_TYPE_PASS_STAGES = 3; // 通过指定关卡数
 }
+
+// 事件触发方式
+enum CellEventActivateType {
+    ACTIVATE_TYPE_CALL = 0;      // 调用生效
+    ACTIVATE_TYPE_LAND = 1;     // 踩中
+    ACTIVATE_TYPE_PASS = 2;     // 路过/经过
+} 
