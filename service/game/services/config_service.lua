@@ -19,6 +19,7 @@ local CONFIG_CACHE = {
     companion_stars = {}, -- 伙伴星级配置
     cell_data = {},      -- 大富翁格子数据
     cell_events = {},    -- 大富翁格子事件
+    cell_random_events = {}, -- 大富翁随机事件
     monopoly = {}        -- 大富翁章节配置
 }
 
@@ -45,7 +46,8 @@ function M.init()
         {name = "companion star configs", loader = M.load_companion_star_configs},
         {name = "monopoly cell data", loader = M.load_cell_data_config},
         {name = "monopoly cell events", loader = M.load_cell_events_config},
-        {name = "monopoly chapter config", loader = M.load_monopoly_config}
+        {name = "monopoly chapter config", loader = M.load_monopoly_config},
+        {name = "monopoly random events", loader = M.load_cell_random_events_config}
     }
 
     for _, config in ipairs(configs_to_load) do
@@ -485,6 +487,35 @@ function M.load_monopoly_config()
     return true
 end
 
+-- 加载大富翁随机事件配置
+function M.load_cell_random_events_config()
+    local data = config_loader.get_config("Dfw_cell_random")
+    if not data then
+        return false
+    end
+
+    -- 转换配置格式
+    for id, random_event_data in pairs(data) do
+        local random_id = tonumber(random_event_data.Id)
+        if random_id then
+            CONFIG_CACHE.cell_random_events[random_id] = {
+                id = random_id,
+                cell_events = random_event_data.Cell_events or {},
+                cell_id = tonumber(random_event_data.Cell_id) or 0,
+                cells = random_event_data.Cells or {},
+                map_id = tonumber(random_event_data.Map_id) or 0,
+                max_gen = tonumber(random_event_data.Generate_max) or 1,  -- 最大生成数量
+                mutex = tonumber(random_event_data.Mutex) or 0,           -- 互斥事件ID
+                repeat_no = tonumber(random_event_data.Repeat_no) or 0,   -- 不重复
+                weight = tonumber(random_event_data.Weights) or 100       -- 生成权重
+            }
+        end
+    end
+
+    logger.info("Cell random events config loaded: %d events", count_pairs(CONFIG_CACHE.cell_random_events))
+    return true
+end
+
 -- 添加通用的get_config方法，用于提供给table_service调用
 function M.get_config(config_name)
     if not config_name then
@@ -517,6 +548,8 @@ function M.get_config(config_name)
         return CONFIG_CACHE.cell_events
     elseif config_name == "monopoly" and next(CONFIG_CACHE.monopoly) then
         return CONFIG_CACHE.monopoly
+    elseif config_name == "cell_random_events" and next(CONFIG_CACHE.cell_random_events) then
+        return CONFIG_CACHE.cell_random_events
     end
     
     return nil
