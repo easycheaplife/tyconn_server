@@ -8,6 +8,7 @@ local bag_service = require "game.services.bag_service"
 local user_service = require "game.services.user_service"
 local error = require "error"
 local enum = require "enum"
+local event_handlers = require "game.services.map_event_handlers"
 
 local M = {}
 
@@ -17,151 +18,6 @@ local OPERATION_TYPE = {
     HANDLE_EVENT = 2,  -- 处理事件
     CLAIM_REWARD = 3   -- 领取奖励
 }
-
--- 事件处理器模块
-local event_handlers = {}
-
--- 处理物品奖励事件
-function event_handlers.handle_item_reward(user_id, complete_event)
-    local bags = {}
-    local success = true
-    
-    -- 从合并后的事件数据中获取物品信息
-    if complete_event.merged_events and #complete_event.merged_events > 0 then
-        -- 查找匹配的事件数据
-        local event_data = nil
-        for _, merged_event in ipairs(complete_event.merged_events) do
-            if merged_event.event_id == complete_event.event_id then
-                event_data = merged_event
-                break
-            end
-        end
-        -- 处理事件数据
-        if event_data then
-            local item_id, count
-            if event_data.params and #event_data.params >= 2 then
-                -- 如果是表格式的参数
-                item_id = event_data.params[1]
-                count = event_data.params[2]
-            end
-            
-            if item_id then
-                local ok, result = bag_service.add_item(user_id, item_id, count, enum.ChangeSource.SOURCE_REWARD)
-                if ok and result then
-                    bags = result
-                else
-                    success = false
-                    logger.error("Failed to add item for user %d, item %d, count %d", 
-                        user_id, item_id, count)
-                end
-            else
-                success = false
-                logger.error("Invalid item reward event data format: missing item_id")
-            end
-        else
-            success = false
-            logger.error("Event not found in merged events")
-        end
-    else
-        success = false
-        logger.error("No merged events found")
-    end
-    
-    return success, bags, nil
-end
-
--- 处理物品装备奖励事件
-function event_handlers.handle_item_equip_reward(user_id, complete_event)
-    return event_handlers.handle_item_reward(user_id, complete_event)
-end
-
--- 处理传送事件
-function event_handlers.handle_teleport(user_id, complete_event, map_info)
-    local success = true
-    local new_position = nil
-    
-    -- 从合并后的事件数据中获取目标位置
-    if complete_event.merged_events and #complete_event.merged_events > 0 then
-        -- 查找匹配的事件数据
-        local event_data = nil
-        for _, merged_event in ipairs(complete_event.merged_events) do
-            if merged_event.event_id == complete_event.event_id then
-                event_data = merged_event
-                break
-            end
-        end
-        
-        if event_data and event_data.params and #event_data.params >= 1 then
-            new_position = event_data.params[1]
-            
-            -- 更新角色位置
-            map_info.current_position = new_position
-            map_info.update_time = os.time()
-            
-            local ok = map_dao.update_map_info(map_info)
-            if not ok then
-                success = false
-                logger.error("Failed to update position for user %d to position %d", 
-                    user_id, new_position)
-            end
-        else
-            success = false
-            logger.error("Invalid teleport event data format or event not found")
-        end
-    else
-        success = false
-        logger.error("No merged events found")
-    end
-    
-    return success, nil, new_position
-end
-
--- 处理转向事件
-function event_handlers.handle_direction_change(user_id, complete_event, map_info)
-    local success = true
-    
-    -- 从合并后的事件数据中获取方向
-    if complete_event.merged_events and #complete_event.merged_events > 0 then
-        -- 查找匹配的事件数据
-        local event_data = nil
-        for _, merged_event in ipairs(complete_event.merged_events) do
-            if merged_event.event_id == complete_event.event_id then
-                event_data = merged_event
-                break
-            end
-        end
-        
-        if event_data and event_data.params and #event_data.params >= 1 then
-            local direction = event_data.params[1]
-            
-            -- 更新角色方向
-            map_info.direction = direction
-            map_info.update_time = os.time()
-            
-            local ok = map_dao.update_map_info(map_info)
-            if not ok then
-                success = false
-                logger.error("Failed to update direction for user %d to direction %d", 
-                    user_id, direction)
-            end
-        else
-            success = false
-            logger.error("Invalid direction change event data format or event not found")
-        end
-    else
-        success = false
-        logger.error("No merged events found")
-    end
-    
-    return success, nil, nil
-end
-
--- 处理一般性事件（不需要特殊处理的事件）
-function event_handlers.handle_generic_event(user_id, complete_event)
-    logger.info("Handling generic event: user_id=%d, event_id=%d, merged_events=%s", 
-        user_id, complete_event.event_id, utils.table_to_string(complete_event.merged_events))
-    return true, nil, nil
-end
 
 -- 获取事件类型ID
 function M.get_event_type_id(event_id)
@@ -908,7 +764,7 @@ local function enter_next_chapter(map_info, next_chapter_id)
     if next_chapter_config then
         -- 更新到下一章节
         map_info.chapter_id = next_chapter_id
-        map_info.current_position = 0  -- 初始位置
+        map_info.current_position = 1  -- 初始位置
         map_info.direction = 1  -- 初始方向（正向）
         map_info.update_time = os.time()
         
