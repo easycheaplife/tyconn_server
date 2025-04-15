@@ -1,5 +1,5 @@
 -- Generating enum.lua from proto/common/enum.proto
--- Generate time: 2025-04-13 12:20:38
+-- Generate time: 2025-04-15 09:54:01
 
 local M = {}
 
@@ -441,6 +441,7 @@ M.CellEventType = {
     EVENT_TYPE_ADD_SCENE_BUFF = 505,    -- 添加场景BUFF
     EVENT_TYPE_ADD_TRIGGER_BUFF = 506,    -- 添加触发者BUFF
     EVENT_TYPE_ADD_PLAYER_BUFF = 507,    -- 添加玩主角BUFF
+    EVENT_TYPE_RANDOM_EVENT = 900,    -- 随机事件
 }
 
 -- 章节通关条件类型
@@ -453,8 +454,8 @@ M.ChapterConditionType = {
 
 -- 事件触发方式
 M.CellEventActivateType = {
-    ACTIVATE_TYPE_CALL = 0,    -- 调用主动
-    ACTIVATE_TYPE_LAND = 1,    -- 正向主动
+    ACTIVATE_TYPE_CALL = 0,    -- 调用生效
+    ACTIVATE_TYPE_LAND = 1,    -- 踩中
     ACTIVATE_TYPE_PASS = 2,    -- 路过/经过
 }
 

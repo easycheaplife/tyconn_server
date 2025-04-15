@@ -320,4 +320,24 @@ function CMD.create_monopoly_log(log_data)
     return wrap_call(monopoly_model.create_monopoly_log, log_data)
 end
 
+-- 创建随机事件
+function CMD.create_monopoly_random_event(event_data)
+    return wrap_call(monopoly_model.create_monopoly_random_event, event_data)
+end
+
+-- 统计用户特定随机事件的数量
+function CMD.count_monopoly_random_events(user_id, chapter_id, event_id)
+    return wrap_call(monopoly_model.count_monopoly_random_events, user_id, chapter_id, event_id)
+end
+
+-- 获取已占用的格子
+function CMD.get_occupied_cells(user_id, chapter_id)
+    return wrap_call(monopoly_model.get_occupied_cells, user_id, chapter_id)
+end
+
+-- 获取用户随机事件
+function CMD.get_monopoly_random_events(user_id, chapter_id)
+    return wrap_call(monopoly_model.get_monopoly_random_events, user_id, chapter_id)
+end
+
 return CMD

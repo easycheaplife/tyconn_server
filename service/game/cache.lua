@@ -819,4 +819,95 @@ function M.remove_map_events(chapter_id, cell_id)
     return true
 end
 
+-- 大富翁随机事件缓存
+
+-- 随机事件数量缓存键
+local function get_random_event_count_key(user_id, chapter_id, event_id)
+    return make_key(PREFIX.random_event_count, string.format("%d:%d:%d", user_id, chapter_id, event_id))
+end
+
+-- 获取随机事件数量
+function M.get_random_event_count(user_id, chapter_id, event_id)
+    local key = get_random_event_count_key(user_id, chapter_id, event_id)
+    local count = redis.get(key)
+    if count then
+        return tonumber(count)
+    end
+    return nil
+end
+
+-- 设置随机事件数量
+function M.set_random_event_count(user_id, chapter_id, event_id, count)
+    local key = get_random_event_count_key(user_id, chapter_id, event_id)
+    local ok = redis.set(key, tostring(count))
+    if ok then
+        redis.expire(key, EXPIRE.map_event)
+    end
+    return ok
+end
+
+-- 随机事件列表缓存键
+local function get_random_events_key(user_id, chapter_id)
+    return make_key(PREFIX.random_events, string.format("%d:%d", user_id, chapter_id))
+end
+
+-- 获取随机事件列表
+function M.get_random_events(user_id, chapter_id)
+    local key = get_random_events_key(user_id, chapter_id)
+    local data = redis.get(key)
+    if data then
+        return utils.decode_json(data)
+    end
+    return nil
+end
+
+-- 设置随机事件列表
+function M.set_random_events(user_id, chapter_id, events)
+    local key = get_random_events_key(user_id, chapter_id)
+    local data = utils.encode_json(events)
+    local ok = redis.set(key, data)
+    if ok then
+        redis.expire(key, EXPIRE.map_event)
+    end
+    return ok
+end
+
+-- 删除随机事件列表缓存
+function M.remove_random_events(user_id, chapter_id)
+    local key = get_random_events_key(user_id, chapter_id)
+    return redis.del(key) > 0
+end
+
+-- 占用格子缓存键
+local function get_occupied_cells_key(user_id, chapter_id)
+    return make_key(PREFIX.occupied_cells, string.format("%d:%d", user_id, chapter_id))
+end
+
+-- 获取占用格子列表
+function M.get_occupied_cells(user_id, chapter_id)
+    local key = get_occupied_cells_key(user_id, chapter_id)
+    local data = redis.get(key)
+    if data then
+        return utils.decode_json(data)
+    end
+    return nil
+end
+
+-- 设置占用格子列表
+function M.set_occupied_cells(user_id, chapter_id, cells)
+    local key = get_occupied_cells_key(user_id, chapter_id)
+    local data = utils.encode_json(cells)
+    local ok = redis.set(key, data)
+    if ok then
+        redis.expire(key, EXPIRE.map_event)
+    end
+    return ok
+end
+
+-- 删除占用格子列表缓存
+function M.remove_occupied_cells(user_id, chapter_id)
+    local key = get_occupied_cells_key(user_id, chapter_id)
+    return redis.del(key) > 0
+end
+
 return M

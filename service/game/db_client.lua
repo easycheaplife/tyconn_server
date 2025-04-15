@@ -975,4 +975,81 @@ function M.get_monopoly_event(event_id)
     return result
 end
 
+-- 创建随机事件
+function M.create_monopoly_random_event(event_data)
+    if not event_data or not event_data.user_id or not event_data.chapter_id 
+        or not event_data.event_id or not event_data.cell_id then
+        logger.error("create_monopoly_random_event: invalid event data")
+        return false
+    end
+    
+    local current_time = os.time()
+    
+    -- 构建数据库记录
+    local db_event = {
+        user_id = event_data.user_id,
+        chapter_id = event_data.chapter_id,
+        event_id = event_data.event_id,
+        cell_id = event_data.cell_id,
+        create_time = event_data.create_time or current_time,
+        update_time = event_data.update_time or current_time
+    }
+    
+    local ok, result = pcall(call_db, "create_monopoly_random_event", db_event)
+    if not ok then
+        logger.error("Failed to create monopoly random event: %s", result)
+        return false
+    end
+    
+    return result
+end
+
+-- 统计用户特定随机事件的数量
+function M.count_monopoly_random_events(user_id, chapter_id, event_id)
+    if not user_id or not chapter_id or not event_id then
+        logger.error("count_monopoly_random_events: invalid parameters")
+        return 0
+    end
+    
+    local ok, result = pcall(call_db, "count_monopoly_random_events", user_id, chapter_id, event_id)
+    if not ok then
+        logger.error("Failed to count monopoly random events: %s", result)
+        return 0
+    end
+    
+    return result or 0
+end
+
+-- 获取已占用的格子
+function M.get_occupied_cells(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("get_occupied_cells: invalid parameters")
+        return {}
+    end
+    
+    local ok, result = pcall(call_db, "get_occupied_cells", user_id, chapter_id)
+    if not ok then
+        logger.error("Failed to get occupied cells: %s", result)
+        return {}
+    end
+    
+    return result or {}
+end
+
+-- 获取用户随机事件
+function M.get_monopoly_random_events(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("get_monopoly_random_events: invalid parameters")
+        return {}
+    end
+    
+    local ok, result = pcall(call_db, "get_monopoly_random_events", user_id, chapter_id)
+    if not ok then
+        logger.error("Failed to get monopoly random events: %s", result)
+        return {}
+    end
+    
+    return result or {}
+end
+
 return M 

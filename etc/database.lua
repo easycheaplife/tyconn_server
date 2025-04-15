@@ -27,7 +27,10 @@ M.redis = {
         partner = "partner:",  -- 伙伴信息缓存前缀
         map_info = "map:user:",
         map_chapter = "map:chapter:",
-        map_events = "map:events:"
+        map_events = "map:events:",
+        random_event_count = "map:random:count:",  -- 随机事件数量缓存前缀
+        random_events = "map:random:events:",      -- 随机事件列表缓存前缀
+        occupied_cells = "map:occupied:cells:"     -- 占用格子缓存前缀
     },
 
     -- 缓存过期时间(秒)
@@ -48,7 +51,8 @@ M.redis = {
         partner = 3600 * 6,  -- 伙伴信息 6小时
         map_info = 3600,       -- 地图信息 1小时
         map_chapter = 3600,    -- 章节进度 1小时
-        map_events = 3600      -- 格子事件 1小时
+        map_event = 3600,      -- 地图事件 1小时
+        session = 86400      -- 会话 24小时
     }
 }
 

@@ -356,4 +356,99 @@ function M.create_monopoly_log(log_data)
     return true
 end
 
+-- 创建随机事件
+function M.create_monopoly_random_event(event_data)
+    if not event_data or not event_data.user_id or not event_data.chapter_id 
+        or not event_data.event_id or not event_data.cell_id then
+        logger.error("Invalid random event data: %s", utils.table_to_string(event_data))
+        return false, "Invalid random event data"
+    end
+    
+    -- 确保所有字段都有合适的默认值
+    local data = {
+        user_id = event_data.user_id,
+        chapter_id = event_data.chapter_id,
+        event_id = event_data.event_id,
+        cell_id = event_data.cell_id,
+        create_time = event_data.create_time or os.time(),
+        update_time = event_data.update_time or os.time()
+    }
+    
+    local query = string.format(sql.CREATE_MONOPOLY_RANDOM_EVENT,
+        data.user_id,
+        data.chapter_id,
+        data.event_id,
+        data.cell_id,
+        data.create_time,
+        data.update_time
+    )
+    
+    local ok = db_util.query(query)
+    if not ok then
+        logger.error("Failed to create random event for user: %d, chapter: %d, event: %d", 
+            data.user_id, data.chapter_id, data.event_id)
+        return false, "Database error"
+    end
+    
+    return true
+end
+
+-- 统计随机事件数量
+function M.count_monopoly_random_events(user_id, chapter_id, event_id)
+    if not user_id or not chapter_id or not event_id then
+        logger.error("Invalid parameters for count_monopoly_random_events")
+        return 0
+    end
+    
+    local query = string.format(sql.COUNT_MONOPOLY_RANDOM_EVENTS,
+        user_id, chapter_id, event_id)
+    
+    local results = db_util.query(query)
+    if not results or #results == 0 then
+        logger.warn("No results found for count_monopoly_random_events")
+        return 0
+    end
+    
+    return tonumber(results[1].count) or 0
+end
+
+-- 获取已占用的格子
+function M.get_occupied_cells(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("Invalid parameters for get_occupied_cells")
+        return {}
+    end
+    
+    local query = string.format(sql.GET_OCCUPIED_CELLS, user_id, chapter_id)
+    
+    local results = db_util.query(query)
+    if not results then
+        logger.error("Failed to get occupied cells for user: %d, chapter: %d", 
+            user_id, chapter_id)
+        return {}
+    end
+    
+    return results
+end
+
+-- 获取用户随机事件
+function M.get_monopoly_random_events(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("Invalid parameters for get_monopoly_random_events")
+        return {}
+    end
+    
+    local query = string.format(sql.GET_MONOPOLY_RANDOM_EVENTS, 
+        user_id, chapter_id)
+    
+    local results = db_util.query(query)
+    if not results then
+        logger.error("Failed to get random events for user: %d, chapter: %d", 
+            user_id, chapter_id)
+        return {}
+    end
+    
+    return results
+end
+
 return M 

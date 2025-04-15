@@ -463,6 +463,7 @@ enum CellEventType {
     EVENT_TYPE_ADD_SCENE_BUFF = 505;// 添加场景BUFF
     EVENT_TYPE_ADD_TRIGGER_BUFF = 506;// 添加触发者BUFF
     EVENT_TYPE_ADD_PLAYER_BUFF = 507; // 添加玩主角BUFF
+    EVENT_TYPE_RANDOM_EVENT = 900;  // 随机事件
 }
 
 // 章节通关条件类型

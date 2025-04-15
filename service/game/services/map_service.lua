@@ -280,37 +280,147 @@ function M.get_chapter_config(chapter_id)
     }
 end
 
--- 获取用户大富翁状态信息
-function M.get_map_info(user_id)
-    if not user_id then
-        logger.error("Invalid user_id")
+-- 根据权重选择随机配置
+local function select_random_config(configs)
+    if not configs or #configs == 0 then
         return nil
     end
     
-    -- 获取用户大富翁状态
-    local map_info = map_dao.get_user_map_info(user_id)
-    
-    -- 如果没有，则创建新的状态信息
-    if not map_info then
-        logger.info("Creating new monopoly state for user %d", user_id)
-        
-        local new_map = map_model.new({
-            user_id = user_id,
-            chapter_id = 1,  -- 默认从第一章开始
-            current_position = 1, -- 初始位置为1
-            direction = 1    -- 初始方向（正向）
-        })
-        
-        local ok = map_dao.create_map_info(new_map)
-        if not ok then
-            logger.error("Failed to create monopoly state for user %d", user_id)
-            return nil
-        end
-        
-        map_info = new_map
+    -- 计算总权重
+    local total_weight = 0
+    for _, config in ipairs(configs) do
+        total_weight = total_weight + (config.weights or 100)
     end
     
-    return map_info
+    -- 随机选择
+    local random_weight = math.random(1, total_weight)
+    local current_weight = 0
+    
+    for _, config in ipairs(configs) do
+        current_weight = current_weight + (config.weights or 100)
+        if random_weight <= current_weight then
+            return config
+        end
+    end
+    
+    -- 默认返回第一个配置
+    return configs[1]
+end
+
+-- 选择随机格子
+local function select_random_cell(available_cells, user_id, chapter_id, mutex)
+    if not available_cells or #available_cells == 0 then
+        return nil
+    end
+    
+    -- 获取已经有事件的格子
+    local occupied_cells = {}
+    if mutex > 0 then
+        occupied_cells = map_dao.get_occupied_cells(user_id, chapter_id)
+    end
+    
+    -- 过滤掉已占用的格子
+    local valid_cells = {}
+    for _, cell_id in ipairs(available_cells) do
+        if not occupied_cells[cell_id] then
+            table.insert(valid_cells, cell_id)
+        end
+    end
+    
+    if #valid_cells == 0 then
+        logger.warn("No valid cells available for random event")
+        return nil
+    end
+    
+    -- 随机选择一个格子
+    local random_index = math.random(1, #valid_cells)
+    return valid_cells[random_index]
+end
+
+-- 生成随机事件
+local function generate_random_events(user_id, chapter_config)
+    if not chapter_config.initial or #chapter_config.initial == 0 then
+        logger.debug("No initial events to generate for chapter %d", chapter_config.id)
+        return
+    end
+    
+    logger.info("Generating random events for user %d, chapter %d", 
+        user_id, chapter_config.id)
+    
+    -- 获取随机事件配置
+    local cell_random_events = table_service.get_config_values("cell_random_events")
+    if not cell_random_events then
+        logger.error("Failed to get cell_random_events config")
+        return
+    end
+   
+    -- 遍历初始化配置
+    for _, initial_config in ipairs(chapter_config.initial) do
+        -- 检查是否是随机事件配置 (第一个元素是900)
+        if initial_config[1] == enum.CellEventType.EVENT_TYPE_RANDOM_EVENT then
+            local map_id = initial_config[2]  -- 随机组ID
+            local count = initial_config[3] or 1  -- 生成数量
+            
+            -- 查找对应的随机配置
+            local random_config_group = {}
+            for _, config in pairs(cell_random_events) do
+                if config.map_id == map_id then
+                    table.insert(random_config_group, config)
+                end
+            end
+            
+            if #random_config_group == 0 then
+                logger.warn("No random event config found for map_id %d", map_id)
+                goto continue
+            end
+            
+            -- 生成随机事件
+            for i = 1, count do
+                -- 根据权重选择配置
+                local selected_config = select_random_config(random_config_group)
+                if not selected_config then
+                    logger.error("Failed to select random config for map_id %d", map_id)
+                    goto continue
+                end
+                
+                -- 检查最大生成数量限制
+                if selected_config.max_gen > 0 then
+                    local existing_count = map_dao.count_random_events(user_id, chapter_config.id, selected_config.id)
+                    if existing_count >= selected_config.max_gen then
+                        logger.debug("Random event %d reached max generation limit", selected_config.id)
+                        goto continue
+                    end
+                end
+                
+                -- 选择放置格子
+                local cell_id = select_random_cell(selected_config.cells, user_id, chapter_config.id, selected_config.mutex)
+                if not cell_id then
+                    logger.error("Failed to select random cell for event %d", selected_config.id)
+                    goto continue
+                end
+                
+                -- 创建随机事件记录
+                local event_data = {
+                    user_id = user_id,
+                    chapter_id = chapter_config.id,
+                    event_id = selected_config.id,
+                    cell_id = cell_id,
+                    create_time = os.time(),
+                    update_time = os.time()
+                }
+                
+                local ok = map_dao.create_random_event(event_data)
+                if not ok then
+                    logger.error("Failed to create random event record")
+                else
+                    logger.info("Created random event: event_id=%d, cell_id=%d", 
+                        selected_config.id, cell_id)
+                end
+            end
+            
+            ::continue::
+        end
+    end
 end
 
 -- 计算骰子移动后的位置
@@ -431,6 +541,48 @@ local function save_path_events(user_id, chapter_id, event_ids)
             end
         end
     end
+end
+
+-- 获取用户大富翁状态信息
+function M.get_map_info(user_id)
+    if not user_id then
+        logger.error("Invalid user_id")
+        return nil
+    end
+    
+    -- 获取用户大富翁状态
+    local map_info = map_dao.get_user_map_info(user_id)
+    
+    -- 如果没有，则创建新的状态信息
+    if not map_info then
+        logger.info("Creating new monopoly state for user %d", user_id)
+        
+        local new_map = map_model.new({
+            user_id = user_id,
+            chapter_id = 1,  -- 默认从第一章开始
+            current_position = 1, -- 初始位置为1
+            direction = 1    -- 初始方向（正向）
+        })
+        
+        local ok = map_dao.create_map_info(new_map)
+        if not ok then
+            logger.error("Failed to create monopoly state for user %d", user_id)
+            return nil
+        end
+        
+        -- 获取章节配置
+        local chapter_config = M.get_chapter_config(new_map.chapter_id)
+        if chapter_config then
+            -- 生成随机事件
+            generate_random_events(user_id, chapter_config)
+        else
+            logger.error("Failed to get chapter config for chapter %d", new_map.chapter_id)
+        end
+        
+        map_info = new_map
+    end
+    
+    return map_info
 end
 
 -- 掷骰子

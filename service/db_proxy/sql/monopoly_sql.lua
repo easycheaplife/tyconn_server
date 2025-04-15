@@ -140,4 +140,48 @@ M.CREATE_MONOPOLY_LOG = [[
     )
 ]]
 
+-- 创建随机事件
+M.CREATE_MONOPOLY_RANDOM_EVENT = [[
+    INSERT INTO monopoly_random_events (
+        user_id,
+        chapter_id,
+        event_id,
+        cell_id,
+        create_time,
+        update_time
+    ) VALUES (
+        %d, %d, %d, %d, %d, %d
+    )
+]]
+
+-- 统计随机事件数量
+M.COUNT_MONOPOLY_RANDOM_EVENTS = [[
+    SELECT 
+        COUNT(*) as count
+    FROM monopoly_random_events 
+    WHERE user_id = %d AND chapter_id = %d AND event_id = %d
+]]
+
+-- 获取已占用的格子
+M.GET_OCCUPIED_CELLS = [[
+    SELECT 
+        cell_id
+    FROM monopoly_random_events 
+    WHERE user_id = %d AND chapter_id = %d
+]]
+
+-- 获取用户随机事件列表
+M.GET_MONOPOLY_RANDOM_EVENTS = [[
+    SELECT 
+        id,
+        user_id,
+        chapter_id,
+        event_id,
+        cell_id,
+        create_time,
+        update_time
+    FROM monopoly_random_events 
+    WHERE user_id = %d AND chapter_id = %d
+]]
+
 return M 

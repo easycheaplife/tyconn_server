@@ -243,6 +243,117 @@ function M.create_monopoly_event(event_data)
     return true
 end
 
+-- 创建随机事件
+function M.create_random_event(event_data)
+    if not event_data then
+        logger.error("map_dao.create_random_event: Invalid event data")
+        return false
+    end
+    
+    -- 校验必要字段
+    if not event_data.user_id or not event_data.chapter_id or 
+       not event_data.event_id or not event_data.cell_id then
+        logger.error("map_dao.create_random_event: Missing required fields")
+        return false
+    end
+    
+    -- 调用数据库代理创建随机事件
+    local ok, result = pcall(function()
+        return db_client.create_monopoly_random_event(event_data)
+    end)
+    
+    if not ok then
+        logger.error("map_dao.create_random_event: Failed to create random event: %s", tostring(result))
+        return false
+    end
+    
+    -- 清除相关缓存
+    cache.remove_random_events(event_data.user_id, event_data.chapter_id)
+    
+    logger.debug("map_dao.create_random_event: Created random event for user %d, chapter %d, cell %d, event %d",
+        event_data.user_id, event_data.chapter_id, event_data.cell_id, event_data.event_id)
+    
+    return true
+end
+
+-- 获取特定事件的数量
+function M.count_random_events(user_id, chapter_id, event_id)
+    if not user_id or not chapter_id or not event_id then
+        logger.error("map_dao.count_random_events: Invalid parameters")
+        return 0
+    end
+    
+    -- 从缓存获取
+    local cached_count = cache.get_random_event_count(user_id, chapter_id, event_id)
+    if cached_count then
+        return cached_count
+    end
+    
+    -- 从数据库获取
+    local count = db_client.count_monopoly_random_events(user_id, chapter_id, event_id)
+    
+    -- 缓存结果
+    cache.set_random_event_count(user_id, chapter_id, event_id, count)
+    
+    return count or 0
+end
+
+-- 获取已被占用的格子
+function M.get_occupied_cells(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("map_dao.get_occupied_cells: Invalid parameters")
+        return {}
+    end
+    
+    -- 从缓存获取
+    local cached_cells = cache.get_occupied_cells(user_id, chapter_id)
+    if cached_cells then
+        return cached_cells
+    end
+    
+    -- 从数据库获取
+    local cells = db_client.get_occupied_cells(user_id, chapter_id)
+    if not cells then
+        return {}
+    end
+    
+    -- 转换为哈希表格式以便快速查找
+    local occupied_cells = {}
+    for _, cell in ipairs(cells) do
+        occupied_cells[cell.cell_id] = true
+    end
+    
+    -- 缓存结果
+    cache.set_occupied_cells(user_id, chapter_id, occupied_cells)
+    
+    return occupied_cells
+end
+
+-- 获取所有随机事件
+function M.get_random_events(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("map_dao.get_random_events: Invalid parameters")
+        return {}
+    end
+    
+    -- 从缓存获取
+    local cached_events = cache.get_random_events(user_id, chapter_id)
+    if cached_events then
+        return cached_events
+    end
+    
+    -- 从数据库获取
+    local events = db_client.get_monopoly_random_events(user_id, chapter_id)
+    if not events then
+        return {}
+    end
+    
+    -- 缓存结果
+    cache.set_random_events(user_id, chapter_id, events)
+    
+    return events
+end
+
 -- 获取格子事件
 function M.get_cell_events(params)
     if not params or not params.chapter_id or not params.cell_id then

@@ -668,4 +668,31 @@ function M.get_config_values(config_name)
     return config_service.get_config(config_name)
 end
 
+-- 获取随机格子配置
+function M.get_cell_random_configs()
+    local configs = config_service.get_config("cell_random_events")
+    if not configs then
+        logger.error("Failed to get cell_random_events configs")
+        return {}
+    end
+    return configs
+end
+
+-- 获取特定地图ID的随机格子配置
+function M.get_cell_random_configs_by_map_id(map_id)
+    local configs = M.get_cell_random_configs()
+    if not configs then
+        return {}
+    end
+    
+    local result = {}
+    for _, config in pairs(configs) do
+        if config.map_id == map_id then
+            table.insert(result, config)
+        end
+    end
+    
+    return result
+end
+
 return M 

@@ -297,7 +297,6 @@ CREATE TABLE IF NOT EXISTS monopoly_events (
     complete_time BIGINT DEFAULT 0,            -- 完成时间
     
     INDEX idx_user_status (user_id, status),   -- 用户状态索引，查询用户未处理事件
-    INDEX idx_event (event_id),                -- 事件索引
     INDEX idx_trigger (trigger_time)           -- 触发时间索引，用于清理过期事件
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -310,7 +309,7 @@ CREATE TABLE IF NOT EXISTS monopoly_random_events (
     cell_id INT NOT NULL,                      -- 格子ID
     create_time BIGINT NOT NULL,               -- 创建时间
     update_time BIGINT NOT NULL,               -- 更新时间
-    INDEX idx_user_id_chapter_id (user_id, chapter_id)               -- 事件索引
+    INDEX idx_user_id_chapter_id (user_id, chapter_id)              
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 用户章节进度表
