@@ -274,6 +274,7 @@ function M.get_chapter_config(chapter_id)
         total_cells = total_cells,
         victory_condition = chapter_config.victory_condition or {},
         chapter_reward = chapter_config.reward or {},
+        initial = chapter_config.initial or {},
         next_chapter = chapter_config.unlock or 0,
         tile_map = chapter_config.tile_map or {}
     }

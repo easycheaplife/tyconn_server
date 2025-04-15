@@ -438,10 +438,7 @@ function M.load_monopoly_config()
             local chapter_config = {
                 id = chapter_id,
                 map_id = tonumber(chapter_data.Customs) or 1,
-                bg_pic = chapter_data.Bg_pic,
-                l_drama = chapter_data.L_drama,
-                l_name = chapter_data.L_name,
-                l_name_explain = chapter_data.L_name_explain,
+                initial = chapter_data.Initial or {},
                 reward = chapter_data.Reward or {},
                 unlock = tonumber(chapter_data.Unlock) or 0,
                 victory_condition = chapter_data.Victory_condition or {}

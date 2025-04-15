@@ -301,6 +301,18 @@ CREATE TABLE IF NOT EXISTS monopoly_events (
     INDEX idx_trigger (trigger_time)           -- 触发时间索引，用于清理过期事件
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 大富翁随机事件处理表
+CREATE TABLE IF NOT EXISTS monopoly_random_events (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,                   -- 用户ID
+    chapter_id INT NOT NULL,                   -- 章节ID
+    event_id INT NOT NULL,                     -- 事件ID
+    cell_id INT NOT NULL,                      -- 格子ID
+    create_time BIGINT NOT NULL,               -- 创建时间
+    update_time BIGINT NOT NULL,               -- 更新时间
+    INDEX idx_user_id_chapter_id (user_id, chapter_id)               -- 事件索引
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- 用户章节进度表
 CREATE TABLE IF NOT EXISTS user_chapter_progress (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
