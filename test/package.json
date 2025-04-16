@@ -24,6 +24,7 @@
     "test:read_mail": "node test/run_test.js -t read_mail",
     "test:claim_mail_items": "node test/run_test.js -t claim_mail_items",
     "test:delete_mail": "node test/run_test.js -t delete_mail",
+    "test:gm_mail": "node test/run_test.js -t gm_mail",
     "test:get_partner_list": "node test/run_test.js -t get_partner_list",
     "test:level_up_partner": "node test/run_test.js -t level_up_partner",
     "test:star_up_partner": "node test/run_test.js -t star_up_partner",
