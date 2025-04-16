@@ -110,7 +110,7 @@ class ReadMailTest extends BaseTest {
             console.log(`\nReading mail with ID: ${testMailId}...`);
             const readResponse = await this.client.readMail(testMailId);
             console.log('Read mail response:', JSON.stringify(readResponse));
-
+            
             // 验证响应
             assert(readResponse && readResponse.success !== false, 
                 `Read mail response should indicate success, got: ${JSON.stringify(readResponse)}`);

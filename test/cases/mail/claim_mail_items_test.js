@@ -63,7 +63,7 @@ class ClaimMailItemsTest extends BaseTest {
                     console.log(`Initial exp potion count: ${initialExpPotionCount}`);
                 }
             }
-            
+
             // 获取邮件列表
             console.log('\nGetting mail list...');
             const mailListResponse = await this.client.getMailList();

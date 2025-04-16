@@ -42,8 +42,8 @@ class DeleteMailTest extends BaseTest {
                 ]);
                 
                 console.log('Send mail response:', JSON.stringify(sendMailResponse));
-                
-                // 验证响应
+            
+            // 验证响应
                 const responseStr = JSON.stringify(sendMailResponse);
                 const containsMailTitle = responseStr.includes(mailTitle);
                 assert(containsMailTitle, `Failed to send test mail: response does not contain expected mail title`);
@@ -275,8 +275,8 @@ class DeleteMailTest extends BaseTest {
                         console.log('重试邮件状态已改变，视为删除成功');
                     } else {
                         console.log('警告：重试邮件仍在列表中且状态未变。继续测试...');
-                    }
-                } else {
+                }
+            } else {
                     // 其他错误，直接抛出
                     throw deleteError;
                 }
