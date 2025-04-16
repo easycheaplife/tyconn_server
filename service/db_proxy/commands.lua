@@ -340,4 +340,9 @@ function CMD.get_monopoly_random_events(user_id, chapter_id)
     return wrap_call(monopoly_model.get_monopoly_random_events, user_id, chapter_id)
 end
 
+-- 获取用户通过的章节
+function CMD.get_user_passed_chapters(user_id)
+    return wrap_call(monopoly_model.get_user_passed_chapters, user_id)
+end
+
 return CMD

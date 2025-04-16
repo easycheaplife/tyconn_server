@@ -187,4 +187,12 @@ M.GET_MONOPOLY_RANDOM_EVENTS = [[
     WHERE user_id = %d AND chapter_id = %d
 ]]
 
+-- 获取用户通过的章节
+M.GET_USER_PASSED_CHAPTERS = [[
+    SELECT 
+        chapter_id
+    FROM user_chapter_progress   
+    WHERE user_id = %d
+]]
+
 return M 

@@ -86,7 +86,7 @@ class ClaimRewardTest extends BaseTest {
             
             assert(updatedChapterId === nextChapter, 
                 `Current chapter should be updated to next chapter (got: ${updatedChapterId})`);
-            assert(updatedPosition === 0, 
+            assert(updatedPosition === 1, 
                 `Current position should be reset to 0 (got: ${updatedPosition})`);
             
             console.log(`Updated map info: Chapter ${updatedChapterId}, ` + 

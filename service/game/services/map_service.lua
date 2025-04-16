@@ -972,7 +972,7 @@ local function check_victory_conditions(victory_conditions, map_info, user_id, c
             end
         elseif condition_type == enum.ChapterConditionType.CONDITION_TYPE_PASS_STAGES then
             -- 检查通过的关卡数
-            local passed_stages = map_dao.get_user_passed_stages(user_id)
+            local passed_stages = map_dao.get_user_passed_chapters(user_id)
             if not passed_stages or #passed_stages < condition_value then
                 return {
                     success = false,

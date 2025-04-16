@@ -1052,4 +1052,21 @@ function M.get_monopoly_random_events(user_id, chapter_id)
     return result or {}
 end
 
+-- 获取用户通过的章节
+function M.get_user_passed_chapters(user_id)
+    if not user_id then
+        logger.error("get_user_passed_chapters: invalid user_id")
+        return {}
+    end
+
+    local ok, result = pcall(call_db, "get_user_passed_chapters", user_id)
+    if not ok then
+        logger.error("Failed to get user passed chapters: %s", result)
+        return {}
+    end
+
+    return result or {}
+end 
+
+
 return M 

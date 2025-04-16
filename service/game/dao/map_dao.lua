@@ -470,4 +470,23 @@ function M.update_event_status(event_id, status)
     return true
 end
 
+-- 获取用户通过的章节
+function M.get_user_passed_chapters(user_id)
+    if not user_id then
+        logger.error("map_dao.get_user_passed_chapters: Invalid user_id")
+        return {}
+    end
+
+    local ok, result = pcall(function()
+        return db_client.get_user_passed_chapters(user_id)
+    end)
+    
+    if not ok then
+        logger.error("Failed to get user passed chapters: %s", tostring(result))
+        return {}
+    end
+
+    return result or {}
+end 
+
 return M 

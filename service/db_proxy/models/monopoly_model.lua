@@ -453,4 +453,21 @@ function M.get_monopoly_random_events(user_id, chapter_id)
     return results
 end
 
+-- 获取用户通过的章节
+function M.get_user_passed_chapters(user_id)
+    if not user_id then
+        logger.error("Invalid parameters for get_user_passed_chapters")
+        return {}   
+    end
+
+    local query = string.format(sql.GET_USER_PASSED_CHAPTERS, user_id)
+    local results = db_util.query(query)    
+    if not results then
+        logger.error("Failed to get passed chapters for user: %d", user_id)
+        return {}
+    end
+
+    return results
+end 
+
 return M 
