@@ -255,6 +255,7 @@ function M.create_monopoly_event(data)
         cell_id = data.cell_id,
         event_id = data.event_id,
         status = data.status or 0,
+        is_random_event = data.is_random_event or 0,
         trigger_time = data.trigger_time or os.time(),
         complete_time = data.complete_time or 0
     }
@@ -265,6 +266,7 @@ function M.create_monopoly_event(data)
         event_data.event_id,
         event_data.cell_id,
         event_data.status,
+        event_data.is_random_event,
         event_data.trigger_time,
         event_data.complete_time
     )

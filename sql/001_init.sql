@@ -293,6 +293,7 @@ CREATE TABLE IF NOT EXISTS monopoly_events (
     event_id INT NOT NULL,                     -- 事件ID
     cell_id INT NOT NULL,                      -- 格子ID
     status TINYINT NOT NULL DEFAULT 0,         -- 处理状态(0:未处理,1:处理中,2:已处理)
+    is_random_event TINYINT NOT NULL DEFAULT 0, -- 是否是随机事件(0:常规事件,1:随机事件)
     trigger_time BIGINT NOT NULL,              -- 触发时间
     complete_time BIGINT DEFAULT 0,            -- 完成时间
     

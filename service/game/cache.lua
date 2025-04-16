@@ -754,18 +754,69 @@ function M.set_map_events(chapter_id, cell_id, events)
         return false
     end
     
+    if not events then
+        logger.error("Events data is nil in set_map_events")
+        return false
+    end
+    
     -- 构建缓存key
     local key = string.format("%s%d:%d", PREFIX.map_events, chapter_id, cell_id)
     
-    -- 将事件数据转换为JSON字符串
-    local value = utils.encode_json(events)
+    -- 数据安全检查 - 清理可能导致序列化问题的数据
+    local cleaned_events = {}
+    local max_events = 50 -- 限制最大事件数量
     
-    -- 使用Redis设置缓存
-    local ok = redis.set(key, value)
-    if ok then
-        redis.expire(key, EXPIRE.map_events)
+    for i, event in ipairs(events) do
+        if i > max_events then 
+            logger.warn("Too many events for cache, truncating to %d events", max_events)
+            break
+        end
+        
+        -- 创建事件的安全副本，只保留必要字段
+        local safe_event = {
+            id = event.id,
+            user_id = event.user_id,
+            chapter_id = event.chapter_id,
+            cell_id = event.cell_id,
+            event_id = event.event_id,
+            status = event.status,
+            is_random_event = event.is_random_event,
+            trigger_time = event.trigger_time,
+            complete_time = event.complete_time
+        }
+        
+        table.insert(cleaned_events, safe_event)
     end
-    return ok
+    
+    -- 将事件数据转换为JSON字符串
+    local ok, value = pcall(utils.encode_json, cleaned_events)
+    if not ok then
+        logger.error("Failed to encode events data to JSON: %s", tostring(value))
+        return false
+    end
+    
+    -- 检查序列化后的数据大小
+    if #value > 1024 * 1024 then  -- 1MB 限制
+        logger.error("Events data too large for Redis cache: %d bytes", #value)
+        return false
+    end
+    
+    -- 使用pcall保护Redis操作
+    local set_ok, set_err = pcall(function()
+        -- 使用Redis设置缓存
+        local redis_ok = redis.set(key, value)
+        if redis_ok then
+            redis.expire(key, EXPIRE.map_events)
+        end
+        return redis_ok
+    end)
+    
+    if not set_ok then
+        logger.error("Redis error in set_map_events: %s", tostring(set_err))
+        return false
+    end
+    
+    return set_ok
 end
 
 -- 获取地图事件数据从缓存

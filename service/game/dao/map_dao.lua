@@ -227,6 +227,11 @@ function M.create_monopoly_event(event_data)
         return false, "Invalid event data"
     end
     
+    -- 确保is_random_event字段存在
+    if event_data.is_random_event == nil then
+        event_data.is_random_event = 0
+    end
+    
     -- 调用数据库代理创建事件
     local ok, result = pcall(function()
         return db_client.create_monopoly_event(event_data)
@@ -354,6 +359,52 @@ function M.get_random_events(user_id, chapter_id)
     return events
 end
 
+-- 获取指定格子列表上的随机事件
+function M.get_random_events_by_cells(user_id, chapter_id, cell_ids)
+    if not user_id or not chapter_id or not cell_ids or #cell_ids == 0 then
+        logger.error("map_dao.get_random_events_by_cells: Invalid parameters")
+        return {}
+    end
+    
+    logger.debug("map_dao.get_random_events_by_cells: Getting random events for user %d, chapter %d, cells %s",
+        user_id, chapter_id, utils.table_to_string(cell_ids))
+    
+    -- 首先尝试从缓存获取所有随机事件
+    local all_events = cache.get_random_events(user_id, chapter_id)
+    
+    -- 如果缓存中没有，从数据库获取
+    if not all_events then
+        all_events = db_client.get_monopoly_random_events(user_id, chapter_id)
+        if not all_events then
+            logger.warn("map_dao.get_random_events_by_cells: No random events found for user %d, chapter %d",
+                user_id, chapter_id)
+            return {}
+        end
+        
+        -- 缓存所有随机事件
+        cache.set_random_events(user_id, chapter_id, all_events)
+    end
+    
+    -- 将格子ID转换为集合以便快速查找
+    local cell_set = {}
+    for _, cell_id in ipairs(cell_ids) do
+        cell_set[cell_id] = true
+    end
+    
+    -- 过滤出指定格子上的随机事件
+    local result = {}
+    for _, event in ipairs(all_events) do
+        if cell_set[event.cell_id] then
+            table.insert(result, event)
+        end
+    end
+    
+    logger.info("map_dao.get_random_events_by_cells: Found %d random events on specified cells for user %d",
+        #result, user_id)
+    
+    return result
+end
+
 -- 获取格子事件
 function M.get_cell_events(params)
     if not params or not params.chapter_id or not params.cell_id then
@@ -362,25 +413,40 @@ function M.get_cell_events(params)
     end
 
     -- 尝试从缓存获取
-    local events = cache.get_map_events(params.chapter_id, params.cell_id)
-    if events then
+    local ok, events = pcall(function()
+        return cache.get_map_events(params.chapter_id, params.cell_id)
+    end)
+    
+    if ok and events then
+        logger.debug("Got cell events from cache for chapter %d, cell %d", 
+            params.chapter_id, params.cell_id)
         return events
+    end
+    
+    if not ok then
+        logger.error("Error getting events from cache: %s", tostring(events))
     end
 
     -- 从数据库获取
-    local ok, result = pcall(function()
+    local db_ok, result = pcall(function()
         return db_client.get_monopoly_events(params)
     end)
 
-    if not ok then
+    if not db_ok then
         logger.error("Failed to get monopoly events: %s", tostring(result))
-        return nil
+        return {}
+    end
+    
+    if not result or #result == 0 then
+        return {}
     end
 
-    -- 缓存结果
-    if result and #result > 0 then
-        cache.set_map_events(params.chapter_id, params.cell_id, result)
-    end
+    -- 缓存结果，使用pcall防止缓存错误影响主流程
+    pcall(function()
+        if result and #result > 0 then
+            cache.set_map_events(params.chapter_id, params.cell_id, result)
+        end
+    end)
 
     return result
 end

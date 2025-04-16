@@ -78,6 +78,7 @@ M.GET_MONOPOLY_EVENTS = [[
         event_id,
         cell_id,
         status,
+        is_random_event,
         trigger_time,
         complete_time
     FROM monopoly_events 
@@ -93,6 +94,7 @@ M.GET_MONOPOLY_EVENT = [[
         event_id,
         cell_id,
         status,
+        is_random_event,
         trigger_time,
         complete_time
     FROM monopoly_events 
@@ -107,10 +109,11 @@ M.CREATE_MONOPOLY_EVENT = [[
         event_id,
         cell_id,
         status,
+        is_random_event,
         trigger_time,
         complete_time
     ) VALUES (
-        %d, %d, %d, %d, %d, %d, %d
+        %d, %d, %d, %d, %d, %d, %d, %d
     )
 ]]
 

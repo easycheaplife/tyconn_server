@@ -28,6 +28,7 @@ function M.get_event_type_id(event_id)
     
     -- 从配置获取事件信息
     local event_configs = table_service.get_config_values("cell_events")
+    logger.debug(utils.table_to_string(event_configs))
     if not event_configs then
         logger.error("Failed to get cell_events config")
         return nil
@@ -192,7 +193,8 @@ local function dispatch_event(user_id, event, map_info)
     local bags = nil
     local new_position = nil
         
-    logger.debug("Dispatching event: user_id=%d, event_id=%d", user_id, event.event_id)
+    logger.debug("Dispatching event: user_id=%d, event_id=%d, is_random=%d", 
+        user_id, event.event_id, event.is_random_event or 0)
     
     -- 获取格子数据
     local cell_data = get_cell_data_by_chapter(event.chapter_id, event.cell_id)
@@ -202,23 +204,76 @@ local function dispatch_event(user_id, event, map_info)
         return false, nil, nil
     end
     
-    -- 获取事件类型ID
-    local event_type_id = M.get_event_type_id(event.event_id)
-    if not event_type_id then
-        logger.error("Failed to get event type id for event_id %d", event.event_id)
-        return false, nil, nil
-    end
-    logger.debug("user_id: %d, event_id: %d, event_type_id: %d", user_id, event.event_id, event_type_id)
+    local event_type_id
+    local complete_event
     
-    -- 合并事件配置和事件数据
-    local complete_event = {
-        event_id = event.event_id,
-        event_type_id = event_type_id,
-        cell_events1 = cell_data.cell_events1,
-        cell_events2 = cell_data.cell_events2,
-        cell_events3 = cell_data.cell_events3,
-        merged_events = merge_cell_events(cell_data.cell_events1, cell_data.cell_events2, cell_data.cell_events3, map_info.direction)
-    }
+    -- 判断是否是随机事件
+    if event.is_random_event == 1 then
+        -- 获取随机事件配置
+        local cell_random_events = table_service.get_config_values("cell_random_events")
+        if not cell_random_events then
+            logger.error("Failed to get cell_random_events config")
+            return false, nil, nil
+        end
+        
+        -- 查找特定的随机事件配置
+        local random_event_config = cell_random_events[event.event_id]
+        if not random_event_config then
+            logger.error("Random event config not found for event_id %d", event.event_id)
+            return false, nil, nil
+        end
+        
+        -- 从随机事件配置中获取Cell_events信息
+        logger.debug(utils.table_to_string(random_event_config))
+        local cell_events = random_event_config.cell_events
+        if not cell_events or #cell_events == 0 then
+            logger.error("No Cell_events in random event config: %d", event.event_id)
+            return false, nil, nil
+        end
+        
+        -- 获取随机事件的实际事件ID
+        local actual_event_id = cell_events[1]
+        logger.debug("Random event %d has actual event_id: %d", event.event_id, actual_event_id)
+        
+        -- 获取事件类型ID
+        event_type_id = M.get_event_type_id(actual_event_id)
+        if not event_type_id then
+            logger.error("Failed to get event type id for actual_event_id %d", actual_event_id)
+            return false, nil, nil
+        end
+        
+        -- 构造完整事件对象
+        complete_event = {
+            event_id = actual_event_id,
+            event_type_id = event_type_id,
+            cell_events1 = cell_events,
+            merged_events = {
+                {
+                    event_id = actual_event_id,
+                    params = {table.unpack(cell_events, 2)},
+                    source = "random_event"
+                }
+            }
+        }
+    else
+        -- 常规事件处理
+        event_type_id = M.get_event_type_id(event.event_id)
+        if not event_type_id then
+            logger.error("Failed to get event type id for event_id %d", event.event_id)
+            return false, nil, nil
+        end
+        
+        complete_event = {
+            event_id = event.event_id,
+            event_type_id = event_type_id,
+            cell_events1 = cell_data.cell_events1,
+            cell_events2 = cell_data.cell_events2,
+            cell_events3 = cell_data.cell_events3,
+            merged_events = merge_cell_events(cell_data.cell_events1, cell_data.cell_events2, cell_data.cell_events3, map_info.direction)
+        }
+    end
+    
+    logger.debug("user_id: %d, event_id: %d, event_type_id: %d", user_id, event.event_id, event_type_id)
     
     -- 根据事件类型调用对应的处理函数
     if event_type_id == enum.CellEventType.EVENT_TYPE_ITEM_REWARD then
@@ -526,6 +581,7 @@ local function save_path_events(user_id, chapter_id, event_ids)
                 cell_id = event_info.cell_id,
                 event_id = event_info.event_id,
                 status = 0, -- 未处理
+                is_random_event = event_info.is_random_event or 0, -- 是否是随机事件
                 trigger_time = os.time(),
                 complete_time = 0
             }
@@ -536,8 +592,8 @@ local function save_path_events(user_id, chapter_id, event_ids)
                 logger.error("Failed to create event record for event_id=%d, chapter_id=%d, cell_id=%d: %s", 
                     event_info.event_id, chapter_id, event_info.cell_id, tostring(err))
             else
-                logger.debug("Created event record for event_id=%d, chapter_id=%d, cell_id=%d", 
-                    event_info.event_id, chapter_id, event_info.cell_id)
+                logger.debug("Created event record for event_id=%d, chapter_id=%d, cell_id=%d, is_random=%d", 
+                    event_info.event_id, chapter_id, event_info.cell_id, event_data.is_random_event)
             end
         end
     end
@@ -630,13 +686,35 @@ function M.roll_dice(user_id)
     end
     
     -- 获取移动路径上的事件
-    local event_ids = get_path_events(chapter_config.map_id, from_position, to_position, map_info.direction, map_info.chapter_id)
-    if not event_ids then
+    local path_event_ids = get_path_events(chapter_config.map_id, from_position, to_position, map_info.direction, map_info.chapter_id)
+    if not path_event_ids then
         return nil
     end
     
+    -- 获取路径上的所有格子ID列表
+    local path_cells = {}
+    local step = map_info.direction > 0 and 1 or -1
+    for pos = from_position + step, to_position, step do
+        table.insert(path_cells, pos)
+    end
+    
+    -- 获取路径上已存在的随机事件
+    local random_events = map_dao.get_random_events_by_cells(user_id, map_info.chapter_id, path_cells)
+    logger.info("Found %d random events on path for user %d", #random_events, user_id)
+    
+    -- 合并路径事件和随机事件
+    local all_events = path_event_ids
+    for _, event in ipairs(random_events) do
+        table.insert(all_events, {
+            event_id = event.event_id,
+            cell_id = event.cell_id,
+            chapter_id = map_info.chapter_id,
+            is_random_event = 1  -- 标记为随机事件
+        })
+    end
+    
     -- 保存事件到数据库
-    save_path_events(user_id, map_info.chapter_id, event_ids)
+    save_path_events(user_id, map_info.chapter_id, all_events)
     
     -- 记录操作日志
     map_dao.log_monopoly_operation({
@@ -653,7 +731,7 @@ function M.roll_dice(user_id)
         dice_value = dice_value,
         from_position = from_position,
         to_position = to_position,
-        event_ids = event_ids
+        event_ids = all_events
     }
 end
 
@@ -662,12 +740,39 @@ local function get_target_event(events, event_id, cell_id)
     local target_event = nil
     local remaining_events = {}
     
+    if not events or #events == 0 then
+        logger.warn("get_target_event: events is empty")
+        return nil, {}
+    end
+    
+    if not event_id then
+        logger.warn("get_target_event: event_id is nil")
+        return nil, {}
+    end
+    
+    -- 确保事件ID是数字
+    event_id = tonumber(event_id) or event_id
+    
     for _, event in ipairs(events) do
-        if event.event_id == event_id and event.cell_id == cell_id then
+        if type(event) ~= "table" then
+            logger.warn("get_target_event: invalid event type: %s", type(event))
+            goto continue
+        end
+        
+        if not event.event_id then
+            logger.warn("get_target_event: event missing event_id")
+            goto continue
+        end
+        
+        local event_event_id = tonumber(event.event_id) or event.event_id
+        
+        if event_event_id == event_id and event.cell_id == cell_id then
             target_event = event
         else
             table.insert(remaining_events, event.event_id)
         end
+        
+        ::continue::
     end
     
     return target_event, remaining_events
@@ -675,7 +780,20 @@ end
 
 -- 处理事件状态更新
 local function update_event_status(event_id, status)
-    map_dao.update_event_status(event_id, status)
+    if not event_id or not status then
+        logger.error("update_event_status: Invalid parameters: event_id=%s, status=%s", 
+            tostring(event_id), tostring(status))
+        return false
+    end
+    
+    local ok = map_dao.update_event_status(event_id, status)
+    if not ok then
+        logger.error("update_event_status: Failed to update status for event_id=%s to status=%d",
+            tostring(event_id), status)
+        return false
+    end
+    
+    return true
 end
 
 -- 记录事件处理操作
@@ -722,8 +840,29 @@ function M.handle_cell_event(user_id, event_id, cell_id)
         }
     end
     
+    -- 安全检查事件数据格式
+    local valid_events = {}
+    for _, event in ipairs(events) do
+        if type(event) == "table" and event.event_id and event.cell_id then
+            table.insert(valid_events, event)
+        else
+            logger.warn("Invalid event data format: %s", utils.table_to_string(event))
+        end
+    end
+    
+    if #valid_events == 0 then
+        logger.warn("No valid events found for chapter %d, cell_id %d", 
+            map_info.chapter_id, cell_id)
+        return {
+            success = false,
+            event_id = event_id,
+            next_event_id = 0,
+            remaining_events = {}
+        }
+    end
+    
     -- 获取目标事件和剩余事件
-    local target_event, remaining_events = get_target_event(events, event_id, cell_id)
+    local target_event, remaining_events = get_target_event(valid_events, event_id, cell_id)
     
     if not target_event then
         logger.error("Event %s not found for user %d at cell_id %d", 
@@ -732,25 +871,31 @@ function M.handle_cell_event(user_id, event_id, cell_id)
             success = false,
             event_id = event_id,
             next_event_id = 0,
-            remaining_events = remaining_events
+            remaining_events = remaining_events or {}
         }
     end
     
     -- 更新事件状态为处理中
-    update_event_status(target_event.id, 1)
+    local status_updated = update_event_status(target_event.id, 1)
+    if not status_updated then
+        logger.warn("Failed to update event status to processing for event %d", target_event.id)
+    end
     
     -- 处理事件
     local success, bags, new_position = dispatch_event(user_id, target_event, map_info)
     
     -- 更新事件状态为已处理
-    update_event_status(target_event.id, 2)
+    status_updated = update_event_status(target_event.id, 2)
+    if not status_updated then
+        logger.warn("Failed to update event status to completed for event %d", target_event.id)
+    end
     
     -- 记录操作日志
     log_event_operation(user_id, map_info.chapter_id, event_id, cell_id)
     
     -- 确定下一个要处理的事件
     local next_event_id = 0
-    if #remaining_events > 0 then
+    if remaining_events and #remaining_events > 0 then
         next_event_id = remaining_events[1]
         table.remove(remaining_events, 1)
     end
@@ -761,7 +906,7 @@ function M.handle_cell_event(user_id, event_id, cell_id)
         bags = bags,
         new_position = new_position,
         next_event_id = next_event_id,
-        remaining_events = remaining_events
+        remaining_events = remaining_events or {}
     }
 end
 
