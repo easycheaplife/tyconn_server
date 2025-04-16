@@ -961,4 +961,55 @@ function M.remove_occupied_cells(user_id, chapter_id)
     return redis.del(key) > 0
 end
 
+-- 用户已通过章节缓存
+function M.get_passed_chapters(user_id)
+    if not user_id then
+        logger.error("cache.get_passed_chapters: invalid user_id")
+        return nil
+    end
+    
+    local key = make_key(PREFIX.passed_chapters, user_id)
+    local data = redis.get(key)
+    if data then
+        local chapters = utils.decode_json(data)
+        if chapters then
+            return chapters
+        end
+        logger.error("Failed to decode passed chapters data: %s", data)
+    end
+    return nil
+end
+
+-- 设置用户已通过章节缓存
+function M.set_passed_chapters(user_id, chapters)
+    if not user_id or not chapters then
+        logger.error("cache.set_passed_chapters: invalid parameters")
+        return false
+    end
+    
+    local key = make_key(PREFIX.passed_chapters, user_id)
+    local data = utils.encode_json(chapters)
+    if not data then
+        logger.error("Failed to encode passed chapters data")
+        return false
+    end
+    
+    local ok = redis.set(key, data)
+    if ok then
+        redis.expire(key, EXPIRE.map_chapter)
+    end
+    return ok
+end
+
+-- 删除用户已通过章节缓存
+function M.remove_passed_chapters(user_id)
+    if not user_id then
+        logger.error("cache.remove_passed_chapters: invalid user_id")
+        return false
+    end
+    
+    local key = make_key(PREFIX.passed_chapters, user_id)
+    return redis.del(key) > 0
+end
+
 return M

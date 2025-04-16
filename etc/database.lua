@@ -30,7 +30,8 @@ M.redis = {
         map_events = "map:events:",
         random_event_count = "map:random:count:",  -- 随机事件数量缓存前缀
         random_events = "map:random:events:",      -- 随机事件列表缓存前缀
-        occupied_cells = "map:occupied:cells:"     -- 占用格子缓存前缀
+        occupied_cells = "map:occupied:cells:",     -- 占用格子缓存前缀
+        passed_chapters = "map:passed:chapters:"  -- 已通过章节缓存前缀
     },
 
     -- 缓存过期时间(秒)

@@ -422,7 +422,7 @@ function M.get_cell_events(params)
             params.chapter_id, params.cell_id)
         return events
     end
-    
+
     if not ok then
         logger.error("Error getting events from cache: %s", tostring(events))
     end
@@ -477,6 +477,14 @@ function M.get_user_passed_chapters(user_id)
         return {}
     end
 
+    -- 从缓存获取
+    local cached_data = cache.get_passed_chapters(user_id)
+    if cached_data then
+        logger.debug("map_dao.get_user_passed_chapters: cache hit for user %d", user_id)
+        return cached_data
+    end
+
+    -- 从数据库获取
     local ok, result = pcall(function()
         return db_client.get_user_passed_chapters(user_id)
     end)
@@ -486,7 +494,14 @@ function M.get_user_passed_chapters(user_id)
         return {}
     end
 
-    return result or {}
+    local chapters = result or {}
+    
+    -- 缓存结果
+    if #chapters > 0 then
+        cache.set_passed_chapters(user_id, chapters)
+    end
+
+    return chapters
 end 
 
 return M 
