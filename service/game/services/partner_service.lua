@@ -411,7 +411,7 @@ function M.level_up_partner(user_id, partner_id)
     end
     
     -- 扣除物品
-    local consume_result, consumed_items = require "services.bag_service".consume_items(user_id, level_up_cost, enum.ChangeSource.SOURCE_PARTNER_LEVEL_UP)
+    local consume_result, consumed_items = require "services.item_service".consume_items(user_id, level_up_cost, enum.ChangeSource.SOURCE_PARTNER_LEVEL_UP)
     if not consume_result then
         logger.error("Failed to consume items for level up partner_id: %d", partner_id)
         return false
@@ -515,7 +515,7 @@ function M.star_up_partner(user_id, partner_id)
     end
     
     -- 扣除物品
-    local consume_result, consumed_items = require "services.bag_service".consume_items(user_id, star_up_cost, enum.ChangeSource.SOURCE_PARTNER_STAR_UP)
+    local consume_result, consumed_items = require "services.item_service".consume_items(user_id, star_up_cost, enum.ChangeSource.SOURCE_PARTNER_STAR_UP)
     if not consume_result then
         logger.error("Failed to consume items for star up partner_id: %d", partner_id)
         return false
