@@ -29,7 +29,7 @@ message BaseResponse {
 message EventInfo {
     int32 event_id = 1;     // 事件ID
     int32 cell_id = 2;      // 事件所在格子ID
-    bool is_random_event = 3 [default = false]; // 是否是随机事件
+    bool is_random_event = 3; // 是否是随机事件
 }
 
 // 用户信息
