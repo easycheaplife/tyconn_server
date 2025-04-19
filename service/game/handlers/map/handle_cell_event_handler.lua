@@ -27,7 +27,17 @@ function M.handle(client_id, msg)
     end
 
     -- 验证请求参数
-    if not request.event_id then
+    if not request.event_info then
+        logger.error("Missing event_info in request from client: %d", client_id)
+        return message_helper.create_error_response(
+            base_request, 
+            "command.G2CHandleCellEventResponse",
+            error.ErrorCode.ERROR_CODE_INVALID_PARAM, 
+            "Missing event info", 
+            message.MessageID.G2C_HANDLE_CELL_EVENT_RESPONSE)
+    end
+
+    if not request.event_info.event_id then
         logger.error("Missing event_id in request from client: %d", client_id)
         return message_helper.create_error_response(
             base_request, 
@@ -37,7 +47,7 @@ function M.handle(client_id, msg)
             message.MessageID.G2C_HANDLE_CELL_EVENT_RESPONSE)
     end
 
-    if not request.cell_id then
+    if not request.event_info.cell_id then
         logger.error("Missing cell_id in request from client: %d", client_id)
         return message_helper.create_error_response(
             base_request, 
@@ -48,10 +58,10 @@ function M.handle(client_id, msg)
     end
 
     -- 处理格子事件
-    local result = map_service.handle_cell_event(user.user_id, request.event_id, request.cell_id)
+    local result = map_service.handle_cell_event(user.user_id, request.event_info.event_id, request.event_info.cell_id)
     if not result then
         logger.error("Failed to handle cell event for user: %d, event_id: %d, cell_id: %d", 
-            user.user_id, request.event_id, request.cell_id)
+            user.user_id, request.event_info.event_id, request.event_info.cell_id)
         return message_helper.create_error_response(
             base_request, 
             "command.G2CHandleCellEventResponse",
@@ -62,7 +72,11 @@ function M.handle(client_id, msg)
 
     -- 构造响应数据
     local response_data = {
-        event_id = request.event_id,
+        event_info = {
+            event_id = request.event_info.event_id,
+            cell_id = request.event_info.cell_id,
+            is_random_event = request.event_info.is_random_event or false
+        },
         success = result.success,
         bags = result.bags or {},
         next_event_id = result.next_event_id or 0,

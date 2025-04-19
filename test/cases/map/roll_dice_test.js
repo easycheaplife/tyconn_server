@@ -64,7 +64,8 @@ class RollDiceTest extends BaseTest {
                 eventIds.forEach(event => {
                     assert(event.hasOwnProperty('event_id'), 'Event should have event_id');
                     assert(event.hasOwnProperty('cell_id'), 'Event should have cell_id');
-                    console.log(`  Event ID: ${event.event_id}, Cell ID: ${event.cell_id}`);
+                    assert(event.hasOwnProperty('is_random_event'), 'Event should have is_random_event');
+                    console.log(`  Event ID: ${event.event_id}, Cell ID: ${event.cell_id}, Is Random: ${event.is_random_event}`);
                 });
             } else {
                 console.log('No events triggered');
@@ -82,14 +83,19 @@ class RollDiceTest extends BaseTest {
             if (eventIds.length > 0) {
                 console.log('\nTesting handle first event...');
                 const firstEvent = eventIds[0];
-                const eventResponse = await this.client.handleCellEvent(firstEvent.event_id, firstEvent.cell_id);
+                const eventResponse = await this.client.handleCellEvent(
+                    firstEvent.event_id, 
+                    firstEvent.cell_id,
+                    firstEvent.is_random_event
+                );
                 assert(eventResponse, 'Event response should not be null');
                 
-                const responseEventId = eventResponse.event_id !== undefined ? 
-                    eventResponse.event_id : eventResponse.eventId;
-                    
-                assert(responseEventId === firstEvent.event_id, 
+                // 检查响应中的event_info对象
+                assert(eventResponse.event_info, 'Response should have event_info object');
+                assert(eventResponse.event_info.event_id === firstEvent.event_id, 
                     'Event ID in response should match requested event ID');
+                assert(eventResponse.event_info.cell_id === firstEvent.cell_id, 
+                    'Cell ID in response should match requested cell ID');
             }
             
             return true;

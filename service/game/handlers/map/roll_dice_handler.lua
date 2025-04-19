@@ -48,18 +48,28 @@ function M.handle(client_id, msg)
 
     -- 转换事件数据为新的格式
     for _, event_info in ipairs(roll_result.event_ids) do
+        -- 确保 is_random_event 字段存在
+        local is_random = false
+        if event_info.is_random_event ~= nil then
+            is_random = event_info.is_random_event == true or event_info.is_random_event == 1
+        end
+        
         table.insert(response_data.event_ids, {
             event_id = event_info.event_id,
-            cell_id = event_info.cell_id
+            cell_id = event_info.cell_id,
+            is_random_event = is_random
         })
     end
 
     -- 返回成功响应
-    return message_helper.create_success_response(
+    local response = message_helper.create_success_response(
         base_request,
         "command.G2CRollDiceResponse",
         response_data,
         message.MessageID.G2C_ROLL_DICE_RESPONSE)
+        
+    logger.debug("Roll dice response: %s", utils.table_to_string(response_data))
+    return response
 end
 
 return M 

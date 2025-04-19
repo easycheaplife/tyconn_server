@@ -25,6 +25,13 @@ message BaseResponse {
     bytes payload = 4;      // 消息负载
 } 
 
+// 事件信息
+message EventInfo {
+    int32 event_id = 1;     // 事件ID
+    int32 cell_id = 2;      // 事件所在格子ID
+    bool is_random_event = 3 [default = false]; // 是否是随机事件
+}
+
 // 用户信息
 message UserInfo {
     int64 user_id = 1;      // 用户ID

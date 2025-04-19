@@ -1,9 +1,12 @@
 // 处理格子事件处理器
-async function handleCellEvent(eventId, cellId) {
+async function handleCellEvent(eventId, cellId, isRandomEvent = false) {
     const request = {
         token: this.token,
-        event_id: eventId,
-        cell_id: cellId
+        event_info: {
+            event_id: eventId,
+            cell_id: cellId,
+            is_random_event: isRandomEvent
+        }
     };
 
     return this.sendGameRequest(

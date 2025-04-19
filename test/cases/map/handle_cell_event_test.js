@@ -46,7 +46,7 @@ class HandleCellEventTest extends BaseTest {
         try {
             console.log(`\nGot ${events.length} events:`);
             events.forEach(event => {
-                console.log(`  Event ID: ${event.event_id}, Cell ID: ${event.cell_id}`);
+                console.log(`  Event ID: ${event.event_id}, Cell ID: ${event.cell_id}, Is Random: ${event.is_random_event}`);
             });
             
             // 记录背包状态，用于验证奖励是否正确
@@ -56,16 +56,26 @@ class HandleCellEventTest extends BaseTest {
             // 循环处理所有事件
             for (let i = 0; i < events.length; i++) {
                 const currentEvent = events[i];
-                console.log(`\nHandling event ${i + 1}/${events.length} (ID: ${currentEvent.event_id}, Cell: ${currentEvent.cell_id})...`);
+                console.log(`\nHandling event ${i + 1}/${events.length} (ID: ${currentEvent.event_id}, Cell: ${currentEvent.cell_id}, Random: ${currentEvent.is_random_event})...`);
                 
-                const response = await this.client.handleCellEvent(currentEvent.event_id, currentEvent.cell_id);
+                const response = await this.client.handleCellEvent(
+                    currentEvent.event_id, 
+                    currentEvent.cell_id,
+                    currentEvent.is_random_event
+                );
                 
                 // 验证响应
                 assert(response, 'Response should not be null');
                 console.log('Handle event response keys:', Object.keys(response));
                 
+                // 验证event_info字段
+                assert(response.event_info, 'Response should have event_info field');
+                assert(response.event_info.event_id === currentEvent.event_id, 
+                    `Event ID in response should match requested ID: ${response.event_info.event_id} vs ${currentEvent.event_id}`);
+                assert(response.event_info.cell_id === currentEvent.cell_id, 
+                    `Cell ID in response should match requested ID: ${response.event_info.cell_id} vs ${currentEvent.cell_id}`);
+                
                 // 获取属性，兼容不同的命名风格
-                const responseEventId = response.event_id !== undefined ? response.event_id : response.eventId;
                 const success = response.success;
                 const bags = response.bags || [];
                 const nextEventId = response.next_event_id !== undefined ? 
@@ -73,7 +83,6 @@ class HandleCellEventTest extends BaseTest {
                 const remainingEvents = response.remaining_events || response.remainingEvents || [];
                 
                 // 验证必要的字段
-                assert(responseEventId !== undefined, 'Response should have event_id or eventId');
                 assert(success !== undefined, 'Response should have success');
                 assert(Array.isArray(bags), 'bags should be an array');
                 assert(nextEventId !== undefined, 'Response should have next_event_id or nextEventId');
@@ -81,8 +90,6 @@ class HandleCellEventTest extends BaseTest {
                 
                 // 检查事件处理是否成功
                 assert(success, 'Event handling should succeed');
-                assert(responseEventId === currentEvent.event_id, 
-                    `Event ID in response should match requested ID: ${responseEventId} vs ${currentEvent.event_id}`);
                 
                 // 检查剩余事件
                 console.log(`Next event ID: ${nextEventId}`);

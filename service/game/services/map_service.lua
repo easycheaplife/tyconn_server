@@ -176,7 +176,8 @@ local function get_cell_events(cell_data, position, is_final_position)
             if should_trigger then
                 table.insert(event_ids, {
                     event_id = event_id,
-                    cell_id = position
+                    cell_id = position,
+                    is_random_event = false  -- 非随机事件
                 })
             end
             
@@ -193,8 +194,8 @@ local function dispatch_event(user_id, event, map_info)
     local bags = nil
     local new_position = nil
         
-    logger.debug("Dispatching event: user_id=%d, event_id=%d, is_random=%d", 
-        user_id, event.event_id, event.is_random_event or 0)
+    logger.debug("Dispatching event: user_id=%d, event_id=%d, is_random=%s", 
+        user_id, event.event_id, tostring(event.is_random_event))
     
     -- 获取格子数据
     local cell_data = get_cell_data_by_chapter(event.chapter_id, event.cell_id)
@@ -208,7 +209,7 @@ local function dispatch_event(user_id, event, map_info)
     local complete_event
     
     -- 判断是否是随机事件
-    if event.is_random_event == 1 then
+    if event.is_random_event then
         -- 获取随机事件配置
         local cell_random_events = table_service.get_config_values("cell_random_events")
         if not cell_random_events then
@@ -559,6 +560,7 @@ local function get_path_events(map_id, from_position, to_position, direction, ch
         local cell_event_ids = get_cell_events(cell_data, pos, pos == to_position)
         for _, event_info in ipairs(cell_event_ids) do
             event_info.chapter_id = chapter_id
+            event_info.is_random_event = false  -- 标记为非随机事件
             table.insert(event_ids, event_info)
         end
     end
@@ -581,7 +583,7 @@ local function save_path_events(user_id, chapter_id, event_ids)
                 cell_id = event_info.cell_id,
                 event_id = event_info.event_id,
                 status = 0, -- 未处理
-                is_random_event = event_info.is_random_event or 0, -- 是否是随机事件
+                is_random_event = event_info.is_random_event and 1 or 0, -- 转换布尔值为数字
                 trigger_time = os.time(),
                 complete_time = 0
             }
@@ -709,9 +711,12 @@ function M.roll_dice(user_id)
             event_id = event.event_id,
             cell_id = event.cell_id,
             chapter_id = map_info.chapter_id,
-            is_random_event = 1  -- 标记为随机事件
+            is_random_event = true  -- 标记为随机事件
         })
     end
+    
+    -- 输出事件信息以便调试
+    logger.debug("All events for roll: %s", utils.table_to_string(all_events))
     
     -- 保存事件到数据库
     save_path_events(user_id, map_info.chapter_id, all_events)
@@ -844,6 +849,10 @@ function M.handle_cell_event(user_id, event_id, cell_id)
     local valid_events = {}
     for _, event in ipairs(events) do
         if type(event) == "table" and event.event_id and event.cell_id then
+            -- 将数字类型的is_random_event转换为布尔值
+            if event.is_random_event ~= nil then
+                event.is_random_event = event.is_random_event == 1
+            end
             table.insert(valid_events, event)
         else
             logger.warn("Invalid event data format: %s", utils.table_to_string(event))
