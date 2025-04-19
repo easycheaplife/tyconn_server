@@ -96,6 +96,10 @@ class RollDiceTest extends BaseTest {
                     'Event ID in response should match requested event ID');
                 assert(eventResponse.event_info.cell_id === firstEvent.cell_id, 
                     'Cell ID in response should match requested cell ID');
+                
+                // 验证next_event字段
+                assert(eventResponse.next_event, 'Response should have next_event field');
+                console.log(`Next event: ID=${eventResponse.next_event.event_id}, Cell=${eventResponse.next_event.cell_id}, IsRandom=${eventResponse.next_event.is_random_event}`);
             }
             
             return true;

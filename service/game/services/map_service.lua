@@ -839,8 +839,16 @@ function M.handle_cell_event(user_id, event_id, cell_id)
             map_info.chapter_id, cell_id)
         return {
             success = false,
-            event_id = event_id,
-            next_event_id = 0,
+            event_info = {
+                event_id = event_id,
+                cell_id = cell_id,
+                is_random_event = false
+            },
+            next_event = {
+                event_id = 0,
+                cell_id = 0,
+                is_random_event = false
+            },
             remaining_events = {}
         }
     end
@@ -864,23 +872,39 @@ function M.handle_cell_event(user_id, event_id, cell_id)
             map_info.chapter_id, cell_id)
         return {
             success = false,
-            event_id = event_id,
-            next_event_id = 0,
+            event_info = {
+                event_id = event_id,
+                cell_id = cell_id,
+                is_random_event = false
+            },
+            next_event = {
+                event_id = 0,
+                cell_id = 0,
+                is_random_event = false
+            },
             remaining_events = {}
         }
     end
     
     -- 获取目标事件和剩余事件
-    local target_event, remaining_events = get_target_event(valid_events, event_id, cell_id)
+    local target_event, remaining_event_ids = get_target_event(valid_events, event_id, cell_id)
     
     if not target_event then
         logger.error("Event %s not found for user %d at cell_id %d", 
             event_id, user_id, cell_id)
         return {
             success = false,
-            event_id = event_id,
-            next_event_id = 0,
-            remaining_events = remaining_events or {}
+            event_info = {
+                event_id = event_id,
+                cell_id = cell_id,
+                is_random_event = false
+            },
+            next_event = {
+                event_id = 0,
+                cell_id = 0,
+                is_random_event = false
+            },
+            remaining_events = {}
         }
     end
     
@@ -902,20 +926,50 @@ function M.handle_cell_event(user_id, event_id, cell_id)
     -- 记录操作日志
     log_event_operation(user_id, map_info.chapter_id, event_id, cell_id)
     
-    -- 确定下一个要处理的事件
-    local next_event_id = 0
-    if remaining_events and #remaining_events > 0 then
-        next_event_id = remaining_events[1]
-        table.remove(remaining_events, 1)
+    -- 查找剩余事件的详细信息
+    local next_event = {
+        event_id = 0,
+        cell_id = 0,
+        is_random_event = false
+    }
+    
+    local remaining_events = {}
+    
+    -- 构建剩余事件列表
+    if remaining_event_ids and #remaining_event_ids > 0 then
+        -- 查找剩余事件的完整信息
+        for _, remaining_id in ipairs(remaining_event_ids) do
+            -- 查找对应的事件详情
+            for _, event in ipairs(valid_events) do
+                if event.event_id == remaining_id then
+                    table.insert(remaining_events, {
+                        event_id = event.event_id,
+                        cell_id = event.cell_id,
+                        is_random_event = event.is_random_event or false
+                    })
+                    break
+                end
+            end
+        end
+        
+        -- 设置下一个事件
+        if #remaining_events > 0 then
+            next_event = remaining_events[1]
+            table.remove(remaining_events, 1)
+        end
     end
     
     return {
         success = success,
-        event_id = event_id,
+        event_info = {
+            event_id = event_id,
+            cell_id = cell_id,
+            is_random_event = target_event.is_random_event or false
+        },
         bags = bags,
         new_position = new_position,
-        next_event_id = next_event_id,
-        remaining_events = remaining_events or {}
+        next_event = next_event,
+        remaining_events = remaining_events
     }
 end
 

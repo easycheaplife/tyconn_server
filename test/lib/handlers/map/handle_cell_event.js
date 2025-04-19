@@ -9,11 +9,16 @@ async function handleCellEvent(eventId, cellId, isRandomEvent = false) {
         }
     };
 
-    return this.sendGameRequest(
+    const response = await this.sendGameRequest(
         this.protoHelper.MessageID.C2G_HANDLE_CELL_EVENT_REQUEST,
         request,
         'command.G2CHandleCellEventResponse'
     );
+    
+    // 打印调试信息
+    console.log("HandleCellEvent原始响应:", JSON.stringify(response, null, 2));
+
+    return response;
 }
 
 module.exports = handleCellEvent; 

@@ -70,18 +70,16 @@ function M.handle(client_id, msg)
             message.MessageID.G2C_HANDLE_CELL_EVENT_RESPONSE)
     end
 
-    -- 构造响应数据
+    -- 构造响应数据（已适配新的结构）
     local response_data = {
-        event_info = {
-            event_id = request.event_info.event_id,
-            cell_id = request.event_info.cell_id,
-            is_random_event = request.event_info.is_random_event or false
-        },
+        event_info = result.event_info,
         success = result.success,
         bags = result.bags or {},
-        next_event_id = result.next_event_id or 0,
-        remaining_events = result.remaining_events or {}
+        next_event = result.next_event,
+        remaining_events = result.remaining_events
     }
+
+    logger.debug("Handle cell event response: %s", utils.table_to_string(response_data))
 
     -- 返回成功响应
     return message_helper.create_success_response(

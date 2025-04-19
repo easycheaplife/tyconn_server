@@ -406,8 +406,8 @@ message G2CHandleCellEventResponse {
     common.EventInfo event_info = 1;          // 当前处理的事件信息
     bool success = 2;                        // 是否成功处理
     repeated common.BagInfo bags = 3;        // 背包变化信息
-    int32 next_event_id = 4;                 // 下一个需要处理的事件ID (0表示所有事件已处理完)
-    repeated int32 remaining_events = 5;     // 剩余未处理的事件列表
+    common.EventInfo next_event = 4;         // 下一个需要处理的事件 (event_id=0表示所有事件已处理完)
+    repeated common.EventInfo remaining_events = 5;  // 剩余未处理的事件列表
 }
 
 // 领取通关奖励请求 {{Req:707}}

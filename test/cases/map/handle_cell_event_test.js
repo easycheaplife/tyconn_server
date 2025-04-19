@@ -75,25 +75,25 @@ class HandleCellEventTest extends BaseTest {
                 assert(response.event_info.cell_id === currentEvent.cell_id, 
                     `Cell ID in response should match requested ID: ${response.event_info.cell_id} vs ${currentEvent.cell_id}`);
                 
+                // 验证next_event字段
+                assert(response.next_event, 'Response should have next_event field');
+                
                 // 获取属性，兼容不同的命名风格
                 const success = response.success;
                 const bags = response.bags || [];
-                const nextEventId = response.next_event_id !== undefined ? 
-                    response.next_event_id : response.nextEventId;
                 const remainingEvents = response.remaining_events || response.remainingEvents || [];
                 
                 // 验证必要的字段
                 assert(success !== undefined, 'Response should have success');
                 assert(Array.isArray(bags), 'bags should be an array');
-                assert(nextEventId !== undefined, 'Response should have next_event_id or nextEventId');
-                assert(Array.isArray(remainingEvents), 'remaining_events or remainingEvents should be an array');
+                assert(Array.isArray(remainingEvents), 'remaining_events should be an array');
                 
                 // 检查事件处理是否成功
                 assert(success, 'Event handling should succeed');
                 
-                // 检查剩余事件
-                console.log(`Next event ID: ${nextEventId}`);
-                console.log(`Remaining events: ${remainingEvents.join(', ')}`);
+                // 检查下一个事件和剩余事件
+                console.log(`Next event: ID=${response.next_event.event_id}, Cell=${response.next_event.cell_id}, IsRandom=${response.next_event.is_random_event}`);
+                console.log(`Remaining events: ${remainingEvents.length}`);
                 
                 // 如果有背包变化，验证变化
                 if (bags && bags.length > 0) {
@@ -115,6 +115,12 @@ class HandleCellEventTest extends BaseTest {
                             });
                         }
                     });
+                }
+                
+                // 如果还有下一个事件，继续处理
+                if (response.next_event && response.next_event.event_id !== 0) {
+                    console.log(`\nProcessing next event: ID=${response.next_event.event_id}, Cell=${response.next_event.cell_id}`);
+                    // 添加处理下一个事件的逻辑，如果需要的话
                 }
             }
             
