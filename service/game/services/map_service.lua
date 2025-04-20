@@ -1214,4 +1214,34 @@ function M.claim_reward(user_id)
     }
 end
 
+-- 获取地图上的随机事件
+function M.get_random_events(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("Invalid parameters: user_id=%s, chapter_id=%s", 
+            tostring(user_id), tostring(chapter_id))
+        return {}
+    end
+    
+    -- 从数据库获取随机事件
+    local random_events = map_dao.get_random_events(user_id, chapter_id)
+    if not random_events or #random_events == 0 then
+        logger.debug("No random events found for user %d, chapter %d", user_id, chapter_id)
+        return {}
+    end
+    
+    -- 转换为EventInfo格式
+    local event_infos = {}
+    for _, event in ipairs(random_events) do
+        table.insert(event_infos, {
+            event_id = event.event_id,
+            cell_id = event.cell_id,
+            is_random_event = true
+        })
+    end
+    
+    logger.debug("Found %d random events for user %d, chapter %d", 
+        #event_infos, user_id, chapter_id)
+    return event_infos
+end
+
 return M 

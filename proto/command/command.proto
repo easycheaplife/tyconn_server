@@ -380,6 +380,7 @@ message G2CMapInfoResponse {
     int32 chapter_id = 1;                    // 章节ID
     int32 current_position = 2;              // 当前位置（对应格子ID）
     int32 direction = 3;                     // 移动朝向(1:正向, -1:反向)
+    repeated common.EventInfo random_events = 4;  // 地图上的随机事件
 }
 
 // 掷骰子请求 {{Req:703}}

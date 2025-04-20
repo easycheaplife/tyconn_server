@@ -38,12 +38,19 @@ function M.handle(client_id, msg)
             message.MessageID.G2C_MAP_INFO_RESPONSE)
     end
 
+    -- 获取地图上的随机事件
+    local random_events = map_service.get_random_events(user.user_id, map_info.chapter_id)
+    
     -- 构造响应数据
     local response_data = {
         chapter_id = map_info.chapter_id,
         current_position = map_info.current_position,
-        direction = map_info.direction
+        direction = map_info.direction,
+        random_events = random_events
     }
+
+    -- 打印一下响应数据便于调试
+    logger.debug("Map info response: %s", utils.table_to_string(response_data))
 
     -- 返回成功响应
     return message_helper.create_success_response(

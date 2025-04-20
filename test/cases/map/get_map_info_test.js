@@ -45,6 +45,21 @@ class GetMapInfoTest extends BaseTest {
                         `Position ${currentPosition}, ` + 
                         `Direction ${direction === 1 ? 'Forward' : 'Backward'}`);
             
+            // 检查和打印随机事件数据
+            const randomEvents = response.random_events || response.randomEvents;
+            if (randomEvents && Array.isArray(randomEvents)) {
+                console.log(`Found ${randomEvents.length} random events on the map:`);
+                randomEvents.forEach((event, index) => {
+                    const eventId = event.event_id !== undefined ? event.event_id : event.eventId;
+                    const cellId = event.cell_id !== undefined ? event.cell_id : event.cellId;
+                    const isRandomEvent = event.is_random_event !== undefined ? event.is_random_event : event.isRandomEvent;
+                    
+                    console.log(`  Event #${index + 1}: Event ID=${eventId}, Cell ID=${cellId}, Is Random=${isRandomEvent}`);
+                });
+            } else {
+                console.log('No random events found on the map.');
+            }
+            
             // 测试缓存
             console.log('\nTesting map info cache...');
             const secondResponse = await this.client.getMapInfo();
