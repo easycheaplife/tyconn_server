@@ -375,7 +375,7 @@ function M.load_cell_data_config()
             end
             
             -- 存储格子数据
-            CONFIG_CACHE.cell_data[map_id][cell_data.Cell_id] = {
+            CONFIG_CACHE.cell_data[map_id][cell_id] = {
                 id = cell_id,
                 map_id = map_id,
                 cell = tonumber(cell_data.Cell) or 0,

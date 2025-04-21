@@ -29,7 +29,6 @@ function M.get_event_type_id(event_id)
     
     -- 从配置获取事件信息
     local event_configs = table_service.get_config_values("cell_events")
-    logger.debug(utils.table_to_string(event_configs))
     if not event_configs then
         logger.error("Failed to get cell_events config")
         return nil
@@ -370,13 +369,27 @@ local function select_random_cell(available_cells, user_id, chapter_id, mutex)
         return nil
     end
     
+    -- 获取章节配置以获取地图ID
+    local chapter_config = M.get_chapter_config(chapter_id)
+    if not chapter_config then
+        logger.error("Failed to get chapter config for chapter %d", chapter_id)
+        return nil
+    end
+    
+    -- 获取地图ID
+    local map_id = chapter_config.map_id
+    if not map_id then
+        logger.error("No map_id found for chapter %d", chapter_id)
+        return nil
+    end
+    
     -- 获取已经有事件的格子
     local occupied_cells = {}
     
     -- 1. 从配置文件获取已有事件的格子
     local cell_data_config = table_service.get_config_values("cell_data")
-    if cell_data_config and cell_data_config[chapter_id] then
-        for cell_id, cell_config in pairs(cell_data_config[chapter_id]) do
+    if cell_data_config and cell_data_config[map_id] then
+        for cell_id, cell_config in pairs(cell_data_config[map_id]) do
             if (cell_config.cell_events1 and #cell_config.cell_events1 > 0 or
                 cell_config.cell_events2 and #cell_config.cell_events2 > 0 or
                 cell_config.cell_events3 and #cell_config.cell_events3 > 0) then
