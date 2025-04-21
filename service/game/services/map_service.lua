@@ -406,6 +406,45 @@ local function select_random_cell(available_cells, user_id, chapter_id, mutex)
     return valid_cells[random_index]
 end
 
+-- 辅助函数，处理随机事件生成的共同逻辑
+local function process_random_event_generation(user_id, chapter_config, selected_config)
+    -- 检查最大生成数量限制
+    if selected_config.max_gen > 0 then
+        local existing_count = map_dao.count_random_events(user_id, chapter_config.id, selected_config.id)
+        if existing_count >= selected_config.max_gen then
+            logger.debug("Random event %d reached max generation limit", selected_config.id)
+            return false
+        end
+    end
+    
+    -- 选择放置格子
+    local cell_id = select_random_cell(selected_config.cells, user_id, chapter_config.id, selected_config.mutex)
+    if not cell_id then
+        logger.error("Failed to select random cell for event %d", selected_config.id)
+        return false
+    end
+    
+    -- 创建随机事件记录
+    local event_data = {
+        user_id = user_id,
+        chapter_id = chapter_config.id,
+        event_id = selected_config.id,
+        cell_id = cell_id,
+        create_time = os.time(),
+        update_time = os.time()
+    }
+    
+    local ok = map_dao.create_random_event(event_data)
+    if not ok then
+        logger.error("Failed to create random event record")
+        return false
+    else
+        logger.info("Created random event: event_id=%d, cell_id=%d", 
+            selected_config.id, cell_id)
+        return true
+    end
+end
+
 -- 生成随机事件
 local function generate_random_events(user_id, chapter_config)
     if not chapter_config.initial or #chapter_config.initial == 0 then
@@ -426,7 +465,7 @@ local function generate_random_events(user_id, chapter_config)
     -- 遍历初始化配置
     for _, initial_config in ipairs(chapter_config.initial) do
         -- 检查是否是随机事件配置 (第一个元素是900)
-        if initial_config[1] == enum.CellEventType.EVENT_TYPE_RANDOM_EVENT then
+        if M.get_event_type_id(initial_config[1]) == enum.CellEventType.EVENT_TYPE_RANDOM_EVENT then
             local map_id = initial_config[2]  -- 随机组ID
             local count = initial_config[3] or 1  -- 生成数量
             
@@ -452,39 +491,8 @@ local function generate_random_events(user_id, chapter_config)
                     goto continue
                 end
                 
-                -- 检查最大生成数量限制
-                if selected_config.max_gen > 0 then
-                    local existing_count = map_dao.count_random_events(user_id, chapter_config.id, selected_config.id)
-                    if existing_count >= selected_config.max_gen then
-                        logger.debug("Random event %d reached max generation limit", selected_config.id)
-                        goto continue
-                    end
-                end
-                
-                -- 选择放置格子
-                local cell_id = select_random_cell(selected_config.cells, user_id, chapter_config.id, selected_config.mutex)
-                if not cell_id then
-                    logger.error("Failed to select random cell for event %d", selected_config.id)
-                    goto continue
-                end
-                
-                -- 创建随机事件记录
-                local event_data = {
-                    user_id = user_id,
-                    chapter_id = chapter_config.id,
-                    event_id = selected_config.id,
-                    cell_id = cell_id,
-                    create_time = os.time(),
-                    update_time = os.time()
-                }
-                
-                local ok = map_dao.create_random_event(event_data)
-                if not ok then
-                    logger.error("Failed to create random event record")
-                else
-                    logger.info("Created random event: event_id=%d, cell_id=%d", 
-                        selected_config.id, cell_id)
-                end
+                -- 使用辅助函数处理随机事件生成
+                process_random_event_generation(user_id, chapter_config, selected_config)
             end
             
             ::continue::
@@ -656,6 +664,82 @@ function M.get_map_info(user_id)
     return map_info
 end
 
+-- 生成路径上的随机事件
+local function generate_path_random_events(user_id, chapter_config, path_cells)
+    if not user_id or not chapter_config or not path_cells or #path_cells == 0 then
+        logger.debug("No path cells to generate random events for user %d", user_id)
+        return
+    end
+    
+    logger.info("Generating path random events for user %d, chapter %d", 
+        user_id, chapter_config.id)
+    
+    -- 获取随机事件配置
+    local cell_random_events = table_service.get_config_values("cell_random_events")
+    if not cell_random_events then
+        logger.error("Failed to get cell_random_events config")
+        return
+    end
+    
+    -- 遍历路径上的每个格子
+    for _, cell_id in ipairs(path_cells) do
+        -- 获取格子数据
+        local cell_data = M.get_cell_data(chapter_config.map_id, cell_id)
+        if not cell_data then
+            logger.warn("No cell data found for cell %d", cell_id)
+            goto continue
+        end
+        
+        -- 处理所有事件数组
+        local event_arrays = {
+            cell_data.cell_events1,
+            cell_data.cell_events2,
+            cell_data.cell_events3
+        }
+        
+        for _, events in ipairs(event_arrays) do
+            if events and #events > 0 and type(events[1]) == "number" then
+                local event_id = events[1]
+                local event_type_id = M.get_event_type_id(event_id)
+                
+                -- 检查是否是随机事件配置
+                if event_type_id == enum.CellEventType.EVENT_TYPE_RANDOM_EVENT then
+                    local map_id = events[2]  -- 随机组ID
+                    local count = events[3] or 1  -- 生成数量
+                    
+                    -- 查找对应的随机配置
+                    local random_config_group = {}
+                    for _, config in pairs(cell_random_events) do
+                        if config.map_id == map_id then
+                            table.insert(random_config_group, config)
+                        end
+                    end
+                    
+                    if #random_config_group == 0 then
+                        logger.warn("No random event config found for map_id %d", map_id)
+                        goto continue
+                    end
+                    
+                    -- 生成随机事件
+                    for i = 1, count do
+                        -- 根据权重选择配置
+                        local selected_config = select_random_config(random_config_group)
+                        if not selected_config then
+                            logger.error("Failed to select random config for map_id %d", map_id)
+                            goto continue
+                        end
+                        
+                        -- 使用辅助函数处理随机事件生成
+                        process_random_event_generation(user_id, chapter_config, selected_config)
+                    end
+                end
+            end
+        end
+        
+        ::continue::
+    end
+end
+
 -- 掷骰子
 function M.roll_dice(user_id)
     if not user_id then
@@ -712,6 +796,9 @@ function M.roll_dice(user_id)
     for pos = from_position + step, to_position, step do
         table.insert(path_cells, pos)
     end
+    
+    -- 生成格子上的随机事件
+    generate_path_random_events(user_id, chapter_config, path_cells)
     
     -- 获取路径上已存在的随机事件
     local random_events = map_dao.get_random_events_by_cells(user_id, map_info.chapter_id, path_cells)
