@@ -9,6 +9,7 @@ local user_service = require "game.services.user_service"
 local error = require "error"
 local enum = require "enum"
 local event_handlers = require "game.services.map_event_handlers"
+local config_service = require "game.services.config_service"
 
 local M = {}
 
@@ -372,7 +373,19 @@ local function select_random_cell(available_cells, user_id, chapter_id, mutex)
     -- 获取已经有事件的格子
     local occupied_cells = {}
     if mutex > 0 then
-        occupied_cells = map_dao.get_occupied_cells(user_id, chapter_id)
+        -- 直接从配置文件获取已有事件的格子，而非从数据库或缓存查询
+        -- 因为数据库或缓存可能尚未有数据
+        local cell_data_config = config_service.get_config("Dfw_cell_data")
+        if cell_data_config then
+            for _, cell_config in pairs(cell_data_config) do
+                if cell_config.Map_id == chapter_id and 
+                   (cell_config.Cell_events1 and #cell_config.Cell_events1 > 0 or
+                    cell_config.Cell_events2 and #cell_config.Cell_events2 > 0 or
+                    cell_config.Cell_events3 and #cell_config.Cell_events3 > 0) then
+                    occupied_cells[cell_config.Cell_id] = true
+                end
+            end
+        end
     end
     
     -- 过滤掉已占用的格子
