@@ -274,6 +274,7 @@ function M.create_random_event(event_data)
     
     -- 清除相关缓存
     cache.remove_random_events(event_data.user_id, event_data.chapter_id)
+    cache.remove_occupied_cells(event_data.user_id, event_data.chapter_id)
     
     logger.debug("map_dao.create_random_event: Created random event for user %d, chapter %d, cell %d, event %d",
         event_data.user_id, event_data.chapter_id, event_data.cell_id, event_data.event_id)
@@ -313,7 +314,14 @@ function M.get_occupied_cells(user_id, chapter_id)
     -- 从缓存获取
     local cached_cells = cache.get_occupied_cells(user_id, chapter_id)
     if cached_cells then
-        return cached_cells
+        -- 将数组格式的缓存转换回哈希表格式
+        local result = {}
+        if type(cached_cells) == "table" then
+            for _, cell_id in ipairs(cached_cells) do
+                result[cell_id] = 1
+            end
+        end
+        return result
     end
     
     -- 从数据库获取
@@ -321,15 +329,22 @@ function M.get_occupied_cells(user_id, chapter_id)
     if not cells then
         return {}
     end
-    
+
     -- 转换为哈希表格式以便快速查找
     local occupied_cells = {}
     for _, cell in ipairs(cells) do
-        occupied_cells[cell.cell_id] = true
+        occupied_cells[cell.cell_id] = 1
     end
     
     -- 缓存结果
-    cache.set_occupied_cells(user_id, chapter_id, occupied_cells)
+    -- 将稀疏哈希表转换为稠密数组进行缓存，避免JSON序列化稀疏数组的问题
+    local cell_ids = {}
+    for cell_id, _ in pairs(occupied_cells) do
+        table.insert(cell_ids, cell_id)
+    end
+    
+    logger.debug("set_occupied_cells: %s", utils.table_to_string(occupied_cells))
+    cache.set_occupied_cells(user_id, chapter_id, cell_ids)
     
     return occupied_cells
 end
