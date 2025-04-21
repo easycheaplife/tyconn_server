@@ -1,5 +1,5 @@
 -- Generating message.lua from proto/common/message.proto
--- Generate time: 2025-04-15 09:54:01
+-- Generate time: 2025-04-21 07:15:33
 
 local M = {}
 

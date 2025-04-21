@@ -372,32 +372,43 @@ local function select_random_cell(available_cells, user_id, chapter_id, mutex)
     
     -- 获取已经有事件的格子
     local occupied_cells = {}
-    if mutex > 0 then
-        -- 直接从配置文件获取已有事件的格子，而非从数据库或缓存查询
-        -- 因为数据库或缓存可能尚未有数据
-        local cell_data_config = config_service.get_config("Dfw_cell_data")
-        if cell_data_config then
-            for _, cell_config in pairs(cell_data_config) do
-                if cell_config.Map_id == chapter_id and 
-                   (cell_config.Cell_events1 and #cell_config.Cell_events1 > 0 or
-                    cell_config.Cell_events2 and #cell_config.Cell_events2 > 0 or
-                    cell_config.Cell_events3 and #cell_config.Cell_events3 > 0) then
-                    occupied_cells[cell_config.Cell_id] = true
-                end
+    
+    -- 1. 从配置文件获取已有事件的格子
+    local cell_data_config = table_service.get_config_values("cell_data")
+    if cell_data_config and cell_data_config[chapter_id] then
+        for cell_id, cell_config in pairs(cell_data_config[chapter_id]) do
+            if (cell_config.cell_events1 and #cell_config.cell_events1 > 0 or
+                cell_config.cell_events2 and #cell_config.cell_events2 > 0 or
+                cell_config.cell_events3 and #cell_config.cell_events3 > 0) then
+                occupied_cells[cell_id] = true
             end
         end
     end
     
-    -- 过滤掉已占用的格子
+    -- 2. 从数据库/缓存获取已有事件的格子
+    local db_occupied_cells = map_dao.get_occupied_cells(user_id, chapter_id)
+    for cell_id, _ in pairs(db_occupied_cells) do
+        occupied_cells[cell_id] = true
+    end
+    
+    -- 根据互斥值筛选格子
     local valid_cells = {}
-    for _, cell_id in ipairs(available_cells) do
-        if not occupied_cells[cell_id] then
-            table.insert(valid_cells, cell_id)
+    
+    if mutex == enum.MutexType.MUTEX_TYPE_EXCLUSIVE then
+        -- 互斥：只选择没有事件的格子
+        for _, cell_id in ipairs(available_cells) do
+            if not occupied_cells[cell_id] then
+                table.insert(valid_cells, cell_id)
+            end
         end
+    else -- mutex == enum.MutexType.MUTEX_TYPE_NO_LIMIT or mutex == enum.MutexType.MUTEX_TYPE_REPLACE
+        -- 无限制：可以放在任何可用格子上;
+        -- 替换: 先不限制，在处理事件时处理;
+        valid_cells = available_cells
     end
     
     if #valid_cells == 0 then
-        logger.warn("No valid cells available for random event")
+        logger.warn("No valid cells available for random event, mutex=%d", mutex)
         return nil
     end
     

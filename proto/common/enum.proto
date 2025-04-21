@@ -482,4 +482,11 @@ enum CellEventActivateType {
     ACTIVATE_TYPE_CALL = 0;      // 调用生效
     ACTIVATE_TYPE_LAND = 1;     // 踩中
     ACTIVATE_TYPE_PASS = 2;     // 路过/经过
+}
+
+// 随机事件格子互斥类型
+enum MutexType {
+    MUTEX_TYPE_EXCLUSIVE = 0;      // 互斥：只随机没有事件的格子
+    MUTEX_TYPE_REPLACE = 1;        // 替换：替换已有的事件
+    MUTEX_TYPE_NO_LIMIT = 2;       // 无限制：不做任何限制
 } 

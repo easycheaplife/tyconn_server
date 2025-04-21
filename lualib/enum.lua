@@ -1,5 +1,5 @@
 -- Generating enum.lua from proto/common/enum.proto
--- Generate time: 2025-04-15 09:54:01
+-- Generate time: 2025-04-21 07:15:33
 
 local M = {}
 
@@ -236,15 +236,18 @@ M.UseLimitType = {
 -- 装备槽位
 M.EquipSlotType = {
     EQUIP_SLOT_TYPE_NONE = 0,
-    EQUIP_SLOT_TYPE_WEAPON = 1,    -- 武器槽
-    EQUIP_SLOT_TYPE_HEAD = 2,    -- 头部槽
-    EQUIP_SLOT_TYPE_BODY = 3,    -- 身体槽
-    EQUIP_SLOT_TYPE_HANDS = 4,    -- 手部槽
-    EQUIP_SLOT_TYPE_FEET = 5,    -- 脚部槽
-    EQUIP_SLOT_TYPE_NECK = 6,    -- 项链槽
-    EQUIP_SLOT_TYPE_FINGER1 = 7,    -- 戒指槽1
-    EQUIP_SLOT_TYPE_FINGER2 = 8,    -- 戒指槽2
-    EQUIP_SLOT_TYPE_TRINKET = 9,    -- 饰品槽
+    EQUIP_SLOT_TYPE_WEAPON = 1,    -- 武器
+    EQUIP_SLOT_TYPE_HAT = 2,    -- 帽子
+    EQUIP_SLOT_TYPE_CLOTHES = 3,    -- 衣服
+    EQUIP_SLOT_TYPE_TROUSERS = 4,    -- 裤子
+    EQUIP_SLOT_TYPE_GLOVE = 5,    -- 手套
+    EQUIP_SLOT_TYPE_BELT = 6,    -- 腰带
+    EQUIP_SLOT_TYPE_SHOE = 7,    -- 鞋子
+    EQUIP_SLOT_TYPE_CLOAK = 8,    -- 披风
+    EQUIP_SLOT_TYPE_NECKLACE = 9,    -- 项链
+    EQUIP_SLOT_TYPE_PENDANT = 10,    -- 玉佩
+    EQUIP_SLOT_TYPE_BRACELET = 11,    -- 手镯
+    EQUIP_SLOT_TYPE_RING = 12,    -- 戒指
 }
 
 -- 装备属性类型
@@ -457,6 +460,13 @@ M.CellEventActivateType = {
     ACTIVATE_TYPE_CALL = 0,    -- 调用生效
     ACTIVATE_TYPE_LAND = 1,    -- 踩中
     ACTIVATE_TYPE_PASS = 2,    -- 路过/经过
+}
+
+-- 随机事件格子互斥类型
+M.MutexType = {
+    MUTEX_TYPE_EXCLUSIVE = 0,    -- 互斥：只随机没有事件的格子
+    MUTEX_TYPE_REPLACE = 1,    -- 替换：替换已有的事件
+    MUTEX_TYPE_NO_LIMIT = 2,    -- 无限制：不做任何限制
 }
 
 return M
