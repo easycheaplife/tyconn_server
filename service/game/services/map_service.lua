@@ -958,7 +958,8 @@ function M.handle_cell_event(user_id, event_id, cell_id)
     -- 获取当前格子的所有事件
     local events = map_dao.get_cell_events({
         chapter_id = map_info.chapter_id,
-        cell_id = cell_id
+        cell_id = cell_id,
+        status = 0
     })
     
     if not events or #events == 0 then
