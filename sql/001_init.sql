@@ -346,7 +346,6 @@ CREATE TABLE IF NOT EXISTS user_chapter_progress (
     reward_claimed TINYINT NOT NULL DEFAULT 0, -- 奖励是否已领取(0:未领取,1:已领取)
     pass_time BIGINT DEFAULT 0,                -- 通关时间
     reward_time BIGINT DEFAULT 0,              -- 领取奖励时间
-    steps_count INT DEFAULT 0,                 -- 移动步数
     create_time BIGINT NOT NULL,               -- 创建时间
     update_time BIGINT NOT NULL,               -- 更新时间
     
