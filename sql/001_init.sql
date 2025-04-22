@@ -1,4 +1,5 @@
 -- 版本表
+DROP TABLE IF EXISTS db_version;
 CREATE TABLE IF NOT EXISTS db_version (
     version INT PRIMARY KEY,
     applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -8,6 +9,7 @@ CREATE TABLE IF NOT EXISTS db_version (
 INSERT INTO db_version (version) VALUES (1);
 
 -- 用户表
+DROP TABLE IF EXISTS users;
 CREATE TABLE IF NOT EXISTS users (
     user_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     account VARCHAR(64) NOT NULL,
@@ -22,6 +24,7 @@ CREATE TABLE IF NOT EXISTS users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 用户令牌表
+DROP TABLE IF EXISTS user_tokens;
 CREATE TABLE IF NOT EXISTS user_tokens (
     token_id BIGINT PRIMARY KEY AUTO_INCREMENT,
     account VARCHAR(64) NOT NULL,
@@ -35,6 +38,7 @@ CREATE TABLE IF NOT EXISTS user_tokens (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 用户卡牌表
+DROP TABLE IF EXISTS user_cards;
 CREATE TABLE IF NOT EXISTS user_cards (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,          -- 用户ID
@@ -50,6 +54,7 @@ CREATE TABLE IF NOT EXISTS user_cards (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 用户物品表
+DROP TABLE IF EXISTS user_items;
 CREATE TABLE IF NOT EXISTS user_items (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,  -- 物品实例ID
     user_id BIGINT NOT NULL,         -- 所属用户ID
@@ -67,6 +72,7 @@ CREATE TABLE IF NOT EXISTS user_items (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 物品变化日志表
+DROP TABLE IF EXISTS item_logs;
 CREATE TABLE IF NOT EXISTS item_logs (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,         -- 用户ID
@@ -82,6 +88,7 @@ CREATE TABLE IF NOT EXISTS item_logs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 物品使用记录表
+DROP TABLE IF EXISTS item_use_records;
 CREATE TABLE IF NOT EXISTS item_use_records (
     user_id BIGINT NOT NULL,         -- 用户ID
     item_id INT NOT NULL,            -- 物品ID
@@ -92,6 +99,7 @@ CREATE TABLE IF NOT EXISTS item_use_records (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 物品交易日志表
+DROP TABLE IF EXISTS item_trade_logs;
 CREATE TABLE IF NOT EXISTS item_trade_logs (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     from_user BIGINT NOT NULL,       -- 交易发起方
@@ -104,6 +112,7 @@ CREATE TABLE IF NOT EXISTS item_trade_logs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 用户背包表
+DROP TABLE IF EXISTS user_bags;
 CREATE TABLE IF NOT EXISTS user_bags (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,         -- 用户ID
@@ -115,6 +124,7 @@ CREATE TABLE IF NOT EXISTS user_bags (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 背包格子表
+DROP TABLE IF EXISTS bag_slots;
 CREATE TABLE IF NOT EXISTS bag_slots (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,         -- 用户ID
@@ -127,6 +137,7 @@ CREATE TABLE IF NOT EXISTS bag_slots (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 用户装备槽位表
+DROP TABLE IF EXISTS user_equipment_slots;
 CREATE TABLE IF NOT EXISTS user_equipment_slots (
     user_id BIGINT NOT NULL,               -- 用户ID
     slot_id INT NOT NULL,                  -- 装备槽位ID (1:武器, 2:护甲, 3:头盔, 4:项链, 5:戒指, 6:靴子...)
@@ -141,6 +152,7 @@ CREATE TABLE IF NOT EXISTS user_equipment_slots (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 用户装备概率等级表
+DROP TABLE IF EXISTS user_equipment_levels;
 CREATE TABLE IF NOT EXISTS user_equipment_levels (
     user_id BIGINT PRIMARY KEY,            -- 用户ID
     level INT DEFAULT 1,                   -- 当前装备概率等级
@@ -153,6 +165,7 @@ CREATE TABLE IF NOT EXISTS user_equipment_levels (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 装备属性表
+DROP TABLE IF EXISTS equip_properties;
 CREATE TABLE IF NOT EXISTS equip_properties (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     equip_id BIGINT NOT NULL,        -- 装备实例ID
@@ -165,6 +178,7 @@ CREATE TABLE IF NOT EXISTS equip_properties (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 装备强化记录表
+DROP TABLE IF EXISTS equip_enhance_logs;
 CREATE TABLE IF NOT EXISTS equip_enhance_logs (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,         -- 用户ID
@@ -179,6 +193,7 @@ CREATE TABLE IF NOT EXISTS equip_enhance_logs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 邮件表
+DROP TABLE IF EXISTS mails;
 CREATE TABLE IF NOT EXISTS mails (
     id BIGINT PRIMARY KEY,           -- 邮件ID
     user_id BIGINT NOT NULL,         -- 用户ID
@@ -198,6 +213,7 @@ CREATE TABLE IF NOT EXISTS mails (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 邮件模板表
+DROP TABLE IF EXISTS mail_templates;
 CREATE TABLE IF NOT EXISTS mail_templates (
     id BIGINT PRIMARY KEY,                -- 模板ID
     title VARCHAR(128) NOT NULL,          -- 邮件标题
@@ -214,6 +230,7 @@ CREATE TABLE IF NOT EXISTS mail_templates (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 用户伙伴表
+DROP TABLE IF EXISTS user_partners;
 CREATE TABLE IF NOT EXISTS user_partners (
     id BIGINT PRIMARY KEY,               -- 伙伴唯一ID
     user_id BIGINT NOT NULL,             -- 所属用户ID
@@ -230,6 +247,7 @@ CREATE TABLE IF NOT EXISTS user_partners (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 伙伴升级日志表
+DROP TABLE IF EXISTS partner_level_logs;
 CREATE TABLE IF NOT EXISTS partner_level_logs (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     partner_id BIGINT NOT NULL,          -- 伙伴ID
@@ -246,6 +264,7 @@ CREATE TABLE IF NOT EXISTS partner_level_logs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 伙伴升星日志表
+DROP TABLE IF EXISTS partner_star_logs;
 CREATE TABLE IF NOT EXISTS partner_star_logs (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     partner_id BIGINT NOT NULL,          -- 伙伴ID
@@ -260,6 +279,7 @@ CREATE TABLE IF NOT EXISTS partner_star_logs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 伙伴解锁日志表
+DROP TABLE IF EXISTS partner_unlock_logs;
 CREATE TABLE IF NOT EXISTS partner_unlock_logs (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     partner_id BIGINT NOT NULL,          -- 伙伴ID
@@ -273,6 +293,7 @@ CREATE TABLE IF NOT EXISTS partner_unlock_logs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 用户大富翁状态表
+DROP TABLE IF EXISTS user_monopoly_state;
 CREATE TABLE IF NOT EXISTS user_monopoly_state (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,                -- 用户ID
@@ -286,6 +307,7 @@ CREATE TABLE IF NOT EXISTS user_monopoly_state (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 大富翁事件处理表
+DROP TABLE IF EXISTS monopoly_events;
 CREATE TABLE IF NOT EXISTS monopoly_events (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,                   -- 用户ID
@@ -302,6 +324,7 @@ CREATE TABLE IF NOT EXISTS monopoly_events (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 大富翁随机事件处理表
+DROP TABLE IF EXISTS monopoly_random_events;
 CREATE TABLE IF NOT EXISTS monopoly_random_events (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,                   -- 用户ID
@@ -314,6 +337,7 @@ CREATE TABLE IF NOT EXISTS monopoly_random_events (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 用户章节进度表
+DROP TABLE IF EXISTS user_chapter_progress;
 CREATE TABLE IF NOT EXISTS user_chapter_progress (
     id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,                   -- 用户ID
@@ -331,6 +355,7 @@ CREATE TABLE IF NOT EXISTS user_chapter_progress (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 大富翁操作日志表
+DROP TABLE IF EXISTS monopoly_logs;
 CREATE TABLE IF NOT EXISTS monopoly_logs (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     user_id BIGINT NOT NULL,                   -- 用户ID
