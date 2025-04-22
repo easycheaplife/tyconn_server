@@ -519,4 +519,23 @@ function M.get_user_passed_chapters(user_id)
     return chapters
 end 
 
+-- 删除格子事件缓存
+function M.remove_cell_events_cache(chapter_id, cell_id)
+    if not chapter_id or not cell_id then
+        logger.error("map_dao.remove_cell_events_cache: Invalid parameters")
+        return false
+    end 
+
+    local ok, result = pcall(function()
+        return cache.remove_map_events(chapter_id, cell_id)
+    end)
+
+    if not ok then
+        logger.error("Failed to remove cell events cache: %s", tostring(result))
+        return false
+    end
+
+    return true
+end
+
 return M 
