@@ -384,9 +384,7 @@ function M.load_cell_data_config()
                 cell_land = tonumber(cell_data.Cell_land) or 0,
                 land_buy = tonumber(cell_data.Land_buy) or 0,
                 land_unit = tonumber(cell_data.Land_unit) or 0,
-                cell_events1 = cell_data.Cell_events1 or {},
-                cell_events2 = cell_data.Cell_events2 or {},
-                cell_events3 = cell_data.Cell_events3 or {}
+                cell_events = cell_data.Cell_events or {}
             }
         end
     end

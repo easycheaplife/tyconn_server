@@ -479,7 +479,7 @@ enum ChapterConditionType {
 
 // 事件触发方式
 enum CellEventActivateType {
-    ACTIVATE_TYPE_CALL = 0;      // 调用生效
+    ACTIVATE_TYPE_NONE = 0;      
     ACTIVATE_TYPE_LAND = 1;     // 踩中
     ACTIVATE_TYPE_PASS = 2;     // 路过/经过
 }

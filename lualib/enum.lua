@@ -1,5 +1,5 @@
 -- Generating enum.lua from proto/common/enum.proto
--- Generate time: 2025-04-21 07:15:33
+-- Generate time: 2025-04-22 03:34:43
 
 local M = {}
 
@@ -457,7 +457,7 @@ M.ChapterConditionType = {
 
 -- 事件触发方式
 M.CellEventActivateType = {
-    ACTIVATE_TYPE_CALL = 0,    -- 调用生效
+    ACTIVATE_TYPE_NONE = 0,
     ACTIVATE_TYPE_LAND = 1,    -- 踩中
     ACTIVATE_TYPE_PASS = 2,    -- 路过/经过
 }

@@ -92,7 +92,7 @@ local function get_cell_data_by_chapter(chapter_id, cell_id)
 end
 
 -- 合并格子事件
-local function merge_cell_events(cell_events1, cell_events2, cell_events3, direction)
+local function merge_cell_events(cell_events, direction)
     local merged_events = {}
     local cell_events_configs = table_service.get_config_values("cell_events")
     if not cell_events_configs then
@@ -100,29 +100,24 @@ local function merge_cell_events(cell_events1, cell_events2, cell_events3, direc
         return merged_events
     end
     
-    -- 处理所有事件数组
-    local event_arrays = {
-        {events = cell_events1, source = "cell_events1"},
-        {events = cell_events2, source = "cell_events2"},
-        {events = cell_events3, source = "cell_events3"}
-    }
-    
-    for _, array_info in ipairs(event_arrays) do
-        local events = array_info.events
-        if events and #events > 0 and type(events[1]) == "number" then
-            -- 获取事件ID和参数
-            local event_id = events[1]
-            local params = {}
-            for i = 2, #events do
-                table.insert(params, events[i])
+    -- 处理事件数组
+    if cell_events and #cell_events > 0 then
+        for _, events in ipairs(cell_events) do
+            if events and #events > 0 and type(events[1]) == "number" then
+                -- 获取事件ID和参数
+                local event_id = events[1]
+                local params = {}
+                for i = 2, #events do
+                    table.insert(params, events[i])
+                end
+                
+                -- 添加事件，触发逻辑在后续根据activate判断
+                table.insert(merged_events, {
+                    event_id = event_id,
+                    params = params,
+                    source = "cell_events"
+                })
             end
-            
-            -- 添加事件，触发逻辑在后续根据activate判断
-            table.insert(merged_events, {
-                event_id = event_id,
-                params = params,
-                source = array_info.source
-            })
         end
     end
     
@@ -143,45 +138,39 @@ local function get_cell_events(cell_data, position, is_final_position)
         return {}
     end
     
-    -- 处理所有事件数组
-    local event_arrays = {
-        cell_data.cell_events1,
-        cell_data.cell_events2,
-        cell_data.cell_events3
-    }
-    
-    for _, events in ipairs(event_arrays) do
-        if events and #events > 0 and type(events[1]) == "number" then
-            local event_id = events[1]
-            
-            -- 获取事件配置中的Activate值
-            local event_config = cell_events_configs[event_id]
-            if not event_config then
-                logger.error("Event config not found for event_id %d", event_id)
-                goto continue
+    -- 处理事件数组
+    if cell_data.cell_events and #cell_data.cell_events > 0 then
+        for _, events in ipairs(cell_data.cell_events) do
+            if events and #events > 0 and type(events[1]) == "number" then
+                local event_id = events[1]
+                
+                -- 获取事件配置中的Activate值
+                local event_config = cell_events_configs[event_id]
+                if not event_config then
+                    logger.error("Event config not found for event_id %d", event_id)
+                    goto continue
+                end
+                
+                local activate_type = event_config.activate or 0
+                local should_trigger = false
+                
+                -- 根据activate_type判断触发条件
+                if activate_type == enum.CellEventActivateType.ACTIVATE_TYPE_LAND then  -- 踩中
+                    should_trigger = is_final_position == true
+                elseif activate_type == enum.CellEventActivateType.ACTIVATE_TYPE_PASS then  -- 路过
+                    should_trigger = true
+                end
+                
+                if should_trigger then
+                    table.insert(event_ids, {
+                        event_id = event_id,
+                        cell_id = position,
+                        is_random_event = false  -- 非随机事件
+                    })
+                end
+                
+                ::continue::
             end
-            
-            local activate_type = event_config.activate or 0
-            local should_trigger = false
-            
-            -- 根据activate_type判断触发条件
-            if activate_type == enum.CellEventActivateType.ACTIVATE_TYPE_CALL then  -- 调用生效
-                should_trigger = true
-            elseif activate_type == enum.CellEventActivateType.ACTIVATE_TYPE_LAND then  -- 踩中
-                should_trigger = is_final_position == true
-            elseif activate_type == enum.CellEventActivateType.ACTIVATE_TYPE_PASS then  -- 路过
-                should_trigger = true
-            end
-            
-            if should_trigger then
-                table.insert(event_ids, {
-                    event_id = event_id,
-                    cell_id = position,
-                    is_random_event = false  -- 非随机事件
-                })
-            end
-            
-            ::continue::
         end
     end
     
@@ -247,7 +236,7 @@ local function dispatch_event(user_id, event, map_info)
         complete_event = {
             event_id = actual_event_id,
             event_type_id = event_type_id,
-            cell_events1 = cell_events,
+            cell_events = cell_events,
             merged_events = {
                 {
                     event_id = actual_event_id,
@@ -267,10 +256,8 @@ local function dispatch_event(user_id, event, map_info)
         complete_event = {
             event_id = event.event_id,
             event_type_id = event_type_id,
-            cell_events1 = cell_data.cell_events1,
-            cell_events2 = cell_data.cell_events2,
-            cell_events3 = cell_data.cell_events3,
-            merged_events = merge_cell_events(cell_data.cell_events1, cell_data.cell_events2, cell_data.cell_events3, map_info.direction)
+            cell_events = cell_data.cell_events,
+            merged_events = merge_cell_events(cell_data.cell_events, map_info.direction)
         }
     end
     
@@ -363,6 +350,28 @@ local function select_random_config(configs)
     return configs[1]
 end
 
+-- 检查格子是否有事件
+local function has_events(cell_config)
+    return cell_config.cell_events and #cell_config.cell_events > 0
+end
+
+-- 获取已经有事件的格子
+local function get_occupied_cells(map_id)
+    local occupied_cells = {}
+    
+    -- 从配置文件获取已有事件的格子
+    local cell_data_config = table_service.get_config_values("cell_data")
+    if cell_data_config and cell_data_config[map_id] then
+        for cell_id, cell_config in pairs(cell_data_config[map_id]) do
+            if has_events(cell_config) then
+                occupied_cells[cell_id] = true
+            end
+        end
+    end
+    
+    return occupied_cells
+end
+
 -- 选择随机格子
 local function select_random_cell(available_cells, user_id, chapter_id, mutex)
     if not available_cells or #available_cells == 0 then
@@ -390,9 +399,7 @@ local function select_random_cell(available_cells, user_id, chapter_id, mutex)
     local cell_data_config = table_service.get_config_values("cell_data")
     if cell_data_config and cell_data_config[map_id] then
         for cell_id, cell_config in pairs(cell_data_config[map_id]) do
-            if (cell_config.cell_events1 and #cell_config.cell_events1 > 0 or
-                cell_config.cell_events2 and #cell_config.cell_events2 > 0 or
-                cell_config.cell_events3 and #cell_config.cell_events3 > 0) then
+            if has_events(cell_config) then
                 occupied_cells[cell_id] = true
             end
         end
@@ -714,47 +721,43 @@ local function generate_path_random_events(user_id, chapter_config, path_cells)
             goto continue
         end
         
-        -- 处理所有事件数组
-        local event_arrays = {
-            cell_data.cell_events1,
-            cell_data.cell_events2,
-            cell_data.cell_events3
-        }
-        
-        for _, events in ipairs(event_arrays) do
-            if events and #events > 0 and type(events[1]) == "number" then
-                local event_id = events[1]
-                local event_type_id = M.get_event_type_id(event_id)
-                
-                -- 检查是否是随机事件配置
-                if event_type_id == enum.CellEventType.EVENT_TYPE_RANDOM_EVENT then
-                    local map_id = events[2]  -- 随机组ID
-                    local count = events[3] or 1  -- 生成数量
+        -- 处理事件数组
+        if cell_data.cell_events and #cell_data.cell_events > 0 then
+            for _, events in ipairs(cell_data.cell_events) do
+                if events and #events > 0 and type(events[1]) == "number" then
+                    local event_id = events[1]
+                    local event_type_id = M.get_event_type_id(event_id)
                     
-                    -- 查找对应的随机配置
-                    local random_config_group = {}
-                    for _, config in pairs(cell_random_events) do
-                        if config.map_id == map_id then
-                            table.insert(random_config_group, config)
+                    -- 检查是否是随机事件配置
+                    if event_type_id == enum.CellEventType.EVENT_TYPE_RANDOM_EVENT then
+                        local map_id = events[2]  -- 随机组ID
+                        local count = events[3] or 1  -- 生成数量
+                        
+                        -- 查找对应的随机配置
+                        local random_config_group = {}
+                        for _, config in pairs(cell_random_events) do
+                            if config.map_id == map_id then
+                                table.insert(random_config_group, config)
+                            end
                         end
-                    end
-                    
-                    if #random_config_group == 0 then
-                        logger.warn("No random event config found for map_id %d", map_id)
-                        goto continue
-                    end
-                    
-                    -- 生成随机事件
-                    for i = 1, count do
-                        -- 根据权重选择配置
-                        local selected_config = select_random_config(random_config_group)
-                        if not selected_config then
-                            logger.error("Failed to select random config for map_id %d", map_id)
+                        
+                        if #random_config_group == 0 then
+                            logger.warn("No random event config found for map_id %d", map_id)
                             goto continue
                         end
                         
-                        -- 使用辅助函数处理随机事件生成
-                        process_random_event_generation(user_id, chapter_config, selected_config)
+                        -- 生成随机事件
+                        for i = 1, count do
+                            -- 根据权重选择配置
+                            local selected_config = select_random_config(random_config_group)
+                            if not selected_config then
+                                logger.error("Failed to select random config for map_id %d", map_id)
+                                goto continue
+                            end
+                            
+                            -- 使用辅助函数处理随机事件生成
+                            process_random_event_generation(user_id, chapter_config, selected_config)
+                        end
                     end
                 end
             end
