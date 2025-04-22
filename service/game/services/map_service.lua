@@ -1049,7 +1049,7 @@ function M.handle_cell_event(user_id, event_id, cell_id)
     if not status_updated then
         logger.warn("Failed to update event status to completed for event %d", target_event.id)
     end
-    
+    map_dao.remove_cell_events(map_info.chapter_id, cell_id)
     -- 记录操作日志
     log_event_operation(user_id, map_info.chapter_id, event_id, cell_id)
     
