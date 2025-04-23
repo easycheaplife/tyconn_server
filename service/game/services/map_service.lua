@@ -842,6 +842,15 @@ function M.roll_dice(user_id)
         })
     end
     
+    -- 过滤掉事件类型为EVENT_TYPE_RANDOM_EVENT的事件
+    -- 从后向前遍历，避免删除元素时的索引问题
+    for i = #all_events, 1, -1 do
+        local event = all_events[i]
+        if M.get_event_type_id(event.event_id) == enum.CellEventType.EVENT_TYPE_RANDOM_EVENT then
+            table.remove(all_events, i)
+        end
+    end
+    
     -- 输出事件信息以便调试
     logger.debug("All events for roll: %s", utils.table_to_string(all_events))
     
