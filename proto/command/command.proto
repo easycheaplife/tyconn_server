@@ -394,6 +394,7 @@ message G2CRollDiceResponse {
     int32 from_position = 2;                 // 起始位置
     int32 to_position = 3;                   // 目标位置
     repeated common.EventInfo event_ids = 4;  // 触发的事件列表
+    repeated common.EventInfo random_events = 5;  // 触发的随机事件
 }
 
 // 处理格子事件请求 {{Req:705}}

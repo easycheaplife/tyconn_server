@@ -444,7 +444,7 @@ local function process_random_event_generation(user_id, chapter_config, selected
         local existing_count = map_dao.count_random_events(user_id, chapter_config.id, selected_config.id)
         if existing_count >= selected_config.max_gen then
             logger.debug("Random event %d reached max generation limit", selected_config.id)
-            return false
+            return false, nil
         end
     end
     
@@ -452,7 +452,7 @@ local function process_random_event_generation(user_id, chapter_config, selected
     local cell_id = select_random_cell(selected_config.cells, user_id, chapter_config.id, selected_config.mutex)
     if not cell_id then
         logger.error("Failed to select random cell for event %d", selected_config.id)
-        return false
+        return false, nil
     end
     
     -- 创建随机事件记录
@@ -468,11 +468,20 @@ local function process_random_event_generation(user_id, chapter_config, selected
     local ok = map_dao.create_random_event(event_data)
     if not ok then
         logger.error("Failed to create random event record")
-        return false
+        return false, nil
     else
         logger.info("Created random event: event_id=%d, cell_id=%d", 
             selected_config.id, cell_id)
-        return true
+            
+        -- 创建事件对象返回
+        local event_info = {
+            event_id = selected_config.id,
+            cell_id = cell_id,
+            chapter_id = chapter_config.id,
+            is_random_event = true
+        }
+        
+        return true, event_info
     end
 end
 
@@ -480,7 +489,7 @@ end
 local function generate_random_events(user_id, chapter_config)
     if not chapter_config.initial or #chapter_config.initial == 0 then
         logger.debug("No initial events to generate for chapter %d", chapter_config.id)
-        return
+        return {}
     end
     
     logger.info("Generating random events for user %d, chapter %d", 
@@ -490,8 +499,11 @@ local function generate_random_events(user_id, chapter_config)
     local cell_random_events = table_service.get_config_values("cell_random_events")
     if not cell_random_events then
         logger.error("Failed to get cell_random_events config")
-        return
+        return {}
     end
+   
+    -- 用于保存生成的随机事件
+    local generated_events = {}
    
     -- 遍历初始化配置
     for _, initial_config in ipairs(chapter_config.initial) do
@@ -523,12 +535,17 @@ local function generate_random_events(user_id, chapter_config)
                 end
                 
                 -- 使用辅助函数处理随机事件生成
-                process_random_event_generation(user_id, chapter_config, selected_config)
+                local success, event_info = process_random_event_generation(user_id, chapter_config, selected_config)
+                if success and event_info then
+                    table.insert(generated_events, event_info)
+                end
             end
             
             ::continue::
         end
     end
+    
+    return generated_events
 end
 
 -- 计算骰子移动后的位置
@@ -683,8 +700,9 @@ function M.get_map_info(user_id)
         -- 获取章节配置
         local chapter_config = M.get_chapter_config(new_map.chapter_id)
         if chapter_config then
-            -- 生成随机事件
-            generate_random_events(user_id, chapter_config)
+            -- 生成随机事件并获取生成的事件
+            local initial_events = generate_random_events(user_id, chapter_config)
+            logger.info("Generated %d initial random events for user %d", #initial_events, user_id)
         else
             logger.error("Failed to get chapter config for chapter %d", new_map.chapter_id)
         end
@@ -699,7 +717,7 @@ end
 local function generate_path_random_events(user_id, chapter_config, path_cells)
     if not user_id or not chapter_config or not path_cells or #path_cells == 0 then
         logger.debug("No path cells to generate random events for user %d", user_id)
-        return
+        return {}
     end
     
     logger.info("Generating path random events for user %d, chapter %d", 
@@ -709,8 +727,11 @@ local function generate_path_random_events(user_id, chapter_config, path_cells)
     local cell_random_events = table_service.get_config_values("cell_random_events")
     if not cell_random_events then
         logger.error("Failed to get cell_random_events config")
-        return
+        return {}
     end
+    
+    -- 用于保存生成的随机事件
+    local generated_events = {}
     
     -- 遍历路径上的每个格子
     for _, cell_id in ipairs(path_cells) do
@@ -756,7 +777,10 @@ local function generate_path_random_events(user_id, chapter_config, path_cells)
                             end
                             
                             -- 使用辅助函数处理随机事件生成
-                            process_random_event_generation(user_id, chapter_config, selected_config)
+                            local success, event_info = process_random_event_generation(user_id, chapter_config, selected_config)
+                            if success and event_info then
+                                table.insert(generated_events, event_info)
+                            end
                         end
                     end
                 end
@@ -765,6 +789,8 @@ local function generate_path_random_events(user_id, chapter_config, path_cells)
         
         ::continue::
     end
+    
+    return generated_events
 end
 
 -- 掷骰子
@@ -824,16 +850,16 @@ function M.roll_dice(user_id)
         table.insert(path_cells, pos)
     end
     
-    -- 生成格子上的随机事件
-    generate_path_random_events(user_id, chapter_config, path_cells)
+    -- 生成格子上的随机事件，并获取生成的随机事件列表
+    local new_random_events = generate_path_random_events(user_id, chapter_config, path_cells)
     
     -- 获取路径上已存在的随机事件
-    local random_events = map_dao.get_random_events_by_cells(user_id, map_info.chapter_id, path_cells)
-    logger.info("Found %d random events on path for user %d", #random_events, user_id)
+    local existing_random_events = map_dao.get_random_events_by_cells(user_id, map_info.chapter_id, path_cells)
+    logger.info("Found %d existing random events on path for user %d", #existing_random_events, user_id)
     
-    -- 合并路径事件和随机事件
+    -- 合并路径事件和已存在的随机事件
     local all_events = path_event_ids
-    for _, event in ipairs(random_events) do
+    for _, event in ipairs(existing_random_events) do
         table.insert(all_events, {
             event_id = event.event_id,
             cell_id = event.cell_id,
@@ -868,11 +894,24 @@ function M.roll_dice(user_id)
         operation_time = os.time()
     })
     
+    -- 合并新生成的随机事件和路径上已有的随机事件，为响应提供完整的随机事件信息
+    local all_random_events = {}
+    
+    -- 添加新生成的随机事件
+    for _, event in ipairs(new_random_events) do
+        table.insert(all_random_events, {
+            event_id = event.event_id,
+            cell_id = event.cell_id,
+            is_random_event = true
+        })
+    end
+    
     return {
         dice_value = dice_value,
         from_position = from_position,
         to_position = to_position,
-        event_ids = all_events
+        event_ids = all_events,
+        random_events = all_random_events  -- 添加随机事件到响应中
     }
 end
 

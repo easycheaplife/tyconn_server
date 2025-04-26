@@ -60,6 +60,52 @@ class GetMapInfoTest extends BaseTest {
                 console.log('No random events found on the map.');
             }
             
+            // 测试掷骰子并验证随机事件
+            console.log('\nTesting roll dice and check random events...');
+            const diceResponse = await this.client.rollDice();
+            
+            assert(diceResponse, 'Dice response should not be null');
+            console.log('Dice response object keys:', Object.keys(diceResponse));
+            
+            assert(diceResponse.hasOwnProperty('dice_value') || diceResponse.hasOwnProperty('diceValue'), 
+                'Dice response should have dice_value');
+            
+            const diceValue = diceResponse.dice_value !== undefined ? diceResponse.dice_value : diceResponse.diceValue;
+            const fromPosition = diceResponse.from_position !== undefined ? diceResponse.from_position : diceResponse.fromPosition;
+            const toPosition = diceResponse.to_position !== undefined ? diceResponse.to_position : diceResponse.toPosition;
+            
+            console.log(`Rolled dice: Value=${diceValue}, From=${fromPosition}, To=${toPosition}`);
+            
+            // 检查掷骰子后触发的事件
+            const eventIds = diceResponse.event_ids || diceResponse.eventIds;
+            if (eventIds && Array.isArray(eventIds)) {
+                console.log(`Found ${eventIds.length} events triggered by dice roll:`);
+                eventIds.forEach((event, index) => {
+                    const eventId = event.event_id !== undefined ? event.event_id : event.eventId;
+                    const cellId = event.cell_id !== undefined ? event.cell_id : event.cellId;
+                    const isRandomEvent = event.is_random_event !== undefined ? event.is_random_event : event.isRandomEvent;
+                    
+                    console.log(`  Event #${index + 1}: Event ID=${eventId}, Cell ID=${cellId}, Is Random=${isRandomEvent}`);
+                });
+            } else {
+                console.log('No events triggered by dice roll.');
+            }
+            
+            // 检查掷骰子后触发的随机事件
+            const diceRandomEvents = diceResponse.random_events || diceResponse.randomEvents;
+            if (diceRandomEvents && Array.isArray(diceRandomEvents)) {
+                console.log(`Found ${diceRandomEvents.length} random events in dice response:`);
+                diceRandomEvents.forEach((event, index) => {
+                    const eventId = event.event_id !== undefined ? event.event_id : event.eventId;
+                    const cellId = event.cell_id !== undefined ? event.cell_id : event.cellId;
+                    const isRandomEvent = event.is_random_event !== undefined ? event.is_random_event : event.isRandomEvent;
+                    
+                    console.log(`  Random Event #${index + 1}: Event ID=${eventId}, Cell ID=${cellId}, Is Random=${isRandomEvent}`);
+                });
+            } else {
+                console.log('No random events in dice response.');
+            }
+            
             // 测试缓存
             console.log('\nTesting map info cache...');
             const secondResponse = await this.client.getMapInfo();
@@ -72,7 +118,7 @@ class GetMapInfoTest extends BaseTest {
             
             // 比较核心数据而不是整个对象
             assert(chapterId === secondChapterId, 'Cached chapter_id should match');
-            assert(currentPosition === secondCurrentPosition, 'Cached current_position should match');
+            // 注意: 掷骰子后位置已经改变，所以不再比较 current_position
             assert(direction === secondDirection, 'Cached direction should match');
             
             // 测试: 断开重连验证
