@@ -28,6 +28,7 @@ function M.handle(client_id, msg)
 
     -- 掷骰子
     local roll_result = map_service.roll_dice(user.user_id)
+    logger.debug("roll_result: %s", utils.table_to_string(roll_result))
     if not roll_result then
         logger.error("Failed to roll dice for user: %d", user.user_id)
         return message_helper.create_error_response(
@@ -43,8 +44,9 @@ function M.handle(client_id, msg)
         dice_value = roll_result.dice_value,
         from_position = roll_result.from_position,
         to_position = roll_result.to_position,
-        event_ids = {}  -- 初始化空数组
-    }
+        event_ids = {},  -- 初始化空数组
+        random_events = {}  -- 初始化空数组
+    }   
 
     -- 转换事件数据为新的格式
     for _, event_info in ipairs(roll_result.event_ids) do
@@ -60,6 +62,15 @@ function M.handle(client_id, msg)
             is_random_event = is_random
         })
     end
+
+    -- 转换随机事件数据为新的格式
+    for _, event_info in ipairs(roll_result.random_events) do
+        table.insert(response_data.random_events, {
+            event_id = event_info.event_id,
+            cell_id = event_info.cell_id,
+            is_random_event = true
+        })
+    end 
 
     -- 返回成功响应
     local response = message_helper.create_success_response(
