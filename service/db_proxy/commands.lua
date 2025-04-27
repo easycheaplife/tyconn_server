@@ -350,6 +350,11 @@ function CMD.get_event_trigger_count(user_id, chapter_id, event_id)
     return wrap_call(monopoly_model.get_event_trigger_count, user_id, chapter_id, event_id)
 end
 
+-- 获取章节所有事件触发记录
+function CMD.get_chapter_event_triggers(user_id, chapter_id)
+    return wrap_call(monopoly_model.get_chapter_event_triggers, user_id, chapter_id)
+end
+
 -- 创建事件触发记录
 function CMD.create_event_trigger(trigger_data)
     return wrap_call(monopoly_model.create_event_trigger, trigger_data)

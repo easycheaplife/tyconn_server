@@ -1608,4 +1608,34 @@ function M.get_random_events(user_id, chapter_id)
     return event_infos
 end
 
+-- 获取事件触发次数记录
+function M.get_event_triggers(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("Invalid parameters: user_id=%s, chapter_id=%s", 
+            tostring(user_id), tostring(chapter_id))
+        return {}
+    end
+    
+    -- 从数据库获取事件触发记录
+    local trigger_records = map_dao.get_chapter_event_triggers(user_id, chapter_id)
+    if not trigger_records or #trigger_records == 0 then
+        logger.debug("No event trigger records found for user %d, chapter %d", user_id, chapter_id)
+        return {}
+    end
+    
+    -- 转换为EventTrigger格式
+    local event_triggers = {}
+    for _, record in ipairs(trigger_records) do
+        table.insert(event_triggers, {
+            chapter_id = record.chapter_id,
+            event_id = record.event_id,
+            trigger_count = record.trigger_count
+        })
+    end
+    
+    logger.debug("Found %d event trigger records for user %d, chapter %d", 
+        #event_triggers, user_id, chapter_id)
+    return event_triggers
+end
+
 return M 

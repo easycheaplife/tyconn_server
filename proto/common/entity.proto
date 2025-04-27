@@ -25,6 +25,13 @@ message BaseResponse {
     bytes payload = 4;      // 消息负载
 } 
 
+// 事件触发信息
+message EventTrigger {
+    int32 chapter_id = 1;      // 章节ID
+    int32 event_id = 2;        // 事件ID
+    int32 trigger_count = 3;   // 触发次数
+}
+
 // 事件信息
 message EventInfo {
     int32 event_id = 1;     // 事件ID

@@ -1087,6 +1087,25 @@ function M.get_event_trigger_count(user_id, chapter_id, event_id)
     return result
 end
 
+-- 获取章节所有事件触发记录
+function M.get_chapter_event_triggers(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("db_client.get_chapter_event_triggers: Invalid parameters")
+        return {}
+    end
+    
+    -- 调用数据库代理
+    local ok, result = pcall(call_db, "get_chapter_event_triggers", user_id, chapter_id)
+    
+    if not ok then
+        logger.error("Failed to get chapter event triggers: %s", tostring(result))
+        return {}
+    end
+    
+    -- 返回查询结果
+    return result
+end
+
 -- 创建事件触发记录
 function M.create_event_trigger(trigger_data)
     if not trigger_data or not trigger_data.user_id or not trigger_data.chapter_id 

@@ -33,7 +33,8 @@ M.redis = {
         occupied_cells = "map:occupied:cells:",     -- 占用格子缓存前缀
         passed_chapters = "map:passed:chapters:",  -- 已通过章节缓存前缀
         event_trigger = "map:event:trigger:",       -- 事件触发次数缓存前缀
-        gm_dice_num = "gm:dice_num:"               -- GM骰子点数缓存前缀
+        gm_dice_num = "gm:dice_num:",               -- GM骰子点数缓存前缀
+        event_triggers = "map:event:triggers:",  -- 所有事件触发记录缓存前缀
     },
 
     -- 缓存过期时间(秒)
@@ -56,7 +57,8 @@ M.redis = {
         map_chapter = 3600,    -- 章节进度 1小时
         map_event = 3600,      -- 地图事件 1小时
         session = 86400,      -- 会话 24小时
-        gm_dice_num = 3600    -- GM骰子点数 1小时
+        gm_dice_num = 3600,    -- GM骰子点数 1小时
+        event_triggers = 3600  -- 事件触发记录 1小时
     }
 }
 

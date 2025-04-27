@@ -234,6 +234,33 @@ class ClaimRewardTest extends BaseTest {
                         `位置 ${updatedPosition}, ` + 
                         `方向 ${updatedDirection === 1 ? '前进' : '后退'}`);
             
+            // 检查事件触发记录是否已重置
+            const eventTriggers = updatedMapInfo.event_triggers || updatedMapInfo.eventTriggers;
+            if (eventTriggers && Array.isArray(eventTriggers)) {
+                console.log(`\n新章节中的事件触发记录: ${eventTriggers.length}个`);
+                // 如果当前是第一章，事件触发记录应该是空的
+                if (updatedChapterId === 1) {
+                    assert(eventTriggers.length === 0, "新章节应该没有事件触发记录");
+                } else {
+                    eventTriggers.forEach((trigger, index) => {
+                        const triggerChapterId = trigger.chapter_id !== undefined ? 
+                            trigger.chapter_id : trigger.chapterId;
+                        const eventId = trigger.event_id !== undefined ? 
+                            trigger.event_id : trigger.eventId;
+                        const triggerCount = trigger.trigger_count !== undefined ? 
+                            trigger.trigger_count : trigger.triggerCount;
+                        
+                        console.log(`  触发记录 #${index + 1}: 章节ID=${triggerChapterId}, 事件ID=${eventId}, 计数=${triggerCount}`);
+                        
+                        // 验证触发记录的章节ID是否与当前章节匹配
+                        assert(triggerChapterId === updatedChapterId, 
+                            `触发记录的章节ID应该与当前章节匹配 (得到: ${triggerChapterId})`);
+                    });
+                }
+            } else {
+                console.log('\n新章节中没有事件触发记录');
+            }
+            
             return true;
         } catch (error) {
             console.error('领取奖励失败:', error);

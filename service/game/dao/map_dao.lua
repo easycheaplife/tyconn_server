@@ -567,6 +567,35 @@ function M.get_event_trigger_count(user_id, chapter_id, event_id)
     return db_data
 end
 
+-- 获取章节的所有事件触发记录
+function M.get_chapter_event_triggers(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("map_dao.get_chapter_event_triggers: Invalid parameters")
+        return {}
+    end
+    
+    -- 从缓存获取
+    local cached_data = cache.get_chapter_event_triggers(user_id, chapter_id)
+    if cached_data then
+        logger.debug("map_dao.get_chapter_event_triggers: cache hit for user %d, chapter %d", 
+            user_id, chapter_id)
+        return cached_data
+    end
+    
+    -- 从数据库获取
+    local db_data = db_client.get_chapter_event_triggers(user_id, chapter_id)
+    if not db_data then
+        logger.debug("map_dao.get_chapter_event_triggers: no trigger records found for user %d, chapter %d", 
+            user_id, chapter_id)
+        return {}
+    end
+    
+    -- 缓存数据
+    cache.set_chapter_event_triggers(user_id, chapter_id, db_data)
+    
+    return db_data
+end
+
 -- 创建事件触发记录
 function M.create_event_trigger(trigger_data)
     if not trigger_data then
@@ -626,7 +655,7 @@ function M.update_event_trigger_count(trigger_data)
     
     -- 清除或更新缓存
     cache.remove_event_trigger_count(trigger_data.user_id, trigger_data.chapter_id, trigger_data.event_id)
-    
+    cache.remove_chapter_event_triggers(trigger_data.user_id, trigger_data.chapter_id)
     return true
 end
 
@@ -649,6 +678,7 @@ function M.increment_event_trigger_count(user_id, chapter_id, event_id)
             user_id, chapter_id, event_id)
         -- 回滚缓存更新
         cache.remove_event_trigger_count(user_id, chapter_id, event_id)
+        cache.remove_chapter_event_triggers(user_id, chapter_id)
         return false
     end
     

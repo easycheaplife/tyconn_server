@@ -477,7 +477,7 @@ function M.get_event_trigger_count(user_id, chapter_id, event_id)
         return nil, "Invalid parameters"
     end
     
-    local query = string.format(sql.get_event_trigger_count, 
+    local query = string.format(sql.GET_EVENT_TRIGGER_COUNT, 
         user_id, chapter_id, event_id)
     
     local results = db_util.query(query)
@@ -492,6 +492,26 @@ function M.get_event_trigger_count(user_id, chapter_id, event_id)
     end
     
     return results[1]
+end
+
+-- 获取章节所有事件触发记录
+function M.get_chapter_event_triggers(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("Invalid parameters for get_chapter_event_triggers")
+        return {}, "Invalid parameters"
+    end
+    
+    local query = string.format(sql.GET_CHAPTER_EVENT_TRIGGERS, 
+        user_id, chapter_id)
+    
+    local results = db_util.query(query)
+    if not results then
+        logger.error("Failed to get event triggers for user: %d, chapter: %d", 
+            user_id, chapter_id)
+        return {}, "Database error"
+    end
+    
+    return results
 end
 
 -- 创建事件触发记录
@@ -511,7 +531,7 @@ function M.create_event_trigger(data)
         update_time = data.update_time or os.time()
     }
     
-    local query = string.format(sql.create_event_trigger,
+    local query = string.format(sql.CREATE_EVENT_TRIGGER,
         trigger_data.user_id,
         trigger_data.chapter_id,
         trigger_data.event_id,
@@ -546,7 +566,7 @@ function M.update_event_trigger_count(data)
         update_time = data.update_time or os.time()
     }
     
-    local query = string.format(sql.update_event_trigger_count,
+    local query = string.format(sql.UPDATE_EVENT_TRIGGER_COUNT,
         trigger_data.trigger_count,
         trigger_data.update_time,
         trigger_data.user_id,
@@ -602,7 +622,7 @@ function M.increment_event_trigger_count(user_id, chapter_id, event_id)
         return false, err
     else
         -- 如果记录存在，使用 INCREMENT 语句增加计数
-        local query = string.format(sql.increment_event_trigger_count,
+        local query = string.format(sql.INCREMENT_EVENT_TRIGGER_COUNT,
             current_time, user_id, chapter_id, event_id)
         local ok = db_util.query(query)
         if not ok then

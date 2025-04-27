@@ -798,4 +798,44 @@ function M.remove_gm_dice_num()
     return remove_cache(key)
 end
 
+-- 事件触发记录缓存key
+local function make_chapter_triggers_key(user_id, chapter_id)
+    local composite_key = string.format("%d:%d", user_id, chapter_id)
+    return make_key(PREFIX.event_triggers, composite_key)
+end
+
+-- 获取章节的所有事件触发记录
+function M.get_chapter_event_triggers(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("cache.get_chapter_event_triggers: invalid parameters")
+        return nil
+    end
+
+    local key = make_chapter_triggers_key(user_id, chapter_id)
+    return get_cache(key, string.format("event triggers for user %d, chapter %d", user_id, chapter_id))
+end
+
+-- 设置章节的所有事件触发记录
+function M.set_chapter_event_triggers(user_id, chapter_id, triggers)
+    if not user_id or not chapter_id or not triggers then
+        logger.error("cache.set_chapter_event_triggers: invalid parameters")
+        return false
+    end
+
+    local key = make_chapter_triggers_key(user_id, chapter_id)
+    return set_cache(key, triggers, EXPIRE.event_triggers or EXPIRE.map_event,
+        string.format("event triggers for user %d, chapter %d", user_id, chapter_id))
+end
+
+-- 删除章节的所有事件触发记录缓存
+function M.remove_chapter_event_triggers(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("cache.remove_chapter_event_triggers: invalid parameters")
+        return false
+    end
+
+    local key = make_chapter_triggers_key(user_id, chapter_id)
+    return remove_cache(key)
+end
+
 return M

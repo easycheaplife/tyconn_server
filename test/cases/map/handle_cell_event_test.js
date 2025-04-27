@@ -95,6 +95,26 @@ class HandleCellEventTest extends BaseTest {
                 console.log(`Next event: ID=${response.next_event.event_id}, Cell=${response.next_event.cell_id}, IsRandom=${response.next_event.is_random_event}`);
                 console.log(`Remaining events: ${remainingEvents.length}`);
                 
+                // 获取最新地图信息，检查事件触发次数
+                const mapInfoAfterEvent = await this.client.getMapInfo();
+                const eventTriggers = mapInfoAfterEvent.event_triggers || mapInfoAfterEvent.eventTriggers || [];
+                if (eventTriggers && eventTriggers.length > 0) {
+                    console.log(`\nFound ${eventTriggers.length} event trigger records after handling event:`);
+                    eventTriggers.forEach((trigger, index) => {
+                        const triggerEventId = trigger.event_id !== undefined ? trigger.event_id : trigger.eventId;
+                        const triggerCount = trigger.trigger_count !== undefined ? trigger.trigger_count : trigger.triggerCount;
+                        
+                        console.log(`  Trigger #${index + 1}: Event ID=${triggerEventId}, Count=${triggerCount}`);
+                        
+                        // 如果是当前处理的事件，验证触发次数是否已增加
+                        if (triggerEventId === currentEvent.event_id) {
+                            console.log(`  Current event (ID=${currentEvent.event_id}) trigger count: ${triggerCount}`);
+                        }
+                    });
+                } else {
+                    console.log('No event trigger records found after handling event.');
+                }
+                
                 // 如果有背包变化，验证变化
                 if (bags && bags.length > 0) {
                     console.log('\nChecking bag changes...');
