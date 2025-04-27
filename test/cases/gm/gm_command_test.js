@@ -72,6 +72,11 @@
  *   - dice_value: Optional, specify dice value (1-6), if not specified, random value is generated
  *   Example: roll_dice 6
  * 
+ * - dice_num <dice_value>: Set dice num
+ *   Parameter description:
+ *   - dice_value: Dice value (1-6)
+ *   Example: dice_num 6
+ * 
  * Available test cases:
  * - add_item: Test item addition functionality
  * - delete_item: Test item deletion functionality
@@ -83,6 +88,7 @@
  * - set_partner_level: Test partner level setting functionality
  * - set_partner_star: Test partner star setting functionality
  * - roll_dice: Test dice roll functionality
+ * - dice_num: Test dice num setting functionality
  * 
  * Note:
  * 1. Partner ID refers to the unitId in the configuration table, while partner instance ID is the partnerId after creation
@@ -110,7 +116,8 @@ class GMCommandTest extends BaseTest {
             'add_fragments': this.testAddFragments.bind(this),
             'set_partner_level': this.testSetPartnerLevel.bind(this),
             'set_partner_star': this.testSetPartnerStar.bind(this),
-            'roll_dice': this.testRollDice.bind(this)
+            'roll_dice': this.testRollDice.bind(this),
+            'dice_num': this.testDiceNum.bind(this)
         };
     }
 
@@ -529,6 +536,54 @@ class GMCommandTest extends BaseTest {
                    'Invalid dice value should return GM command failed error');
             console.log('Invalid dice value test passed: Command correctly rejected invalid parameter');
         }
+        
+        return true;
+    }
+
+    async testDiceNum() {
+        console.log('\nTesting dice_num command...');
+        
+        // 测试1：设置固定骰子点数
+        let response = await this.client.gmCommand('dice_num', ['3']);
+        assert(response.result === 'success', 'Setting dice number should succeed');
+        console.log('Set dice number result:', response);
+        
+        // 测试2：验证roll_dice现在总是返回设置的点数
+        console.log('Verify fixed dice roll:');
+        // 多次掷骰子验证点数固定
+        for (let i = 0; i < 3; i++) {
+            const rollResponse = await this.client.gmCommand('roll_dice', []);
+            assert(rollResponse.result === 'success', 'Dice roll should succeed');
+            
+            // 从返回的消息中解析骰子点数
+            const diceValue = rollResponse.message.match(/value=(\d+)/);
+            assert(diceValue && diceValue[1] === '3', `Dice value should be 3, got: ${diceValue ? diceValue[1] : 'unknown'}`);
+            console.log(`Roll ${i+1} verified with fixed value: 3`);
+        }
+        
+        // 测试3：取消固定骰子点数
+        response = await this.client.gmCommand('dice_num', ['7']); // 超出1-6范围会取消设置
+        assert(response.result === 'success', 'Canceling dice number should succeed');
+        console.log('Cancel dice number result:', response);
+        
+        // 测试4：验证roll_dice现在返回随机点数
+        console.log('Verify random dice roll after cancellation:');
+        // 收集多次掷骰子的结果，检查是否有变化
+        const rollResults = [];
+        for (let i = 0; i < 5; i++) {
+            const rollResponse = await this.client.gmCommand('roll_dice', []);
+            assert(rollResponse.result === 'success', 'Dice roll should succeed');
+            
+            // 从返回的消息中解析骰子点数
+            const diceValue = rollResponse.message.match(/value=(\d+)/);
+            assert(diceValue, 'Should get valid dice value');
+            rollResults.push(diceValue[1]);
+            console.log(`Roll ${i+1} after cancellation: ${diceValue[1]}`);
+        }
+        
+        // 至少有两个不同的结果表明骰子点数是随机的
+        const uniqueResults = [...new Set(rollResults)];
+        assert(uniqueResults.length > 1, 'Dice values should be random after cancellation');
         
         return true;
     }

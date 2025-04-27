@@ -11,14 +11,19 @@ local enum = require "enum"
 local event_handlers = require "game.services.map_event_handlers"
 local config_service = require "game.services.config_service"
 
-local M = {}
-
--- 操作类型常量
-local OPERATION_TYPE = {
-    ROLL_DICE = 1,     -- 掷骰子
-    HANDLE_EVENT = 2,  -- 处理事件
-    CLAIM_REWARD = 3   -- 领取奖励
+local M = {
+    gm_dice_num = nil
 }
+
+-- 设置骰子点数
+function M.gm_set_dice_num(num)
+    M.gm_dice_num = num
+end
+
+-- 获取骰子点数
+function M.get_gm_dice_num()
+    return M.gm_dice_num
+end
 
 -- 获取事件类型ID
 function M.get_event_type_id(event_id)
@@ -976,6 +981,13 @@ function M.roll_dice(user_id, dice_value)
     else
         dice_result = tonumber(dice_result)
     end
+
+    -- 如果骰子点数被GM指定，则使用GM指定的骰子点数
+    if (gm_dice_num ~= nil) then
+        logger.info("User %d rolled gm dice: %d", user_id, gm_dice_num)
+        dice_value = gm_dice_num
+    end
+
     logger.info("User %d rolled dice: %d" .. (dice_value and " (GM specified)" or ""), user_id, dice_result)
     
     -- 记录起始位置
@@ -1059,7 +1071,7 @@ function M.roll_dice(user_id, dice_value)
     map_dao.log_monopoly_operation({
         user_id = user_id,
         chapter_id = map_info.chapter_id,
-        operation_type = OPERATION_TYPE.ROLL_DICE,
+        operation_type = enum.MonopolyOperationType.MONOPOLY_OPERATION_TYPE_ROLL_DICE,
         dice_value = dice_result,
         from_position = from_position,
         to_position = to_position,
@@ -1153,7 +1165,7 @@ local function log_event_operation(user_id, chapter_id, event_id, cell_id)
     map_dao.log_monopoly_operation({
         user_id = user_id,
         chapter_id = chapter_id,
-        operation_type = OPERATION_TYPE.HANDLE_EVENT,
+        operation_type = enum.MonopolyOperationType.MONOPOLY_OPERATION_TYPE_HANDLE_EVENT,
         event_id = event_id,
         cell_id = cell_id,
         operation_time = os.time()
@@ -1550,7 +1562,7 @@ function M.claim_reward(user_id)
     map_dao.log_monopoly_operation({
         user_id = user_id,
         chapter_id = map_info.chapter_id,
-        operation_type = OPERATION_TYPE.CLAIM_REWARD,
+        operation_type = enum.MonopolyOperationType.MONOPOLY_OPERATION_TYPE_CLAIM_REWARD,
         reward_items = bags,
         operation_time = os.time()
     })

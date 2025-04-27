@@ -412,6 +412,19 @@ local GM_HANDLERS = {
         
         return {true, string.format("Roll dice success: value=%d, moved from position %d to %d", 
             result.dice_value, result.from_position, result.to_position), nil}
+    end,
+
+    dice_num = function (user_id, params)
+        if not params or #params < 1 then
+            return {false, nil, "Missing dice num"}
+        end
+        local num = tonumber(params[1])
+        if(num < 1 or num > 6) then
+            map_service.gm_set_dice_num(nil)
+            return {true, nil, "cancel gm dice num"}
+        end
+        map_service.gm_set_dice_num(num)
+        return {true, nil, "gm set dice num:" .. params[1]}
     end
 }
 
