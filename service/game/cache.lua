@@ -764,4 +764,38 @@ function M.increment_event_trigger_count(user_id, chapter_id, event_id)
     return trigger_data
 end
 
+-- 获取GM骰子点数
+function M.get_gm_dice_num()
+    local key = make_key(PREFIX.gm_dice_num, "global")
+    local value = redis.get(key)
+    if value then
+        logger.debug("Got GM dice num from cache: %s", value)
+        return tonumber(value)
+    end
+    return nil
+end
+
+-- 设置GM骰子点数
+function M.set_gm_dice_num(num)
+    local key = make_key(PREFIX.gm_dice_num, "global")
+    if num == nil then
+        logger.debug("Removing GM dice num from cache")
+        return redis.del(key) > 0
+    end
+    
+    logger.debug("Setting GM dice num to cache: %s", tostring(num))
+    local ok = redis.set(key, tostring(num))
+    if ok then
+        redis.expire(key, EXPIRE.gm_dice_num)
+    end
+    return ok
+end
+
+-- 删除GM骰子点数缓存
+function M.remove_gm_dice_num()
+    local key = make_key(PREFIX.gm_dice_num, "global")
+    logger.debug("Removing GM dice num cache")
+    return remove_cache(key)
+end
+
 return M

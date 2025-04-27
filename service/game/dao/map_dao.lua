@@ -655,4 +655,26 @@ function M.increment_event_trigger_count(user_id, chapter_id, event_id)
     return true, cached_data.trigger_count
 end
 
+-- 获取GM骰子点数
+function M.get_gm_dice_num()
+    logger.debug("map_dao.get_gm_dice_num: Getting GM dice number")
+    return cache.get_gm_dice_num()
+end
+
+-- 设置GM骰子点数
+function M.set_gm_dice_num(num)
+    logger.debug("map_dao.set_gm_dice_num: Setting GM dice number to %s", tostring(num))
+    local result = cache.set_gm_dice_num(num)
+    if not result then
+        logger.error("map_dao.set_gm_dice_num: Failed to set GM dice number")
+    end
+    return result
+end
+
+-- 删除GM骰子点数
+function M.remove_gm_dice_num()
+    logger.debug("map_dao.remove_gm_dice_num: Removing GM dice number")
+    return cache.remove_gm_dice_num()
+end
+
 return M 

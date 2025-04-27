@@ -1,5 +1,5 @@
 -- Generating enum.lua from proto/common/enum.proto
--- Generate time: 2025-04-22 03:34:43
+-- Generate time: 2025-04-27 08:19:01
 
 local M = {}
 
@@ -467,6 +467,13 @@ M.MutexType = {
     MUTEX_TYPE_EXCLUSIVE = 0,    -- 互斥：只随机没有事件的格子
     MUTEX_TYPE_REPLACE = 1,    -- 替换：替换已有的事件
     MUTEX_TYPE_NO_LIMIT = 2,    -- 无限制：不做任何限制
+}
+
+M.MonopolyOperationType = {
+    MONOPOLY_OPERATION_TYPE_NONE = 0,
+    MONOPOLY_OPERATION_TYPE_ROLL_DICE = 1,    -- 掷骰子
+    MONOPOLY_OPERATION_TYPE_HANDLE_EVENT = 2,    -- 处理事件
+    MONOPOLY_OPERATION_TYPE_CLAIM_REWARD = 3,    -- 领取奖励
 }
 
 return M

@@ -11,18 +11,27 @@ local enum = require "enum"
 local event_handlers = require "game.services.map_event_handlers"
 local config_service = require "game.services.config_service"
 
-local M = {
-    gm_dice_num = nil
-}
+local M = {}
 
 -- 设置骰子点数
 function M.gm_set_dice_num(num)
-    M.gm_dice_num = num
+    logger.info("Setting dice num to: %s", tostring(num))
+    
+    -- 保存到Redis
+    local ok = map_dao.set_gm_dice_num(num)
+    if not ok then
+        logger.error("Failed to save GM dice num to Redis")
+    end
+    
+    return ok
 end
 
 -- 获取骰子点数
 function M.get_gm_dice_num()
-    return M.gm_dice_num
+    -- 直接从Redis获取
+    local dice_num = map_dao.get_gm_dice_num()
+    logger.debug("Got GM dice num from Redis: %s", tostring(dice_num))
+    return dice_num
 end
 
 -- 获取事件类型ID
@@ -961,7 +970,7 @@ local function generate_path_random_events(user_id, chapter_config, path_cells)
 end
 
 -- 掷骰子
-function M.roll_dice(user_id, dice_value)
+function M.roll_dice(user_id)
     if not user_id then
         logger.error("Invalid user_id")
         return nil
@@ -974,22 +983,17 @@ function M.roll_dice(user_id, dice_value)
         return nil
     end
     
-    -- 使用传入的骰子点数或者随机生成(1-6)
-    local dice_result = dice_value
-    if not dice_result or tonumber(dice_result) < 1 or tonumber(dice_result) > 6 then
-        dice_result = math.random(1, 6)
-    else
-        dice_result = tonumber(dice_result)
-    end
-
-    -- 如果骰子点数被GM指定，则使用GM指定的骰子点数
-    if (gm_dice_num ~= nil) then
-        logger.info("User %d rolled gm dice: %d", user_id, gm_dice_num)
-        dice_value = gm_dice_num
-    end
-
-    logger.info("User %d rolled dice: %d" .. (dice_value and " (GM specified)" or ""), user_id, dice_result)
+    local dice_result = math.random(1, 6)
     
+    -- 如果骰子点数被GM指定，则使用GM指定的骰子点数
+    local gm_dice = M.get_gm_dice_num()
+    if gm_dice ~= nil then
+        logger.info("User %d rolled with GM specified dice: %d", user_id, gm_dice)
+        dice_result = gm_dice
+    else
+        logger.info("User %d rolled random dice: %d", user_id, dice_result)
+    end
+
     -- 记录起始位置
     local from_position = map_info.current_position
     
