@@ -604,7 +604,6 @@ function M.increment_event_trigger_count(user_id, chapter_id, event_id)
         -- 如果记录存在，使用 INCREMENT 语句增加计数
         local query = string.format(sql.increment_event_trigger_count,
             current_time, user_id, chapter_id, event_id)
-        
         local ok = db_util.query(query)
         if not ok then
             logger.error("Failed to increment event trigger count for user: %d, chapter: %d, event_id: %d", 

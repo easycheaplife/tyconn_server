@@ -227,7 +227,7 @@ M.update_event_trigger_count = [[
 -- 增加事件触发次数
 M.increment_event_trigger_count = [[
     UPDATE monopoly_event_triggers
-    SET trigger_count = trigger_count + 1, update_time = ?
+    SET trigger_count = trigger_count + 1, update_time = %d
     WHERE user_id = %d AND chapter_id = %d AND event_id = %d
 ]]
 
