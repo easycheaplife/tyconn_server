@@ -370,3 +370,19 @@ CREATE TABLE IF NOT EXISTS monopoly_logs (
     INDEX idx_user_time (user_id, operation_time), -- 用户操作时间索引
     INDEX idx_chapter (chapter_id)                -- 章节索引，用于统计分析
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4; 
+
+-- 大富翁事件触发次数统计表
+DROP TABLE IF EXISTS monopoly_event_triggers;
+CREATE TABLE IF NOT EXISTS monopoly_event_triggers (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,                   -- 用户ID
+    chapter_id INT NOT NULL,                   -- 章节ID
+    event_id INT NOT NULL,                     -- 事件ID (对应Dfw_cell_events.json中的Id)
+    trigger_count INT NOT NULL DEFAULT 0,      -- 已触发次数
+    create_time BIGINT NOT NULL,               -- 创建时间
+    update_time BIGINT NOT NULL,               -- 更新时间
+    
+    UNIQUE KEY idx_user_chapter_event (user_id, chapter_id, event_id), -- 复合唯一索引
+    INDEX idx_user_id (user_id),                                       -- 用户索引
+    INDEX idx_update_time (update_time)                                -- 更新时间索引，用于清理过期数据
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4; 

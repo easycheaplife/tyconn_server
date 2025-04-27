@@ -7,6 +7,7 @@ local utils = require "utils"
 local enum = require "enum"
 local partner_service = require "services.partner_service"
 local bag_service = require "services.bag_service"
+local map_service = require "services.map_service"
 
 local M = {}
 
@@ -296,7 +297,7 @@ local GM_HANDLERS = {
             items = items,
             expire_time = nil,  -- expire_time
             sender_id = 0,    -- sender_id (0 表示系统)
-            sender_name = "系统"  -- sender_name
+            sender_name = "system"  -- sender_name
         })
         
         if not ok then
@@ -386,6 +387,31 @@ local GM_HANDLERS = {
         end
         
         return {true, result, nil}
+    end,
+
+    -- 掷骰子
+    roll_dice = function(user_id, params)
+        local dice_value = nil
+        
+        -- 检查是否提供了骰子点数参数
+        if params and #params > 0 then
+            dice_value = tonumber(params[1])
+            if not dice_value or dice_value < 1 or dice_value > 6 then
+                return {false, nil, "Invalid dice value, must be an integer between 1-6"}
+            end
+        end
+        
+        -- 调用map_service的roll_dice函数
+        local result = map_service.roll_dice(user_id, dice_value)
+        if not result then
+            return {false, nil, "Failed to roll dice"}
+        end
+        
+        logger.info("GM roll dice - user_id: %d, dice_value: %d, from: %d, to: %d", 
+            user_id, result.dice_value, result.from_position, result.to_position)
+        
+        return {true, string.format("Roll dice success: value=%d, moved from position %d to %d", 
+            result.dice_value, result.from_position, result.to_position), nil}
     end
 }
 

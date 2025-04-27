@@ -345,4 +345,24 @@ function CMD.get_user_passed_chapters(user_id)
     return wrap_call(monopoly_model.get_user_passed_chapters, user_id)
 end
 
+-- 获取事件触发次数
+function CMD.get_event_trigger_count(user_id, chapter_id, event_id)
+    return wrap_call(monopoly_model.get_event_trigger_count, user_id, chapter_id, event_id)
+end
+
+-- 创建事件触发记录
+function CMD.create_event_trigger(trigger_data)
+    return wrap_call(monopoly_model.create_event_trigger, trigger_data)
+end
+
+-- 更新事件触发次数
+function CMD.update_event_trigger_count(trigger_data)
+    return wrap_call(monopoly_model.update_event_trigger_count, trigger_data)
+end
+
+-- 增加事件触发次数
+function CMD.increment_event_trigger_count(user_id, chapter_id, event_id)
+    return wrap_call(monopoly_model.increment_event_trigger_count, user_id, chapter_id, event_id)
+end
+
 return CMD

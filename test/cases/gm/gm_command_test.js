@@ -1,88 +1,96 @@
 /**
- * GM命令测试模块
+ * GM command test module
  * 
- * 用途：
- * 此模块用于测试游戏中的GM命令功能，包括物品添加删除、等级设置、伙伴操作等功能。
+ * Purpose:
+ * This module is used to test the GM command functionality in the game, including item addition/deletion, level setting, partner operation, etc.
  * 
- * 运行方式：
- * 1. 运行单个测试：
- *    node test/run_test.js -t gm_command_test <测试名称>
- *    例如：node test/run_test.js -t gm_command_test add_item
+ * Running method:
+ * 1. Run a single test:
+ *    node test/run_test.js -t gm_command_test <test name>
+ *    For example: node test/run_test.js -t gm_command_test add_item
  * 
- * 2. 直接执行GM命令：
- *    node test/run_test.js -t gm_command <命令> <参数1> <参数2> ...
- *    例如：node test/run_test.js -t gm_command add_item 1001 100
+ * 2. Directly execute GM command:
+ *    node test/run_test.js -t gm_command <command> <param1> <param2> ...
+ *    For example: node test/run_test.js -t gm_command add_item 1001 100
  * 
- * 3. 运行所有测试：
+ * 3. Run all tests:
  *    node test/run_test.js -t gm_command_test
  * 
- * GM指令说明：
+ * GM command description:
  * 
- * 基础指令：
- * - set_level <level>：设置角色等级
- *   参数说明：
- *   - level: 目标等级(1-99)
- *   示例：set_level 10
+ * Basic commands:
+ * - set_level <level>: Set character level
+ *   Parameter description:
+ *   - level: Target level (1-99)
+ *   Example: set_level 10
  * 
- * 物品管理指令：
- * - add_item <item_id> <count>：添加物品
- *   参数说明：
- *   - item_id: 物品ID(1001-9999)
- *   - count: 添加数量(1-2000)
- *   示例：add_item 1001 100
+ * Item management commands:
+ * - add_item <item_id> <count>: Add item
+ *   Parameter description:
+ *   - item_id: Item ID (1001-9999)
+ *   - count: Add quantity (1-2000)
+ *   Example: add_item 1001 100
  * 
- * - del_item <item_id> <count>：删除物品
- *   参数说明：
- *   - item_id: 物品ID(1001-9999)
- *   - count: 删除数量(1-2000)
- *   示例：del_item 1001 50
+ * - del_item <item_id> <count>: Delete item
+ *   Parameter description:
+ *   - item_id: Item ID (1001-9999)
+ *   - count: Delete quantity (1-2000)
+ *   Example: del_item 1001 50
  * 
- * - clear_bag <bag_type>：清空背包
- *   参数说明：
- *   - bag_type: 背包类型(1=主背包)
- *   示例：clear_bag 1
+ * - clear_bag <bag_type>: Clear bag
+ *   Parameter description:
+ *   - bag_type: Bag type (1=Main bag)
+ *   Example: clear_bag 1
  * 
- * 伙伴系统指令：
- * - add_partner <unit_id>：添加伙伴
- *   参数说明：
- *   - unit_id: 伙伴单位ID(4301-4350)
- *   示例：add_partner 4301
+ * Partner system commands:
+ * - add_partner <unit_id>: Add partner
+ *   Parameter description:
+ *   - unit_id: Partner unit ID (4301-4350)
+ *   Example: add_partner 4301
  * 
- * - add_fragments <fragment_id> <count>：添加伙伴碎片
- *   参数说明：
- *   - fragment_id: 碎片ID(5301-5350)
- *   - count: 添加数量(1-999)
- *   示例：add_fragments 5301 100
+ * - add_fragments <fragment_id> <count>: Add partner fragments
+ *   Parameter description:
+ *   - fragment_id: Fragment ID (5301-5350)
+ *   - count: Add quantity (1-999)
+ *   Example: add_fragments 5301 100
  * 
- * - set_partner_level <partner_id> <level>：设置伙伴等级
- *   参数说明：
- *   - partner_id: 伙伴实例ID(创建后获得)
- *   - level: 目标等级(1-100)
- *   示例：set_partner_level 40113330800919552 50
+ * - set_partner_level <partner_id> <level>: Set partner level
+ *   Parameter description:
+ *   - partner_id: Partner instance ID (obtained after creation)
+ *   - level: Target level (1-100)
+ *   Example: set_partner_level 40113330800919552 50
  * 
- * - set_partner_star <partner_id> <star>：设置伙伴星级
- *   参数说明：
- *   - partner_id: 伙伴实例ID(创建后获得)
- *   - star: 目标星级(1-5)
- *   示例：set_partner_star 40113330800919552 5
+ * - set_partner_star <partner_id> <star>: Set partner star
+ *   Parameter description:
+ *   - partner_id: Partner instance ID (obtained after creation)
+ *   - star: Target star (1-5)
+ *   Example: set_partner_star 40113330800919552 5
  * 
- * 可用测试用例：
- * - add_item：测试添加物品功能
- * - delete_item：测试删除物品功能
- * - set_level：测试设置角色等级功能
- * - error_cases：测试错误处理
- * - clear_bag：测试清空背包功能
- * - add_partner：测试添加伙伴功能
- * - add_fragments：测试添加伙伴碎片功能
- * - set_partner_level：测试设置伙伴等级功能
- * - set_partner_star：测试设置伙伴星级功能
+ * Game play commands:
+ * - roll_dice [dice_value]: Roll dice
+ *   Parameter description:
+ *   - dice_value: Optional, specify dice value (1-6), if not specified, random value is generated
+ *   Example: roll_dice 6
  * 
- * 注意：
- * 1. 伙伴ID指的是配置表中的unitId，而伙伴实例ID是创建后的partnerId
- * 2. 测试会自动处理伙伴不存在的情况，会先尝试添加伙伴再进行操作
- * 3. 如果指定伙伴不可用，测试会尝试使用第一个已解锁的伙伴
- * 4. 所有数值参数都需要是有效的正整数
- * 5. 物品和碎片数量不能超过最大堆叠限制(2000)
+ * Available test cases:
+ * - add_item: Test item addition functionality
+ * - delete_item: Test item deletion functionality
+ * - set_level: Test character level setting functionality
+ * - error_cases: Test error handling
+ * - clear_bag: Test clear bag functionality
+ * - add_partner: Test partner addition functionality
+ * - add_fragments: Test partner fragment addition functionality
+ * - set_partner_level: Test partner level setting functionality
+ * - set_partner_star: Test partner star setting functionality
+ * - roll_dice: Test dice roll functionality
+ * 
+ * Note:
+ * 1. Partner ID refers to the unitId in the configuration table, while partner instance ID is the partnerId after creation
+ * 2. Tests automatically handle the case where the partner does not exist, they will first try to add the partner before operating
+ * 3. If the specified partner is not available, the test will try to use the first unlocked partner
+ * 4. All numerical parameters must be valid positive integers
+ * 5. Item and fragment quantities cannot exceed the maximum stack limit (2000)
+ * 6. Dice values must be integers between 1-6
  */
 
 const assert = require('assert');
@@ -91,7 +99,7 @@ const BaseTest = require('../../lib/base_test');
 class GMCommandTest extends BaseTest {
     constructor() {
         super('GM Command Test');
-        // 定义可用的测试用例
+        // Define available test cases
         this.testCases = {
             'add_item': this.testAddItem.bind(this),
             'delete_item': this.testDeleteItem.bind(this),
@@ -101,18 +109,19 @@ class GMCommandTest extends BaseTest {
             'add_partner': this.testAddPartner.bind(this),
             'add_fragments': this.testAddFragments.bind(this),
             'set_partner_level': this.testSetPartnerLevel.bind(this),
-            'set_partner_star': this.testSetPartnerStar.bind(this)
+            'set_partner_star': this.testSetPartnerStar.bind(this),
+            'roll_dice': this.testRollDice.bind(this)
         };
     }
 
     async test() {
         try {
-            // 查找 -t 参数后的第一个参数作为测试用例名
+            // Find -t parameter after the first parameter as test case name
             const args = process.argv;
             const tIndex = args.indexOf('-t');
             
-            // 检查是否为直接执行GM命令的格式
-            // 例如: node test/run_test.js -t gm_command additem 1005 10000
+            // Check if it's a direct execution of GM command format
+            // For example: node test/run_test.js -t gm_command additem 1005 10000
             if (tIndex >= 0 && args[tIndex + 1] === 'gm_command' && args.length > tIndex + 2) {
                 const gmCommand = args[tIndex + 2];
                 const gmParams = args.slice(tIndex + 3);
@@ -132,7 +141,7 @@ class GMCommandTest extends BaseTest {
             const testCase = tIndex >= 0 ? args[tIndex + 2] : null; // -t gm_command test_name
             
             if (testCase && this.testCases[testCase]) {
-                // 执行指定测试
+                // Execute specified test
                 console.log(`Running test case: ${testCase}`);
                 await this.testCases[testCase]();
             } else if (testCase) {
@@ -140,7 +149,7 @@ class GMCommandTest extends BaseTest {
                 console.log('Available test cases:', Object.keys(this.testCases).join(', '));
                 throw new Error('Invalid test case');
             } else {
-                // 执行所有测试
+                // Execute all tests
                 console.log('Running all test cases...');
                 for (const [name, testFn] of Object.entries(this.testCases)) {
                     console.log(`\nRunning test case: ${name}`);
@@ -158,25 +167,25 @@ class GMCommandTest extends BaseTest {
     async testAddItem() {
         console.log('\nTesting add item command...');
         
-        // 先获取背包初始状态
+        // Get initial bag state
         const bagResponse = await this.client.getBagInfo();
         const mainBag = bagResponse.bags.find(bag => bag.bag_type === 1);
         const initialItems = mainBag.items;
         
-        // 执行GM命令添加物品
+        // Execute GM command to add item
         const response = await this.client.gmCommand('add_item', ['1001', '100']);
         assert(response.result === 'success', 'Add item should succeed');
         
-        // 获取更新后的背包
+        // Get updated bag
         const updatedBagResponse = await this.client.getBagInfo();
         const updatedMainBag = updatedBagResponse.bags.find(bag => bag.bag_type === 1);
         
-        // 检查物品数量
+        // Check item quantity
         const totalCount = updatedMainBag.items
             .filter(item => item.item_id === 1001)
             .reduce((sum, item) => sum + item.count, 0);
             
-        // 验证总数量正确
+        // Verify total quantity is correct
         assert.strictEqual(
             totalCount - (initialItems.filter(i => i.item_id === 1001)
                 .reduce((sum, i) => sum + i.count, 0)), 
@@ -188,27 +197,27 @@ class GMCommandTest extends BaseTest {
     async testDeleteItem() {
         console.log('\nTesting delete item command...');
         
-        // 1. 先添加物品
+        // 1. First add item
         let response = await this.client.gmCommand('add_item', ['1001', '100']);
         assert.strictEqual(response.result, 'success');
 
-        // 验证添加成功
+        // Verify addition success
         let bagInfo = await this.client.getBagInfo();
         let initialCount = bagInfo.bags[0].items
             .filter(i => i.item_id === 1001)
             .reduce((sum, i) => sum + i.count, 0);
         
-        // 2. 删除物品
+        // 2. Delete item
         response = await this.client.gmCommand('del_item', ['1001', '50']);
         assert.strictEqual(response.result, 'success');
 
-        // 3. 验证背包
+        // 3. Verify bag
         bagInfo = await this.client.getBagInfo();
         const finalCount = bagInfo.bags[0].items
             .filter(i => i.item_id === 1001)
             .reduce((sum, i) => sum + i.count, 0);
 
-        // 验证删除的数量正确
+        // Verify deleted quantity is correct
         assert.strictEqual(
             initialCount - finalCount,
             50,
@@ -219,7 +228,7 @@ class GMCommandTest extends BaseTest {
     async testSetLevel() {
         console.log('\nTesting set level command...');
         
-        // 设置等级
+        // Set level
         const response = await this.client.gmCommand('set_level', ['10']);
         assert.strictEqual(response.result, 'success');
     }
@@ -227,7 +236,7 @@ class GMCommandTest extends BaseTest {
     async testErrorCases() {
         console.log('\nTesting error cases...');
         
-        // 测试无效命令
+        // Test invalid command
         try {
             await this.client.gmCommand('invalid_command', []);
             assert.fail('Should throw error for invalid command');
@@ -235,7 +244,7 @@ class GMCommandTest extends BaseTest {
             assert(err.errorCode === this.client.protoHelper.ErrorCode.ERROR_CODE_GM_COMMAND_FAILED);
         }
 
-        // 测试无效参数
+        // Test invalid parameter
         try {
             await this.client.gmCommand('add_item', ['invalid']);
             assert.fail('Should throw error for invalid params');
@@ -247,14 +256,14 @@ class GMCommandTest extends BaseTest {
     async testClearBag() {
         console.log('\nTesting clear bag command...');
         
-        // 执行清空背包命令
+        // Execute clear bag command
         const response = await this.client.gmCommand('clear_bag', ['1']);
-        assert(response.result === 'success', "清空背包失败");
+        assert(response.result === 'success', "Clear bag failed");
         
-        // 获取背包信息验证是否成功
+        // Get bag information to verify success
         const bagInfo = await this.client.getBagInfo();
         const mainBag = bagInfo.bags.find(bag => bag.bag_type === this.client.protoHelper.BagType.BAG_TYPE_MAIN);
-        assert(mainBag.items.length === 0, "背包未清空");
+        assert(mainBag.items.length === 0, "Bag not cleared");
         
         return true;
     }
@@ -262,59 +271,59 @@ class GMCommandTest extends BaseTest {
     async testAddPartner() {
         console.log('\nTesting add partner command...');
         
-        // 使用有效的伙伴ID（从配置中选择一个有效的伙伴单位ID）
-        const unitId = 4301; // 使用系统中已知存在的伙伴ID
+        // Use valid partner ID (select a valid partner unit ID from configuration)
+        const unitId = 4301; // Use system-known existing partner ID
         
-        // 获取初始伙伴列表
+        // Get initial partner list
         const initialPartners = await this.client.getPartnerList();
         console.log(`Initial partners count: ${initialPartners.partners.length}`);
         
-        // 检查伙伴是否已存在
+        // Check if partner already exists
         const existingPartner = initialPartners.partners.find(p => p.base_info.unit_id === unitId && p.state === 2);
-        if (existingPartner) { // 状态2表示已解锁
+        if (existingPartner) { // State 2 indicates unlocked
             console.log(`Partner ${unitId} already exists, will be treated as success`);
         }
         
-        // 执行GM命令添加伙伴
+        // Execute GM command to add partner
         const response = await this.client.gmCommand('add_partner', [unitId.toString()]);
         assert(response.result === 'success', 'Add partner should succeed');
         console.log(`Add partner response: ${JSON.stringify(response)}`);
         
-        // 获取更新后的伙伴列表
+        // Get updated partner list
         const updatedPartners = await this.client.getPartnerList();
         console.log(`Updated partners count: ${updatedPartners.partners.length}`);
         
-        // 无论如何，验证伙伴存在且属性正确
+        // Regardless, verify partner exists and attributes are correct
         const newPartner = updatedPartners.partners.find(p => p.base_info.unit_id === unitId && p.state === 2);
         assert(newPartner, 'Partner should exist and be unlocked');
         assert(newPartner.base_info.level >= 1, 'Partner should have level >= 1');
         
-        return true; // 测试成功
+        return true; // Test success
     }
 
     async testAddFragments() {
         console.log('\nTesting add partner fragments command...');
         
-        // 使用有效的伙伴碎片ID
-        const fragmentId = 5301; // 确保这是一个有效的伙伴碎片ID
+        // Use valid partner fragment ID
+        const fragmentId = 5301; // Ensure this is a valid partner fragment ID
         
-        // 获取初始背包状态
+        // Get initial bag state
         const bagResponse = await this.client.getBagInfo();
         const mainBag = bagResponse.bags.find(bag => bag.bag_type === 1);
         const initialFragments = mainBag.items.filter(item => item.item_id === fragmentId);
         const initialCount = initialFragments.reduce((sum, item) => sum + item.count, 0);
         
-        // 执行GM命令添加碎片
+        // Execute GM command to add fragments
         const response = await this.client.gmCommand('add_fragments', [fragmentId.toString(), '100']);
         assert(response.result === 'success', 'Add fragments should succeed');
         
-        // 获取更新后的背包
+        // Get updated bag
         const updatedBagResponse = await this.client.getBagInfo();
         const updatedMainBag = updatedBagResponse.bags.find(bag => bag.bag_type === 1);
         const updatedFragments = updatedMainBag.items.filter(item => item.item_id === fragmentId);
         const updatedCount = updatedFragments.reduce((sum, item) => sum + item.count, 0);
         
-        // 验证碎片数量增加
+        // Verify fragment quantity increased
         assert.strictEqual(updatedCount - initialCount, 100, 'Should add correct amount of fragments');
     }
 
@@ -493,6 +502,35 @@ class GMCommandTest extends BaseTest {
         console.log(`Successfully set partner star to ${targetStar}`);
         
         return true; // 测试成功
+    }
+
+    async testRollDice() {
+        console.log('\nTesting roll dice command...');
+        
+        // 测试1：不指定骰子点数（随机值）
+        console.log('Testing random dice roll:');
+        let response = await this.client.gmCommand('roll_dice', []);
+        assert(response.result === 'success', 'Random dice roll should succeed');
+        console.log('Random dice roll result:', response);
+        
+        // 测试2：指定有效骰子点数
+        console.log('Testing specified dice value:');
+        response = await this.client.gmCommand('roll_dice', ['6']);
+        assert(response.result === 'success', 'Specified dice roll should succeed');
+        console.log('Specified dice roll result:', response);
+        
+        // 测试3：指定无效骰子点数
+        console.log('Testing invalid dice value:');
+        try {
+            response = await this.client.gmCommand('roll_dice', ['10']);
+            assert.fail('Should fail due to invalid dice value');
+        } catch (err) {
+            assert(err.errorCode === this.client.protoHelper.ErrorCode.ERROR_CODE_GM_COMMAND_FAILED, 
+                   'Invalid dice value should return GM command failed error');
+            console.log('Invalid dice value test passed: Command correctly rejected invalid parameter');
+        }
+        
+        return true;
     }
 }
 

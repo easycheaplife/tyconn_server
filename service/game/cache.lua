@@ -710,4 +710,58 @@ function M.remove_passed_chapters(user_id)
     return remove_cache(key)
 end
 
+-- 获取事件触发计数
+function M.get_event_trigger_count(user_id, chapter_id, event_id)
+    local composite_key = string.format("%d:%d:%d", user_id, chapter_id, event_id)
+    local key = make_key(PREFIX.event_trigger, composite_key)
+    
+    return get_cache(key, string.format("event trigger count for user %d, chapter %d, event_id %d", 
+        user_id, chapter_id, event_id))
+end
+
+-- 设置事件触发计数
+function M.set_event_trigger_count(user_id, chapter_id, event_id, trigger_data)
+    local composite_key = string.format("%d:%d:%d", user_id, chapter_id, event_id)
+    local key = make_key(PREFIX.event_trigger, composite_key)
+    
+    return set_cache(key, trigger_data, EXPIRE.map_event, 
+        string.format("event trigger count for user %d, chapter %d, event_id %d", 
+            user_id, chapter_id, event_id))
+end
+
+-- 删除事件触发计数缓存
+function M.remove_event_trigger_count(user_id, chapter_id, event_id)
+    local composite_key = string.format("%d:%d:%d", user_id, chapter_id, event_id)
+    local key = make_key(PREFIX.event_trigger, composite_key)
+    
+    return remove_cache(key)
+end
+
+-- 增加事件触发计数（返回增加后的数据）
+function M.increment_event_trigger_count(user_id, chapter_id, event_id)
+    local trigger_data = M.get_event_trigger_count(user_id, chapter_id, event_id)
+    local current_time = os.time()
+    
+    -- 如果没有记录，创建一个新的
+    if not trigger_data then
+        trigger_data = {
+            user_id = user_id,
+            chapter_id = chapter_id,
+            event_id = event_id,
+            trigger_count = 1,
+            create_time = current_time,
+            update_time = current_time
+        }
+    else
+        -- 增加计数
+        trigger_data.trigger_count = trigger_data.trigger_count + 1
+        trigger_data.update_time = current_time
+    end
+    
+    -- 更新缓存
+    M.set_event_trigger_count(user_id, chapter_id, event_id, trigger_data)
+    
+    return trigger_data
+end
+
 return M

@@ -538,4 +538,121 @@ function M.remove_cell_events_cache(chapter_id, cell_id)
     return true
 end
 
+-- 获取事件触发次数
+function M.get_event_trigger_count(user_id, chapter_id, event_id)
+    if not user_id or not chapter_id or not event_id then
+        logger.error("map_dao.get_event_trigger_count: Invalid parameters")
+        return nil
+    end
+    
+    -- 从缓存获取
+    local cached_data = cache.get_event_trigger_count(user_id, chapter_id, event_id)
+    if cached_data then
+        logger.debug("map_dao.get_event_trigger_count: cache hit for user %d, chapter %d, event_id %d", 
+            user_id, chapter_id, event_id)
+        return cached_data
+    end
+    
+    -- 从数据库获取
+    local db_data = db_client.get_event_trigger_count(user_id, chapter_id, event_id)
+    if not db_data then
+        logger.debug("map_dao.get_event_trigger_count: no trigger count found for user %d, chapter %d, event_id %d", 
+            user_id, chapter_id, event_id)
+        return nil
+    end
+    
+    -- 缓存数据
+    cache.set_event_trigger_count(user_id, chapter_id, event_id, db_data)
+    
+    return db_data
+end
+
+-- 创建事件触发记录
+function M.create_event_trigger(trigger_data)
+    if not trigger_data then
+        logger.error("map_dao.create_event_trigger: trigger_data is nil")
+        return false
+    end
+    
+    -- 校验必要字段
+    if not trigger_data.user_id or not trigger_data.chapter_id or not trigger_data.event_id then
+        logger.error("map_dao.create_event_trigger: Missing required fields")
+        return false
+    end
+    
+    -- 设置默认值
+    trigger_data.trigger_count = trigger_data.trigger_count or 1
+    trigger_data.create_time = trigger_data.create_time or os.time()
+    trigger_data.update_time = trigger_data.update_time or os.time()
+    
+    -- 调用数据库代理创建触发记录
+    local result = db_client.create_event_trigger(trigger_data)
+    if not result then
+        logger.error("map_dao.create_event_trigger: Failed to create event trigger for user %d, chapter %d, event_id %d", 
+            trigger_data.user_id, trigger_data.chapter_id, trigger_data.event_id)
+        return false
+    end
+    
+    -- 清除缓存
+    cache.remove_event_trigger_count(trigger_data.user_id, trigger_data.chapter_id, trigger_data.event_id)
+    
+    return true
+end
+
+-- 更新事件触发次数
+function M.update_event_trigger_count(trigger_data)
+    if not trigger_data then
+        logger.error("map_dao.update_event_trigger_count: trigger_data is nil")
+        return false
+    end
+    
+    -- 校验必要字段
+    if not trigger_data.user_id or not trigger_data.chapter_id or 
+       not trigger_data.event_id or not trigger_data.trigger_count then
+        logger.error("map_dao.update_event_trigger_count: Missing required fields")
+        return false
+    end
+    
+    -- 设置更新时间
+    trigger_data.update_time = trigger_data.update_time or os.time()
+    
+    -- 调用数据库代理更新触发次数
+    local result = db_client.update_event_trigger_count(trigger_data)
+    if not result then
+        logger.error("map_dao.update_event_trigger_count: Failed to update event trigger count for user %d, chapter %d, event_id %d", 
+            trigger_data.user_id, trigger_data.chapter_id, trigger_data.event_id)
+        return false
+    end
+    
+    -- 清除或更新缓存
+    cache.remove_event_trigger_count(trigger_data.user_id, trigger_data.chapter_id, trigger_data.event_id)
+    
+    return true
+end
+
+-- 增加事件触发次数
+function M.increment_event_trigger_count(user_id, chapter_id, event_id)
+    if not user_id or not chapter_id or not event_id then
+        logger.error("map_dao.increment_event_trigger_count: Invalid parameters")
+        return false
+    end
+    
+    -- 先尝试更新缓存
+    local cached_data = cache.increment_event_trigger_count(user_id, chapter_id, event_id)
+    logger.debug("map_dao.increment_event_trigger_count: Incremented cache for user %d, chapter %d, event_id %d, new count: %d", 
+        user_id, chapter_id, event_id, cached_data.trigger_count)
+    
+    -- 调用数据库代理增加触发次数
+    local result = db_client.increment_event_trigger_count(user_id, chapter_id, event_id)
+    if not result then
+        logger.error("map_dao.increment_event_trigger_count: Failed to increment event trigger count for user %d, chapter %d, event_id %d", 
+            user_id, chapter_id, event_id)
+        -- 回滚缓存更新
+        cache.remove_event_trigger_count(user_id, chapter_id, event_id)
+        return false
+    end
+    
+    return true, cached_data.trigger_count
+end
+
 return M 

@@ -1066,7 +1066,81 @@ function M.get_user_passed_chapters(user_id)
     end
 
     return result or {}
-end 
+end
 
+-- 获取事件触发次数
+function M.get_event_trigger_count(user_id, chapter_id, event_id)
+    if not user_id or not chapter_id or not event_id then
+        logger.error("Invalid parameters")
+        return nil
+    end
+    
+    -- 调用数据库代理
+    local ok, result = pcall(call_db, "get_event_trigger_count", user_id, chapter_id, event_id)
+    
+    if not ok then
+        logger.error("Failed to get event trigger count: %s", tostring(result))
+        return nil
+    end
+    
+    -- 返回查询结果
+    return result
+end
+
+-- 创建事件触发记录
+function M.create_event_trigger(trigger_data)
+    if not trigger_data or not trigger_data.user_id or not trigger_data.chapter_id 
+        or not trigger_data.event_id then
+        logger.error("Invalid trigger data")
+        return false
+    end
+    
+    -- 调用数据库代理
+    local ok, result = pcall(call_db, "create_event_trigger", trigger_data)
+    
+    if not ok then
+        logger.error("Failed to create event trigger: %s", tostring(result))
+        return false
+    end
+    
+    return result
+end
+
+-- 更新事件触发次数
+function M.update_event_trigger_count(trigger_data)
+    if not trigger_data or not trigger_data.user_id or not trigger_data.chapter_id 
+        or not trigger_data.event_id or not trigger_data.trigger_count then
+        logger.error("Invalid trigger data")
+        return false
+    end
+    
+    -- 调用数据库代理
+    local ok, result = pcall(call_db, "update_event_trigger_count", trigger_data)
+    
+    if not ok then
+        logger.error("Failed to update event trigger count: %s", tostring(result))
+        return false
+    end
+    
+    return result
+end
+
+-- 增加事件触发次数
+function M.increment_event_trigger_count(user_id, chapter_id, event_id)
+    if not user_id or not chapter_id or not event_id then
+        logger.error("Invalid parameters")
+        return false
+    end
+    
+    -- 调用数据库代理
+    local ok, result = pcall(call_db, "increment_event_trigger_count", user_id, chapter_id, event_id)
+    
+    if not ok then
+        logger.error("Failed to increment event trigger count: %s", tostring(result))
+        return false
+    end
+    
+    return result
+end
 
 return M 
