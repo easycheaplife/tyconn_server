@@ -637,6 +637,39 @@ local function get_path_events(map_id, from_position, to_position, direction, ch
     return event_ids
 end
 
+-- 获取随机事件的真实事件ID
+local function get_random_event_real_id(random_event_id)
+    if not random_event_id then
+        logger.error("Invalid random_event_id")
+        return nil
+    end
+    
+    -- 获取随机事件配置
+    local cell_random_events = table_service.get_config_values("cell_random_events")
+    if not cell_random_events then
+        logger.error("Failed to get cell_random_events config")
+        return nil
+    end
+    
+    -- 查找特定的随机事件配置
+    local random_event_config = cell_random_events[random_event_id]
+    if not random_event_config then
+        logger.error("Random event config not found for random_event_id %d", random_event_id)
+        return nil
+    end
+    
+    -- 从随机事件配置中获取Cell_events信息的第一个元素（真实事件ID）
+    if not random_event_config.cell_events or #random_event_config.cell_events == 0 then
+        logger.error("No Cell_events in random event config: %d", random_event_id)
+        return nil
+    end
+    
+    -- 返回Cell_events的第一个元素作为真实事件ID
+    local real_event_id = random_event_config.cell_events[1]
+    logger.debug("Random event %d has real event_id: %d", random_event_id, real_event_id)
+    return real_event_id
+end
+
 -- 检查事件触发次数限制
 local function check_event_trigger_limit(user_id, chapter_id, all_events)
     -- 获取事件配置
@@ -650,10 +683,22 @@ local function check_event_trigger_limit(user_id, chapter_id, all_events)
     
     for _, event in ipairs(all_events) do
         local event_id = nil
+        local event_to_check = event.event_id
+        
+        -- 处理随机事件，获取真实事件ID
+        if event.is_random_event then
+            local real_id = get_random_event_real_id(event.event_id)
+            if real_id then
+                event_to_check = real_id
+                logger.debug("Using real event ID %d for random event %d", real_id, event.event_id)
+            else
+                logger.error("Failed to get real event ID for random event %d", event.event_id)
+            end
+        end
         
         -- 查找事件表ID
         for id, config in pairs(cell_events_config) do
-            if config.event_id == event.event_id then
+            if config.event_id == event_to_check then
                 event_id = id
                 break
             end
@@ -673,12 +718,12 @@ local function check_event_trigger_limit(user_id, chapter_id, all_events)
                 end
                 
                 logger.debug("Event %d (table_id %d) trigger count: %d, limit: %d", 
-                    event.event_id, event_id, trigger_count, config.one_off)
+                    event_to_check, event_id, trigger_count, config.one_off)
                 
                 -- 判断是否已达到触发次数限制
                 if trigger_count >= config.one_off then
                     logger.info("Event %d has reached its trigger limit %d for user %d, skipping", 
-                        event.event_id, config.one_off, user_id)
+                        event_to_check, config.one_off, user_id)
                     -- 不添加到过滤后的事件列表
                 else
                     -- 未达到限制，添加到过滤后的事件列表
@@ -710,10 +755,22 @@ local function increment_event_trigger_counts(user_id, chapter_id, events)
     
     for _, event in ipairs(events) do
         local event_id = nil
+        local event_to_check = event.event_id
+        
+        -- 处理随机事件，获取真实事件ID
+        if event.is_random_event then
+            local real_id = get_random_event_real_id(event.event_id)
+            if real_id then
+                event_to_check = real_id
+                logger.debug("Using real event ID %d for random event %d", real_id, event.event_id)
+            else
+                logger.error("Failed to get real event ID for random event %d", event.event_id)
+            end
+        end
         
         -- 查找事件表ID
         for id, config in pairs(cell_events_config) do
-            if config.event_id == event.event_id then
+            if config.event_id == event_to_check then
                 event_id = id
                 break
             end
