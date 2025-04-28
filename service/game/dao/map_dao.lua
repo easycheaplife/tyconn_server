@@ -678,10 +678,9 @@ function M.increment_event_trigger_count(user_id, chapter_id, event_id)
             user_id, chapter_id, event_id)
         -- 回滚缓存更新
         cache.remove_event_trigger_count(user_id, chapter_id, event_id)
-        cache.remove_chapter_event_triggers(user_id, chapter_id)
         return false
     end
-    
+    cache.remove_chapter_event_triggers(user_id, chapter_id)
     return true, cached_data.trigger_count
 end
 
