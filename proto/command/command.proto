@@ -381,6 +381,7 @@ message G2CMapInfoResponse {
     int32 current_position = 2;              // 当前位置（对应格子ID）
     int32 direction = 3;                     // 移动朝向(1:正向, -1:反向)
     repeated common.EventInfo random_events = 4;  // 地图上的随机事件
+    repeated common.EventTrigger event_triggers = 5;  // 事件触发记录
 }
 
 // 掷骰子请求 {{Req:703}}
@@ -395,6 +396,7 @@ message G2CRollDiceResponse {
     int32 to_position = 3;                   // 目标位置
     repeated common.EventInfo event_ids = 4;  // 触发的事件列表
     repeated common.EventInfo random_events = 5;  // 触发的随机事件
+    repeated common.EventTrigger event_triggers = 6;  // 事件触发记录
 }
 
 // 处理格子事件请求 {{Req:705}}
@@ -417,7 +419,7 @@ message C2GClaimRewardRequest {
     string token = 1;      // JWT令牌
 }
 
-// 领取通关奖励响应 {{Res:718}}
+// 领取通关奖励响应 {{Res:708}}
 message G2CClaimRewardResponse {
     bool success = 1;                      // 是否成功
     repeated common.BagInfo bags = 2;      // 背包变化信息

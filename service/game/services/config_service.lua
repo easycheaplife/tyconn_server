@@ -412,7 +412,8 @@ function M.load_cell_events_config()
                 event_id = event_id,
                 event_type_id = tonumber(event_data.Event_type_id),
                 resource = event_data.resource,
-                activate = tonumber(event_data.Activate) or enum.CellEventActivateType.ACTIVATE_TYPE_MANUAL  -- 添加Activate字段，默认为调用主动
+                activate = tonumber(event_data.Activate) or enum.CellEventActivateType.ACTIVATE_TYPE_MANUAL,  -- 添加Activate字段，默认为调用主动
+                one_off = tonumber(event_data.one_off) or 0  -- 添加one_off字段，默认为0
             }
         end
     end

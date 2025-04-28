@@ -1,5 +1,5 @@
 -- Generating message.lua from proto/common/message.proto
--- Generate time: 2025-04-22 03:34:43
+-- Generate time: 2025-04-27 10:53:14
 
 local M = {}
 
@@ -71,7 +71,7 @@ M.MessageID = {
     C2G_HANDLE_CELL_EVENT_REQUEST = 705,    -- 处理格子事件请求
     G2C_HANDLE_CELL_EVENT_RESPONSE = 706,    -- 处理格子事件响应
     C2G_CLAIM_REWARD_REQUEST = 707,    -- 领取通关奖励请求
-    G2C_CLAIM_REWARD_RESPONSE = 718,    -- 领取通关奖励响应
+    G2C_CLAIM_REWARD_RESPONSE = 708,    -- 领取通关奖励响应
     G2C_CHAPTER_COMPLETED_PUSH = 751,    -- 章节完成推送
 }
 

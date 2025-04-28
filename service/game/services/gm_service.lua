@@ -7,6 +7,7 @@ local utils = require "utils"
 local enum = require "enum"
 local partner_service = require "services.partner_service"
 local bag_service = require "services.bag_service"
+local map_service = require "services.map_service"
 
 local M = {}
 
@@ -296,7 +297,7 @@ local GM_HANDLERS = {
             items = items,
             expire_time = nil,  -- expire_time
             sender_id = 0,    -- sender_id (0 表示系统)
-            sender_name = "系统"  -- sender_name
+            sender_name = "system"  -- sender_name
         })
         
         if not ok then
@@ -386,6 +387,19 @@ local GM_HANDLERS = {
         end
         
         return {true, result, nil}
+    end,
+
+    dice_num = function (user_id, params)
+        if not params or #params < 1 then
+            return {false, nil, "Missing dice num"}
+        end
+        local num = tonumber(params[1])
+        if(num < 1 or num > 6) then
+            map_service.gm_set_dice_num(nil)
+            return {true, nil, "cancel gm dice num"}
+        end
+        map_service.gm_set_dice_num(num)
+        return {true, nil, "gm set dice num:" .. params[1]}
     end
 }
 

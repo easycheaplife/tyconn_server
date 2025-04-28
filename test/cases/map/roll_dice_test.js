@@ -58,6 +58,21 @@ class RollDiceTest extends BaseTest {
             console.log(`Rolled ${diceValue}, moved from ${fromPosition} to ${toPosition}`);
             console.log(`Direction: ${direction}, Expected position: ${expectedPosition}`);
             
+            // 检查事件触发记录
+            const eventTriggers = response.event_triggers || response.eventTriggers;
+            if (eventTriggers && Array.isArray(eventTriggers)) {
+                console.log(`Found ${eventTriggers.length} event trigger records in dice response:`);
+                eventTriggers.forEach((trigger, index) => {
+                    const chapterId = trigger.chapter_id !== undefined ? trigger.chapter_id : trigger.chapterId;
+                    const eventId = trigger.event_id !== undefined ? trigger.event_id : trigger.eventId;
+                    const triggerCount = trigger.trigger_count !== undefined ? trigger.trigger_count : trigger.triggerCount;
+                    
+                    console.log(`  Trigger #${index + 1}: Chapter ID=${chapterId}, Event ID=${eventId}, Count=${triggerCount}`);
+                });
+            } else {
+                console.log('No event trigger records in dice response.');
+            }
+            
             // 检查事件数据格式
             if (eventIds.length > 0) {
                 console.log('Triggered events:');

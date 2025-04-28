@@ -39,13 +39,29 @@ function M.handle(client_id, msg)
             message.MessageID.G2C_ROLL_DICE_RESPONSE)
     end
 
+    -- 获取用户当前地图信息
+    local map_info = map_service.get_map_info(user.user_id)
+    if not map_info then
+        logger.error("Failed to get map info for user: %d", user.user_id)
+        return message_helper.create_error_response(
+            base_request, 
+            "command.G2CRollDiceResponse",
+            error.ErrorCode.ERROR_CODE_SYSTEM_ERROR, 
+            "Failed to get map info", 
+            message.MessageID.G2C_ROLL_DICE_RESPONSE)
+    end
+
+    -- 获取事件触发次数记录
+    local event_triggers = map_service.get_event_triggers(user.user_id, map_info.chapter_id)
+
     -- 构造响应数据
     local response_data = {
         dice_value = roll_result.dice_value,
         from_position = roll_result.from_position,
         to_position = roll_result.to_position,
         event_ids = {},  -- 初始化空数组
-        random_events = {}  -- 初始化空数组
+        random_events = {},  -- 初始化空数组
+        event_triggers = event_triggers
     }   
 
     -- 转换事件数据为新的格式

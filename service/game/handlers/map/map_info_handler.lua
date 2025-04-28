@@ -41,12 +41,16 @@ function M.handle(client_id, msg)
     -- 获取地图上的随机事件
     local random_events = map_service.get_random_events(user.user_id, map_info.chapter_id)
     
+    -- 获取事件触发次数记录
+    local event_triggers = map_service.get_event_triggers(user.user_id, map_info.chapter_id)
+    
     -- 构造响应数据
     local response_data = {
         chapter_id = map_info.chapter_id,
         current_position = map_info.current_position,
         direction = map_info.direction,
-        random_events = random_events
+        random_events = random_events,
+        event_triggers = event_triggers
     }
 
     -- 打印一下响应数据便于调试

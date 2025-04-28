@@ -45,7 +45,7 @@ class GetMapInfoTest extends BaseTest {
                         `Position ${currentPosition}, ` + 
                         `Direction ${direction === 1 ? 'Forward' : 'Backward'}`);
             
-            // 检查和打印随机事件数据
+            // 检查随机事件数据
             const randomEvents = response.random_events || response.randomEvents;
             if (randomEvents && Array.isArray(randomEvents)) {
                 console.log(`Found ${randomEvents.length} random events on the map:`);
@@ -58,6 +58,21 @@ class GetMapInfoTest extends BaseTest {
                 });
             } else {
                 console.log('No random events found on the map.');
+            }
+            
+            // 检查事件触发记录
+            const eventTriggers = response.event_triggers || response.eventTriggers;
+            if (eventTriggers && Array.isArray(eventTriggers)) {
+                console.log(`Found ${eventTriggers.length} event trigger records:`);
+                eventTriggers.forEach((trigger, index) => {
+                    const chapterId = trigger.chapter_id !== undefined ? trigger.chapter_id : trigger.chapterId;
+                    const eventId = trigger.event_id !== undefined ? trigger.event_id : trigger.eventId;
+                    const triggerCount = trigger.trigger_count !== undefined ? trigger.trigger_count : trigger.triggerCount;
+                    
+                    console.log(`  Trigger #${index + 1}: Chapter ID=${chapterId}, Event ID=${eventId}, Count=${triggerCount}`);
+                });
+            } else {
+                console.log('No event trigger records found.');
             }
             
             // 测试掷骰子并验证随机事件

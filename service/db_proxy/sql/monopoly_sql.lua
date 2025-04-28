@@ -195,4 +195,50 @@ M.GET_USER_PASSED_CHAPTERS = [[
     WHERE user_id = %d
 ]]
 
+-- 获取事件触发次数
+M.GET_EVENT_TRIGGER_COUNT = [[
+    SELECT id, user_id, chapter_id, 
+        event_id, 
+        trigger_count, create_time, update_time
+    FROM monopoly_event_triggers
+    WHERE user_id = %d AND chapter_id = %d AND event_id = %d
+    LIMIT 1
+]]
+
+-- 获取章节所有事件触发记录
+M.GET_CHAPTER_EVENT_TRIGGERS = [[
+    SELECT id, user_id, chapter_id, 
+        event_id, 
+        trigger_count, create_time, update_time
+    FROM monopoly_event_triggers
+    WHERE user_id = %d AND chapter_id = %d
+    ORDER BY event_id ASC
+]]
+
+-- 创建事件触发记录
+M.CREATE_EVENT_TRIGGER = [[
+    INSERT INTO monopoly_event_triggers (
+        user_id, chapter_id, 
+        event_id, 
+        trigger_count, create_time, update_time
+    ) VALUES (
+        %d, %d, %d, %d, %d, %d
+    )
+]]
+
+-- 更新事件触发次数
+M.UPDATE_EVENT_TRIGGER_COUNT = [[
+    UPDATE monopoly_event_triggers SET
+        trigger_count = %d,
+        update_time = %d
+    WHERE user_id = %d AND chapter_id = %d AND event_id = %d
+]]
+
+-- 增加事件触发次数
+M.INCREMENT_EVENT_TRIGGER_COUNT = [[
+    UPDATE monopoly_event_triggers
+    SET trigger_count = trigger_count + 1, update_time = %d
+    WHERE user_id = %d AND chapter_id = %d AND event_id = %d
+]]
+
 return M 

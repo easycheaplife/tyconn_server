@@ -13,12 +13,26 @@ local config_service = require "game.services.config_service"
 
 local M = {}
 
--- 操作类型常量
-local OPERATION_TYPE = {
-    ROLL_DICE = 1,     -- 掷骰子
-    HANDLE_EVENT = 2,  -- 处理事件
-    CLAIM_REWARD = 3   -- 领取奖励
-}
+-- 设置骰子点数
+function M.gm_set_dice_num(num)
+    logger.info("Setting dice num to: %s", tostring(num))
+    
+    -- 保存到Redis
+    local ok = map_dao.set_gm_dice_num(num)
+    if not ok then
+        logger.error("Failed to save GM dice num to Redis")
+    end
+    
+    return ok
+end
+
+-- 获取骰子点数
+function M.get_gm_dice_num()
+    -- 直接从Redis获取
+    local dice_num = map_dao.get_gm_dice_num()
+    logger.debug("Got GM dice num from Redis: %s", tostring(dice_num))
+    return dice_num
+end
 
 -- 获取事件类型ID
 function M.get_event_type_id(event_id)
@@ -637,8 +651,166 @@ local function get_path_events(map_id, from_position, to_position, direction, ch
     return event_ids
 end
 
+-- 获取随机事件的真实事件ID
+local function get_random_event_real_id(random_event_id)
+    if not random_event_id then
+        logger.error("Invalid random_event_id")
+        return nil
+    end
+    
+    -- 获取随机事件配置
+    local cell_random_events = table_service.get_config_values("cell_random_events")
+    if not cell_random_events then
+        logger.error("Failed to get cell_random_events config")
+        return nil
+    end
+    
+    -- 查找特定的随机事件配置
+    local random_event_config = cell_random_events[random_event_id]
+    if not random_event_config then
+        logger.error("Random event config not found for random_event_id %d", random_event_id)
+        return nil
+    end
+    
+    -- 从随机事件配置中获取Cell_events信息的第一个元素（真实事件ID）
+    if not random_event_config.cell_events or #random_event_config.cell_events == 0 then
+        logger.error("No Cell_events in random event config: %d", random_event_id)
+        return nil
+    end
+    
+    -- 返回Cell_events的第一个元素作为真实事件ID
+    local real_event_id = random_event_config.cell_events[1]
+    logger.debug("Random event %d has real event_id: %d", random_event_id, real_event_id)
+    return real_event_id
+end
+
+-- 检查事件触发次数限制
+local function check_event_trigger_limit(user_id, chapter_id, all_events)
+    -- 获取事件配置
+    local cell_events_config = table_service.get_config_values("cell_events")
+    if not cell_events_config then
+        logger.error("Failed to get cell_events config")
+        return all_events
+    end
+    
+    local filtered_events = {}
+    
+    for _, event in ipairs(all_events) do
+        local event_id = nil
+        local event_to_check = event.event_id
+        
+        -- 处理随机事件，获取真实事件ID
+        if event.is_random_event then
+            local real_id = get_random_event_real_id(event.event_id)
+            if real_id then
+                event_to_check = real_id
+                logger.debug("Using real event ID %d for random event %d", real_id, event.event_id)
+            else
+                logger.error("Failed to get real event ID for random event %d", event.event_id)
+            end
+        end
+        
+        -- 查找事件表ID
+        for id, config in pairs(cell_events_config) do
+            if config.event_id == event_to_check then
+                event_id = id
+                break
+            end
+        end
+        
+        if event_id then
+            local config = cell_events_config[event_id]
+            
+            -- 检查是否有触发次数限制
+            if config.one_off > 0 then
+                -- 获取当前触发次数
+                local trigger_data = map_dao.get_event_trigger_count(user_id, chapter_id, event_id)
+                local trigger_count = 0
+                
+                if trigger_data then
+                    trigger_count = trigger_data.trigger_count
+                end
+                
+                logger.debug("Event %d (table_id %d) trigger count: %d, limit: %d", 
+                    event_to_check, event_id, trigger_count, config.one_off)
+                
+                -- 判断是否已达到触发次数限制
+                if trigger_count >= config.one_off then
+                    logger.info("Event %d has reached its trigger limit %d for user %d, skipping", 
+                        event_to_check, config.one_off, user_id)
+                    -- 不添加到过滤后的事件列表
+                else
+                    -- 未达到限制，添加到过滤后的事件列表
+                    table.insert(filtered_events, event)
+                end
+            else
+                -- 无限制事件，直接添加
+                table.insert(filtered_events, event)
+            end
+        else
+            -- 未找到配置的事件，按无限制处理
+            table.insert(filtered_events, event)
+        end
+    end
+    
+    return filtered_events
+end
+
+-- 增加事件触发次数
+local function increment_event_trigger_counts(user_id, chapter_id, events)
+    logger.debug("Incrementing event trigger counts for user %d, chapter %d, events: %s", user_id, chapter_id, utils.table_to_string(events))
+    -- 获取事件配置
+    local cell_events_config = table_service.get_config_values("cell_events")
+    if not cell_events_config then
+        logger.error("Failed to get cell_events config")
+        return
+    end
+    logger.debug("Cell events config: %s", utils.table_to_string(cell_events_config))
+    
+    for _, event in ipairs(events) do
+        local event_id = nil
+        local event_to_check = event.event_id
+        
+        -- 处理随机事件，获取真实事件ID
+        if event.is_random_event then
+            local real_id = get_random_event_real_id(event.event_id)
+            if real_id then
+                event_to_check = real_id
+                logger.debug("Using real event ID %d for random event %d", real_id, event.event_id)
+            else
+                logger.error("Failed to get real event ID for random event %d", event.event_id)
+            end
+        end
+        
+        -- 查找事件表ID
+        for id, config in pairs(cell_events_config) do
+            if config.event_id == event_to_check then
+                event_id = id
+                break
+            end
+        end
+        
+        if event_id then
+            local config = cell_events_config[event_id]
+            
+            -- 只有有限制的事件才需要增加触发次数
+            logger.debug("Event config: %s", utils.table_to_string(config))
+            if config.one_off > 0 then
+                local ok, new_count = map_dao.increment_event_trigger_count(user_id, chapter_id, event_id)
+                if ok then
+                    logger.debug("Incremented trigger count for event_id %d to %d", event_id, new_count)
+                else
+                    logger.error("Failed to increment trigger count for event_id %d", event_id)
+                end
+            end
+        end
+    end
+end
+
 -- 保存事件到数据库
 local function save_path_events(user_id, chapter_id, event_ids)
+    local saved_events = {}
+    
     if #event_ids > 0 then
         logger.info("Found %d events on path for user %d", #event_ids, user_id)
         logger.debug("Events: %s", utils.table_to_string(event_ids))
@@ -665,9 +837,13 @@ local function save_path_events(user_id, chapter_id, event_ids)
             else
                 logger.debug("Created event record for event_id=%d, chapter_id=%d, cell_id=%d, is_random=%d", 
                     event_info.event_id, chapter_id, event_info.cell_id, event_data.is_random_event)
+                -- 将成功保存的事件添加到返回列表
+                table.insert(saved_events, event_info)
             end
         end
     end
+    
+    return saved_events
 end
 
 -- 获取用户大富翁状态信息
@@ -807,10 +983,17 @@ function M.roll_dice(user_id)
         return nil
     end
     
-    -- 生成骰子点数(1-6)
-    local dice_value = math.random(1, 6)
-    logger.info("User %d rolled dice: %d", user_id, dice_value)
+    local dice_result = math.random(1, 6)
     
+    -- 如果骰子点数被GM指定，则使用GM指定的骰子点数
+    local gm_dice = M.get_gm_dice_num()
+    if gm_dice ~= nil then
+        logger.info("User %d rolled with GM specified dice: %d", user_id, gm_dice)
+        dice_result = gm_dice
+    else
+        logger.info("User %d rolled random dice: %d", user_id, dice_result)
+    end
+
     -- 记录起始位置
     local from_position = map_info.current_position
     
@@ -824,7 +1007,7 @@ function M.roll_dice(user_id)
     logger.debug("Chapter config: %s", utils.table_to_string(chapter_config))
     
     -- 计算新位置（使用tileMap配置）
-    local to_position = calculate_new_position(from_position, dice_value, map_info.direction, chapter_config)
+    local to_position = calculate_new_position(from_position, dice_result, map_info.direction, chapter_config)
     
     -- 更新位置
     map_info.current_position = to_position
@@ -877,18 +1060,23 @@ function M.roll_dice(user_id)
         end
     end
     
-    -- 输出事件信息以便调试
-    logger.debug("All events for roll: %s", utils.table_to_string(all_events))
+    logger.debug("All events before filtering: %s", utils.table_to_string(all_events))
+    -- 过滤掉达到触发次数限制的事件
+    all_events = check_event_trigger_limit(user_id, map_info.chapter_id, all_events)
+    logger.debug("All events after filtering: %s", utils.table_to_string(all_events))
     
     -- 保存事件到数据库
-    save_path_events(user_id, map_info.chapter_id, all_events)
+    local saved_events = save_path_events(user_id, map_info.chapter_id, all_events)
+    
+    -- 增加事件触发次数
+    increment_event_trigger_counts(user_id, map_info.chapter_id, saved_events)
     
     -- 记录操作日志
     map_dao.log_monopoly_operation({
         user_id = user_id,
         chapter_id = map_info.chapter_id,
-        operation_type = OPERATION_TYPE.ROLL_DICE,
-        dice_value = dice_value,
+        operation_type = enum.MonopolyOperationType.MONOPOLY_OPERATION_TYPE_ROLL_DICE,
+        dice_value = dice_result,
         from_position = from_position,
         to_position = to_position,
         operation_time = os.time()
@@ -907,7 +1095,7 @@ function M.roll_dice(user_id)
     end
     
     return {
-        dice_value = dice_value,
+        dice_value = dice_result,
         from_position = from_position,
         to_position = to_position,
         event_ids = all_events,
@@ -981,7 +1169,7 @@ local function log_event_operation(user_id, chapter_id, event_id, cell_id)
     map_dao.log_monopoly_operation({
         user_id = user_id,
         chapter_id = chapter_id,
-        operation_type = OPERATION_TYPE.HANDLE_EVENT,
+        operation_type = enum.MonopolyOperationType.MONOPOLY_OPERATION_TYPE_HANDLE_EVENT,
         event_id = event_id,
         cell_id = cell_id,
         operation_time = os.time()
@@ -1378,7 +1566,7 @@ function M.claim_reward(user_id)
     map_dao.log_monopoly_operation({
         user_id = user_id,
         chapter_id = map_info.chapter_id,
-        operation_type = OPERATION_TYPE.CLAIM_REWARD,
+        operation_type = enum.MonopolyOperationType.MONOPOLY_OPERATION_TYPE_CLAIM_REWARD,
         reward_items = bags,
         operation_time = os.time()
     })
@@ -1418,6 +1606,36 @@ function M.get_random_events(user_id, chapter_id)
     logger.debug("Found %d random events for user %d, chapter %d", 
         #event_infos, user_id, chapter_id)
     return event_infos
+end
+
+-- 获取事件触发次数记录
+function M.get_event_triggers(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("Invalid parameters: user_id=%s, chapter_id=%s", 
+            tostring(user_id), tostring(chapter_id))
+        return {}
+    end
+    
+    -- 从数据库获取事件触发记录
+    local trigger_records = map_dao.get_chapter_event_triggers(user_id, chapter_id)
+    if not trigger_records or #trigger_records == 0 then
+        logger.debug("No event trigger records found for user %d, chapter %d", user_id, chapter_id)
+        return {}
+    end
+    
+    -- 转换为EventTrigger格式
+    local event_triggers = {}
+    for _, record in ipairs(trigger_records) do
+        table.insert(event_triggers, {
+            chapter_id = record.chapter_id,
+            event_id = record.event_id,
+            trigger_count = record.trigger_count
+        })
+    end
+    
+    logger.debug("Found %d event trigger records for user %d, chapter %d", 
+        #event_triggers, user_id, chapter_id)
+    return event_triggers
 end
 
 return M 

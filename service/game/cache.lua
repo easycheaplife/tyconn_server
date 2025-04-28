@@ -710,4 +710,132 @@ function M.remove_passed_chapters(user_id)
     return remove_cache(key)
 end
 
+-- 获取事件触发计数
+function M.get_event_trigger_count(user_id, chapter_id, event_id)
+    local composite_key = string.format("%d:%d:%d", user_id, chapter_id, event_id)
+    local key = make_key(PREFIX.event_trigger, composite_key)
+    
+    return get_cache(key, string.format("event trigger count for user %d, chapter %d, event_id %d", 
+        user_id, chapter_id, event_id))
+end
+
+-- 设置事件触发计数
+function M.set_event_trigger_count(user_id, chapter_id, event_id, trigger_data)
+    local composite_key = string.format("%d:%d:%d", user_id, chapter_id, event_id)
+    local key = make_key(PREFIX.event_trigger, composite_key)
+    
+    return set_cache(key, trigger_data, EXPIRE.map_event, 
+        string.format("event trigger count for user %d, chapter %d, event_id %d", 
+            user_id, chapter_id, event_id))
+end
+
+-- 删除事件触发计数缓存
+function M.remove_event_trigger_count(user_id, chapter_id, event_id)
+    local composite_key = string.format("%d:%d:%d", user_id, chapter_id, event_id)
+    local key = make_key(PREFIX.event_trigger, composite_key)
+    
+    return remove_cache(key)
+end
+
+-- 增加事件触发计数（返回增加后的数据）
+function M.increment_event_trigger_count(user_id, chapter_id, event_id)
+    local trigger_data = M.get_event_trigger_count(user_id, chapter_id, event_id)
+    local current_time = os.time()
+    
+    -- 如果没有记录，创建一个新的
+    if not trigger_data then
+        trigger_data = {
+            user_id = user_id,
+            chapter_id = chapter_id,
+            event_id = event_id,
+            trigger_count = 1,
+            create_time = current_time,
+            update_time = current_time
+        }
+    else
+        -- 增加计数
+        trigger_data.trigger_count = trigger_data.trigger_count + 1
+        trigger_data.update_time = current_time
+    end
+    
+    -- 更新缓存
+    M.set_event_trigger_count(user_id, chapter_id, event_id, trigger_data)
+    
+    return trigger_data
+end
+
+-- 获取GM骰子点数
+function M.get_gm_dice_num()
+    local key = make_key(PREFIX.gm_dice_num, "global")
+    local value = redis.get(key)
+    if value then
+        logger.debug("Got GM dice num from cache: %s", value)
+        return tonumber(value)
+    end
+    return nil
+end
+
+-- 设置GM骰子点数
+function M.set_gm_dice_num(num)
+    local key = make_key(PREFIX.gm_dice_num, "global")
+    if num == nil then
+        logger.debug("Removing GM dice num from cache")
+        return redis.del(key) > 0
+    end
+    
+    logger.debug("Setting GM dice num to cache: %s", tostring(num))
+    local ok = redis.set(key, tostring(num))
+    if ok then
+        redis.expire(key, EXPIRE.gm_dice_num)
+    end
+    return ok
+end
+
+-- 删除GM骰子点数缓存
+function M.remove_gm_dice_num()
+    local key = make_key(PREFIX.gm_dice_num, "global")
+    logger.debug("Removing GM dice num cache")
+    return remove_cache(key)
+end
+
+-- 事件触发记录缓存key
+local function make_chapter_triggers_key(user_id, chapter_id)
+    local composite_key = string.format("%d:%d", user_id, chapter_id)
+    return make_key(PREFIX.event_triggers, composite_key)
+end
+
+-- 获取章节的所有事件触发记录
+function M.get_chapter_event_triggers(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("cache.get_chapter_event_triggers: invalid parameters")
+        return nil
+    end
+
+    local key = make_chapter_triggers_key(user_id, chapter_id)
+    return get_cache(key, string.format("event triggers for user %d, chapter %d", user_id, chapter_id))
+end
+
+-- 设置章节的所有事件触发记录
+function M.set_chapter_event_triggers(user_id, chapter_id, triggers)
+    if not user_id or not chapter_id or not triggers then
+        logger.error("cache.set_chapter_event_triggers: invalid parameters")
+        return false
+    end
+
+    local key = make_chapter_triggers_key(user_id, chapter_id)
+    return set_cache(key, triggers, EXPIRE.event_triggers or EXPIRE.map_event,
+        string.format("event triggers for user %d, chapter %d", user_id, chapter_id))
+end
+
+-- 删除章节的所有事件触发记录缓存
+function M.remove_chapter_event_triggers(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("cache.remove_chapter_event_triggers: invalid parameters")
+        return false
+    end
+
+    local key = make_chapter_triggers_key(user_id, chapter_id)
+    return remove_cache(key)
+end
+
 return M

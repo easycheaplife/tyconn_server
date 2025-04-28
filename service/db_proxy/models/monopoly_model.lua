@@ -470,4 +470,169 @@ function M.get_user_passed_chapters(user_id)
     return results
 end 
 
+-- 获取事件触发次数
+function M.get_event_trigger_count(user_id, chapter_id, event_id)
+    if not user_id or not chapter_id or not event_id then
+        logger.error("Invalid parameters for get_event_trigger_count")
+        return nil, "Invalid parameters"
+    end
+    
+    local query = string.format(sql.GET_EVENT_TRIGGER_COUNT, 
+        user_id, chapter_id, event_id)
+    
+    local results = db_util.query(query)
+    if not results then
+        logger.error("Failed to get event trigger count for user: %d, chapter: %d, event_id: %d", 
+            user_id, chapter_id, event_id)
+        return nil, "Database error"
+    end
+    
+    if #results == 0 then
+        return nil, "record not found"
+    end
+    
+    return results[1]
+end
+
+-- 获取章节所有事件触发记录
+function M.get_chapter_event_triggers(user_id, chapter_id)
+    if not user_id or not chapter_id then
+        logger.error("Invalid parameters for get_chapter_event_triggers")
+        return {}, "Invalid parameters"
+    end
+    
+    local query = string.format(sql.GET_CHAPTER_EVENT_TRIGGERS, 
+        user_id, chapter_id)
+    
+    local results = db_util.query(query)
+    if not results then
+        logger.error("Failed to get event triggers for user: %d, chapter: %d", 
+            user_id, chapter_id)
+        return {}, "Database error"
+    end
+    
+    return results
+end
+
+-- 创建事件触发记录
+function M.create_event_trigger(data)
+    if not data or not data.user_id or not data.chapter_id or not data.event_id then
+        logger.error("Invalid event trigger data: %s", utils.table_to_string(data))
+        return false, "Invalid event trigger data"
+    end
+    
+    -- 确保所有字段都有合适的默认值
+    local trigger_data = {
+        user_id = data.user_id,
+        chapter_id = data.chapter_id,
+        event_id = data.event_id,
+        trigger_count = data.trigger_count or 1,
+        create_time = data.create_time or os.time(),
+        update_time = data.update_time or os.time()
+    }
+    
+    local query = string.format(sql.CREATE_EVENT_TRIGGER,
+        trigger_data.user_id,
+        trigger_data.chapter_id,
+        trigger_data.event_id,
+        trigger_data.trigger_count,
+        trigger_data.create_time,
+        trigger_data.update_time
+    )
+    
+    local ok = db_util.query(query)
+    if not ok then
+        logger.error("Failed to create event trigger for user: %d, chapter: %d, event_id: %d", 
+            trigger_data.user_id, trigger_data.chapter_id, trigger_data.event_id)
+        return false, "Database error"
+    end
+    
+    return true
+end
+
+-- 更新事件触发次数
+function M.update_event_trigger_count(data)
+    if not data or not data.user_id or not data.chapter_id or not data.event_id then
+        logger.error("Invalid event trigger data: %s", utils.table_to_string(data))
+        return false, "Invalid event trigger data"
+    end
+    
+    -- 确保所有字段都有合适的默认值
+    local trigger_data = {
+        user_id = data.user_id,
+        chapter_id = data.chapter_id,
+        event_id = data.event_id,
+        trigger_count = data.trigger_count or 0,
+        update_time = data.update_time or os.time()
+    }
+    
+    local query = string.format(sql.UPDATE_EVENT_TRIGGER_COUNT,
+        trigger_data.trigger_count,
+        trigger_data.update_time,
+        trigger_data.user_id,
+        trigger_data.chapter_id,
+        trigger_data.event_id
+    )
+    
+    local ok = db_util.query(query)
+    if not ok then
+        logger.error("Failed to update event trigger count for user: %d, chapter: %d, event_id: %d", 
+            trigger_data.user_id, trigger_data.chapter_id, trigger_data.event_id)
+        return false, "Database error"
+    end
+    
+    return true
+end
+
+-- 增加事件触发次数
+function M.increment_event_trigger_count(user_id, chapter_id, event_id)
+    if not user_id or not chapter_id or not event_id then
+        logger.error("Invalid parameters for increment_event_trigger_count")
+        return false, "Invalid parameters"
+    end
+    
+    local current_time = os.time()
+    
+    -- 首先尝试查询是否存在记录
+    local trigger_data, err = M.get_event_trigger_count(user_id, chapter_id, event_id)
+    
+    if not trigger_data and err == "record not found" then
+        -- 如果记录不存在，创建一个新记录
+        logger.debug("Creating new event trigger record for user: %d, chapter: %d, event_id: %d", 
+            user_id, chapter_id, event_id)
+        
+        local create_ok, create_err = M.create_event_trigger({
+            user_id = user_id,
+            chapter_id = chapter_id,
+            event_id = event_id,
+            trigger_count = 1,
+            create_time = current_time,
+            update_time = current_time
+        })
+        
+        if not create_ok then
+            logger.error("Failed to create event trigger: %s", create_err)
+            return false, create_err
+        end
+        
+        return true
+    elseif not trigger_data then
+        -- 如果是其他错误
+        logger.error("Error getting event trigger: %s", err)
+        return false, err
+    else
+        -- 如果记录存在，使用 INCREMENT 语句增加计数
+        local query = string.format(sql.INCREMENT_EVENT_TRIGGER_COUNT,
+            current_time, user_id, chapter_id, event_id)
+        local ok = db_util.query(query)
+        if not ok then
+            logger.error("Failed to increment event trigger count for user: %d, chapter: %d, event_id: %d", 
+                user_id, chapter_id, event_id)
+            return false, "Database error"
+        end
+        
+        return true
+    end
+end
+
 return M 

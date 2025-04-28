@@ -490,3 +490,11 @@ enum MutexType {
     MUTEX_TYPE_REPLACE = 1;        // 替换：替换已有的事件
     MUTEX_TYPE_NO_LIMIT = 2;       // 无限制：不做任何限制
 } 
+
+// 
+enum MonopolyOperationType {
+    MONOPOLY_OPERATION_TYPE_NONE = 0;
+    MONOPOLY_OPERATION_TYPE_ROLL_DICE = 1;    // 掷骰子
+    MONOPOLY_OPERATION_TYPE_HANDLE_EVENT = 2; // 处理事件
+    MONOPOLY_OPERATION_TYPE_CLAIM_REWARD = 3; // 领取奖励
+}
