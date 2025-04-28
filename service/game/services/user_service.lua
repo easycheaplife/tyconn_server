@@ -3,11 +3,14 @@ local logger = require "logger"
 local utils = require "utils"
 local user_model = require "models.user_model"
 local user_dao = require "dao.user_dao"
-local property_service = require "services.property_service"
 local cache = require "cache"
+local enum = require "enum"
+local property_service = require "services.property_service"
+local card_service = require "services.card_service"
+local mail_service = require "services.mail_service"
+local table_service = require "services.table_service"
 
 local M = {}
-local default_unit_id = 10001
 
 -- 初始化
 function M.init()
@@ -30,33 +33,6 @@ function M.create_user_info(username, password, nickname)
         register_time = now,
         last_login = now,
     }
-end
-
--- 创建新用户
-function M.create_user(username, password, nickname, avatar)
-    -- 检查用户名是否已存在
-    local exists = user_dao.get_user_by_username(username)
-    if exists then
-        return nil, "用户名已存在"
-    end
-    
-    -- 创建用户信息
-    local user = M.create_user_info(username, password, nickname)
-    user.avatar = avatar or "default.png"
-    user.unit_id = default_unit_id
-    logger.debug("create_user: %s", utils.table_to_string(user))
-    
-    -- 使用 dao 创建用户
-    local ok, created_user = user_dao.create_user(user)
-    if not ok then
-        return nil, "创建用户失败"
-    end
-    
-    -- 写入缓存
-    M.cache_user_by_id(created_user)
-    M.cache_user_by_account(created_user)
-    
-    return created_user
 end
 
 -- 获取或创建用户
@@ -87,6 +63,8 @@ function M.get_or_create_user(account, username)
     M.cache_user_by_account(created_user)
 
     logger.info("New user created: %s (ID: %d)", account, created_user.user_id)
+    -- 发送欢迎邮件
+    mail_service.send_welcome_mail(created_user.user_id, username)
     return created_user, nil, true
 end
 
@@ -94,40 +72,36 @@ end
 function M.add_exp(user_id, exp)
     logger.debug("Adding exp to user %d: %d", user_id, exp)
     if not user_id or not exp or exp <= 0 then
-        return false, "参数无效"
+        return false, "invalid params"
     end
 
     -- 从缓存获取用户信息
     local user_info = cache.get_user_info(user_id)
     if not user_info then
-        return false, "用户不存在"
+        return false, "user not found"
     end
 
     -- 确保经验值存在
     user_info.exp = (user_info.exp or 0) + exp
-    
-    -- 更新数据库和缓存
-    local ok = user_dao.update_user(user_info)
-    if ok then
-        M.cache_user(user_info)
-    end
-
     -- 检查是否升级
     local old_level = user_info.level
     local new_level = M.calculate_level(user_info.exp)
-    
     if new_level > old_level then
         user_info.level = new_level
         -- 更新属性
         user_info = M.update_user_property(user_info)
     end
-
+    -- 更新数据库和缓存
+    local ok = user_dao.update_user(user_info)
+    if ok then
+        M.cache_user(user_info)
+    end
     return true
 end
 
 -- 更新用户属性
 function M.update_user_property(user_info)
-    local property = property_service.get_unit_property(default_unit_id, user_info.level)
+    local property = property_service.get_unit_level_property(unit_id, user_info.level)
     if property then
         -- 更新属性
         user_info.hp = property.hp
@@ -147,12 +121,12 @@ end
 function M.add_gold(user_id, gold)
     logger.debug("Adding gold to user %d: %d", user_id, gold)
     if not user_id or not gold or gold <= 0 then
-        return false, "参数无效"
+        return false, "invalid params"
     end
 
     local user_info = cache.get_user_info(user_id)
     if not user_info then
-        return false, "用户不存在"
+        return false, "user not found"
     end
 
     -- 确保金币值存在
@@ -250,19 +224,22 @@ end
 
 -- 将用户信息存入缓存
 function M.cache_user(user_info)
+    logger.info("Caching user info: %s", utils.table_to_string(user_info))
     if not user_info or not user_info.user_id then
         return false, "Invalid user info"
     end
-    local base_property = property_service.get_unit_property(default_unit_id, user_info.level)
+    local hero_unit_id = table_service.get_hero_unit_id()
+    local base_property = property_service.get_unit_level_property(hero_unit_id, user_info.level)
     -- 添加基础属性
     user_info.hp = base_property and base_property.hp or 0
     user_info.attack = base_property and base_property.attack or 0
     user_info.defense = base_property and base_property.defense or 0
-    
     logger.debug("Caching user info: %s", utils.table_to_string({
         account = user_info.account,
         user_id = user_info.user_id,
         username = user_info.username,
+        exp = user_info.exp,
+        gold = user_info.gold,
         hp = user_info.hp,
         attack = user_info.attack,
         defense = user_info.defense
@@ -273,8 +250,25 @@ end
 
 -- 根据用户ID获取用户
 function M.get_user_by_id(user_id)
-    local users = user_dao.get_user_by_id(user_id)
-    return users and users[1]
+    -- 1. 先从缓存获取
+    local user = cache.get_user_info(user_id)
+    if user then
+        logger.debug("Got user from cache by ID: %d", user_id)
+        return user
+    end
+
+    -- 2. 从数据库获取
+    local user = user_dao.get_user_by_id(user_id)
+    if not user then
+        logger.error("Failed to get user from db by ID: %d", user_id)
+        return nil
+    end
+
+    -- 3. 写入缓存
+    M.cache_user_by_id(user)
+    
+    logger.debug("Got user from db by ID: %d", user_id)
+    return user
 end
 
 -- 根据用户名获取用户
@@ -291,6 +285,67 @@ end
 -- 获取用户统计信息
 function M.get_stats()
     return user_dao.get_stats()
+end
+
+function M.check_gm_permission(user_id)
+    return true
+end
+
+function M.init_new_user(user_id)
+    logger.info("Initializing new user: %d", user_id)
+    -- 1. 初始化卡牌
+    local ok = card_service.init_user_cards(user_id)
+    if not ok then
+        logger.error("Failed to initialize cards for new user: %d", user_id)
+        -- 继续处理，不影响流程
+    end
+
+    logger.info("Initializing bags for new user: %d", user_id)
+    -- 2. 初始化背包
+    local ok = require "services.bag_service".init_user_bags(user_id)
+    if not ok then
+        logger.error("Failed to initialize bags for new user: %d", user_id)
+        -- 继续处理，不影响流程
+    end
+
+    logger.info("Initializing items for new user: %d", user_id)
+    -- 3. 初始化物品
+    local ok = require "services.bag_service".init_user_items(user_id)
+    if not ok then
+        logger.error("Failed to initialize items for new user: %d", user_id)
+        -- 继续处理，不影响流程
+    end
+
+    logger.info("Initializing equipment slots for new user: %d", user_id)
+    -- 4. 初始化用户装备槽和等级
+    local equipment_service = require "services.equip_service"
+    local ok = equipment_service.init_user_equip_slots(user_id)
+    if not ok then
+        logger.error("Failed to initialize equipment slots for user %d", user_id)
+        -- 继续执行，不影响用户创建
+    end
+end
+
+function M.get_user_level(user_id)
+    local user = M.get_user_by_id(user_id)
+    if not user then
+        return 1
+    end
+    return user.level
+end
+
+-- 添加更新用户登录时间的函数
+function M.update_user_login_time(user_id)
+    logger.debug("Updating login time for user %d", user_id)
+    
+    local now = os.time()
+    local ok, err = user_dao.update_login_time(user_id, now)
+    
+    if not ok then
+        logger.error("Failed to update login time: %s", err or "unknown error")
+        return false
+    end
+    return true
 end
 
 return M 

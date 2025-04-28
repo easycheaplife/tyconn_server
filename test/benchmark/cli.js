@@ -1,14 +1,17 @@
-const { program } = require('commander');
+const program = require('commander');
 const loginBenchmark = require('./login_benchmark');
-const bagBenchmark = require('./bag_benchmark');
 const heartbeatBenchmark = require('./heartbeat_benchmark');
+const bagBenchmark = require('./bag_benchmark');
 const useItemBenchmark = require('./use_item_benchmark');
+const stackItemBenchmark = require('./stack_item_benchmark');
 
+// 定义可用的基准测试
 const benchmarks = {
     login: loginBenchmark,
-    bag: bagBenchmark,
     heartbeat: heartbeatBenchmark,
-    useItem: useItemBenchmark
+    bag: bagBenchmark,
+    use_item: useItemBenchmark,
+    stack_item: stackItemBenchmark
 };
 
 program
@@ -17,18 +20,18 @@ program
     .version('1.0.0');
 
 program
-    .command('run <name>')
+    .command('run <benchmark>')
     .description('Run a benchmark test')
-    .option('-c, --concurrent <number>', 'concurrent users', parseInt)
-    .option('-n, --total <number>', 'total requests', parseInt)
-    .option('-t, --timeout <number>', 'request timeout (ms)', parseInt)
+    .option('-c, --concurrent <number>', 'Number of concurrent requests', parseInt)
+    .option('-n, --total <number>', 'Total number of requests', parseInt)
+    .option('-t, --timeout <number>', 'Request timeout in milliseconds', parseInt)
     .option('-s, --server <host>', 'server host')
     .option('-p, --port <number>', 'server port', parseInt)
     .option('--account <string>', 'test account')
     .option('--password <string>', 'test password')
-    .action(async (name, options) => {
-        if (!benchmarks[name]) {
-            console.error(`Unknown benchmark: ${name}`);
+    .action(async (benchmark, options) => {
+        if (!benchmarks[benchmark]) {
+            console.error(`Unknown benchmark: ${benchmark}`);
             console.log('Available benchmarks:');
             Object.keys(benchmarks).forEach(name => {
                 console.log(`  - ${name}`);
@@ -43,8 +46,8 @@ program
         if (options.password) process.env.TEST_PASSWORD = options.password;
 
         try {
-            console.log(`Running ${name} benchmark...`);
-            await benchmarks[name](options);
+            console.log(`Running ${benchmark} benchmark...`);
+            await benchmarks[benchmark](options);
         } catch (error) {
             console.error('Benchmark failed:', error);
             process.exit(1);
@@ -61,4 +64,4 @@ program
         });
     });
 
-program.parse(); 
+program.parse(process.argv); 

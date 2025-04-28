@@ -44,9 +44,11 @@ class GameClient extends BaseClient {
             if (!this.protoHelper.initialized) {
                 await this.protoHelper.init();
             }
-
+            console.log('sendGameRequest requestData', requestData);
             const response = await this.sendRequest(messageId, requestData);
-            return this.decodeResponse(response, responseType);
+            const result = this.decodeResponse(response, responseType);
+            //console.log('sendGameRequest responseData', result);
+            return result;
         } catch (error) {
             // 如果是已知错误，添加更多上下文信息
             if (error.errorCode !== undefined) {
@@ -109,6 +111,11 @@ class GameClient extends BaseClient {
             }
         }
         return fullFields;
+    }
+
+    async initUserBags() {
+        const response = await this.sendRequest(this.protoHelper.MessageID.C2G_INIT_USER_BAGS_REQUEST, {});
+        return this.decodeResponse(response, 'command.G2CInitUserBagsResponse');
     }
 }
 

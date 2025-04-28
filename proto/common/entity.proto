@@ -1,18 +1,50 @@
 syntax = "proto3";
 package common;
 
+import "common/enum.proto";
+
+// 会话信息
+message Session {
+    int32 messageId = 1;    // 消息ID
+    int32 sequence = 2;     // 序列号
+    int64 timestamp = 3;    // 时间戳
+    string version = 4;     // 版本号
+}
+
+// 基础请求
+message BaseRequest {
+    Session session = 1;    // 会话信息
+    bytes payload = 2;      // 消息内容
+}
+
+// 基础响应
+message BaseResponse {
+    Session session = 1;    // 会话信息
+    int32 errorCode = 2;    // 错误码
+    string errorMsg = 3;    // 错误信息
+    bytes payload = 4;      // 消息负载
+} 
+
+// 事件信息
+message EventInfo {
+    int32 event_id = 1;     // 事件ID
+    int32 cell_id = 2;      // 事件所在格子ID
+    bool is_random_event = 3; // 是否是随机事件
+}
+
 // 用户信息
 message UserInfo {
     int64 user_id = 1;      // 用户ID
     string username = 2;     // 用户名
     int32 level = 3;        // 等级
     int64 exp = 4;          // 经验值
-    int32 vip_level = 5;    // VIP等级
-    int64 create_time = 6;  // 创建时间
-    int64 login_time = 7;   // 最后登录时间
-    int32 hp = 8;           // 生命值
-    int32 attack = 9;       // 攻击力
-    int32 defense = 10;     // 防御力
+    int64 gold = 5;         // 金币
+    int32 vip_level = 6;    // VIP等级
+    int32 hp = 7;           // 生命值
+    int32 attack = 8;       // 攻击力
+    int32 defense = 9;     // 防御力
+    int64 create_time = 10;  // 创建时间
+    int64 login_time = 11;   // 最后登录时间
 }
 
 // 卡牌信息
@@ -29,9 +61,85 @@ message CardInfo {
 
 // 物品信息
 message ItemInfo {
-    int64 id = 1;           // 物品实例ID
-    int32 item_id = 2;      // 物品配置ID
-    int32 count = 3;        // 数量
-    int64 create_time = 4;  // 获得时间
-    int64 update_time = 5;  // 更新时间
+    int32 item_id = 1;
+    int32 count = 2;
+    int32 slot = 3;  
+}
+
+// 背包信息
+message BagInfo {
+    int32 bag_type = 1;
+    int32 size = 2;
+    repeated ItemInfo items = 3;
+}
+
+// 邮件信息
+message MailInfo {
+    int64 id = 1;              // 邮件ID
+    string title = 2;          // 标题
+    string content = 3;        // 内容
+    repeated ItemInfo items = 4;  // 附件物品
+    int32 mail_type = 5;       // 邮件类型
+    int32 status = 6;          // 邮件状态
+    int64 create_time = 7;     // 创建时间
+    int64 expire_time = 8;     // 过期时间
+    int64 template_id = 9;    // 模板ID
+    int64 sender_id = 10;      // 发送者ID
+    string sender_name = 11;   // 发送者名称
+}
+
+// 邮件模板信息
+message MailTemplateInfo {
+    int64 id = 1;             // 模板ID
+    string title = 2;          // 标题
+    string content = 3;        // 内容
+    repeated ItemInfo items = 4;  // 附件物品
+    int32 mail_type = 5;       // 邮件类型
+    int64 create_time = 6;     // 创建时间
+    int64 expire_time = 7;     // 过期时间
+}
+
+// 用户资源信息
+message ResourceInfo {
+    int32 type = 1;           // 资源类型
+    int32 amount = 2;         // 资源数量
+}
+
+// 伙伴基本信息
+message PartnerBaseInfo {
+  int64 partner_id = 1;       // 伙伴ID
+  int32 unit_id = 2;          // 单位ID
+  int32 level = 3;            // 等级
+  int32 exp = 4;              // 经验
+  int32 quality = 5;          // 品质
+  int32 star = 6;             // 星级
+  int64 create_time = 7;      // 创建时间
+  int32 race = 8;             // 种族
+  int32 forte = 9;            // 特长/职业
+  repeated PropertyInfo properties = 10; // 属性列表
+}
+
+// 伙伴完整信息
+message PartnerInfo {
+  PartnerBaseInfo base_info = 1;      // 基本信息
+  int32 state = 2;                    // 状态 (1:可解锁, 2:已解锁, 3:未解锁)
+  int32 fragment_count = 3;           // 拥有的碎片数量
+  int32 fragment_need = 4;            // 解锁所需的碎片数量
+  int32 fragment_item_id = 5;         // 碎片物品ID
+  bool can_level_up = 6;              // 是否可以升级
+  bool can_star_up = 7;               // 是否可以升星
+  repeated ItemCost level_up_cost = 8; // 升级消耗
+  repeated ItemCost star_up_cost = 9;  // 升星消耗
+}
+
+// 属性信息
+message PropertyInfo {
+  PropType prop_id = 1;    // 属性ID
+  float value = 2;        // 基础值
+}
+
+// 物品消耗
+message ItemCost {
+  int32 item_id = 1;    // 物品ID
+  int32 count = 2;      // 数量
 }

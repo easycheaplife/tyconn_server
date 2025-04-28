@@ -15,6 +15,90 @@ function M.register(msg_id, handler)
     handlers[msg_id] = handler
 end
 
+function M.register_user_handler()
+    M.register(pb.enum("common.MessageID", "C2G_USER_INFO_REQUEST"), 
+        require "game.handlers.user.user_info_handler")
+    M.register(pb.enum("common.MessageID", "C2G_HEARTBEAT_REQUEST"), 
+        require "game.handlers.user.heartbeat_handler")
+    M.register(pb.enum("common.MessageID", "C2G_LOGIN_GAME_REQUEST"), 
+        require "game.handlers.user.login_game_handler")
+end
+
+function M.register_user_cards_handler()
+    M.register(pb.enum("common.MessageID", "C2G_USER_CARDS_REQUEST"), 
+        require "game.handlers.card.user_cards_handler")
+end
+
+function M.register_gm_command_handler()
+    M.register(pb.enum("common.MessageID", "C2G_GM_COMMAND_REQUEST"),
+        require "game.handlers.gm.gm_command_handler")
+end
+
+function M.register_bag_handler()
+    M.register(pb.enum("common.MessageID", "C2G_BAG_INFO_REQUEST"),
+        require "game.handlers.bag.bag_info_handler")
+    M.register(pb.enum("common.MessageID", "C2G_USE_ITEM_REQUEST"),
+        require "game.handlers.bag.use_item_handler")
+    M.register(pb.enum("common.MessageID", "C2G_EXPAND_BAG_REQUEST"),
+        require "game.handlers.bag.expand_bag_handler")
+    M.register(pb.enum("common.MessageID", "C2G_SORT_BAG_REQUEST"),
+        require "game.handlers.bag.sort_bag_handler")
+    M.register(pb.enum("common.MessageID", "C2G_MOVE_ITEM_REQUEST"),
+        require "game.handlers.bag.move_item_handler")
+    M.register(pb.enum("common.MessageID", "C2G_COMPOSE_ITEM_REQUEST"), 
+        require "game.handlers.bag.compose_item_handler")
+    M.register(pb.enum("common.MessageID", "C2G_DECOMPOSE_ITEM_REQUEST"),
+        require "game.handlers.bag.decompose_item_handler")  
+end
+
+function M.register_mail_handler()
+    M.register(pb.enum("common.MessageID", "C2G_MAIL_LIST_REQUEST"), 
+        require "game.handlers.mail.get_mail_list_handler")
+    M.register(pb.enum("common.MessageID", "C2G_READ_MAIL_REQUEST"), 
+        require "game.handlers.mail.read_mail_handler")
+    M.register(pb.enum("common.MessageID", "C2G_CLAIM_MAIL_ITEMS_REQUEST"), 
+        require "game.handlers.mail.claim_mail_items_handler")
+    M.register(pb.enum("common.MessageID", "C2G_DELETE_MAIL_REQUEST"), 
+        require "game.handlers.mail.delete_mail_handler")
+end
+
+function M.register_equip_handler()
+    M.register(pb.enum("common.MessageID", "C2G_EQUIP_INFO_REQUEST"), 
+        require "game.handlers.equip.equip_info_handler")
+    M.register(pb.enum("common.MessageID", "C2G_EQUIP_ITEM_REQUEST"), 
+        require "game.handlers.equip.equip_item_handler")
+    M.register(pb.enum("common.MessageID", "C2G_UNEQUIP_ITEM_REQUEST"), 
+        require "game.handlers.equip.unequip_item_handler")
+    M.register(pb.enum("common.MessageID", "C2G_EQUIP_RANDOM_REQUEST"), 
+        require "game.handlers.equip.equip_random_handler")
+    M.register(pb.enum("common.MessageID", "C2G_EQUIP_LEVEL_INFO_REQUEST"), 
+        require "game.handlers.equip.equip_level_info_handler")
+    M.register(pb.enum("common.MessageID", "C2G_EQUIP_LEVEL_UPGRADE_REQUEST"), 
+        require "game.handlers.equip.equip_level_upgrade_handler")  
+end
+
+function M.register_partner_handler()
+    M.register(pb.enum("common.MessageID", "C2G_PARTNER_LIST_REQUEST"), 
+        require "game.handlers.partner.partner_list_handler")
+    M.register(pb.enum("common.MessageID", "C2G_PARTNER_LEVEL_UP_REQUEST"), 
+        require "game.handlers.partner.partner_level_up_handler")
+    M.register(pb.enum("common.MessageID", "C2G_PARTNER_STAR_UP_REQUEST"), 
+        require "game.handlers.partner.partner_star_up_handler")
+    M.register(pb.enum("common.MessageID", "C2G_PARTNER_UNLOCK_REQUEST"), 
+        require "game.handlers.partner.partner_unlock_handler")
+end
+
+function M.register_map_handler()
+    M.register(pb.enum("common.MessageID", "C2G_MAP_INFO_REQUEST"), 
+        require "game.handlers.map.map_info_handler")
+    M.register(pb.enum("common.MessageID", "C2G_ROLL_DICE_REQUEST"), 
+        require "game.handlers.map.roll_dice_handler")
+    M.register(pb.enum("common.MessageID", "C2G_HANDLE_CELL_EVENT_REQUEST"), 
+        require "game.handlers.map.handle_cell_event_handler")
+    M.register(pb.enum("common.MessageID", "C2G_CLAIM_REWARD_REQUEST"), 
+        require "game.handlers.map.claim_reward_handler")
+end
+
 -- 初始化消息处理器
 function M.init()
     -- 先加载 proto 文件
@@ -25,19 +109,14 @@ function M.init()
     logger.info("Proto files loaded")
 
     -- 注册处理器
-    M.register(pb.enum("common.MessageID", "C2G_USER_INFO_REQUEST"), 
-        require "game.handlers.user_info")
-    M.register(pb.enum("common.MessageID", "C2G_HEARTBEAT_REQUEST"), 
-        require "game.handlers.heartbeat")
-    M.register(pb.enum("common.MessageID", "C2G_USER_CARDS_REQUEST"), 
-        require "game.handlers.user_cards")
-    M.register(pb.enum("common.MessageID", "C2G_BAG_INFO_REQUEST"),
-        require "game.handlers.bag_info")
-    M.register(pb.enum("common.MessageID", "C2G_USE_ITEM_REQUEST"),
-        require "game.handlers.use_item")
-    M.register(pb.enum("common.MessageID", "C2G_EXPAND_BAG_REQUEST"),
-        require "game.handlers.expand_bag")
-    
+    M.register_gm_command_handler()
+    M.register_user_handler()
+    M.register_user_cards_handler()
+    M.register_bag_handler()
+    M.register_mail_handler()
+    M.register_equip_handler()
+    M.register_partner_handler()
+    M.register_map_handler()
     logger.info("Message handlers initialized")
     return true
 end
@@ -70,7 +149,7 @@ function M.handle_message(source, client_id, msg, gate_node)
     local handler = handlers[msg_id]
     if handler then
         logger.debug("Found handler for message %d", msg_id)
-        local response = handler.handle(client_id, msg)
+        local response = handler.handle(client_id, msg, gate_node)
         if response then
             logger.debug("Sending response back to gate")
             cluster.send(gate_node, source, "client_message", response)

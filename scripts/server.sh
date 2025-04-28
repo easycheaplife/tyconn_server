@@ -28,8 +28,10 @@ WORK_DIR="$(cd "$(dirname "$0")/.." && pwd)"  # 获取项目根目录的绝对�
 SKYNET_PATH="$WORK_DIR/skynet/skynet"
 PID_DIR="$WORK_DIR/run"
 LOG_DIR="$WORK_DIR/logs"
-GAME_NODES=2  # 默认游戏节点数
-GATE_NODES=2  # 默认网关节点数
+GAME_NODES=2    # 默认游戏节点数
+GATE_NODES=2    # 默认网关节点数
+DB_NODES=2      # 默认数据库代理节点数
+LOGIN_NODES=2   # 默认登录节点数
 
 # 确保目录存在
 mkdir -p "$PID_DIR" "$LOG_DIR"
@@ -72,16 +74,20 @@ start_server() {
     cd "$WORK_DIR"
     
     # 启动数据库代理
-    echo "Starting DB proxy..."
-    nohup "$SKYNET_PATH" etc/config/db_proxy.lua > "$LOG_DIR/db_proxy.log" 2>&1 &
-    save_pid "db_proxy" $!
-    sleep 2
+    for i in $(seq 1 "$DB_NODES"); do
+        echo "Starting DB proxy $i..."
+        nohup "$SKYNET_PATH" etc/config/db_proxy$i.lua > "$LOG_DIR/db_proxy$i.log" 2>&1 &
+        save_pid "db_proxy$i" $!
+        sleep 2
+    done
 
-        # 启动登陆服务器
-    echo "Starting Login..."
-    nohup "$SKYNET_PATH" etc/config/login.lua > "$LOG_DIR/login.log" 2>&1 &
-    save_pid "login" $!
-    sleep 2
+    # 启动登录服务器
+    for i in $(seq 1 "$LOGIN_NODES"); do
+        echo "Starting Login $i..."
+        nohup "$SKYNET_PATH" etc/config/login$i.lua > "$LOG_DIR/login$i.log" 2>&1 &
+        save_pid "login$i" $!
+        sleep 2
+    done
     
     # 启动游戏服务器
     for i in $(seq 1 "$GAME_NODES"); do
@@ -110,8 +116,16 @@ stop_server() {
     cd "$WORK_DIR"
     
     # 停止所有进程
-    local processes=("db_proxy")
-    processes+=("login")
+    local processes=()
+    # 添加数据库代理进程
+    for i in $(seq 1 "$DB_NODES"); do
+        processes+=("db_proxy$i")
+    done
+    # 添加登录服务器进程
+    for i in $(seq 1 "$LOGIN_NODES"); do
+        processes+=("login$i")
+    done
+    # 添加游戏和网关进程
     for i in $(seq 1 "$GAME_NODES"); do
         processes+=("game$i")
     done
@@ -140,8 +154,16 @@ check_status() {
     cd "$WORK_DIR"
     
     # 检查所有进程
-    local processes=("db_proxy")
-    processes+=("login")
+    local processes=()
+    # 添加数据库代理进程
+    for i in $(seq 1 "$DB_NODES"); do
+        processes+=("db_proxy$i")
+    done
+    # 添加登录服务器进程
+    for i in $(seq 1 "$LOGIN_NODES"); do
+        processes+=("login$i")
+    done
+    # 添加游戏和网关进程
     for i in $(seq 1 "$GAME_NODES"); do
         processes+=("game$i")
     done
@@ -168,7 +190,7 @@ show_logs() {
     local node=$1
     if [ -z "$node" ]; then
         echo "Usage: $0 logs <node_name>"
-        echo "Available nodes: db_proxy, game1, game2, gate1, gate2"
+        echo "Available nodes: db_proxy[1-$DB_NODES], login[1-$LOGIN_NODES], game[1-$GAME_NODES], gate[1-$GATE_NODES]"
         return 1
     fi
     

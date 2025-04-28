@@ -45,4 +45,5 @@ skynet.start(function()
     
     -- 打开集群端口
     cluster.open(node_name)
+    cluster.register(node_name, gateway_manager)
 end)

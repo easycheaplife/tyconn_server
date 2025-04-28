@@ -41,7 +41,9 @@ luac.out
 
 skynet
 test/node_modules
+ts_proto/node_modules
 logs
 test/benchmark*.json
 run
 .DS_Store
+

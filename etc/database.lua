@@ -13,24 +13,47 @@ M.redis = {
         token = "token:",    -- token缓存前缀
         user_info = "user_info:",  -- 用户信息缓存前缀(通过user_id)
         user_account = "user_account:",  -- 账号到用户ID的映射
+        user_mails = "user_mails:",  -- 用户邮件列表缓存前缀
+        mail_template = "mail_template:",  -- 邮件模板缓存前缀
         card = "card:",      -- 卡牌信息缓存前缀
         user_cards = "user_cards:",  -- 用户卡组缓存前缀
         user_items = "user_items:",  -- 用户物品缓存前缀
         user_bag = "bag:",
         user_bags = "bags:",
         bag_slots = "slots:",
+        equip_slots = "equip:slots:",
+        equip_level = "equip:level:",
+        user_partners = "user_partners:",  -- 用户伙伴列表缓存前缀
+        partner = "partner:",  -- 伙伴信息缓存前缀
+        map_info = "map:user:",
+        map_chapter = "map:chapter:",
+        map_events = "map:events:",
+        random_event_count = "map:random:count:",  -- 随机事件数量缓存前缀
+        random_events = "map:random:events:",      -- 随机事件列表缓存前缀
+        occupied_cells = "map:occupied:cells:",     -- 占用格子缓存前缀
+        passed_chapters = "map:passed:chapters:"  -- 已通过章节缓存前缀
     },
 
     -- 缓存过期时间(秒)
     expire = {
         token = 3600 * 24,     -- token 24小时
         user = 3600 * 24,      -- 用户信息 24小时
+        user_mails = 3600,     -- 用户邮件列表 1小时
+        mail_template = 3600,   -- 邮件模板 1小时
         card = 1800,        -- 卡牌信息缓存30分钟
         user_cards = 3600 * 24, -- 用户卡牌 24小时
         user_items = 3600 * 24,  -- 用户物品 24小时
         user_bag = 7200,    -- 2小时
         user_bags = 7200,   -- 2小时
         bag_slots = 7200,   -- 2小时
+        equip_slots = 3600,  -- 1小时
+        equip_level = 3600,  -- 1小时
+        user_partners = 3600 * 12,  -- 用户伙伴列表 12小时
+        partner = 3600 * 6,  -- 伙伴信息 6小时
+        map_info = 3600,       -- 地图信息 1小时
+        map_chapter = 3600,    -- 章节进度 1小时
+        map_event = 3600,      -- 地图事件 1小时
+        session = 86400      -- 会话 24小时
     }
 }
 
@@ -60,7 +83,7 @@ M.mysql = {
 
     -- 查询配置
     query = {
-        max_retries = 3,     -- 最大重试次数
+        max_retries = 1,     -- 最大重试次数
         retry_delay = 1,     -- 重试延迟（秒）
         timeout = 1000,      -- 查询超时（毫秒）
     }

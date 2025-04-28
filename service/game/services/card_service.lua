@@ -21,7 +21,7 @@ end
 -- 获取用户卡牌
 function M.get_user_cards(user_id)
     if not user_id then
-        return nil, "无效的用户ID"
+        return nil, "invalid user id"
     end
 
     -- 从dao层获取卡牌
@@ -37,7 +37,7 @@ end
 -- 初始化用户卡牌
 function M.init_user_cards(user_id)
     if not user_id then
-        return false, "无效的用户ID"
+        return false, "invalid user id"
     end
 
     logger.info("Initializing cards for new user: %d", user_id)
@@ -98,7 +98,7 @@ function M.add_card(card_info)
     -- 写入数据库
     local ok = card_dao.create_card(card)
     if not ok then
-        return false, "添加卡牌失败"
+        return false, "add card failed"
     end
 
     return true

@@ -1,40 +1,27 @@
-const Benchmark = require('../lib/benchmark');
+const BaseBenchmark = require('./base_benchmark');
 const LoginClient = require('../lib/login_client');
 const config = require('../config/config');
 
-async function loginBenchmark(options = {}) {
-    const benchmark = new Benchmark({
-        concurrent: options.concurrent || 100,
-        total: options.total || 1000,
-        timeout: options.timeout || 5000
-    });
+class LoginBenchmark extends BaseBenchmark {
+    async setup() {
+        // 不需要调用 super.setup()，因为登录测试不需要预先登录
+        this.loginClient = new LoginClient();
+    }
 
-    const report = await benchmark.run(async () => {
-        const client = new LoginClient();
-        // 使用随机账号避免冲突
-        const account = `test_${Math.random().toString(36).slice(2)}`;
-        await client.login(account, config.testPassword);
-    });
+    async runTest() {
+        await this.loginClient.login(
+            config.testAccount,
+            config.testPassword
+        );
+    }
 
-    // 打印报告
-    console.log('\nLogin Benchmark Results:');
-    console.log('-'.repeat(50));
-    console.log(`Total Requests: ${report.total}`);
-    console.log(`Success: ${report.success}`);
-    console.log(`Failed: ${report.failed}`);
-    console.log(`Success Rate: ${report.successRate}%`);
-    console.log(`Average Time: ${report.avgTime}ms`);
-    console.log(`QPS: ${report.qps}`);
-    console.log(`P95: ${report.p95}ms`);
-    console.log(`P99: ${report.p99}ms`);
-    console.log(`Duration: ${(report.duration/1000).toFixed(1)}s`);
+    async teardown() {
+        // 不需要关闭连接，因为每次登录都是新的连接
+    }
 
-    if (Object.keys(report.errors).length > 0) {
-        console.log('\nError Distribution:');
-        for (const [code, count] of Object.entries(report.errors)) {
-            console.log(`- ${code}: ${count}`);
-        }
+    getTitle() {
+        return 'Login Benchmark Results';
     }
 }
 
-module.exports = loginBenchmark; 
+module.exports = (options) => new LoginBenchmark(options).run(); 

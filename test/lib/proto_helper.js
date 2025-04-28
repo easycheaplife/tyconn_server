@@ -3,13 +3,44 @@ const path = require('path');
 const fs = require('fs');
 
 class ProtoHelper {
+    static #instance = null;
+    static #initPromise = null;
+
+    static getInstance() {
+        if (!this.#instance) {
+            this.#instance = new ProtoHelper();
+        }
+        return this.#instance;
+    }
+
     constructor() {
+        if (ProtoHelper.#instance) {
+            throw new Error('Use ProtoHelper.getInstance() instead');
+        }
         this.root = null;
         this.MessageID = {};
         this.initialized = false;
         this.sequence = 0;
         this.ErrorCode = {};  // 改为空对象，等待动态加载
-        this.init();
+        this.BagType = {};  // 改为空对象，等待动态加载
+    }
+
+    async ensureInitialized() {
+        if (this.initialized) {
+            return;
+        }
+
+        if (ProtoHelper.#initPromise) {
+            await ProtoHelper.#initPromise;
+            return;
+        }
+
+        ProtoHelper.#initPromise = this.init();
+        try {
+            await ProtoHelper.#initPromise;
+        } finally {
+            ProtoHelper.#initPromise = null;
+        }
     }
 
     async init() {
@@ -59,6 +90,11 @@ class ProtoHelper {
             // 初始化错误码
             const ErrorCode = this.root.lookupEnum('common.ErrorCode');
             this.ErrorCode = ErrorCode.values;
+
+            // 初始化背包类型
+            const BagType = this.root.lookupEnum('common.BagType');
+            this.BagType = BagType.values;
+            console.log('Loaded BagType:', Object.keys(this.BagType));
 
             this.initialized = true;
         } catch (error) {
@@ -381,33 +417,52 @@ class ProtoHelper {
             this.BagType = {
                 BAG_TYPE_NONE: 0,
                 BAG_TYPE_MAIN: 1,
-                BAG_TYPE_STORAGE: 2
             };
             console.log('Using default BagType enum:', this.BagType);
         }
     }
 
-    // 获取错误码名称
-    getErrorCodeName(code) {
-        // 查找错误码对应的名称
-        for (const [name, value] of Object.entries(this.ErrorCode)) {
-            if (value === code) {
+    // 获取枚举名称
+    getEnumName(enumType, value) {
+        let enumValues;
+        switch (enumType) {
+            case 'MessageID':
+                enumValues = this.MessageID;
+                break;
+            case 'ErrorCode':
+                enumValues = this.ErrorCode;
+                break;
+            case 'BagType':
+                enumValues = this.BagType;
+                break;
+            default:
+                throw new Error(`Unknown enum type: ${enumType}`);
+        }
+
+        // 查找枚举值对应的名称
+        for (const [name, val] of Object.entries(enumValues)) {
+            if (val === value) {
                 return name;
             }
         }
-        return `UNKNOWN_ERROR(${code})`;
+
+        // 如果没找到，返回数字值
+        return value.toString();
     }
 
-    // 获取错误码值
-    getErrorCode(name) {
-        if (typeof name === 'number') {
-            return name;  // 如果已经是数字，直接返回
-        }
-        const code = this.ErrorCode[name];
-        if (code === undefined) {
-            throw new Error(`Unknown error code name: ${name}`);
-        }
-        return code;
+    // 获取错误码名称
+    getErrorCodeName(errorCode) {
+        return this.getEnumName('ErrorCode', errorCode);
+    }
+
+    // 获取消息ID名称
+    getMessageIDName(messageId) {
+        return this.getEnumName('MessageID', messageId);
+    }
+
+    // 获取背包类型名称
+    getBagTypeName(bagType) {
+        return this.getEnumName('BagType', bagType);
     }
 }
 

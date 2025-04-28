@@ -26,8 +26,6 @@ module.exports = {
     testPassword: '123456',
 
     loginServer: `${WS_PROTOCOL}://${SERVER_HOST}:${WS_PORT}`,
-    account: 'test',
-    password: '123456',
     deviceId: 'test_device',
     jwtSecret: 'tyconn_jwt_secret',  // 添加JWT密钥，需要和服务器端一致
     ssl: WS_PROTOCOL === 'wss' ? SSL_CONFIG : undefined  // 仅在wss时使用SSL配置

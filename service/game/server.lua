@@ -1,8 +1,9 @@
 local skynet = require "skynet"
 local logger = require "logger"
-local message = require "message"  -- 更新引用路径
 local message_mgr = require "game.message_mgr"
 local cmd_mgr = require "game.cmd_mgr"
+local init = require "game.init"
+local balancer_service = require "balancer_service"
 
 -- 心跳相关配置
 local heartbeat_timeout = tonumber(skynet.getenv("heartbeat_timeout")) or 180  -- 默认180秒超时
@@ -21,23 +22,38 @@ local function check_heartbeat_timeout()
     end
 end
 
--- 服务入口
-skynet.start(function()
+-- 改名为 initialize 避免冲突
+local function initialize()
+    -- 加载并初始化
+    local ok = init.init()
+    if not ok then
+        logger.error("Failed to initialize game server")
+        skynet.exit()
+        return false
+    end
+    
     logger.info("Game server starting...")
     
     -- 初始化命令管理器
     if not cmd_mgr.init() then
         logger.error("Failed to initialize command manager")
-        return
+        return false
     end
     logger.info("Command manager initialized")
     
     -- 初始化消息处理器
     if not message_mgr.init() then
         logger.error("Failed to initialize message manager")
-        return
+        return false
     end
     logger.info("Message manager initialized")
+    
+    -- 初始化service_balancer
+    if not balancer_service.init("db_proxy", skynet.getenv("node_name")) then
+        logger.error("Failed to initialize db_proxy balancer")
+        return false
+    end
+    logger.info("DB proxy balancer initialized")
     
     -- 启动心跳检查定时器
     skynet.fork(function()
@@ -48,4 +64,10 @@ skynet.start(function()
     end)
     
     logger.info("Game server started")
+    return true
+end
+
+-- 服务入口
+skynet.start(function()
+    initialize()
 end)

@@ -5,6 +5,8 @@ local db_client = require "game.db_client"
 local item_model = require "models.item_model"
 local bag_model = require "models.bag_model"
 local snowflake = require "utils.snowflake"
+local utils = require "utils"
+local enum = require "enum"
 
 local M = {}
 
@@ -67,7 +69,8 @@ function M.get_user_bags(user_id)
     
     -- 2. 从数据库获取
     bags = db_client.get_user_bags(user_id)
-    if not bags then
+    
+    if not bags or #bags == 0 then
         return nil
     end
     
@@ -152,7 +155,7 @@ function M.create_bag(user_id, bag_type, size)
             user_id = user_id,
             bag_type = bag_type,
             slot_index = i-1,
-            state = bag_model.SLOT_STATE.EMPTY,
+            state = enum.SlotState.SLOT_STATE_EMPTY,
             create_time = now,
             update_time = now
         }))
@@ -190,31 +193,99 @@ function M.update_bag_size(user_id, bag_type, new_size)
     
     -- 3. 初始化新增格子
     local slots = cache.get_bag_slots(user_id, bag_type) or {}
+    local old_size = #slots
+    slots = {}
     local now = os.time()
-    
-    -- 添加新格子
-    for i = (#slots + 1), new_size do
+   
+    for i = old_size + 1, new_size do
+        local slot_index = i-1
         table.insert(slots, bag_model.new_slot({
             user_id = user_id,
-            bag_type = bag_type,
-            slot_index = i-1,
-            state = bag_model.SLOT_STATE.EMPTY,
+            bag_type = bag_type,    
+            slot_index = slot_index,
+            state = enum.SlotState.SLOT_STATE_EMPTY,
             create_time = now,
             update_time = now
         }))
     end
-    
     -- 4. 保存新格子到数据库
     ok = db_client.batch_create_slots(slots)
     if not ok then
         -- 回滚背包大小
-        db_client.update_bag_size(user_id, bag_type, #slots)
+        db_client.update_bag_size(user_id, bag_type, old_size)
         return false
     end
     
     -- 5. 更新格子缓存
     cache.set_bag_slots(user_id, bag_type, slots)
     
+    return true
+end
+
+-- 获取用户所有背包
+function M.get_user_all_bags(user_id)
+    if not user_id then
+        return nil
+    end
+
+    -- 1. 从缓存获取所有背包信息
+    local bags = cache.get_user_bags(user_id)
+    if bags then
+        -- 获取每个背包的格子信息
+        for _, bag in ipairs(bags) do
+            local slots = cache.get_bag_slots(user_id, bag.bag_type)
+            if slots then
+                bag.slots = slots
+            end
+        end
+        return bags
+    end
+
+    -- 2. 从数据库获取所有背包
+    bags = db_client.get_user_bags(user_id)
+    if not bags then
+        logger.error("get_user_all_bags: get user bags failed")
+        return nil
+    end
+
+    -- 3. 获取每个背包的格子信息
+    for _, bag in ipairs(bags) do
+        local slots = db_client.get_bag_slots(user_id, bag.bag_type)
+        if slots then
+            bag.slots = slots
+        else
+            bag.slots = {}
+        end
+    end
+
+    -- 4. 写入缓存
+    cache.set_user_bags(user_id, bags)
+    for _, bag in ipairs(bags) do
+        if bag.slots then
+            cache.set_bag_slots(user_id, bag.bag_type, bag.slots)
+        end
+    end
+
+    return bags
+end
+
+-- 清除缓存
+function M.clear_cache(user_id)
+    -- 先打印日志看看 cache 对象的内容
+    logger.debug("Cache object: %s", utils.table_to_string(cache))
+    
+    if not cache.remove_user_items then
+        logger.error("cache.remove_user_items is nil")
+        return false
+    end
+    
+    if not cache.clear_bag_cache then
+        logger.error("cache.clear_bag_cache is nil")
+        return false
+    end
+
+    cache.remove_user_items(user_id)
+    cache.clear_bag_cache(user_id)
     return true
 end
 

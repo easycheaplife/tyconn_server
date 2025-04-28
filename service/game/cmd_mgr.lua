@@ -2,7 +2,7 @@ local skynet = require "skynet"
 local logger = require "logger"
 local message_mgr = require "game.message_mgr"
 local user_service = require "services.user_service"
-local session = require "services.session_service"
+local user_session_service = require "services.user_session_service"
 
 local M = {}
 local CMD = {}
@@ -16,7 +16,7 @@ end
 -- 处理客户端断开连接
 function CMD.client_disconnect(_, client_id)
     logger.info("Client disconnected: %d", client_id)
-    session.remove_user(client_id)
+    user_session_service.remove_user(client_id)
 end
 
 -- 获取用户信息

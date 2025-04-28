@@ -1,7 +1,7 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local init = require "db_proxy.init"
-local token_model = require "db_proxy.models.token"
+local token_model = require "db_proxy.models.token_model"
 local CMD = require "db_proxy.commands"
 
 -- 服务入口

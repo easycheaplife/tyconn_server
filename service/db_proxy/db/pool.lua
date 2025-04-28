@@ -1,6 +1,6 @@
 local skynet = require "skynet"
 local logger = require "logger"
-local mysql = require "db.mysql"
+local mysql = require "mysql"
 local database = require "database"
 
 local M = {}
@@ -108,23 +108,21 @@ end
 function M.query(sql, ...)
     local conn = M.get()
     if not conn then
-        return false, "No available connection"
+        return false, "ERROR: No available connection"
     end
     
-    -- 直接使用mysql模块的query方法
-    local ok, res = pcall(mysql.query, sql)
+    -- 直接执行查询
+    local res, err, errno, sqlstate = mysql.query(sql)
     
-    if not ok then
-        -- 连接可能断开，尝试重新获取
-        M.check()
-        conn = M.get()
-        if conn then
-            ok, res = pcall(mysql.query, sql)
-        end
-    end
-    
-    if not ok then
-        return false, res
+    -- 检查是否是错误结果
+    if type(res) == "table" and res.badresult then
+        local error_msg = string.format("ERROR %s (%s): %s", 
+            tostring(errno or "unknown"), 
+            tostring(sqlstate or "unknown"), 
+            res.err or "Query execution failed")
+        
+        -- 返回错误信息
+        return false, error_msg
     end
     
     -- 确保返回的是表格

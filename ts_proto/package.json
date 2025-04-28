@@ -1,0 +1,11 @@
+{
+  "scripts": {
+    "proto": "find ../proto -name '*.proto' -exec protoc --proto_path=proto --plugin=./node_modules/.bin/protoc-gen-ts_proto --ts_proto_out=. {} \\;"
+  },
+  "devDependencies": {
+    "ts-proto": "^2.6.1"
+  },
+  "dependencies": {
+    "long": "^5.3.1"
+  }
+}

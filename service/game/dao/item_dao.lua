@@ -3,6 +3,7 @@ local logger = require "logger"
 local db_client = require "game.db_client"
 local cache = require "game.cache"
 local item_model = require "models.item_model"
+local utils = require "utils"
 
 local M = {}
 
@@ -15,6 +16,13 @@ function M.get_user_items(user_id)
     -- 1. 从缓存获取
     local items = cache.get_user_items(user_id)
     if items then
+        -- 确保数值类型
+        for _, item in ipairs(items) do
+            item.item_id = tonumber(item.item_id)
+            item.count = tonumber(item.count)
+            item.slot_index = tonumber(item.slot_index or 0)
+            item.bag_type = tonumber(item.bag_type)
+        end
         return items
     end
 
@@ -22,6 +30,14 @@ function M.get_user_items(user_id)
     local result = db_client.get_user_items(user_id)
     if not result then
         return {}, "获取物品失败"
+    end
+
+    -- 确保数值类型
+    for _, item in ipairs(result) do
+        item.item_id = tonumber(item.item_id)
+        item.count = tonumber(item.count)
+        item.slot_index = tonumber(item.slot_index or 0)
+        item.bag_type = tonumber(item.bag_type)
     end
 
     -- 3. 写入缓存
@@ -35,13 +51,13 @@ end
 -- 更新用户物品
 function M.update_user_items(user_id, items)
     if not user_id or not items then
-        return false, "参数无效"
+        return false, "invalid params"
     end
 
     -- 1. 更新数据库
     local ok = db_client.update_user_items(user_id, items)
     if not ok then
-        return false, "更新失败"
+        return false, "update failed"
     end
 
     -- 2. 更新缓存
@@ -144,6 +160,75 @@ function M.log_trade(from_user, to_user, item_id, count)
         count = count,
         time = os.time()
     })
+end
+
+-- 更新单个物品
+function M.update_single_item(item)
+    if not item or not item.id or not item.user_id then
+        logger.error("Invalid item for update_single_item: %s", utils.table_to_string(item or {}))
+        return false, "参数无效"
+    end
+    
+    -- 1. 更新数据库中的单条记录
+    local ok = db_client.update_single_item(item)
+    if not ok then
+        logger.error("Failed to update single item in DB: user_id=%d, item_id=%d, id=%s",
+            item.user_id, item.item_id, tostring(item.id))
+        return false, "更新失败"
+    end
+    
+    -- 2. 清除缓存，强制下次获取时从数据库读取最新数据
+    M.clear_user_items_cache(item.user_id)
+    
+    return true
+end
+
+-- 添加单个物品
+function M.add_single_item(item)
+    if not item or not item.user_id or not item.item_id then
+        logger.error("Invalid item for add_single_item: %s", utils.table_to_string(item or {}))
+        return false, "参数无效"
+    end
+    
+    -- 确保物品有ID
+    if not item.id then
+        logger.error("Item must have an ID for add_single_item")
+        return false, "物品缺少ID"
+    end
+    
+    -- 1. 添加到数据库
+    local ok = db_client.add_single_item(item)
+    if not ok then
+        logger.error("Failed to add single item to DB: user_id=%d, item_id=%d",
+            item.user_id, item.item_id)
+        return false, "添加失败"
+    end
+    
+    -- 2. 清除缓存，强制下次获取时从数据库读取最新数据
+    M.clear_user_items_cache(item.user_id)
+    
+    return true
+end
+
+-- 删除单个物品
+function M.delete_single_item(item_id, user_id)
+    if not item_id or not user_id then
+        logger.error("Invalid params for delete_single_item")
+        return false, "参数无效"
+    end
+    
+    -- 1. 从数据库删除
+    local ok = db_client.delete_single_item(item_id, user_id)
+    if not ok then
+        logger.error("Failed to delete single item from DB: user_id=%d, item_id=%s",
+            user_id, tostring(item_id))
+        return false, "删除失败"
+    end
+    
+    -- 2. 清除缓存，强制下次获取时从数据库读取最新数据
+    M.clear_user_items_cache(user_id)
+    
+    return true
 end
 
 return M 

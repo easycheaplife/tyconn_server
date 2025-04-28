@@ -29,6 +29,27 @@ function CMD.start(conf)
     return true
 end
 
+function CMD.client_push(client_id, message_id, encoded_response)
+    logger.info("client_push: Received push request for client %s, message_id: %s", 
+        tostring(client_id), tostring(message_id))
+    logger.debug("client_push: Response payload size: %d bytes", #encoded_response)
+    
+    -- 直接发送消息给客户端
+    if server then
+        logger.info("Sending message to client %s", client_id)
+        local ok, err = pcall(skynet.call, server, "lua", "send_message", client_id, encoded_response)
+        if not ok then
+            logger.error("Failed to send message to client %s: %s", client_id, tostring(err))
+            return false
+        end
+        logger.info("Successfully sent message to client %s", client_id)
+        return true
+    else
+        logger.error("client_push: Server not initialized")
+        return false
+    end
+end
+
 skynet.start(function()
     skynet.dispatch("lua", function(session, source, cmd, ...)
         local f = CMD[cmd]

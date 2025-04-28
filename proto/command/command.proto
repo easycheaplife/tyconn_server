@@ -42,110 +42,384 @@ message G2CUserInfoResponse {
     bool is_new = 2;       // 是否是新创建的用户
 }
 
-// 获取用户卡牌请求 {{Req:7}}
+// 游戏登录请求 {{Req:7}}
+message C2GLoginGameRequest {
+    string token = 1;       // JWT令牌
+}
+
+// 游戏登录响应 {{Res:8}}
+message G2CLoginGameResponse {
+    common.UserInfo user = 1;              // 用户基本信息
+    bool is_new_user = 2;                  // 是否是新创建的用户
+    repeated common.BagInfo bags = 3;      // 背包信息
+    repeated common.ResourceInfo resources = 4;  // 资源信息
+    repeated common.PropertyInfo property_info = 5; // 属性信息
+    int64 server_time = 6;                 // 服务器时间（毫秒）
+}
+
+// 获取用户卡牌请求 {{Req:101}}
 message C2GUserCardsRequest {
     string token = 1;       // JWT令牌
 }
 
-// 获取用户卡牌响应 {{Res:8}}
+// 获取用户卡牌响应 {{Res:102}}
 message G2CUserCardsResponse {
     repeated common.CardInfo cards = 1;  // 卡牌列表
 }
 
-// 获取背包信息请求 {{Req:9}}
+// 获取背包信息请求 {{Req:201}}
 message C2GBagInfoRequest {
     string token = 1;
 }
 
-// 背包信息响应 {{Res:10}}
+// 背包信息响应 {{Res:202}}
 message G2CBagInfoResponse {
-    repeated common.ItemInfo items = 1;  // 背包物品列表
+    repeated common.BagInfo bags = 1;  // 背包信息列表
 }
 
-// 使用物品请求 {{Req:11}}
+// 使用物品请求 {{Req:203}}
 message C2GUseItemRequest {
     string token = 1;        // 用户令牌
     int32 item_id = 2;      // 物品ID
     int32 count = 3;        // 使用数量
 }
 
-// 使用物品响应 {{Res:12}}
+// 使用物品响应 {{Res:204=202}}
 message G2CUseItemResponse {
-    repeated common.ItemInfo items = 1;  // 变化的物品列表
+    repeated common.BagInfo bags = 1;  // 变化的物品列表
 }
 
-// 扩展背包请求 {{Req:13}}
+// 扩展背包请求 {{Req:205}}
 message C2GExpandBagRequest {
     string token = 1;
     common.BagType bag_type = 2;  // 使用枚举类型
     int32 add_size = 3;
 }
 
-// 扩展背包响应 {{Res:14}}
+// 扩展背包响应 {{Res:206}}
 message G2CExpandBagResponse {
-    int32 code = 1;               // 错误码
-    string message = 2;           // 错误信息
-    common.BagType bag_type = 3;  // 背包类型
-    int32 new_size = 4;          // 新的背包大小
-    repeated common.ItemInfo items = 5;  // 物品列表
+    common.BagInfo bag = 1;  // 背包信息
 }
 
-// 整理背包请求 {{Req:15}}  
+// 整理背包请求 {{Req:207}}  
 message C2GSortBagRequest {
-    required string token = 1;       // JWT令牌
-    required common.BagType bag_type = 2;   // 背包类型
-    required int32 sort_rule = 3;    // 整理规则(1:类型 2:品质 3:等级)
-}
-
-// 整理背包响应 {{Res:16}}  
-message G2CSortBagResponse {
-    int32 code = 1;         // 错误码
-    string message = 2;     // 错误信息
-    repeated common.ItemInfo items = 3;     // 整理后的物品列表
-}
-
-// 物品移动请求 {{Req:17}}
-message C2GMoveItemRequest {
     string token = 1;       // JWT令牌
-    common.BagType from_bag = 2;   // 源背包
-    int32 from_slot = 3;    // 源格子
-    common.BagType to_bag = 4;     // 目标背包
-    int32 to_slot = 5;      // 目标格子
-    int32 count = 6;        // 移动数量(不填则全部)
+    common.BagType bag_type = 2;   // 背包类型
+    int32 sort_rule = 3;    // 整理规则(1:类型 2:品质 3:等级)
 }
 
-// 物品移动响应 {{Res:18}}
+// 整理背包响应 {{Res:208}}  
+message G2CSortBagResponse {
+    repeated common.ItemInfo items = 1;     // 整理后的物品列表
+}
+
+// 移动物品请求 {{Req:209}}
+message C2GMoveItemRequest {
+    string token = 1;
+    int32 src_bag_type = 2;     // 源背包类型
+    int32 src_slot = 3;         // 源格子位置
+    int32 dst_bag_type = 4;     // 目标背包类型
+    int32 dst_slot = 5;         // 目标格子位置
+    int32 count = 6;   // 可选的移动数量
+}
+
+// 移动物品响应 {{Res:210}}
 message G2CMoveItemResponse {
-    int32 code = 1;         // 错误码
-    string message = 2;     // 错误信息
-    repeated common.ItemInfo changed_items = 3;  // 变化的物品
+    repeated common.ItemInfo changed_items = 1;  // 所有变化的物品
 }
 
-// 物品合成请求 {{Req:19}}
+// 物品合成请求 {{Req:211}}
 message C2GComposeItemRequest {
     string token = 1;       // JWT令牌
     int32 target_id = 2;    // 目标物品ID
-    repeated int32 material_slots = 3;  // 材料所在格子
 }
 
-// 物品合成响应 {{Res:20}}
+// 物品合成响应 {{Res:212}}
 message G2CComposeItemResponse {
-    int32 code = 1;         // 错误码
-    string message = 2;     // 错误信息
-    bool success = 3;       // 是否成功
-    common.ItemInfo new_item = 4;  // 合成的新物品
-    repeated common.ItemInfo remain_items = 5;  // 剩余材料
+    common.ItemInfo new_item = 1;  // 合成的新物品
+    repeated common.ItemInfo remain_items = 2;  // 剩余材料
 }
 
-// 物品分解请求 {{Req:21}}
+// 物品分解请求 {{Req:213}}
 message C2GDecomposeItemRequest {
     string token = 1;       // JWT令牌
-    repeated int32 item_slots = 2;   // 要分解的物品格子
+    int32 target_id = 2;    // 目标物品ID
 }
 
-// 物品分解响应 {{Res:22}}
+// 物品分解响应 {{Res:214}}
 message G2CDecomposeItemResponse {
-    int32 code = 1;         // 错误码
-    string message = 2;     // 错误信息
-    repeated common.ItemInfo result_items = 3;  // 分解获得的物品
+    repeated common.ItemInfo result_items = 1;  // 分解获得的物品
+}
+
+// GM指令请求 {{Req:301}}
+message C2GGmCommandRequest {
+    string token = 1;  // 令牌
+    string command = 2;  // GM指令
+    repeated string params = 3;  // 参数列表
+}
+
+// GM指令响应 {{Res:302}}
+message G2CGmCommandResponse {
+    string result = 1;  // 结果
+    string message = 2;  // 消息
+}
+
+// 获取装备信息请求 {{Req:401}}
+message C2GEquipInfoRequest {
+    string token = 1;       // JWT令牌
+}
+
+// 获取装备信息响应 {{Res:402}}
+message G2CEquipInfoResponse {
+    repeated common.ItemInfo equipped_items = 1;  // 已装备的物品列表
+    int32 combat_power = 2;            // 装备提供的战斗力
+}
+
+// 装备物品请求 {{Req:403}}
+message C2GEquipItemRequest {
+    string token = 1;        // JWT令牌
+    int32 bag_type = 2;      // 物品所在背包类型
+    int32 slot_index = 3;    // 物品所在格子索引
+    int32 equip_slot = 4;    // 装备位置
+}
+
+// 装备物品响应 {{Res:404}}
+message G2CEquipItemResponse {
+    common.ItemInfo equipped_item = 1; // 装备上的物品
+    common.ItemInfo unequipped_item = 2; // 卸下的物品(如果有)
+    int32 combat_power_change = 3;     // 战斗力变化
+}
+
+// 卸下装备请求 {{Req:405}}
+message C2GUnequipItemRequest {
+    string token = 1;        // JWT令牌
+    int32 equip_slot = 2;    // 装备位置
+    int32 bag_type = 3;      // 目标背包类型
+    int32 slot_index = 4;    // 目标格子索引(可选，0表示自动选择)
+}
+
+// 卸下装备响应 {{Res:406}}
+message G2CUnequipItemResponse {
+    common.ItemInfo unequipped_item = 1; // 卸下的物品
+    int32 combat_power_change = 2;     // 战斗力变化
+}
+
+// 随机获取装备请求 {{Req:407}}
+message C2GEquipRandomRequest {
+    string token = 1;     // JWT令牌
+    int32 part = 2;       // 部位(0表示随机)
+    bool is_replace = 3;  // 是否替换现有装备
+}
+
+// 随机获取装备响应 {{Res:408}}
+message G2CEquipRandomResponse {
+    common.ItemInfo new_equip = 1;      // 新获得的装备
+    common.ItemInfo current_equip = 2;  // 当前装备(如果有)
+    int32 power_diff = 3;               // 战力差异
+}
+
+// 获取装备等级信息请求 {{Req:409}}
+message C2GEquipLevelInfoRequest {
+    string token = 1;       // JWT令牌
+}
+
+// 获取装备等级信息响应 {{Res:410}}
+message G2CEquipLevelInfoResponse {
+    int32 current_level = 1;             // 当前等级
+    int32 max_level = 2;                 // 最大等级
+    int32 item_id = 3;                   // 升级所需物品ID
+    int32 item_count = 4;                // 升级所需物品数量
+    int32 owned_count = 5;               // 已拥有物品数量
+    int32 upgrade_time = 6;              // 升级所需时间(秒)
+    int32 remaining_time = 7;            // 剩余时间(秒)
+    bool is_upgrading = 8;               // 是否正在升级
+    repeated double current_odds = 9;    // 当前等级品质概率
+    repeated double next_odds = 10;      // 下一等级品质概率
+}
+
+// 升级装备等级请求 {{Req:411}}
+message C2GEquipLevelUpgradeRequest {
+    string token = 1;        // JWT令牌
+    bool use_ad = 2;         // 是否使用广告加速
+    bool use_item = 3;       // 是否使用道具加速
+    int32 speedup_item_id = 4;  // 加速道具ID
+}
+
+// 升级装备等级响应 {{Res:412}}
+message G2CEquipLevelUpgradeResponse {
+    int32 current_level = 1;           // 当前等级
+    int32 remaining_time = 2;          // 剩余时间(秒)
+    bool is_upgrading = 3;             // 是否正在升级
+    repeated double current_odds = 4;  // 当前等级品质概率
+}
+
+// 装备过期推送 {{Push:451}}
+message G2CEquipmentExpiredPush {
+    repeated common.ItemInfo expired_items = 1;  // 过期的装备列表
+}
+
+// 装备等级升级完成通知 {{Push:452}}
+message G2CEquipmentLevelUpgradedPush {
+    int32 new_level = 1;  // 新等级
+}
+
+// -------------------- 邮件系统 --------------------
+
+// 获取邮件列表请求 {{Req:501}}
+message C2GMailListRequest {
+    string token = 1;  // JWT令牌
+}
+
+// 获取邮件列表响应 {{Res:502}}
+message G2CMailListResponse {
+    repeated common.MailInfo mails = 1;  // 邮件列表
+}
+
+// 读取邮件请求 {{Req:503}}
+message C2GReadMailRequest {
+    string token = 1;  // JWT令牌
+    int64 mail_id = 2;  // 邮件ID
+}
+
+// 读取邮件响应 {{Res:504}}
+message G2CReadMailResponse {
+    int64 mail_id = 1;  // 邮件ID
+}
+
+// 领取邮件附件请求 {{Req:505}}
+message C2GClaimMailItemsRequest {
+    string token = 1;  // JWT令牌
+    int64 mail_id = 2;  // 邮件ID
+}
+
+// 领取邮件附件响应 {{Res:506}}
+message G2CClaimMailItemsResponse {
+    int64 mail_id = 1;  // 邮件ID
+    repeated common.ItemInfo items = 2;  // 获得的物品
+}
+
+// 删除邮件请求 {{Req:507}}
+message C2GDeleteMailRequest {
+    string token = 1;  // JWT令牌
+    int64 mail_id = 2;  // 邮件ID
+}
+
+// 删除邮件响应 {{Res:508}}
+message G2CDeleteMailResponse {
+    int64 mail_id = 2;  // 邮件ID
+}
+
+// 新邮件推送 {{Push:551}}
+message G2CNewMailPush {
+    common.MailInfo mail = 1;  // 新邮件信息
+}
+
+// 获取伙伴列表请求 {{Req:601}}
+message C2GPartnerListRequest {
+    string token = 1;       // JWT令牌
+}
+
+// 获取伙伴列表响应 {{Res:602}}
+message G2CPartnerListResponse {
+    repeated common.PartnerInfo partners = 1;  // 伙伴列表
+}
+
+// 伙伴升级请求 {{Req:603}}
+message C2GPartnerLevelUpRequest {
+    string token = 1;       // JWT令牌
+    int64 partner_id = 2;   // 伙伴ID
+}
+
+// 伙伴升级响应 {{Res:604}}
+message G2CPartnerLevelUpResponse {
+    common.PartnerInfo partner = 1;  // 更新后的伙伴信息
+    repeated common.PropertyInfo property_changes = 2;  // 变化属性
+    repeated common.BagInfo bags = 3;  // 变化的物品列表
+}
+
+// 伙伴升星请求 {{Req:605}}
+message C2GPartnerStarUpRequest {
+    string token = 1;       // JWT令牌
+    int64 partner_id = 2;   // 伙伴ID
+}
+
+// 伙伴升星响应 {{Res:606}}
+message G2CPartnerStarUpResponse {
+    common.PartnerInfo partner = 1;  // 更新后的伙伴信息
+    repeated common.PropertyInfo property_changes = 2;  // 变化属性
+    repeated common.BagInfo bags = 3;  // 变化的物品列表
+}
+
+// 伙伴解锁请求 {{Req:607}}
+message C2GPartnerUnlockRequest {
+    string token = 1;       // JWT令牌
+    int32 unit_id = 2;      // 单位ID
+}
+
+// 伙伴解锁响应 {{Res:608}}
+message G2CPartnerUnlockResponse {
+    common.PartnerInfo partner = 1;  // 新解锁的伙伴信息
+    repeated common.BagInfo bags = 2;  // 变化的物品列表
+    repeated common.PropertyInfo property_changes = 3;  // 变化属性
+}
+
+// 伙伴属性变化推送 {{Push:651}}
+message G2CPartnerPropertyChangedPush {
+    int64 partner_id = 1;            // 伙伴ID
+    repeated common.PropertyInfo property_changes = 2;  // 变化属性
+    string reason = 3;               // 变化原因
+}
+
+// 获取地图信息请求 {{Req:701}}
+message C2GMapInfoRequest {
+    string token = 1;      // JWT令牌
+}
+
+// 获取地图信息响应 {{Res:702}}
+message G2CMapInfoResponse {
+    int32 chapter_id = 1;                    // 章节ID
+    int32 current_position = 2;              // 当前位置（对应格子ID）
+    int32 direction = 3;                     // 移动朝向(1:正向, -1:反向)
+    repeated common.EventInfo random_events = 4;  // 地图上的随机事件
+}
+
+// 掷骰子请求 {{Req:703}}
+message C2GRollDiceRequest {
+    string token = 1;      // JWT令牌
+}
+
+// 掷骰子响应 {{Res:704}}
+message G2CRollDiceResponse {
+    int32 dice_value = 1;                    // 骰子点数
+    int32 from_position = 2;                 // 起始位置
+    int32 to_position = 3;                   // 目标位置
+    repeated common.EventInfo event_ids = 4;  // 触发的事件列表
+    repeated common.EventInfo random_events = 5;  // 触发的随机事件
+}
+
+// 处理格子事件请求 {{Req:705}}
+message C2GHandleCellEventRequest {
+    string token = 1;           // JWT令牌
+    common.EventInfo event_info = 2;  // 事件信息
+}
+
+// 处理格子事件响应 {{Res:706}}
+message G2CHandleCellEventResponse {
+    common.EventInfo event_info = 1;          // 当前处理的事件信息
+    bool success = 2;                        // 是否成功处理
+    repeated common.BagInfo bags = 3;        // 背包变化信息
+    common.EventInfo next_event = 4;         // 下一个需要处理的事件 (event_id=0表示所有事件已处理完)
+    repeated common.EventInfo remaining_events = 5;  // 剩余未处理的事件列表
+}
+
+// 领取通关奖励请求 {{Req:707}}
+message C2GClaimRewardRequest {
+    string token = 1;      // JWT令牌
+}
+
+// 领取通关奖励响应 {{Res:718}}
+message G2CClaimRewardResponse {
+    bool success = 1;                      // 是否成功
+    repeated common.BagInfo bags = 2;      // 背包变化信息
+    int32 next_chapter = 3;                // 下一章节ID
 }

@@ -1,168 +1,78 @@
-local pb = require "pb"
-local logger = require "logger"
-local utils = require "utils"
-local jwt = require "jwt"
-local skynet = require "skynet"
+-- Generating message.lua from proto/common/message.proto
+-- Generate time: 2025-04-22 03:34:43
 
 local M = {}
 
--- 解码基础请求和具体请求
-function M.decode_request(msg, request_type)
-    -- 解码基础请求
-    local ok, base_request = pcall(pb.decode, "common.BaseRequest", msg)
-    if not ok then
-        logger.error("Failed to decode base request: %s", base_request)
-        return nil
-    end
-    
-    if base_request and base_request.session then
-        logger.debug("Decoded base request: messageId=%d, sequence=%d", 
-            base_request.session.messageId or 0,
-            base_request.session.sequence or 0
-        )
-    end
+-- 消息ID定义
+M.MessageID = {
+    NONE = 0,
+    C2L_LOGIN_REQUEST = 1,    -- 客户端到登录服务器的登录请求
+    L2C_LOGIN_RESPONSE = 2,    -- 登录服务器到客户端的登录响应
+    C2G_HEARTBEAT_REQUEST = 3,    -- 客户端到游戏服务器的心跳请求
+    G2C_HEARTBEAT_RESPONSE = 4,    -- 游戏服务器到客户端的心跳响应
+    C2G_USER_INFO_REQUEST = 5,    -- 获取用户信息请求
+    G2C_USER_INFO_RESPONSE = 6,    -- 获取用户信息响应
+    C2G_LOGIN_GAME_REQUEST = 7,    -- 客户端到游戏服务器的登录请求
+    G2C_LOGIN_GAME_RESPONSE = 8,    -- 游戏服务器到客户端的登录响应
+    C2G_USER_CARDS_REQUEST = 101,    -- 获取用户卡牌请求
+    G2C_USER_CARDS_RESPONSE = 102,    -- 获取用户卡牌响应
+    C2G_BAG_INFO_REQUEST = 201,    -- 获取背包信息请求
+    G2C_BAG_INFO_RESPONSE = 202,    -- 获取背包信息响应
+    C2G_USE_ITEM_REQUEST = 203,    -- 使用物品请求
+    G2C_USE_ITEM_RESPONSE = 204,    -- 使用物品响应
+    C2G_EXPAND_BAG_REQUEST = 205,    -- 扩展背包请求
+    G2C_EXPAND_BAG_RESPONSE = 206,    -- 扩展背包响应
+    C2G_SORT_BAG_REQUEST = 207,    -- 整理背包请求
+    G2C_SORT_BAG_RESPONSE = 208,    -- 整理背包响应
+    C2G_MOVE_ITEM_REQUEST = 209,    -- 移动物品请求
+    G2C_MOVE_ITEM_RESPONSE = 210,    -- 移动物品响应
+    C2G_COMPOSE_ITEM_REQUEST = 211,    -- 物品合成请求
+    G2C_COMPOSE_ITEM_RESPONSE = 212,    -- 物品合成响应
+    C2G_DECOMPOSE_ITEM_REQUEST = 213,    -- 物品分解请求
+    G2C_DECOMPOSE_ITEM_RESPONSE = 214,    -- 物品分解响应
+    C2G_GM_COMMAND_REQUEST = 301,    -- GM命令请求
+    G2C_GM_COMMAND_RESPONSE = 302,    -- GM命令响应
+    C2G_EQUIP_INFO_REQUEST = 401,    -- 获取装备信息请求
+    G2C_EQUIP_INFO_RESPONSE = 402,    -- 获取装备信息响应
+    C2G_EQUIP_ITEM_REQUEST = 403,    -- 装备物品请求
+    G2C_EQUIP_ITEM_RESPONSE = 404,    -- 装备物品响应
+    C2G_UNEQUIP_ITEM_REQUEST = 405,    -- 卸下装备请求
+    G2C_UNEQUIP_ITEM_RESPONSE = 406,    -- 卸下装备响应
+    C2G_EQUIP_RANDOM_REQUEST = 407,    -- 随机装备请求
+    G2C_EQUIP_RANDOM_RESPONSE = 408,    -- 随机装备响应
+    C2G_EQUIP_LEVEL_INFO_REQUEST = 409,    -- 获取装备等级信息请求
+    G2C_EQUIP_LEVEL_INFO_RESPONSE = 410,    -- 获取装备等级信息响应
+    C2G_EQUIP_LEVEL_UPGRADE_REQUEST = 411,    -- 装备等级升级请求
+    G2C_EQUIP_LEVEL_UPGRADE_RESPONSE = 412,    -- 装备等级升级响应
+    G2C_EQUIPMENT_EXPIRED_PUSH = 451,    -- 装备过期推送
+    G2C_EQUIPMENT_LEVEL_UPGRADED_PUSH = 452,    -- 装备等级升级完成推送
+    C2G_MAIL_LIST_REQUEST = 501,    -- 获取邮件列表请求
+    G2C_MAIL_LIST_RESPONSE = 502,    -- 获取邮件列表响应
+    C2G_READ_MAIL_REQUEST = 503,    -- 读取邮件请求
+    G2C_READ_MAIL_RESPONSE = 504,    -- 读取邮件响应
+    C2G_CLAIM_MAIL_ITEMS_REQUEST = 505,    -- 领取邮件附件请求
+    G2C_CLAIM_MAIL_ITEMS_RESPONSE = 506,    -- 领取邮件附件响应
+    C2G_DELETE_MAIL_REQUEST = 507,    -- 删除邮件请求
+    G2C_DELETE_MAIL_RESPONSE = 508,    -- 删除邮件响应
+    G2C_NEW_MAIL_PUSH = 551,    -- 新邮件推送
+    C2G_PARTNER_LIST_REQUEST = 601,    -- 获取伙伴列表请求
+    G2C_PARTNER_LIST_RESPONSE = 602,    -- 获取伙伴列表响应
+    C2G_PARTNER_LEVEL_UP_REQUEST = 603,    -- 伙伴升级请求
+    G2C_PARTNER_LEVEL_UP_RESPONSE = 604,    -- 伙伴升级响应
+    C2G_PARTNER_STAR_UP_REQUEST = 605,    -- 伙伴升星请求
+    G2C_PARTNER_STAR_UP_RESPONSE = 606,    -- 伙伴升星响应
+    C2G_PARTNER_UNLOCK_REQUEST = 607,    -- 伙伴解锁请求
+    G2C_PARTNER_UNLOCK_RESPONSE = 608,    -- 伙伴解锁响应
+    G2C_PARTNER_PROPERTY_CHANGED_PUSH = 651,    -- 伙伴属性变化推送
+    C2G_MAP_INFO_REQUEST = 701,    -- 获取地图信息请求
+    G2C_MAP_INFO_RESPONSE = 702,    -- 获取地图信息响应
+    C2G_ROLL_DICE_REQUEST = 703,    -- 掷骰子请求
+    G2C_ROLL_DICE_RESPONSE = 704,    -- 掷骰子响应
+    C2G_HANDLE_CELL_EVENT_REQUEST = 705,    -- 处理格子事件请求
+    G2C_HANDLE_CELL_EVENT_RESPONSE = 706,    -- 处理格子事件响应
+    C2G_CLAIM_REWARD_REQUEST = 707,    -- 领取通关奖励请求
+    G2C_CLAIM_REWARD_RESPONSE = 718,    -- 领取通关奖励响应
+    G2C_CHAPTER_COMPLETED_PUSH = 751,    -- 章节完成推送
+}
 
-    -- 如果没有指定具体请求类型，直接返回基础请求
-    if not request_type then
-        return base_request
-    end
-
-    -- 解码具体请求
-    local ok, request = pcall(pb.decode, request_type, base_request.payload)
-    if not ok then
-        logger.error("Failed to decode request payload: %s", request)
-        return nil
-    end
-
-    return base_request, request
-end
-
--- 验证Token
-function M.verify_token(token)
-    if not token then
-        return {
-            code = pb.enum("common.ErrorCode", "ERROR_CODE_TOKEN_INVALID"),
-            message = "Missing token"
-        }
-    end
-
-    local ok, claims = pcall(jwt.decode, token, skynet.getenv("jwt_secret"), true)
-    if not ok or not claims then
-        logger.error("Failed to decode token")
-        return {
-            code = pb.enum("common.ErrorCode", "ERROR_CODE_TOKEN_INVALID"),
-            message = "Invalid token"
-        }
-    end
-
-    if not claims.account then
-        logger.error("Missing account in token claims")
-        return {
-            code = pb.enum("common.ErrorCode", "ERROR_CODE_TOKEN_INVALID"),
-            message = "Invalid token format"
-        }
-    end
-
-    return {
-        code = pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
-        message = "success",
-        claims = claims
-    }
-end
-
--- 创建会话信息
-function M.create_session(messageId, sequence, version)
-    return {
-        messageId = messageId or 0,
-        sequence = sequence or 0,
-        timestamp = os.time(),
-        version = version or "1.0.0"
-    }
-end
-
--- 创建基础响应
-function M.create_base_response(session, errorCode, errorMsg, payload)
-    -- 确保所有字段都有默认值
-    local new_session = session or M.create_session()
-    new_session.timestamp = os.time()  -- 更新时间戳
-    
-    return {
-        session = new_session,
-        errorCode = errorCode or 0,
-        errorMsg = errorMsg or "",
-        payload = payload or ""
-    }
-end
-
--- 编码基础响应
-function M.encode_response(response)
-    -- 确保错误码被正确编码
-    local base_response = {
-        session = response.session,
-        errorCode = response.errorCode,  -- 修改这里，使用相同的字段名
-        errorMsg = response.errorMsg,    -- 修改这里，使用相同的字段名
-        payload = response.payload
-    }
-    
-    return pb.encode("common.BaseResponse", base_response)
-end
-
--- 创建成功响应
-function M.create_success_response(base_request, proto_name, data, message_id)
-    -- 加日志
-    logger.debug("Creating success response with params:")
-    logger.debug("- base_request: %s", utils.table_to_string(base_request))
-    logger.debug("- proto_name: %s", proto_name)
-    logger.debug("- data: %s", utils.table_to_string(data))
-    logger.debug("- message_id: %d", message_id)
-
-    local response = {
-        session = {
-            messageId = message_id,
-            sequence = base_request.session.sequence,
-            timestamp = base_request.session.timestamp,
-            version = base_request.session.version
-        },
-        errorCode = pb.enum("common.ErrorCode", "ERROR_CODE_SUCCESS"),
-        errorMsg = "Success",
-        payload = pb.encode(proto_name, data)
-    }
-    -- 打印完整响应
-    logger.debug("Full success response: %s", utils.table_to_string(response))
-    return M.encode_response(response)
-end
-
--- 创建错误响应
-function M.create_error_response(base_request, error_code, response_type, error_message, message_id)
-    -- 确保错误码是数字
-    if type(error_code) ~= "number" then
-        logger.error("Invalid error code type: %s, value: %s", type(error_code), tostring(error_code))
-        error_code = pb.enum("common.ErrorCode", "ERROR_CODE_INVALID_PARAM")
-    end
-
-    -- 打印所有参数
-    logger.debug("Creating error response with params:")
-    logger.debug("- error_code: %d", error_code)
-    logger.debug("- response_type: %s", response_type)
-    logger.debug("- error_message: %s", error_message)
-    logger.debug("- message_id: %d", message_id)
-
-    local response = {
-        session = {
-            messageId = message_id,
-            sequence = base_request.session.sequence,
-            timestamp = base_request.session.timestamp,
-            version = base_request.session.version
-        },
-        errorCode = error_code,
-        errorMsg = error_message or "",
-        payload = ""
-    }
-
-    -- 打印完整响应
-    logger.debug("Full error response: %s", utils.table_to_string(response))
-
-    return M.encode_response(response)
-end
-
-return M 
+return M

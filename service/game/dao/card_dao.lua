@@ -10,7 +10,7 @@ local M = {}
 -- 获取用户卡牌
 function M.get_user_cards(user_id)
     if not user_id then
-        return nil, "无效的用户ID"
+        return nil, "invalid user id"
     end
 
     -- 1. 从缓存获取
@@ -58,7 +58,7 @@ end
 -- 批量创建卡牌
 function M.batch_create_cards(cards)
     if not cards or #cards == 0 then
-        return false, "无效的卡牌数据"
+        return false, "invalid card data"
     end
     
     -- 写入数据库

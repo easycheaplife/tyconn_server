@@ -74,21 +74,6 @@ class LoginClient extends BaseClient {
             return null;
         }
     }
-
-    async useItem(itemId, count) {
-        const request = {
-            token: this.token,
-            item_id: itemId,
-            count: count
-        };
-        
-        return await this.sendRequest(
-            this.protoHelper.MessageID.C2G_USE_ITEM_REQUEST,
-            'command.C2GUseItemRequest',
-            request,
-            'command.G2CUseItemResponse'
-        );
-    }
 }
 
 module.exports = LoginClient; 

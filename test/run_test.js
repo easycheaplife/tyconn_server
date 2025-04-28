@@ -1,25 +1,110 @@
 const LoginClient = require('./lib/login_client');
 const config = require('./config/config');
 const { parseArgs } = require('./lib/cli');
-const UserInfoTest = require('./cases/user_info_test');
-const HeartbeatTest = require('./cases/heartbeat_test');
-const UserCardsTest = require('./cases/user_cards_test');
-const BagInfoTest = require('./cases/bag_info_test');
-const UseItemTest = require('./cases/use_item_test');
-const TokenTest = require('./cases/token_test');
-const LoginTest = require('./cases/login_test');
-const ExpandBagTest = require('./cases/expand_bag_test');
+
+// System tests
+const TokenTest = require('./cases/system/token_test');
+const HeartbeatTest = require('./cases/system/heartbeat_test');
+
+// User tests
+const LoginGameTest = require('./cases/user/login_game_test');
+const UserInfoTest = require('./cases/user/user_info_test');
+const UserCardsTest = require('./cases/user/user_cards_test');
+const LoginTest = require('./cases/user/login_test');
+
+// Bag tests
+const BagInfoTest = require('./cases/bag/bag_info_test');
+const ExpandBagTest = require('./cases/bag/expand_bag_test');
+const SortBagTest = require('./cases/bag/sort_bag_test');
+const MoveItemTest = require('./cases/bag/move_item_test');
+
+// Item tests
+const UseItemTest = require('./cases/item/use_item_test');
+const ComposeItemTest = require('./cases/item/compose_item_test');
+const DecomposeItemTest = require('./cases/item/decompose_item_test');
+
+// Equipment tests
+const EquipInfoTest = require('./cases/equip/equip_info_test');
+const EquipItemTest = require('./cases/equip/equip_item_test');
+const UnequipItemTest = require('./cases/equip/unequip_item_test');
+const EquipLevelInfoTest = require('./cases/equip/equip_level_info_test');
+const UpgradeEquipLevelTest = require('./cases/equip/upgrade_equip_level_test');
+const EquipRandomTest = require('./cases/equip/equip_random_test');
+
+// Mail tests
+const GetMailListTest = require('./cases/mail/get_mail_list_test');
+const ReadMailTest = require('./cases/mail/read_mail_test');
+const ClaimMailItemsTest = require('./cases/mail/claim_mail_items_test');
+const DeleteMailTest = require('./cases/mail/delete_mail_test');
+const GmMailTest = require('./cases/mail/gm_mail_test');
+
+// Partner tests
+const GetPartnerListTest = require('./cases/partner/get_partner_list_test');
+const LevelUpPartnerTest = require('./cases/partner/level_up_partner_test');
+const StarUpPartnerTest = require('./cases/partner/star_up_partner_test');
+const UnlockPartnerTest = require('./cases/partner/unlock_partner_test');
+
+// Map tests
+const GetMapInfoTest = require('./cases/map/get_map_info_test');
+const RollDiceTest = require('./cases/map/roll_dice_test');
+const HandleCellEventTest = require('./cases/map/handle_cell_event_test');
+const ClaimRewardTest = require('./cases/map/claim_reward_test');
+
+// GM tests
+const GMCommandTest = require('./cases/gm/gm_command_test');
 
 // 所有测试用例
 const ALL_TESTS = {
-    user_info: UserInfoTest,
-    heartbeat: HeartbeatTest,
-    user_cards: UserCardsTest,
-    bag_info: BagInfoTest,
-    use_item: UseItemTest,
+    // System tests
     token: TokenTest,
+    heartbeat: HeartbeatTest,
+
+    // User tests
+    login_game: LoginGameTest,
+    user_info: UserInfoTest,
+    user_cards: UserCardsTest,
     login: LoginTest,
-    expand_bag: ExpandBagTest
+
+    // Bag tests
+    bag_info: BagInfoTest,
+    expand_bag: ExpandBagTest,
+    sort_bag: SortBagTest,
+    move_item: MoveItemTest,
+
+    // Item tests
+    use_item: UseItemTest,
+    compose_item: ComposeItemTest,
+    decompose_item: DecomposeItemTest,
+
+    // Equipment tests
+    equip_info: EquipInfoTest,
+    equip_item: EquipItemTest,
+    unequip_item: UnequipItemTest,
+    equip_level_info: EquipLevelInfoTest,
+    upgrade_equip_level: UpgradeEquipLevelTest,
+    equip_random: EquipRandomTest,
+
+    // Mail tests
+    get_mail_list: GetMailListTest,
+    read_mail: ReadMailTest,
+    claim_mail_items: ClaimMailItemsTest,
+    delete_mail: DeleteMailTest,
+    gm_mail: GmMailTest,
+
+    // Partner tests
+    get_partner_list: GetPartnerListTest,
+    level_up_partner: LevelUpPartnerTest,
+    star_up_partner: StarUpPartnerTest,
+    unlock_partner: UnlockPartnerTest,
+    
+    // Map tests
+    get_map_info: GetMapInfoTest,
+    roll_dice: RollDiceTest,
+    handle_cell_event: HandleCellEventTest,
+    claim_reward: ClaimRewardTest,
+
+    // GM tests
+    gm_command: GMCommandTest,
 };
 
 async function runTests() {
@@ -27,6 +112,8 @@ async function runTests() {
     console.log('\nStarting tests...');
     let passed = 0;
     let failed = 0;
+    // Track failed test cases
+    const failedTests = [];
 
     try {
         // 获取token和服务器信息
@@ -68,11 +155,14 @@ async function runTests() {
 
         // 运行测试用例
         for (const testCase of testsToRun) {
+            console.log(`\nRunning test: ${testCase.name}`);
             const result = await testCase.run(token, gateInfo);
             if (result) {
                 passed++;
             } else {
                 failed++;
+                // Add the failing test name to our list
+                failedTests.push(testCase.name);
             }
         }
 
@@ -81,6 +171,14 @@ async function runTests() {
         console.log(`Total: ${testsToRun.length}`);
         console.log(`Passed: ${passed}`);
         console.log(`Failed: ${failed}`);
+        
+        // 打印失败的测试案例名称
+        if (failedTests.length > 0) {
+            console.log('\nFailed tests:');
+            failedTests.forEach((testName, index) => {
+                console.log(`${index + 1}. ${testName}`);
+            });
+        }
 
         // 如果有失败的测试，退出码设为1
         if (failed > 0) {

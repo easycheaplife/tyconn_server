@@ -6,6 +6,7 @@ local protoloader = require "protoloader"
 local ws_server = require "login.network.ws_server"
 local login_mgr = require "login.login_mgr"
 local gate_mgr = require "login.gate_mgr"
+local balancer_service = require "balancer_service"
 
 local CMD = {}
 
@@ -49,6 +50,13 @@ function CMD.start(conf)
         return false
     end
     logger.info("Proto files loaded")
+    
+    -- 初始化service_balancer
+    if not balancer_service.init("db_proxy", skynet.getenv("node_name")) then
+        logger.error("Failed to initialize db_proxy balancer")
+        return false
+    end
+    logger.info("DB proxy balancer initialized")
     
     -- 启动WebSocket服务器
     local id = socket.listen("0.0.0.0", conf.port)
