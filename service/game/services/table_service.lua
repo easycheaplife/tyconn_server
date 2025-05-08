@@ -6,6 +6,28 @@ local config_service = require "services.config_service"
 
 local M = {}
 
+-- 获取配置值
+function M.get_config_value(config_name, key, default_value)
+    local config = config_service.get_config(config_name)
+    if not config then
+        logger.warn("Config '%s' not found", config_name)
+        return default_value
+    end
+    
+    local value = config[key]
+    if value == nil then
+        logger.warn("Key '%s' not found in config '%s'", key, config_name)
+        return default_value
+    end
+    
+    return value
+end
+
+-- 获取配置值
+function M.get_config_values(config_name)
+    return config_service.get_config(config_name)
+end
+
 -- 获取所有单位配置
 function M.get_unit_configs()
     local configs = config_service.get_config("units")
@@ -49,17 +71,6 @@ function M.get_property_config(property_id, level)
     
     local key = string.format("%d_%d", property_id, level)
     return configs[key]
-end
-
--- 获取属性成长配置
-function M.get_property_growth_config(unit_id)
-    local configs = config_service.get_config("property_growth")
-    if not configs then
-        logger.error("Failed to get property growth configs")
-        return {}
-    end
-    
-    return configs[unit_id] or {}
 end
 
 -- 获取伙伴最大等级
@@ -172,69 +183,6 @@ function M.get_partner_star_up_cost(unit_id, star)
     end
     
     return result
-end
-
--- 按品质筛选伙伴
-function M.get_partners_by_quality(quality)
-    local configs = M.get_unit_configs()
-    if not configs then
-        return {}
-    end
-    
-    local result = {}
-    for id, config in pairs(configs) do
-        if config.type == 4 and config.quality == quality then
-            table.insert(result, config)
-        end
-    end
-    
-    return result
-end
-
--- 按种族筛选伙伴
-function M.get_partners_by_race(race)
-    local configs = M.get_unit_configs()
-    if not configs then
-        return {}
-    end
-    
-    local result = {}
-    for id, config in pairs(configs) do
-        if config.type == 4 and config.race == race then
-            table.insert(result, config)
-        end
-    end
-    
-    return result
-end
-
--- 获取伙伴碎片分解配置
-function M.get_partner_shard_config(unit_id)
-    local configs = config_service.get_config("partner_shards")
-    if not configs then
-        logger.error("Failed to get partner shard configs")
-        return nil
-    end
-    
-    local unit_config = M.get_unit_config(unit_id)
-    if not unit_config then
-        logger.error("Failed to get unit config for unit_id: %d", unit_id)
-        return nil
-    end
-    
-    local quality = unit_config.quality or 1
-    return configs[quality] or configs[1]
-end
-
--- 获取伙伴分解配置
-function M.get_partner_disassemble_config(quality)
-    local configs = config_service.get_config("partner_disassemble")
-    if not configs then
-        logger.error("Failed to get partner disassemble configs")
-        return nil
-    end
-    
-    return configs[quality] or configs[1]
 end
 
 -- 获取默认解锁碎片数量
@@ -502,28 +450,6 @@ function M.get_all_exp_configs()
     return configs
 end
 
--- 获取配置值
-function M.get_config_value(config_name, key, default_value)
-    local config = config_service.get_config(config_name)
-    if not config then
-        logger.warn("Config '%s' not found", config_name)
-        return default_value
-    end
-    
-    local value = config[key]
-    if value == nil then
-        logger.warn("Key '%s' not found in config '%s'", key, config_name)
-        return default_value
-    end
-    
-    return value
-end
-
--- 获取配置值
-function M.get_config_values(config_name)
-    return config_service.get_config(config_name)
-end
-
 -- 获取随机格子配置
 function M.get_cell_random_configs()
     local configs = config_service.get_config("cell_random_events")
@@ -533,23 +459,5 @@ function M.get_cell_random_configs()
     end
     return configs
 end
-
--- 获取特定地图ID的随机格子配置
-function M.get_cell_random_configs_by_map_id(map_id)
-    local configs = M.get_cell_random_configs()
-    if not configs then
-        return {}
-    end
-    
-    local result = {}
-    for _, config in pairs(configs) do
-        if config.map_id == map_id then
-            table.insert(result, config)
-        end
-    end
-    
-    return result
-end
-
 
 return M 
