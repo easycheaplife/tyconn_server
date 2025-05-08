@@ -237,69 +237,6 @@ function M.get_partner_disassemble_config(quality)
     return configs[quality] or configs[1]
 end
 
--- 获取战力计算配置
-function M.get_power_calculation_config()
-    local configs = config_service.get_config("power_calculation")
-    if not configs then
-        logger.error("Failed to get power calculation configs")
-        -- 返回默认战力计算配置
-        return {
-            prop_multipliers = {
-                [enum.PropType.PROP_HP] = 0.1,  -- 生命值
-                [enum.PropType.PROP_MP] = 0.05, -- 魔法值
-                [enum.PropType.PROP_ATTACK] = 2.0,  -- 攻击力
-                [enum.PropType.PROP_DEFENSE] = 1.5,  -- 防御力
-                [enum.PropType.PROP_SPEED] = 1.0,  -- 速度
-                [enum.PropType.PROP_CRIT_RATE] = 3.0   -- 暴击率
-            },
-            level_multiplier = 10,
-            star_multiplier = 100,
-            quality_multiplier = 200
-        }
-    end
-    
-    return configs
-end
-
--- 获取默认属性配置
-function M.get_default_property_config()
-    local configs = config_service.get_config("default_properties")
-    if not configs then
-        logger.error("Failed to get default property configs")
-        -- 返回默认属性配置
-        return {
-            base_hp = 100,
-            base_mp = 50,
-            base_attack = 10,
-            base_defense = 5,
-            base_speed = 100,
-            hit_rate = 5,
-            dodge_rate = 3,
-            crit_rate = 5,
-            crit_dmg = 150
-        }
-    end
-    
-    return configs
-end
-
--- 获取成长公式配置
-function M.get_growth_formula_config()
-    local configs = config_service.get_config("growth_formula")
-    if not configs then
-        logger.error("Failed to get growth formula configs")
-        -- 返回默认成长公式配置
-        return {
-            star_bonus_rate = 0.1,
-            quality_bonus_rate = 0.2,
-            level_growth_rate = 0.1,
-            combat_quality_bonus_rate = 0.5
-        }
-    end
-    
-    return configs
-end
-
 -- 获取默认解锁碎片数量
 function M.get_default_unlock_fragments()
     local configs = config_service.get_config("game_constants")
@@ -613,5 +550,6 @@ function M.get_cell_random_configs_by_map_id(map_id)
     
     return result
 end
+
 
 return M 

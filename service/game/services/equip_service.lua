@@ -1066,7 +1066,7 @@ end
 -- 根据玩家等级随机装备等级
 local function random_equip_level(player_level)
     -- 获取配置
-    local config = table_service.get_config_values("Td_config")
+    local config = table_service.get_config_values("config")
     if not config or not config["1001"] then
         -- 默认区间[-5, 5]
         local min_diff = -5

@@ -20,7 +20,8 @@ local CONFIG_CACHE = {
     cell_data = {},      -- 大富翁格子数据
     cell_events = {},    -- 大富翁格子事件
     cell_random_events = {}, -- 大富翁随机事件
-    monopoly = {}        -- 大富翁章节配置
+    monopoly = {},        -- 大富翁章节配置
+    config = {}        -- 通用配置
 }
 
 -- 计算table中的键值对数量
@@ -47,7 +48,8 @@ function M.init()
         {name = "monopoly cell data", loader = M.load_cell_data_config},
         {name = "monopoly cell events", loader = M.load_cell_events_config},
         {name = "monopoly chapter config", loader = M.load_monopoly_config},
-        {name = "monopoly random events", loader = M.load_cell_random_events_config}
+        {name = "monopoly random events", loader = M.load_cell_random_events_config},
+        {name = "td config", loader = M.load_config}
     }
 
     for _, config in ipairs(configs_to_load) do
@@ -512,15 +514,44 @@ function M.load_cell_random_events_config()
     return true
 end
 
+-- 加载通用配置
+function M.load_config()
+    local data = config_loader.get_config("Td_config")
+    if not data then
+        return false
+    end
+    
+    -- 转换配置格式
+    for id, config in pairs(data) do
+        local config_id = tonumber(config.Config_id)
+        if config_id then
+            CONFIG_CACHE.config[config_id] = {
+                id = config_id,
+                type = tonumber(config.Type) or 0,
+                param_1 = tonumber(config.Param_1) or 0,
+                param_2 = config.Param_2 or {},
+                param_3 = config.Param_3 or {}
+            }
+        end
+    end
+    
+    logger.info("Td config loaded: %d configs", count_pairs(CONFIG_CACHE.config))
+    return true
+end
+
 -- 添加通用的get_config方法，用于提供给table_service调用
 function M.get_config(config_name)
     if not config_name then
         logger.error("Config name is nil, config_name: %s", config_name)
         return nil
     end
+    
     logger.info("get_config, config_name: %s", config_name)
+    
     -- 首先查找CONFIG_CACHE中是否已有对应配置
-    if config_name == "units" and next(CONFIG_CACHE.units) then
+    if config_name == "config" and next(CONFIG_CACHE.config) then
+        return CONFIG_CACHE.config
+    elseif config_name == "units" and next(CONFIG_CACHE.units) then
         return CONFIG_CACHE.units
     elseif config_name == "initial_items" and next(CONFIG_CACHE.initial_items) then
         return CONFIG_CACHE.initial_items
