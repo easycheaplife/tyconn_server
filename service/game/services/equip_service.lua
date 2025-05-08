@@ -1019,33 +1019,51 @@ local function random_equip_props(equip_id)
         logger.error("Failed to get equipment config for id: %d", equip_id)
         return {}
     end
+    
     logger.info("random_equip_props equip_config: %s", utils.table_to_string(equip_config))
+    
     -- 获取属性数量配置
     local attr_num_config = equip_config.attr_num
     if not attr_num_config or #attr_num_config == 0 then
+        logger.error("No attr_num config found for equip: %d", equip_id)
         return {}
     end
     
     -- 根据权重随机属性数量
     local total_weight = 0
-    for _, weight_pair in ipairs(attr_num_config) do
-        total_weight = total_weight + weight_pair[2]
+    for _, config in ipairs(attr_num_config) do
+        total_weight = total_weight + (config[2] or 0)
     end
     
-    local random_weight = math.random(1, total_weight)
-    local current_weight = 0
-    local selected_attr_count = attr_num_config[1][1] -- 默认使用第一个配置
+    if total_weight <= 0 then
+        logger.error("No valid weights in attr_num config for equip: %d", equip_id)
+        return {}
+    end
     
-    for _, weight_pair in ipairs(attr_num_config) do
-        current_weight = current_weight + weight_pair[2]
+    -- 随机选择属性数量配置
+    local random_weight = math.random(1, total_weight)
+    logger.info("random_weight: %d", random_weight)
+    local current_weight = 0
+    local selected_attr_count = attr_num_config[1][1] -- 默认使用第一个配置的数量
+    
+    for _, config in ipairs(attr_num_config) do
+        current_weight = current_weight + (config[2] or 0)
         if random_weight <= current_weight then
-            selected_attr_count = weight_pair[1]
+            selected_attr_count = config[1]
             break
         end
     end
     
-    -- 随机选择属性
+    logger.info("Selected attr count: %d", selected_attr_count)
+    
+    -- 获取可用属性列表
     local available_attrs = equip_config.attr or {}
+    if #available_attrs == 0 then
+        logger.error("No available attributes for equip: %d", equip_id)
+        return {}
+    end
+    
+    -- 随机选择属性
     local selected_attrs = {}
     local selected_indices = {}
     
@@ -1053,6 +1071,7 @@ local function random_equip_props(equip_id)
     for i = 1, selected_attr_count do
         if #available_attrs == 0 then break end
         
+        -- 构建未选择的属性索引列表
         local valid_indices = {}
         for j = 1, #available_attrs do
             if not selected_indices[j] then
@@ -1062,6 +1081,7 @@ local function random_equip_props(equip_id)
         
         if #valid_indices == 0 then break end
         
+        -- 随机选择一个未使用的属性
         local random_index = valid_indices[math.random(1, #valid_indices)]
         selected_indices[random_index] = true
         table.insert(selected_attrs, available_attrs[random_index])
@@ -1069,17 +1089,30 @@ local function random_equip_props(equip_id)
     
     -- 计算属性值
     local props = {}
+    local props_array = {} -- 使用数组格式存储属性
     for _, attr in ipairs(selected_attrs) do
         local prop_type = attr[1]
         local calc_type = attr[2]
         local base_value = attr[3]
         
+        logger.info("Calculating property - type: %d, calc_type: %d, base_value: %d", 
+            prop_type, calc_type, base_value)
+        
         -- 使用 property_service 计算最终属性值
         local final_value = property_service.calculate_property({{prop_type, calc_type, base_value}}, prop_type)
+        
+        -- 同时保存到数组和映射中
+        table.insert(props_array, {
+            type = prop_type,
+            value = final_value
+        })
         props[prop_type] = final_value
+        
+        logger.info("Calculated property - type: %d, final_value: %d", prop_type, final_value)
     end
+    
     logger.info("random_equip_props props: %s", utils.table_to_string(props))
-    return props
+    return props_array -- 返回数组格式的属性列表
 end
 
 -- 根据玩家等级随机装备等级
@@ -1132,7 +1165,7 @@ function M.random_equipment(player_level)
         quality = quality,
         level = level,
         equip_id = equip_id,
-        props = props
+        props = props -- 现在是数组格式
     }
 end
 

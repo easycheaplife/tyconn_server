@@ -15,6 +15,9 @@ local CALC_TYPE = {
     PERCENT = 2   -- 万分比
 }
 
+-- 将 CALC_TYPE 添加到模块中，以便外部使用
+M.CALC_TYPE = CALC_TYPE
+
 -- 查找属性配置
 local function find_level_property_list(property_id, level)
     logger.info("Finding property list for id: %s, level: %d", property_id, level)
@@ -39,7 +42,7 @@ local function find_level_property_list(property_id, level)
 end
 
 -- 计算单个属性类型的最终值
-local function calculate_property(property_list, property_type)
+function M.calculate_property(property_list, property_type)
     local base_value = 0
     local percent = 0
     
@@ -69,6 +72,11 @@ local function calculate_property(property_list, property_type)
                 percent = percent + value
             end
         end
+    end
+    
+    -- 如果只有万分比，没有基础值，则使用1000作为基础值
+    if base_value == 0 and percent > 0 then
+        base_value = 1000
     end
     
     -- 计算最终值（基础值 * (1 + 万分比/10000)）
@@ -114,7 +122,7 @@ function M.get_unit_level_property(unit_id, level)
     -- 4. 计算每个属性类型的最终值并以PropertyChange格式返回
     local property_changes = {}
     for prop_type, _ in pairs(property_types) do
-        local value = calculate_property(property_list, prop_type)
+        local value = M.calculate_property(property_list, prop_type)
         table.insert(property_changes, {
             prop_id = prop_type,
             value = value
@@ -214,7 +222,7 @@ function M.get_unit_battle_property(unit_id)
     -- 3. 计算每个属性类型的最终值
     local property_changes = {}
     for prop_type, _ in pairs(property_types) do
-        local value = calculate_property(property_list, prop_type)
+        local value = M.calculate_property(property_list, prop_type)
         table.insert(property_changes, {
             prop_id = prop_type,
             value = value
@@ -248,7 +256,7 @@ function M.get_companion_star_property(star_id, star_level)
     -- 3. 计算每个属性类型的最终值
     local property_changes = {}
     for prop_type, _ in pairs(property_types) do
-        local value = calculate_property(property_list, prop_type)
+        local value = M.calculate_property(property_list, prop_type)
         table.insert(property_changes, {
             prop_id = prop_type,
             value = value
