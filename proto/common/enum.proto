@@ -430,24 +430,6 @@ enum PartnerForte {
   PARTNER_FORTE_WARLOCK = 9;    // 术士
 }
 
-// 格子类型
-enum CellType {
-    CELL_TYPE_NONE = 0;     // 未知类型
-    CELL_TYPE_START = 1;       // 起点
-    CELL_TYPE_NORMAL = 2;      // 普通格子
-    CELL_TYPE_CHANCE = 3;      // 机会格子
-    CELL_TYPE_TREASURE = 4;    // 宝藏格子
-    CELL_TYPE_TRAP = 5;        // 陷阱格子
-    CELL_TYPE_SHOP = 6;        // 商店格子
-    CELL_TYPE_REST = 7;        // 休息格子
-    CELL_TYPE_TELEPORT = 8;    // 传送格子
-    CELL_TYPE_BATTLE = 9;      // 战斗格子
-    CELL_TYPE_PROPERTY = 10;   // 地产格子
-    CELL_TYPE_CHECKPOINT = 11; // 检查点
-    CELL_TYPE_BOSS = 12;       // Boss格子
-    CELL_TYPE_MYSTERY = 13;    // 神秘格子
-}
-
 // 格子事件类型
 enum CellEventType {
     EVENT_TYPE_NONE = 0;        // 未知事件

@@ -4,6 +4,7 @@ local bag_dao = require "dao.bag_dao"
 local item_dao = require "dao.item_dao"
 local enum = require "enum"
 local cjson = require "cjson"
+local utils = require "utils"
 local snowflake = require "utils.snowflake"
 local equipment_dao = require "dao.equipment_dao"
 local property_service = require "services.property_service"
@@ -926,6 +927,7 @@ end
 
 -- 根据玩家等级随机装备品质
 local function random_equip_quality(player_level)
+    logger.info("random_equip_quality: player_level: %d", player_level)
     -- 获取装备概率配置
     local odds_config = table_service.get_equipment_odds_config(player_level)
     if not odds_config then
@@ -933,12 +935,21 @@ local function random_equip_quality(player_level)
         return 1 -- 默认返回白色品质
     end
     
+    logger.info("odds_config: %s", utils.table_to_string(odds_config))
+    
     -- 计算总权重
     local total_weight = 0
     for i = 1, 9 do
-        local qua_key = "Qua_" .. i
-        local weight = odds_config[qua_key] or 0
-        total_weight = total_weight + weight
+        local weight = odds_config["qua_" .. i] or 0
+        if weight > 0 then
+            total_weight = total_weight + weight
+        end
+    end
+    
+    -- 如果没有有效权重，返回默认品质
+    if total_weight <= 0 then
+        logger.error("No valid quality weights found for level: %d", player_level)
+        return 1
     end
     
     -- 随机一个权重值
@@ -947,22 +958,25 @@ local function random_equip_quality(player_level)
     
     -- 根据权重选择品质
     for i = 1, 9 do
-        local qua_key = "Qua_" .. i
-        local weight = odds_config[qua_key] or 0
-        current_weight = current_weight + weight
-        if random_weight <= current_weight then
-            return i
+        local weight = odds_config["qua_" .. i] or 0
+        if weight > 0 then
+            current_weight = current_weight + weight
+            if random_weight <= current_weight then
+                logger.info("Selected quality %d with weight %d (total weight: %d, random weight: %d)", 
+                    i, weight, total_weight, random_weight)
+                return i
+            end
         end
     end
     
+    logger.warn("Failed to select quality, returning default quality 1")
     return 1 -- 默认返回白色品质
 end
 
 -- 随机装备部位
 local function random_equip_slot()
-    -- 从 EquipSlotType 枚举中随机选择一个部位
-    local random_index = math.random(1, enum.EquipSlotType.EQUIP_SLOT_TYPE_RING)
-    return valid_slots[random_index]
+    -- 从 EquipSlotType 枚举中随机选择一个部位（跳过 NONE = 0）
+    return math.random(enum.EquipSlotType.EQUIP_SLOT_TYPE_WEAPON, enum.EquipSlotType.EQUIP_SLOT_TYPE_RING)
 end
 
 -- 根据部位和品质获取装备ID
@@ -977,7 +991,7 @@ local function get_equip_id(slot_type, quality)
     -- 筛选符合条件的装备
     local valid_equips = {}
     for _, config in pairs(equip_configs) do
-        if config.Part == slot_type and config.Qua == quality then
+        if config.part == slot_type and config.quality == quality then
             table.insert(valid_equips, config)
         end
     end
@@ -987,9 +1001,13 @@ local function get_equip_id(slot_type, quality)
         return nil
     end
     
+    logger.info("valid_equips: %s", utils.table_to_string(valid_equips))
     -- 随机选择一个装备
     local random_index = math.random(1, #valid_equips)
-    return valid_equips[random_index].Equip_id
+    logger.info("random_index: %d", random_index)
+    local equip_id = valid_equips[random_index].id
+    logger.info("get_equip_id equip_id: %d", equip_id or 0)
+    return equip_id
 end
 
 -- 随机装备属性
@@ -1002,7 +1020,7 @@ local function random_equip_props(equip_id)
     end
     
     -- 获取属性数量配置
-    local attr_num_config = equip_config.Attr_num
+    local attr_num_config = equip_config.attr_num
     if not attr_num_config or #attr_num_config == 0 then
         return {}
     end
@@ -1026,7 +1044,7 @@ local function random_equip_props(equip_id)
     end
     
     -- 随机选择属性
-    local available_attrs = equip_config.Attr or {}
+    local available_attrs = equip_config.attr or {}
     local selected_attrs = {}
     local selected_indices = {}
     
@@ -1059,7 +1077,7 @@ local function random_equip_props(equip_id)
         local final_value = property_service.calculate_property({{prop_type, calc_type, base_value}}, prop_type)
         props[prop_type] = final_value
     end
-    
+    logger.info("random_equip_props props: %s", utils.table_to_string(props))
     return props
 end
 
@@ -1082,7 +1100,9 @@ local function random_equip_level(player_level)
     local min_level = math.max(1, player_level + min_diff)
     local max_level = player_level + max_diff
     
-    return math.random(min_level, max_level)
+    local level = math.random(min_level, max_level)
+    logger.info("random_equip_level level: %d", level)
+    return level
 end
 
 -- 随机生成装备

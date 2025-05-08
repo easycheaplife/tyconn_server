@@ -765,7 +765,6 @@ local function increment_event_trigger_counts(user_id, chapter_id, events)
         logger.error("Failed to get cell_events config")
         return
     end
-    logger.debug("Cell events config: %s", utils.table_to_string(cell_events_config))
     
     for _, event in ipairs(events) do
         local event_id = nil
@@ -1003,8 +1002,6 @@ function M.roll_dice(user_id)
         logger.error("Failed to get chapter config for chapter %d", map_info.chapter_id)
         return nil
     end
-    
-    logger.debug("Chapter config: %s", utils.table_to_string(chapter_config))
     
     -- 计算新位置（使用tileMap配置）
     local to_position = calculate_new_position(from_position, dice_result, map_info.direction, chapter_config)

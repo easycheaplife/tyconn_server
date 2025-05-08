@@ -203,7 +203,7 @@ function M.load_equipment_configs()
     end     
 
     local equips = {}
-    for _, config in ipairs(data) do
+    for _, config in pairs(data) do
         local id = tonumber(config.Equip_id)
         if id then
             equips[id] = {
@@ -233,7 +233,7 @@ function M.load_equipment_level_configs()
     end
 
     local levels = {}
-    for _, config in ipairs(data) do
+    for _, config in pairs(data) do
         local level = tonumber(config.Level)
         if level then
             levels[level] = {
@@ -264,12 +264,12 @@ function M.load_equipment_odds_configs()
     end
 
     local odds = {}
-    for _, config in ipairs(data) do
+    for _, config in pairs(data) do
         local level = tonumber(config.Level)
         if level then
             odds[level] = {
                 level = level,
-                exp = tonumber(config.Exp) or 0,
+                exp = config.Exp or {},
                 qua_1 = tonumber(config.Qua_1) or 0,
                 qua_2 = tonumber(config.Qua_2) or 0,
                 qua_3 = tonumber(config.Qua_3) or 0,
@@ -471,7 +471,6 @@ function M.load_monopoly_config()
                 chapter_config.tile_map = tile_map
                 logger.info("Loaded tile map for chapter %d, map_id: %d, tiles: %d", 
                     chapter_id, chapter_config.map_id, count_pairs(tile_map))
-                logger.debug("Tile map for chapter %d: %s", chapter_id, utils.table_to_string(tile_map))
             else
                 logger.info("No map config found for chapter %d, map_id: %d", 
                     chapter_id, chapter_config.map_id)
