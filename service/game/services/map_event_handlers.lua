@@ -69,7 +69,7 @@ function M.handle_item_equip_reward(user_id, complete_event)
     end
     
     -- 2. 添加装备到背包
-    local ok, bags = bag_service.add_item(user_id, {
+    local ok, bags = bag_service.add_items(user_id, {
         item_id = equip_info.equip_id,
         count = 1
     }, enum.ChangeSource.SOURCE_REWARD)
