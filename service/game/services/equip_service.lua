@@ -539,102 +539,6 @@ local function generate_random_attributes(equip_level, quality, equip_config)
     return attributes
 end
 
--- 随机获取装备
-function M.random_equipment(user_id, part)
-    if not user_id then
-        return nil, "invalid user id"
-    end
-    
-    -- 获取装备配置
-    local base_config = table_service.get_equip_base_config()
-    if not base_config then
-        logger.error("Failed to get equip base config")
-        return nil, "config error"
-    end
-    
-    -- 如果没有指定部位，随机选择
-    local target_part = part or 0
-    if target_part <= 0 or target_part > 6 then
-        local idx = math.random(1, #base_config.parts)
-        target_part = base_config.parts[idx]
-    end
-    
-    -- 获取装备模板
-    local template = table_service.get_random_equip_template(target_part)
-    if not template then
-        logger.error("Failed to get equip template for part %d", target_part)
-        return nil, "template error"
-    end
-    
-    -- 随机品质
-    local quality_odds = base_config.quality_odds
-    local rnd = math.random(1, 100)
-    local quality = 1
-    local sum = 0
-    
-    for i, odds in ipairs(quality_odds) do
-        sum = sum + odds
-        if rnd <= sum then
-            quality = i
-            break
-        end
-    end
-    
-    -- 创建装备
-    local item_id = template.item_id_base + quality - 1
-    local equip = {
-        id = snowflake.next_id(snowflake.ID_TYPE.ITEM),
-        user_id = user_id,
-        item_id = item_id,
-        count = 1,
-        bag_type = enum.BagType.BAG_TYPE_MAIN,
-        slot_index = 0, -- 临时
-        bind_type = enum.BindType.BIND_NONE,
-        acquire_time = os.time(),
-        expire_time = 0,
-        quality = quality,
-        level = 1,
-        enhance_level = 0,
-        refine_level = 0,
-        gem_slots = {},
-        is_equipped = false,
-        equip_slot = nil,
-        props = {}
-    }
-    
-    -- 生成属性
-    for prop_name, values in pairs(template.props) do
-        equip.props[prop_name] = values[quality]
-    end
-    
-    -- 查找空闲格子
-    bag_type = enum.BagType.BAG_TYPE_MAIN
-    local bag_service = require "services.bag_service"
-    local slot_index = bag_service.find_empty_slot(user_id, bag_type)
-    
-    if not slot_index then
-        logger.error("No empty slot found for new equipment")
-        return nil, "no empty slot"
-    end
-    
-    -- 添加到物品列表
-    local bag_service = require "services.bag_service"
-    local ok, err = bag_service.add_items(user_id, {
-        item_id = equip.item_id,
-        count = equip.count
-    }, enum.ChangeSource.SOURCE_RANDOM, bag_type)
-    
-    if not ok then
-        logger.error("Failed to add random equipment for user %d: %s", user_id, err)
-        return nil, err
-    end
-    
-    -- 计算装备配置
-    local equip_config = table_service.get_item_config(equip.item_id)
-    
-    return equip, nil, equip_config
-end
-
 -- 分解装备
 function M.decompose_equipment(user_id, item_id)
     local config_service = require "services.config_service"
@@ -970,19 +874,258 @@ function M.get_equip_part(equip)
     return equip_config and equip_config.part
 end
 
+-- 保存装备属性
+function M.save_equip_properties(props_data)
+    if not props_data or not props_data.equip_id then
+        logger.error("save_equip_properties: invalid props data")
+        return false
+    end
+    
+    -- 调用 DAO 层保存数据
+    local ok = equipment_dao.insert_equip_properties(props_data)
+    if not ok then
+        logger.error("Failed to save equipment properties for equip %d", props_data.equip_id)
+        return false
+    end
+    
+    return true
+end
+
 -- 获取装备属性
-function M.get_equip_properties(equip)
-    if not equip then
-        return {}
+function M.get_equip_properties(equip_id)
+    if not equip_id then
+        logger.error("get_equip_properties: missing equip_id")
+        return nil
     end
     
+    -- 通过 DAO 层获取数据
+    local props = equipment_dao.get_equip_properties(equip_id)
+    if not props then
+        return nil
+    end
+    
+    return props
+end
+
+-- 更新装备属性
+function M.update_equip_properties(props_data)
+    if not props_data or not props_data.equip_id then
+        logger.error("update_equip_properties: invalid props data")
+        return false
+    end
+    
+    -- 通过 DAO 层更新数据
+    local ok = equipment_dao.update_equip_properties(props_data)
+    if not ok then
+        logger.error("Failed to update equipment properties for equip %d", props_data.equip_id)
+        return false
+    end
+    
+    return true
+end
+
+-- 根据玩家等级随机装备品质
+local function random_equip_quality(player_level)
+    -- 获取装备概率配置
+    local odds_config = table_service.get_equipment_odds_config(player_level)
+    if not odds_config then
+        logger.error("Failed to get equipment odds config for level: %d", player_level)
+        return 1 -- 默认返回白色品质
+    end
+    
+    -- 计算总权重
+    local total_weight = 0
+    for i = 1, 9 do
+        local qua_key = "Qua_" .. i
+        local weight = odds_config[qua_key] or 0
+        total_weight = total_weight + weight
+    end
+    
+    -- 随机一个权重值
+    local random_weight = math.random(1, total_weight)
+    local current_weight = 0
+    
+    -- 根据权重选择品质
+    for i = 1, 9 do
+        local qua_key = "Qua_" .. i
+        local weight = odds_config[qua_key] or 0
+        current_weight = current_weight + weight
+        if random_weight <= current_weight then
+            return i
+        end
+    end
+    
+    return 1 -- 默认返回白色品质
+end
+
+-- 随机装备部位
+local function random_equip_slot()
+    -- 从 EquipSlotType 枚举中随机选择一个部位
+    local random_index = math.random(1, enum.EquipSlotType.EQUIP_SLOT_TYPE_RING)
+    return valid_slots[random_index]
+end
+
+-- 根据部位和品质获取装备ID
+local function get_equip_id(slot_type, quality)
+    -- 获取所有装备配置
+    local equip_configs = table_service.get_all_equipment_configs()
+    if not equip_configs then
+        logger.error("Failed to get equipment configs")
+        return nil
+    end
+    
+    -- 筛选符合条件的装备
+    local valid_equips = {}
+    for _, config in pairs(equip_configs) do
+        if config.Part == slot_type and config.Qua == quality then
+            table.insert(valid_equips, config)
+        end
+    end
+    
+    if #valid_equips == 0 then
+        logger.error("No valid equipment found for slot: %d, quality: %d", slot_type, quality)
+        return nil
+    end
+    
+    -- 随机选择一个装备
+    local random_index = math.random(1, #valid_equips)
+    return valid_equips[random_index].Equip_id
+end
+
+-- 随机装备属性
+local function random_equip_props(equip_id)
     -- 获取装备配置
-    local item_config = table_service.get_equipment_config(equip.item_id)
-    if not item_config then
+    local equip_config = table_service.get_equipment_config(equip_id)
+    if not equip_config then
+        logger.error("Failed to get equipment config for id: %d", equip_id)
         return {}
     end
     
-    -- ... existing code ...
+    -- 获取属性数量配置
+    local attr_num_config = equip_config.Attr_num
+    if not attr_num_config or #attr_num_config == 0 then
+        return {}
+    end
+    
+    -- 根据权重随机属性数量
+    local total_weight = 0
+    for _, weight_pair in ipairs(attr_num_config) do
+        total_weight = total_weight + weight_pair[2]
+    end
+    
+    local random_weight = math.random(1, total_weight)
+    local current_weight = 0
+    local selected_attr_count = attr_num_config[1][1] -- 默认使用第一个配置
+    
+    for _, weight_pair in ipairs(attr_num_config) do
+        current_weight = current_weight + weight_pair[2]
+        if random_weight <= current_weight then
+            selected_attr_count = weight_pair[1]
+            break
+        end
+    end
+    
+    -- 随机选择属性
+    local available_attrs = equip_config.Attr or {}
+    local selected_attrs = {}
+    local selected_indices = {}
+    
+    -- 确保不会选择重复的属性
+    for i = 1, selected_attr_count do
+        if #available_attrs == 0 then break end
+        
+        local valid_indices = {}
+        for j = 1, #available_attrs do
+            if not selected_indices[j] then
+                table.insert(valid_indices, j)
+            end
+        end
+        
+        if #valid_indices == 0 then break end
+        
+        local random_index = valid_indices[math.random(1, #valid_indices)]
+        selected_indices[random_index] = true
+        table.insert(selected_attrs, available_attrs[random_index])
+    end
+    
+    -- 计算属性值
+    local props = {}
+    for _, attr in ipairs(selected_attrs) do
+        local prop_type = attr[1]
+        local calc_type = attr[2]
+        local base_value = attr[3]
+        
+        -- 使用 property_service 计算最终属性值
+        local final_value = property_service.calculate_property({{prop_type, calc_type, base_value}}, prop_type)
+        props[prop_type] = final_value
+    end
+    
+    return props
+end
+
+-- 根据玩家等级随机装备等级
+local function random_equip_level(player_level)
+    -- 获取配置
+    local config = table_service.get_config_values("Td_config")
+    if not config or not config["1001"] then
+        -- 默认区间[-5, 5]
+        local min_diff = -5
+        local max_diff = 5
+        return math.max(1, math.random(player_level + min_diff, player_level + max_diff))
+    end
+    
+    local level_config = config["1001"]
+    local min_diff = level_config.min_level_diff or -5
+    local max_diff = level_config.max_level_diff or 5
+    
+    -- 计算等级区间
+    local min_level = math.max(1, player_level + min_diff)
+    local max_level = player_level + max_diff
+    
+    return math.random(min_level, max_level)
+end
+
+-- 随机生成装备
+function M.random_equipment(player_level)
+    -- 随机品质
+    local quality = random_equip_quality(player_level)
+    
+    -- 随机部位
+    local slot_type = random_equip_slot()
+    
+    -- 获取装备ID
+    local equip_id = get_equip_id(slot_type, quality)
+    if not equip_id then
+        return nil
+    end
+    
+    -- 随机等级
+    local level = random_equip_level(player_level)
+    
+    -- 随机属性
+    local props = random_equip_props(equip_id)
+    
+    -- 返回结果
+    return {
+        slot_type = slot_type,
+        quality = quality,
+        level = level,
+        equip_id = equip_id,
+        props = props
+    }
+end
+
+-- 根据用户ID随机生成装备
+function M.random_equipment_by_user(user_id)
+    -- 获取用户等级
+    local user_service = require "services.user_service"
+    local user_level = user_service.get_user_level(user_id)
+    if not user_level then
+        logger.error("Failed to get user level for user: %d", user_id)
+        return nil
+    end
+    
+    return M.random_equipment(user_level)
 end
 
 return M 

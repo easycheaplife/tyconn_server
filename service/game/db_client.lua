@@ -1162,4 +1162,52 @@ function M.increment_event_trigger_count(user_id, chapter_id, event_id)
     return result
 end
 
+-- 获取装备属性
+function M.get_equip_properties(equip_id)
+    if not equip_id then
+        logger.error("db_client.get_equip_properties: missing equip_id")
+        return nil
+    end
+    
+    local ok, result = pcall(call_db, "get_equip_properties", equip_id)
+    if not ok then
+        logger.error("Failed to get equipment properties: %s", result)
+        return nil
+    end
+    
+    return result
+end
+
+-- 插入装备属性
+function M.insert_equip_properties(params)
+    if not params or not params.equip_id then
+        logger.error("db_client.insert_equip_properties: invalid params")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "insert_equip_properties", params)
+    if not ok then
+        logger.error("Failed to insert equipment properties: %s", result)
+        return false
+    end
+    
+    return result
+end
+
+-- 更新装备属性
+function M.update_equip_properties(params)
+    if not params or not params.equip_id then
+        logger.error("db_client.update_equip_properties: invalid params")
+        return false
+    end
+    
+    local ok, result = pcall(call_db, "update_equip_properties", params)
+    if not ok then
+        logger.error("Failed to update equipment properties: %s", result)
+        return false
+    end
+    
+    return result
+end
+
 return M 

@@ -110,4 +110,51 @@ M.INIT_EQUIP_LEVEL = [[
     )
 ]]
 
+-- 获取装备属性
+M.GET_EQUIP_PROPERTIES = [[
+    SELECT 
+        id,
+        equip_id,
+        part,
+        quality,
+        level,
+        additional_props,
+        create_time,
+        update_time
+    FROM equip_properties
+    WHERE equip_id = %d
+]]
+
+-- 插入装备属性
+M.INSERT_EQUIP_PROPERTIES = [[
+    INSERT INTO equip_properties (
+        equip_id,
+        part,
+        quality,
+        level,
+        additional_props,
+        create_time,
+        update_time
+    ) VALUES (
+        %d,
+        %d,
+        %d,
+        %d,
+        %s,
+        %d,
+        %d
+    )
+]]
+
+-- 更新装备属性
+M.UPDATE_EQUIP_PROPERTIES = [[
+    UPDATE equip_properties
+    SET additional_props = %s,
+        part = %d,
+        quality = %d,
+        level = %d,
+        update_time = %d
+    WHERE equip_id = %d
+]]
+
 return M 

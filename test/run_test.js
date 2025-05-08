@@ -29,7 +29,6 @@ const EquipItemTest = require('./cases/equip/equip_item_test');
 const UnequipItemTest = require('./cases/equip/unequip_item_test');
 const EquipLevelInfoTest = require('./cases/equip/equip_level_info_test');
 const UpgradeEquipLevelTest = require('./cases/equip/upgrade_equip_level_test');
-const EquipRandomTest = require('./cases/equip/equip_random_test');
 
 // Mail tests
 const GetMailListTest = require('./cases/mail/get_mail_list_test');
@@ -82,7 +81,6 @@ const ALL_TESTS = {
     unequip_item: UnequipItemTest,
     equip_level_info: EquipLevelInfoTest,
     upgrade_equip_level: UpgradeEquipLevelTest,
-    equip_random: EquipRandomTest,
 
     // Mail tests
     get_mail_list: GetMailListTest,

@@ -69,8 +69,6 @@ function M.register_equip_handler()
         require "game.handlers.equip.equip_item_handler")
     M.register(pb.enum("common.MessageID", "C2G_UNEQUIP_ITEM_REQUEST"), 
         require "game.handlers.equip.unequip_item_handler")
-    M.register(pb.enum("common.MessageID", "C2G_EQUIP_RANDOM_REQUEST"), 
-        require "game.handlers.equip.equip_random_handler")
     M.register(pb.enum("common.MessageID", "C2G_EQUIP_LEVEL_INFO_REQUEST"), 
         require "game.handlers.equip.equip_level_info_handler")
     M.register(pb.enum("common.MessageID", "C2G_EQUIP_LEVEL_UPGRADE_REQUEST"), 

@@ -336,10 +336,30 @@ function M.remove_equip_level(user_id)
     return remove_cache(key)
 end
 
+-- 获取装备属性
+function M.get_equip_properties(equip_id)
+    local key = make_key(PREFIX.equip_props, equip_id)
+    return get_cache(key, string.format("equipment properties for equip %d", equip_id))
+end
+
+-- 设置装备属性
+function M.set_equip_properties(equip_id, props)
+    local key = make_key(PREFIX.equip_props, equip_id)
+    return set_cache(key, props, EXPIRE.equip_props,
+        string.format("equipment properties for equip %d", equip_id))
+end
+
+-- 删除装备属性缓存
+function M.remove_equip_properties(equip_id)
+    local key = make_key(PREFIX.equip_props, equip_id)
+    return remove_cache(key)
+end
+
 -- 清除用户所有装备相关缓存
 function M.clear_equip_cache(user_id)
     M.remove_equip_slots(user_id)
     M.remove_equip_level(user_id)
+    -- 注意：装备属性缓存需要具体的装备ID，这里无法清除
     return true
 end
 

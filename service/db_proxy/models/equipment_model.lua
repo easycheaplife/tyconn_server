@@ -181,4 +181,89 @@ function M.get_expired_equipment(params)
     return result or {}
 end
 
+-- 获取装备属性
+function M.get_equip_properties(equip_id)
+    if not equip_id then
+        logger.error("get_equip_properties: missing equip_id")
+        return nil
+    end
+    
+    local query = string.format(equipment_sql.GET_EQUIP_PROPERTIES, equip_id)
+    local result = db_util.query(query)
+    
+    if result and result[1] then
+        -- 解析 JSON 属性
+        if result[1].additional_props then
+            local ok, decoded = pcall(cjson.decode, result[1].additional_props)
+            if ok then
+                result[1].additional_props = decoded
+            else
+                result[1].additional_props = {}
+                logger.error("Failed to decode additional_props for equip %d", equip_id)
+            end
+        end
+        return result[1]
+    end
+    
+    return nil
+end
+
+-- 插入装备属性
+function M.insert_equip_properties(params)
+    if not params.equip_id or not params.additional_props then
+        logger.error("insert_equip_properties: missing required params")
+        return false
+    end
+    
+    -- 参数验证
+    if not params.part or not params.quality or not params.level then
+        logger.error("insert_equip_properties: missing part, quality or level")
+        return false
+    end
+    
+    -- 将 additional_props 转换为 JSON 字符串
+    local additional_props_json = cjson.encode(params.additional_props)
+    local current_time = os.time()
+    local query = string.format(
+        equipment_sql.INSERT_EQUIP_PROPERTIES,
+        params.equip_id,
+        params.part,
+        params.quality,
+        params.level,
+        "'" .. additional_props_json .. "'",
+        params.create_time or current_time,
+        params.update_time or current_time
+    )
+    
+    return db_util.query(query) ~= nil
+end
+
+-- 更新装备属性
+function M.update_equip_properties(params)
+    if not params.equip_id or not params.additional_props then
+        logger.error("update_equip_properties: missing required params")
+        return false
+    end
+    
+    -- 参数验证
+    if not params.part or not params.quality or not params.level then
+        logger.error("update_equip_properties: missing part, quality or level")
+        return false
+    end
+    
+    -- 将 additional_props 转换为 JSON 字符串
+    local additional_props_json = cjson.encode(params.additional_props)
+    local query = string.format(
+        equipment_sql.UPDATE_EQUIP_PROPERTIES,
+        "'" .. additional_props_json .. "'",
+        params.part,
+        params.quality,
+        params.level,
+        params.update_time or os.time(),
+        params.equip_id
+    )
+    
+    return db_util.query(query) ~= nil
+end
+
 return M 

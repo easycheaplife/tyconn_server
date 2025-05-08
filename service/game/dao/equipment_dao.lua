@@ -309,4 +309,94 @@ function M.save_equip_level_info(user_id, info)
     return true
 end
 
+-- 获取装备属性
+function M.get_equip_properties(equip_id)
+    if not equip_id then
+        logger.error("get_equip_properties: missing equip_id")
+        return nil
+    end
+    
+    -- 先尝试从缓存获取
+    local props = cache.get_equip_properties(equip_id)
+    if props then
+        return props
+    end
+    
+    -- 从数据库获取
+    props = db_client.get_equip_properties(equip_id)
+    if not props then
+        return nil
+    end
+    
+    -- 更新缓存
+    local ok = cache.set_equip_properties(equip_id, props)
+    if not ok then
+        logger.warn("Failed to set cache for equip properties %d", equip_id)
+    end
+    
+    return props
+end
+
+-- 插入装备属性
+function M.insert_equip_properties(props_data)
+    if not props_data or not props_data.equip_id then
+        logger.error("insert_equip_properties: invalid props data")
+        return false
+    end
+    
+    -- 设置时间戳
+    props_data.create_time = props_data.create_time or os.time()
+    props_data.update_time = props_data.update_time or os.time()
+    
+    -- 保存到数据库
+    local ok = db_client.insert_equip_properties(props_data)
+    if not ok then
+        logger.error("Failed to insert equipment properties for equip %d", props_data.equip_id)
+        return false
+    end
+    
+    -- 更新缓存
+    ok = cache.set_equip_properties(props_data.equip_id, props_data)
+    if not ok then
+        logger.warn("Failed to update cache for equip properties %d", props_data.equip_id)
+    end
+    
+    return true
+end
+
+-- 更新装备属性
+function M.update_equip_properties(props_data)
+    if not props_data or not props_data.equip_id then
+        logger.error("update_equip_properties: invalid props data")
+        return false
+    end
+    
+    -- 设置更新时间
+    props_data.update_time = os.time()
+    
+    -- 更新数据库
+    local ok = db_client.update_equip_properties(props_data)
+    if not ok then
+        logger.error("Failed to update equipment properties for equip %d", props_data.equip_id)
+        return false
+    end
+    
+    -- 更新缓存
+    ok = cache.set_equip_properties(props_data.equip_id, props_data)
+    if not ok then
+        logger.warn("Failed to update cache for equip properties %d", props_data.equip_id)
+    end
+    
+    return true
+end
+
+-- 删除装备属性缓存
+function M.remove_equip_properties_cache(equip_id)
+    if not equip_id then
+        return false
+    end
+    
+    return cache.remove_equip_properties(equip_id)
+end
+
 return M 

@@ -370,4 +370,17 @@ function CMD.increment_event_trigger_count(user_id, chapter_id, event_id)
     return wrap_call(monopoly_model.increment_event_trigger_count, user_id, chapter_id, event_id)
 end
 
+-- 装备属性相关命令
+function CMD.get_equip_properties(equip_id)
+    return wrap_call(equipment_model.get_equip_properties, equip_id)
+end
+
+function CMD.insert_equip_properties(params)
+    return wrap_call(equipment_model.insert_equip_properties, params)
+end
+
+function CMD.update_equip_properties(params)
+    return wrap_call(equipment_model.update_equip_properties, params)
+end
+
 return CMD

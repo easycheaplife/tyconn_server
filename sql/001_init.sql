@@ -169,12 +169,13 @@ DROP TABLE IF EXISTS equip_properties;
 CREATE TABLE IF NOT EXISTS equip_properties (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     equip_id BIGINT NOT NULL,        -- 装备实例ID
-    base_props TEXT,                 -- 基础属性(JSON)
-    enhance_props TEXT,              -- 强化属性(JSON)
-    refine_props TEXT,               -- 精炼属性(JSON)
-    gem_props TEXT,                  -- 宝石属性(JSON)
-    reforge_props TEXT,              -- 洗练属性(JSON)
-    update_time BIGINT NOT NULL      -- 更新时间
+    part INT NOT NULL,               -- 装备部位
+    quality INT NOT NULL,            -- 装备品质
+    level INT NOT NULL,              -- 装备等级
+    additional_props VARCHAR(512),    -- 附加属性(JSON)
+    create_time BIGINT NOT NULL,     -- 创建时间
+    update_time BIGINT NOT NULL,     -- 更新时间
+    INDEX idx_equip_id (equip_id)    -- 装备ID索引
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 装备强化记录表

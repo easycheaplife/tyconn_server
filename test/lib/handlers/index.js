@@ -14,7 +14,6 @@ const decomposeItem = require('./item/decompose_item');
 const getEquipInfo = require('./equipment/get_equip_info');
 const equipItem = require('./equipment/equip_item');
 const unequipItem = require('./equipment/unequip_item');
-const getRandomEquip = require('./equipment/get_random_equip');
 const getEquipLevelInfo = require('./equipment/get_equip_level_info');
 const upgradeEquipLevel = require('./equipment/upgrade_equip_level');
 
@@ -66,7 +65,6 @@ module.exports = {
     getEquipInfo,
     equipItem,
     unequipItem,
-    getRandomEquip,
     getEquipLevelInfo,
     upgradeEquipLevel,
 
