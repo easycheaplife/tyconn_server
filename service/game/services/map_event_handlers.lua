@@ -81,13 +81,13 @@ function M.handle_item_equip_reward(user_id, complete_event)
     
     -- 3. 保存装备属性
     local props_data = {
-        equip_id = bags.item_id,
+        equip_id = equip_info.equip_id,
         part = equip_info.slot_type,
         quality = equip_info.quality,
         level = equip_info.level,
         additional_props = cjson.encode(equip_info.props or {})
     }
-    
+    logger.info("handle_item_equip_reward props_data: %s", utils.table_to_string(props_data))
     ok = equip_service.save_equip_properties(props_data)
     if not ok then
         logger.error("Failed to save equipment properties for user %d, equip %d", user_id, bags.item_id)

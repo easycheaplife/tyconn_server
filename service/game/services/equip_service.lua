@@ -1012,13 +1012,14 @@ end
 
 -- 随机装备属性
 local function random_equip_props(equip_id)
+    logger.info("random_equip_props equip_id: %d", equip_id)
     -- 获取装备配置
     local equip_config = table_service.get_equipment_config(equip_id)
     if not equip_config then
         logger.error("Failed to get equipment config for id: %d", equip_id)
         return {}
     end
-    
+    logger.info("random_equip_props equip_config: %s", utils.table_to_string(equip_config))
     -- 获取属性数量配置
     local attr_num_config = equip_config.attr_num
     if not attr_num_config or #attr_num_config == 0 then
