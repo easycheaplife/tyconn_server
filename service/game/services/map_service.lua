@@ -276,6 +276,7 @@ local function dispatch_event(user_id, event, map_info)
     end
     
     logger.debug("user_id: %d, event_id: %d, event_type_id: %d", user_id, event.event_id, event_type_id)
+    logger.debug("complete_event: %s", utils.table_to_string(complete_event))
     
     -- 根据事件类型调用对应的处理函数
     if event_type_id == enum.CellEventType.EVENT_TYPE_ITEM_REWARD then
