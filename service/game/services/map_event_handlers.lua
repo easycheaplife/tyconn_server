@@ -1,10 +1,11 @@
 local skynet = require "skynet"
 local logger = require "logger"
 local utils = require "utils"
-local map_dao = require "game.dao.map_dao"
-local bag_service = require "game.services.bag_service"
 local enum = require "enum"
 local cjson = require "cjson"
+local map_dao = require "dao.map_dao"
+local bag_service = require "services.bag_service"
+local equip_service = require "services.equip_service"
 
 local M = {}
 
@@ -59,41 +60,62 @@ end
 
 -- 处理物品装备奖励事件
 function M.handle_item_equip_reward(user_id, complete_event)
-    local equip_service = require "services.equip_service"
-    
-    -- 1. 随机生成装备
-    local equip_info = equip_service.random_equipment_by_user(user_id)
-    if not equip_info then
-        logger.error("Failed to generate random equipment for user %d", user_id)
-        return false, nil, nil
+      -- 从合并后的事件数据中获取物品信息
+      if complete_event.merged_events and #complete_event.merged_events > 0 then
+        -- 查找匹配的事件数据
+        local event_data = nil
+        for _, merged_event in ipairs(complete_event.merged_events) do
+            if merged_event.event_id == complete_event.event_id then
+                event_data = merged_event
+                break
+            end
+        end
+        -- 处理事件数据
+        if event_data then
+            local equip_odds_level, equip_level
+            if event_data.params and #event_data.params >= 2 then
+                -- 如果是表格式的参数
+                equip_odds_level = event_data.params[1]
+                equip_level = event_data.params[2]
+            end
+
+            -- 1. 随机生成装备
+            local equip_info = equip_service.random_equipment_by_user(user_id, equip_odds_level, equip_level)
+            if not equip_info then
+                logger.error("Failed to generate random equipment for user %d", user_id)
+                return false, nil, nil
+            end
+            
+            -- 2. 添加装备到背包
+            local ok, bags = bag_service.add_items(user_id, {
+                item_id = equip_info.equip_id,
+                count = 1
+            }, enum.ChangeSource.SOURCE_REWARD)
+            
+            if not ok or not bags then
+                logger.error("Failed to add equipment to bag for user %d", user_id)
+                return false, nil, nil
+            end
+            
+            -- 3. 保存装备属性
+            local props_data = {
+                equip_id = equip_info.equip_id,
+                part = equip_info.slot_type,
+                quality = equip_info.quality,
+                level = equip_info.level,
+                additional_props = cjson.encode(equip_info.props or {})
+            }
+            logger.info("handle_item_equip_reward props_data: %s", utils.table_to_string(props_data))
+            ok = equip_service.save_equip_properties(props_data)
+            if not ok then
+                logger.error("Failed to save equipment properties for user %d, equip %d", user_id, bags.item_id)
+                -- 注意：即使保存属性失败，我们也不回滚背包操作，因为装备已经生成
+                -- 属性可以后续补偿或重新生成
+            end
+
+        end
     end
-    
-    -- 2. 添加装备到背包
-    local ok, bags = bag_service.add_items(user_id, {
-        item_id = equip_info.equip_id,
-        count = 1
-    }, enum.ChangeSource.SOURCE_REWARD)
-    
-    if not ok or not bags then
-        logger.error("Failed to add equipment to bag for user %d", user_id)
-        return false, nil, nil
-    end
-    
-    -- 3. 保存装备属性
-    local props_data = {
-        equip_id = equip_info.equip_id,
-        part = equip_info.slot_type,
-        quality = equip_info.quality,
-        level = equip_info.level,
-        additional_props = cjson.encode(equip_info.props or {})
-    }
-    logger.info("handle_item_equip_reward props_data: %s", utils.table_to_string(props_data))
-    ok = equip_service.save_equip_properties(props_data)
-    if not ok then
-        logger.error("Failed to save equipment properties for user %d, equip %d", user_id, bags.item_id)
-        -- 注意：即使保存属性失败，我们也不回滚背包操作，因为装备已经生成
-        -- 属性可以后续补偿或重新生成
-    end
+
     
     -- 返回值格式：success, bags, new_position
     -- 与 handle_item_reward 保持一致

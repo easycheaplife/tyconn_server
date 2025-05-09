@@ -926,12 +926,12 @@ function M.update_equip_properties(props_data)
 end
 
 -- 根据玩家等级随机装备品质
-local function random_equip_quality(player_level)
-    logger.info("random_equip_quality: player_level: %d", player_level)
+local function random_equip_quality(equip_odds_level)
+    logger.info("random_equip_quality: equip_odds_level: %d", equip_odds_level)
     -- 获取装备概率配置
-    local odds_config = table_service.get_equipment_odds_config(player_level)
+    local odds_config = table_service.get_equipment_odds_config(equip_odds_level)
     if not odds_config then
-        logger.error("Failed to get equipment odds config for level: %d", player_level)
+        logger.error("Failed to get equipment odds config for level: %d", equip_odds_level)
         return 1 -- 默认返回白色品质
     end
     
@@ -948,7 +948,7 @@ local function random_equip_quality(player_level)
     
     -- 如果没有有效权重，返回默认品质
     if total_weight <= 0 then
-        logger.error("No valid quality weights found for level: %d", player_level)
+        logger.error("No valid quality weights found for level: %d", equip_odds_level)
         return 1
     end
     
@@ -1140,9 +1140,9 @@ local function random_equip_level(player_level)
 end
 
 -- 随机生成装备
-function M.random_equipment(player_level)
+function M.random_equipment(player_level, equip_odds_level, equip_level)
     -- 随机品质
-    local quality = random_equip_quality(player_level)
+    local quality = random_equip_quality(equip_odds_level)
     
     -- 随机部位
     local slot_type = random_equip_slot()
@@ -1154,7 +1154,9 @@ function M.random_equipment(player_level)
     end
     
     -- 随机等级
-    local level = random_equip_level(player_level)
+    if not equip_level then
+        equip_level = random_equip_level(player_level)
+    end
     
     -- 随机属性
     local props = random_equip_props(equip_id)
@@ -1163,14 +1165,14 @@ function M.random_equipment(player_level)
     return {
         slot_type = slot_type,
         quality = quality,
-        level = level,
+        level = equip_level,
         equip_id = equip_id,
         props = props -- 现在是数组格式
     }
 end
 
 -- 根据用户ID随机生成装备
-function M.random_equipment_by_user(user_id)
+function M.random_equipment_by_user(user_id, equip_odds_level, equip_level)
     -- 获取用户等级
     local user_service = require "services.user_service"
     local user_level = user_service.get_user_level(user_id)
@@ -1179,7 +1181,7 @@ function M.random_equipment_by_user(user_id)
         return nil
     end
     
-    return M.random_equipment(user_level)
+    return M.random_equipment(user_level, equip_odds_level, equip_level)
 end
 
 return M 
